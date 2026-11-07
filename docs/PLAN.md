@@ -14,15 +14,15 @@ otherwise. Assets come from the 1.18.2 client jar and the 1.18 asset index (`too
 
 **Order: 1.17 first.** Everything in 1.17 fits 1.12.2's normal world height, so it is planned and built
 first. Lush caves, dripstone caves and geodes are added as cave decoration inside y 0-255. The 1.18 terrain
-(world height, noise caves, aquifers, ore distribution, new mountains) is the user's call: see *Still open*.
+(world height, noise caves, aquifers, ore distribution, new mountains) was the user's call: full height, see stream T.
 
 ## Scope at a glance
 
 | In | Out (and why) |
 | --- | --- |
-| Every 1.17 block, item, mob, effect-like mechanic (freezing), advancement and generated feature; 1.17's changes to existing blocks (ore drops, cauldrons); 1.18's music, its music disc and its cave biomes as decoration | The 1.18 terrain until the user decides (*Still open*) |
-| Lush caves and dripstone caves as 3D cave regions inside the existing height | Data-pack, command, render-distance and options changes |
-| Glow ink on signs, if the user wants a position-based store (*Still open*) | Experimental-only 1.17 content that shipped later (below) |
+| Every 1.17 block, item, mob, effect-like mechanic (freezing), advancement and generated feature; 1.17's changes to existing blocks (ore drops, cauldrons); 1.18's music, its music disc, its cave biomes, and its full-height terrain (stream T) | Data-pack, command, render-distance and options changes |
+| Lush caves and dripstone caves as 3D cave regions inside the existing height (in old worlds) | |
+| Glowing sign text with glow ink sacs | Experimental-only 1.17 content that shipped later (below) |
 
 ## Content owned by another mod of the family
 
