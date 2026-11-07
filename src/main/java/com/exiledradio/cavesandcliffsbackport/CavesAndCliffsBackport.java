@@ -57,6 +57,7 @@ public final class CavesAndCliffsBackport {
     public void init(FMLInitializationEvent event) {
         com.exiledradio.cavesandcliffsbackport.common.Compat.init();
         com.exiledradio.cavesandcliffsbackport.deepslate.DeepslateContent.init();
+        com.exiledradio.cavesandcliffsbackport.copper.CopperContent.init();
     }
 
     @Mod.EventHandler

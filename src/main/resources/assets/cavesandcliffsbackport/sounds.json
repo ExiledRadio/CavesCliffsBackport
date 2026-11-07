@@ -524,5 +524,151 @@
       "cavesandcliffsbackport:block/basalt/step5",
       "cavesandcliffsbackport:block/basalt/step6"
     ]
+  },
+  "block.copper.break": {
+    "sounds": [
+      "cavesandcliffsbackport:block/copper/break1",
+      "cavesandcliffsbackport:block/copper/break2",
+      "cavesandcliffsbackport:block/copper/break3",
+      "cavesandcliffsbackport:block/copper/break4"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.copper.step": {
+    "sounds": [
+      "cavesandcliffsbackport:block/copper/step1",
+      "cavesandcliffsbackport:block/copper/step2",
+      "cavesandcliffsbackport:block/copper/step3",
+      "cavesandcliffsbackport:block/copper/step4",
+      "cavesandcliffsbackport:block/copper/step5",
+      "cavesandcliffsbackport:block/copper/step6"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.copper.place": {
+    "sounds": [
+      "cavesandcliffsbackport:block/copper/break1",
+      "cavesandcliffsbackport:block/copper/break2",
+      "cavesandcliffsbackport:block/copper/break3",
+      "cavesandcliffsbackport:block/copper/break4"
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.copper.hit": {
+    "sounds": [
+      "cavesandcliffsbackport:block/copper/step1",
+      "cavesandcliffsbackport:block/copper/step2",
+      "cavesandcliffsbackport:block/copper/step3",
+      "cavesandcliffsbackport:block/copper/step4",
+      "cavesandcliffsbackport:block/copper/step5",
+      "cavesandcliffsbackport:block/copper/step6"
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.copper.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/copper/step1",
+      "cavesandcliffsbackport:block/copper/step2",
+      "cavesandcliffsbackport:block/copper/step3",
+      "cavesandcliffsbackport:block/copper/step4",
+      "cavesandcliffsbackport:block/copper/step5",
+      "cavesandcliffsbackport:block/copper/step6"
+    ]
+  },
+  "item.honeycomb.wax_on": {
+    "sounds": [
+      "cavesandcliffsbackport:item/honeycomb/wax_on1",
+      {
+        "name": "cavesandcliffsbackport:item/honeycomb/wax_on1",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/honeycomb/wax_on1",
+        "pitch": 1.1
+      },
+      "cavesandcliffsbackport:item/honeycomb/wax_on2",
+      {
+        "name": "cavesandcliffsbackport:item/honeycomb/wax_on2",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/honeycomb/wax_on2",
+        "pitch": 1.1
+      },
+      "cavesandcliffsbackport:item/honeycomb/wax_on3",
+      {
+        "name": "cavesandcliffsbackport:item/honeycomb/wax_on3",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/honeycomb/wax_on3",
+        "pitch": 1.1
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.item.honeycomb.wax_on"
+  },
+  "item.axe.wax_off": {
+    "sounds": [
+      "cavesandcliffsbackport:item/axe/wax_off1",
+      {
+        "name": "cavesandcliffsbackport:item/axe/wax_off1",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/axe/wax_off1",
+        "pitch": 1.1
+      },
+      "cavesandcliffsbackport:item/axe/wax_off2",
+      {
+        "name": "cavesandcliffsbackport:item/axe/wax_off2",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/axe/wax_off2",
+        "pitch": 1.1
+      },
+      "cavesandcliffsbackport:item/axe/wax_off3",
+      {
+        "name": "cavesandcliffsbackport:item/axe/wax_off3",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/axe/wax_off3",
+        "pitch": 1.1
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.item.axe.wax_off"
+  },
+  "item.axe.scrape": {
+    "sounds": [
+      "cavesandcliffsbackport:item/axe/scrape1",
+      {
+        "name": "cavesandcliffsbackport:item/axe/scrape1",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/axe/scrape1",
+        "pitch": 1.1
+      },
+      "cavesandcliffsbackport:item/axe/scrape2",
+      {
+        "name": "cavesandcliffsbackport:item/axe/scrape2",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/axe/scrape2",
+        "pitch": 1.1
+      },
+      "cavesandcliffsbackport:item/axe/scrape3",
+      {
+        "name": "cavesandcliffsbackport:item/axe/scrape3",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/axe/scrape3",
+        "pitch": 1.1
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.item.axe.scrape"
   }
 }

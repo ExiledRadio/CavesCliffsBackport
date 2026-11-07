@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "variant=default": {
+      "model": "cavesandcliffsbackport:exposed_cut_copper"
+    }
+  }
+}

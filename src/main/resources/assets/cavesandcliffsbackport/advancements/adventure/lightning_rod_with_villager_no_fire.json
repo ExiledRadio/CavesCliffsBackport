@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "cavesandcliffsbackport:lightning_rod"
+    },
+    "title": {
+      "translate": "advancements.cavesandcliffsbackport.lightning_rod_with_villager_no_fire.title"
+    },
+    "description": {
+      "translate": "advancements.cavesandcliffsbackport.lightning_rod_with_villager_no_fire.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "minecraft:adventure/root",
+  "criteria": {
+    "code": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

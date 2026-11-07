@@ -1,6 +1,5 @@
-package com.exiledradio.cavesandcliffsbackport.deepslate;
+package com.exiledradio.cavesandcliffsbackport.common;
 
-import com.exiledradio.cavesandcliffsbackport.common.BlockBasic;
 
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.MapColor;
@@ -37,7 +36,13 @@ public class BlockCCOre extends BlockBasic {
      */
     public BlockCCOre(MapColor color, SoundType sound, Supplier<Item> drop, int meta, int min, int max, Bonus bonus,
                       int xpMin, int xpMax) {
-        super(Material.ROCK, color, sound, 4.5F, 3.0F);
+        this(color, sound, 4.5F, 3.0F, drop, meta, min, max, bonus, xpMin, xpMax);
+    }
+
+    /** With its own hardness and blast resistance (Java units); the other constructor is a deepslate ore's 4.5 / 3. */
+    public BlockCCOre(MapColor color, SoundType sound, float hardness, float resistance, Supplier<Item> drop, int meta,
+                      int min, int max, Bonus bonus, int xpMin, int xpMax) {
+        super(Material.ROCK, color, sound, hardness, resistance);
         this.drop = drop;
         this.meta = meta;
         this.min = min;

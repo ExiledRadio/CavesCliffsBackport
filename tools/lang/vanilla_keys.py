@@ -31,12 +31,18 @@ def candidates(key):
     parts = key.split(".")
     if key.startswith("tile.%s." % M) and key.endswith(".name"):
         name = ".".join(parts[2:-1])
+        if name.endswith("_double_slab"):
+            # 1.12's double slab block is named as its slab, which is 1.18's one block
+            name = name[:-len("_double_slab")] + "_slab"
         return ["block.minecraft." + name, "item.minecraft." + name]
     if key.startswith("item.%s." % M) and key.endswith(".name"):
         name = ".".join(parts[2:-1])
         return ["item.minecraft." + name, "block.minecraft." + name]
     if key.startswith("subtitles.%s." % M):
         return ["subtitles." + key[len("subtitles.%s." % M):]]
+    if key.startswith("advancements.%s." % M):
+        rest = key[len("advancements.%s." % M):]
+        return ["advancements.%s.%s" % (tab, rest) for tab in ("story", "nether", "end", "adventure", "husbandry")]
     return []
 
 

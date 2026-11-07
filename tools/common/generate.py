@@ -33,6 +33,8 @@ CATEGORY_NAMES = {
 # Option names that words-from-camelCase would get wrong.
 OPTION_NAMES = {
     "enabled": "Enabled",
+    "minY": "Lowest height",
+    "maxY": "Highest height",
 }
 
 SRC = os.path.join(assets.ROOT, "src", "main", "java", "com", "exiledradio", assets.MODID, "ModConfig.java")

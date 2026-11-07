@@ -1,0 +1,8 @@
+{
+  "parent": "cavesandcliffsbackport:block/slab_top",
+  "textures": {
+    "bottom": "cavesandcliffsbackport:block/oxidized_cut_copper",
+    "top": "cavesandcliffsbackport:block/oxidized_cut_copper",
+    "side": "cavesandcliffsbackport:block/oxidized_cut_copper"
+  }
+}
