@@ -19,5 +19,11 @@
     "code": {
       "trigger": "minecraft:impossible"
     }
-  }
+  },
+  "conditions": [
+    {
+      "type": "minecraft:item_exists",
+      "item": "cavesandcliffsbackport:waxed_copper_block"
+    }
+  ]
 }

@@ -35,6 +35,8 @@ OPTION_NAMES = {
     "enabled": "Enabled",
     "minY": "Lowest height",
     "maxY": "Highest height",
+    "geodeMinY": "Lowest geode height",
+    "geodeMaxY": "Highest geode height",
 }
 
 SRC = os.path.join(assets.ROOT, "src", "main", "java", "com", "exiledradio", assets.MODID, "ModConfig.java")

@@ -46,6 +46,7 @@ public final class SelfTestRunner {
             new ScaffoldSelfTest(),
             new DeepslateSelfTest(),
             new CopperSelfTest(),
+            new AmethystSelfTest(),
     };
 
     private final List<String> wanted;

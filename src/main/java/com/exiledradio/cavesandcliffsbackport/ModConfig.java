@@ -155,6 +155,25 @@ public final class ModConfig {
         @Config.Comment("Amethyst blocks, buds and shards, tinted glass and the spyglass. Off, nothing is registered.")
         @Config.LangKey("config.cavesandcliffsbackport.amethyst.enabled")
         public boolean enabled = true;
+
+        @Config.Comment("Amethyst geodes generate underground in newly generated chunks.")
+        @Config.LangKey("config.cavesandcliffsbackport.amethyst.geodes")
+        public boolean geodes = true;
+
+        @Config.Comment("One geode in this many chunks, on average.")
+        @Config.LangKey("config.cavesandcliffsbackport.amethyst.geodeRarity")
+        @Config.RangeInt(min = 1, max = 1000)
+        public int geodeRarity = 24;
+
+        @Config.Comment("Lowest height of a geode.")
+        @Config.LangKey("config.cavesandcliffsbackport.amethyst.geodeMinY")
+        @Config.RangeInt(min = 1, max = 240)
+        public int geodeMinY = 6;
+
+        @Config.Comment("Highest height of a geode.")
+        @Config.LangKey("config.cavesandcliffsbackport.amethyst.geodeMaxY")
+        @Config.RangeInt(min = 1, max = 240)
+        public int geodeMaxY = 46;
     }
 
     public static final class Dripstone {

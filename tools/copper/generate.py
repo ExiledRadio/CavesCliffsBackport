@@ -43,7 +43,7 @@ for item in ("copper_ingot", "raw_copper"):
     lang.append("item.%s.%s.name=%s" % (M, item, assets.name("item.minecraft." + item)))
 
 assets.port_advancement("husbandry/wax_on", "minecraft:husbandry/root", M + ":waxed_copper_block", lang)
-assets.port_advancement("husbandry/wax_off", M + ":husbandry/wax_on", "minecraft:stone_axe", lang)
+assets.port_advancement("husbandry/wax_off", M + ":husbandry/wax_on", "minecraft:stone_axe", lang, requires=M + ":waxed_copper_block")
 assets.port_advancement("adventure/lightning_rod_with_villager_no_fire", "minecraft:adventure/root", M + ":lightning_rod", lang)
 
 events = {}
