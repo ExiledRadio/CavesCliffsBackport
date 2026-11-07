@@ -1,0 +1,6 @@
+{
+  "parent": "cavesandcliffsbackport:block/template_wall_side_tall",
+  "textures": {
+    "wall": "cavesandcliffsbackport:block/deepslate_tiles"
+  }
+}

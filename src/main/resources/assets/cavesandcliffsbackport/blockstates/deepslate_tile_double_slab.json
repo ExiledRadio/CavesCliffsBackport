@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "variant=default": {
+      "model": "cavesandcliffsbackport:deepslate_tiles"
+    }
+  }
+}

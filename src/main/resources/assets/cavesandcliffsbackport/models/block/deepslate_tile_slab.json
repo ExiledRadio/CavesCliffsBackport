@@ -1,0 +1,8 @@
+{
+  "parent": "cavesandcliffsbackport:block/slab",
+  "textures": {
+    "bottom": "cavesandcliffsbackport:block/deepslate_tiles",
+    "top": "cavesandcliffsbackport:block/deepslate_tiles",
+    "side": "cavesandcliffsbackport:block/deepslate_tiles"
+  }
+}

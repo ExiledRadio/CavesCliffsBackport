@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "variant=default": {
+      "model": "cavesandcliffsbackport:cobbled_deepslate"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "variant=default": {
+      "model": "cavesandcliffsbackport:polished_deepslate"
+    }
+  }
+}

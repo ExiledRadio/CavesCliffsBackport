@@ -1,0 +1,7 @@
+{
+  "parent": "cavesandcliffsbackport:block/cube_column_mirrored",
+  "textures": {
+    "end": "cavesandcliffsbackport:block/deepslate_top",
+    "side": "cavesandcliffsbackport:block/deepslate"
+  }
+}

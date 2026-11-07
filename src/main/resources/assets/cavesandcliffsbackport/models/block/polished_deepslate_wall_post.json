@@ -1,0 +1,6 @@
+{
+  "parent": "cavesandcliffsbackport:block/template_wall_post",
+  "textures": {
+    "wall": "cavesandcliffsbackport:block/polished_deepslate"
+  }
+}

@@ -73,3 +73,20 @@ updates copy (copper, tuff, deepslate, moss, lightning rod, powder snow).
   `cavesandcliffsbackport:glow_berries` by name.
 - 1.17's mason trade (dripstone blocks) and wandering trader items: we add them through Core's
   `TradeRegistry`; nothing to do unless the career key for the mason differs from `"minecraft:mason/mason"`.
+
+## 8. A shared modern wall (and slab) class
+
+1.16 gave walls low and tall sides; every family mod with new walls needs the same block (our deepslate
+walls, Tricky Trials' tuff walls, Wild Update's mud brick walls), or walls of different mods won't match
+side by side. Ours is `common/BlockCCWall` (sides `none|low|tall`, `up`, all actual state, meta 0, face
+shapes as 1.12's walls so they join cobblestone walls) and `common/BlockCCSlab` (`<name>_slab` with `half`
+and a one-value `variant=default`, plus `<name>_double_slab`). Wanted: both in Core under
+`com.exiledradio.backportcore.building`, same properties, so every mod's walls and slabs behave alike.
+Meanwhile they live here.
+
+## 9. Glow lichen and sculk vein (multiface)
+
+Wild Update asks Core for a shared `BlockMultiface` with its faces in a tile entity (NBT byte `Faces`).
+Glow lichen generates on most cave walls in 1.18, so a tile entity per block would be costly; we lean to
+four registered blocks sharing one item (bits in metadata, no tile entity). To settle with Wild Update
+and Core before our lush stream (L) is built.
