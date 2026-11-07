@@ -183,8 +183,9 @@ same noise (the seed reaches the client in our login packet, id 0).
 ### Gs. Glow squid, glow ink, glow item frames
 
 - **Glow squid** (dark water spawning, darkening when hurt, full-bright texture), **glow ink sac** (drops
-  1-3), **glow item frame** (its own entity, contents drawn full-bright). Advancement *Glow and Behold!*
-  only if glowing sign text is built (*Still open* 3).
+  1-3), **glow item frame** (its own entity, contents drawn full-bright), **glowing sign text** (glow ink sac
+  on a sign, ink sac to undo; kept in the sign's NBT through a small patch, *Still open* 3) and *Glow and
+  Behold!*.
 
 ### Ax. Axolotls
 
@@ -274,16 +275,18 @@ All soft (`Loader.isModLoaded` and names):
 
 ## Still open (the user's call)
 
-1. **Honeycomb without Buzzy Bees.** Waxing copper and crafting candles need honeycomb, which comes only from
-   bees. Without Buzzy Bees Backport installed: (a) accept any mod's honeycomb (`honeycomb` ore name) and
-   nothing else, so waxing and candles need a bee mod; (b) as (a), plus a fallback recipe (candles from
-   string and slimeball or tallow-like vanilla items, waxing with a slimeball); (c) register our own copy of
-   the honeycomb item (Rule 1) with a stand-in source. **Built until answered: (a).**
-2. **Ore drops.** Iron and gold ore dropping raw ore changes an existing vanilla block in every pack
-   (auto-smelting and ore-doubling mods expect the ore block). Built: on, with config `rawOreDrops`.
-3. **Glowing sign text (glow ink sac on signs).** 1.12's sign loses unknown NBT on save, so the glow must
-   live in a per-world list of sign positions and the sign renderer must be replaced for all signs (a
-   conflict with other sign-rendering mods). Build it or skip it? **Not built until answered.**
+Standing rule (the user, 2026-11-07): **always build what is closest to vanilla**; bytecode patches are fine
+wherever vanilla parity needs them, not only for extended height. Design questions that vanilla answers are not
+asked.
+
+Answered 2026-11-07:
+
+1. **Honeycomb**: Buzzy Bees Backport's honeycomb first, then any other mod's item with the ore name
+   `honeycomb` (as built: config `copper.waxItems` plus the ore name).
+2. **Ore drops**: iron and gold ore drop raw ore (as built, `deepslate.rawOreDrops` on).
+3. **Glowing sign text**: build it (stream Gs). The glow is kept on the sign itself, by patching
+   `TileEntitySign` to read and write current Java's `GlowingText` tag and its renderer to draw it full-bright
+   with the outline, if that is the cleanest way; no side list of positions.
 4. **The 1.18 terrain** - decided: option A (see stream T and `docs/EXTENDED_HEIGHT.md`). The comparison as
    it was put to the user (world height y -64..319, noise caves - cheese, spaghetti and noodle - aquifers, 1.18
    ore distribution and ore veins, mountains and their biomes: meadow, grove, snowy slopes, jagged, frozen
