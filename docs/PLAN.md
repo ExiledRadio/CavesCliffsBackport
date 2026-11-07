@@ -67,7 +67,7 @@ stream calls another's classes; when one needs another's block or item it looks 
 | Gt | Goats | `goat` | `goats` | 15-19 | 50-54 | 1.17 |
 | X | Other 1.17 blocks, items and changes | `blocks` | `blocks` | none | 55-59 | 1.17 |
 | Mu | 1.18 music and the Otherside disc | `music` | `music` | none | 60-64 | 1.18 |
-| T | 1.18 terrain (waits for the user) | `terrain` | `terrain` | none | 65-74 | 1.18 |
+| T | 1.18 terrain: extended height (coremod) and the terrain | `height`, `terrain` | `terrain` | none | 65-74 | 1.18 |
 
 Packet ids 0-4 are `common`'s. Build order: D, Cu, Am, Dr, L, Ps, Ca, Gs, Ax, Gt, X, Mu; T when decided.
 D comes first because copper ore, geodes and dripstone caves sit in its deepslate.
@@ -213,9 +213,11 @@ same noise (the seed reaches the client in our login packet, id 0).
   music (in a built-in resource pack behind a switch), and the lush and dripstone tracks played in their
   regions.
 
-### T. 1.18 terrain (waits for the user)
+### T. 1.18 terrain
 
-See *Still open* 4. Nothing is built before the user picks an option.
+**Decided (the user, 2026-11-07): option A, full height y -64..319**, bytecode patching approved for this part
+only. Design first: `docs/EXTENDED_HEIGHT.md` (a small ASM coremod in package `height`, the terrain as plain
+code in `terrain`). Built after the 1.17 streams.
 
 ## Waterlogging
 
@@ -282,7 +284,8 @@ All soft (`Loader.isModLoaded` and names):
 3. **Glowing sign text (glow ink sac on signs).** 1.12's sign loses unknown NBT on save, so the glow must
    live in a per-world list of sign positions and the sign renderer must be replaced for all signs (a
    conflict with other sign-rendering mods). Build it or skip it? **Not built until answered.**
-4. **The 1.18 terrain** (world height y -64..319, noise caves - cheese, spaghetti and noodle - aquifers, 1.18
+4. **The 1.18 terrain** - decided: option A (see stream T and `docs/EXTENDED_HEIGHT.md`). The comparison as
+   it was put to the user (world height y -64..319, noise caves - cheese, spaghetti and noodle - aquifers, 1.18
    ore distribution and ore veins, mountains and their biomes: meadow, grove, snowy slopes, jagged, frozen
    and stony peaks). Three options, with speed a hard requirement for the RLCraft Revamped pack:
 

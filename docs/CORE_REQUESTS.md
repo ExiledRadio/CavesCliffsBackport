@@ -111,3 +111,24 @@ This only works if later updates declare our names (their Rule 1 shims) from the
 mod constructor: every mod's constructor runs before anyone's pre-init, so a constructor declaration beats
 ours whatever the load order (Tricky Trials hit this and moved theirs, 7b7e501). Worth a line in Core's API
 docs next to `declare`.
+
+## 11. `WorldHeights` for our extended height
+
+The user chose full 1.18 height for this mod (docs/EXTENDED_HEIGHT.md). Core's `WorldHeights` already answers
+for the other extended-height mods; it needs a branch for ours, found by reflection so Core never links us:
+
+```java
+// com.exiledradio.cavesandcliffsbackport.height.Heights (public, static, no client types)
+int minY(World world);           // -64 in an extended overworld, else 0
+int maxY(World world);           // 320 (exclusive) in an extended overworld, else 256
+int slot(World world, int y);    // section array index: 0-15 = y 0-255, 16-19 = 256-319, 20-23 = -64..-1
+boolean isExtended(World world);
+```
+
+`WorldHeights.minY/maxYExclusive/storageIndex` call these when `cavesandcliffsbackport` is loaded.
+`enterFullHeight()` needs no change for us: we don't clip population to 0-255, so it can return a no-op.
+Wild Update's deep dark and Tricky Trials' trial chambers then use 1.18's heights in our worlds.
+
+Also needed (EXTENDED_HEIGHT.md section 3): fluid states outside y 0-255. Fluidlogged API's per-chunk store packs
+y in 8 bits, so either its author widens the key for extended worlds, or Core's `Waterloggable` adapter stores
+those states itself.
