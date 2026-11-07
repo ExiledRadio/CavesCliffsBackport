@@ -72,8 +72,8 @@ stream calls another's classes; when one needs another's block or item it looks 
 Packet ids 0-4 are `common`'s. Build order: D, Cu, Am, Dr, L, Ps, Ca, Gs, Ax, Gt, X, Mu; T when decided.
 D comes first because copper ore, geodes and dripstone caves sit in its deepslate.
 
-**Status (2026-11-07):** D and Cu built, tested and merged (`docs/streams/deepslate.md`, `copper.md`). Double
-slabs are `<name>_double_slab`, as Village & Pillage's released ones. Next: Am.
+**Status (2026-11-07):** D, Cu and Am built, tested and merged (`docs/streams/deepslate.md`, `copper.md`,
+`amethyst.md`). Double slabs are `<name>_double_slab`, as Village & Pillage's released ones. Next: Dr.
 
 ### Shared by the cave streams: `common/CaveRegions`
 
