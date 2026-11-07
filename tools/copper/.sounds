@@ -1,0 +1,8 @@
+block.copper.break
+block.copper.fall
+block.copper.hit
+block.copper.place
+block.copper.step
+item.axe.scrape
+item.axe.wax_off
+item.honeycomb.wax_on

@@ -1,0 +1,8 @@
+{
+  "parent": "block/stairs",
+  "textures": {
+    "bottom": "cavesandcliffsbackport:block/cut_copper",
+    "top": "cavesandcliffsbackport:block/cut_copper",
+    "side": "cavesandcliffsbackport:block/cut_copper"
+  }
+}

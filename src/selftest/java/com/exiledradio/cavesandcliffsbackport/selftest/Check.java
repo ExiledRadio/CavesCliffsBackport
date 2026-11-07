@@ -70,15 +70,17 @@ public final class Check {
     }
 
     /**
-     * @return the corner of a new empty 32x32 area at y=100, cleared from y=60 to y=160 with a stone floor
+     * @return the corner of a new empty 32x32 area at y=100, cleared (with 8 blocks around it) from y=60 to y=160 with a stone floor
      * at y=99 and its chunks loaded
      */
     public BlockPos area() {
         int x = 20000 + 48 * this.nextArea++;
         int z = 20000;
         BlockPos corner = new BlockPos(x, 100, z);
-        for (int dx = 0; dx < 32; dx++) {
-            for (int dz = 0; dz < 32; dz++) {
+        // Clears the whole 48-block cell around it, so a test that strays a few blocks outside its 32x32 area
+        // cannot leave blocks behind for a later run's neighboring test.
+        for (int dx = -8; dx < 40; dx++) {
+            for (int dz = -8; dz < 40; dz++) {
                 for (int y = 60; y < 160; y++) {
                     BlockPos p = new BlockPos(x + dx, y, z + dz);
                     IBlockState want = y == 99 ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState();

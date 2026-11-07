@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "cavesandcliffsbackport:waxed_copper_block"
+    },
+    "title": {
+      "translate": "advancements.cavesandcliffsbackport.wax_on.title"
+    },
+    "description": {
+      "translate": "advancements.cavesandcliffsbackport.wax_on.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "minecraft:husbandry/root",
+  "criteria": {
+    "code": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

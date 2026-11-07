@@ -287,3 +287,41 @@ def copy_sound_group(group, events):
     """Copies a sound group's five events (break, step, place, hit, fall) into the events dict."""
     for e in ("break", "step", "place", "hit", "fall"):
         events["%s.%s" % (group, e)] = copy_sound("%s.%s" % (group, e))
+
+
+def port_slab(name):
+    """1.18's one slab block (type=bottom/top/double) as 1.12's two: <name> and <name minus _slab>_double_slab.
+
+    @return the two blockstate names written
+    """
+    data = jar_json("assets/minecraft/blockstates/%s.json" % name)["variants"]
+    double = name[:-len("_slab")] + "_double_slab"
+    write_json("blockstates/%s.json" % name, {"variants": {
+        "half=bottom,variant=default": _port_apply(data["type=bottom"]),
+        "half=top,variant=default": _port_apply(data["type=top"])}})
+    write_json("blockstates/%s.json" % double, {"variants": {"variant=default": _port_apply(data["type=double"])}})
+    return name, double
+
+
+def port_advancement(path, parent, icon, lang):
+    """Writes advancements/<path>.json from 1.18's: its display, a code-granted criterion, the given parent.
+
+    @param parent an advancement id 1.12 has ("minecraft:husbandry/root") or one of ours
+    @param icon the icon's item id, ours or 1.12's
+    @param lang a list the title and description lines are appended to
+    """
+    data = jar_json("data/minecraft/advancements/%s.json" % path)
+    d = data["display"]
+    key = path.split("/")[-1]
+    title = "advancements.%s.%s.title" % (MODID, key)
+    desc = "advancements.%s.%s.description" % (MODID, key)
+    lang.append("%s=%s" % (title, VANILLA_LANG[d["title"]["translate"]]))
+    lang.append("%s=%s" % (desc, VANILLA_LANG[d["description"]["translate"]]))
+    out = {
+        "display": {"icon": {"item": icon}, "title": {"translate": title}, "description": {"translate": desc},
+                    "frame": d.get("frame", "task"), "show_toast": d.get("show_toast", True),
+                    "announce_to_chat": d.get("announce_to_chat", True), "hidden": d.get("hidden", False)},
+        "parent": parent,
+        "criteria": {"code": {"trigger": "minecraft:impossible"}},
+    }
+    write_json("advancements/%s.json" % path, out)

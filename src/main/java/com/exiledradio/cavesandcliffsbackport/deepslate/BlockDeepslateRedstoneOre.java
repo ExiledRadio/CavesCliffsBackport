@@ -1,5 +1,7 @@
 package com.exiledradio.cavesandcliffsbackport.deepslate;
 
+import com.exiledradio.cavesandcliffsbackport.common.BlockCCOre;
+
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.properties.PropertyBool;

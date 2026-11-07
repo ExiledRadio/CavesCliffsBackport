@@ -111,6 +111,43 @@ public final class ModConfig {
         @Config.Comment("Copper ore, raw copper, the copper blocks and lightning rods. Off, nothing is registered.")
         @Config.LangKey("config.cavesandcliffsbackport.copper.enabled")
         public boolean enabled = true;
+
+        @Config.Comment("Unwaxed copper blocks slowly oxidize: exposed, weathered, then oxidized.")
+        @Config.LangKey("config.cavesandcliffsbackport.copper.oxidation")
+        public boolean oxidation = true;
+
+        @Config.Comment("Lightning from thunderstorms strikes the nearest lightning rod within 128 blocks instead.")
+        @Config.LangKey("config.cavesandcliffsbackport.copper.lightningRods")
+        public boolean lightningRods = true;
+
+        @Config.Comment("Items that wax copper when used on it or crafted with it (registry names). Any item with the ore name honeycomb works too.")
+        @Config.LangKey("config.cavesandcliffsbackport.copper.waxItems")
+        @Config.RequiresMcRestart
+        public String[] waxItems = {"buzzybeesbackport:honeycomb"};
+
+        @Config.Comment("Copper ore generates in newly generated chunks.")
+        @Config.LangKey("config.cavesandcliffsbackport.copper.generate")
+        public boolean generate = true;
+
+        @Config.Comment("Copper ore veins per chunk.")
+        @Config.LangKey("config.cavesandcliffsbackport.copper.veinsPerChunk")
+        @Config.RangeInt(min = 0, max = 64)
+        public int veinsPerChunk = 6;
+
+        @Config.Comment("Blocks of copper ore per vein, at most.")
+        @Config.LangKey("config.cavesandcliffsbackport.copper.veinSize")
+        @Config.RangeInt(min = 1, max = 64)
+        public int veinSize = 10;
+
+        @Config.Comment("Lowest height of a copper ore vein.")
+        @Config.LangKey("config.cavesandcliffsbackport.copper.minY")
+        @Config.RangeInt(min = 1, max = 255)
+        public int minY = 1;
+
+        @Config.Comment("Highest height of a copper ore vein.")
+        @Config.LangKey("config.cavesandcliffsbackport.copper.maxY")
+        @Config.RangeInt(min = 1, max = 255)
+        public int maxY = 96;
     }
 
     public static final class Amethyst {

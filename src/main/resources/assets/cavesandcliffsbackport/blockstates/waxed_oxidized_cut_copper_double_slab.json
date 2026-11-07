@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "variant=default": {
+      "model": "cavesandcliffsbackport:oxidized_cut_copper"
+    }
+  }
+}

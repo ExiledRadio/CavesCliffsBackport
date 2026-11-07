@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:stone_axe"
+    },
+    "title": {
+      "translate": "advancements.cavesandcliffsbackport.wax_off.title"
+    },
+    "description": {
+      "translate": "advancements.cavesandcliffsbackport.wax_off.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "cavesandcliffsbackport:husbandry/wax_on",
+  "criteria": {
+    "code": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

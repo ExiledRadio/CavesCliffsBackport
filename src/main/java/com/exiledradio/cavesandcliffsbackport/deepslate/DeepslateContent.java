@@ -3,6 +3,7 @@ package com.exiledradio.cavesandcliffsbackport.deepslate;
 import com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport;
 import com.exiledradio.cavesandcliffsbackport.ModConfig;
 import com.exiledradio.cavesandcliffsbackport.common.BlockBasic;
+import com.exiledradio.cavesandcliffsbackport.common.BlockCCOre;
 import com.exiledradio.cavesandcliffsbackport.common.BlockCCSlab;
 import com.exiledradio.cavesandcliffsbackport.common.BlockCCStairs;
 import com.exiledradio.cavesandcliffsbackport.common.BlockCCWall;
