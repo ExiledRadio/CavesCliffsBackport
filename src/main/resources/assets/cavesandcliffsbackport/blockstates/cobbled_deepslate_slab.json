@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "half=bottom,variant=default": {
+      "model": "cavesandcliffsbackport:cobbled_deepslate_slab"
+    },
+    "half=top,variant=default": {
+      "model": "cavesandcliffsbackport:cobbled_deepslate_slab_top"
+    }
+  }
+}

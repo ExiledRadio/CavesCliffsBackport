@@ -1,0 +1,8 @@
+{
+  "parent": "block/inner_stairs",
+  "textures": {
+    "bottom": "cavesandcliffsbackport:block/deepslate_bricks",
+    "top": "cavesandcliffsbackport:block/deepslate_bricks",
+    "side": "cavesandcliffsbackport:block/deepslate_bricks"
+  }
+}

@@ -73,6 +73,37 @@ public final class ModConfig {
         @Config.Comment("Deepslate, its stairs, slabs and walls, calcite, tuff, smooth basalt, the deepslate ores and raw iron and gold. Off, nothing is registered.")
         @Config.LangKey("config.cavesandcliffsbackport.deepslate.enabled")
         public boolean enabled = true;
+
+        @Config.Comment({"Iron ore and gold ore drop raw iron and raw gold, as in 1.17, instead of themselves.",
+                "Silk Touch still gives the ore. Off, they and the deepslate iron and gold ores drop themselves."})
+        @Config.LangKey("config.cavesandcliffsbackport.deepslate.rawOreDrops")
+        public boolean rawOreDrops = true;
+
+        @Config.Comment("Newly generated chunks get a deepslate layer at the bottom of the world, with deepslate ores and tuff in it.")
+        @Config.LangKey("config.cavesandcliffsbackport.deepslate.generate")
+        public boolean generate = true;
+
+        @Config.Comment("The height below which stone may become deepslate. Between layerFull and this, less and less of it does.")
+        @Config.LangKey("config.cavesandcliffsbackport.deepslate.layerTop")
+        @Config.RangeInt(min = 1, max = 128)
+        public int layerTop = 16;
+
+        @Config.Comment("The height below which all stone becomes deepslate.")
+        @Config.LangKey("config.cavesandcliffsbackport.deepslate.layerFull")
+        @Config.RangeInt(min = 0, max = 128)
+        public int layerFull = 8;
+
+        @Config.Comment("Tuff blobs generate in the deepslate layer.")
+        @Config.LangKey("config.cavesandcliffsbackport.deepslate.tuff")
+        public boolean tuff = true;
+
+        @Config.Comment("Dimensions that get the deepslate layer.")
+        @Config.LangKey("config.cavesandcliffsbackport.deepslate.dimensions")
+        public int[] dimensions = {0};
+
+        @Config.Comment("World types (their names, as in level.dat) that never get the deepslate layer.")
+        @Config.LangKey("config.cavesandcliffsbackport.deepslate.skipWorldTypes")
+        public String[] skipWorldTypes = {"flat", "debug_all_block_states"};
     }
 
     public static final class Copper {

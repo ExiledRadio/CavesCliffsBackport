@@ -230,3 +230,60 @@ def item_generated(name, texture_name):
 def item_from_block(name, model=None):
     """Writes models/item/<name>.json that shows the block model."""
     write_json("models/item/%s.json" % name, {"parent": "%s:block/%s" % (MODID, model or name)})
+
+
+def _bs_model(model):
+    """A blockstate's model reference after porting: 1.12 names models relative to models/block/."""
+    ns, _, path = model.rpartition(":")
+    if (ns or "minecraft") == "minecraft":
+        model = port_model(path)
+    return model.replace(":block/", ":")
+
+
+def _port_apply(apply):
+    if isinstance(apply, list):
+        return [_port_apply(a) for a in apply]
+    out = dict(apply)
+    out["model"] = _bs_model(apply["model"])
+    return out
+
+
+def port_blockstate(src, ours=None, variants=None):
+    """Ports blockstates/<src>.json from the 1.18.2 jar: every model it names is ported too.
+
+    * a variant key "" becomes 1.12's "normal";
+    * @param variants optional {1.18 key: our key} renames (keys not listed are kept; None drops one)
+    @return the written data
+    """
+    ours = ours or src
+    data = jar_json("assets/minecraft/blockstates/%s.json" % src)
+    if "variants" in data:
+        out = {}
+        for key, apply in data["variants"].items():
+            new = key
+            if variants is not None and key in variants:
+                new = variants[key]
+                if new is None:
+                    continue
+            out[new or "normal"] = _port_apply(apply)
+        data = {"variants": out}
+    else:
+        parts = []
+        for part in data["multipart"]:
+            p = dict(part)
+            p["apply"] = _port_apply(part["apply"])
+            parts.append(p)
+        data = {"multipart": parts}
+    write_json("blockstates/%s.json" % ours, data)
+    return data
+
+
+def port_item_model(name, src=None):
+    """Ports models/item/<src or name>.json to our models/item/<name>.json."""
+    return port_model("item/" + (src or name), "item/" + name)
+
+
+def copy_sound_group(group, events):
+    """Copies a sound group's five events (break, step, place, hit, fall) into the events dict."""
+    for e in ("break", "step", "place", "hit", "fall"):
+        events["%s.%s" % (group, e)] = copy_sound("%s.%s" % (group, e))

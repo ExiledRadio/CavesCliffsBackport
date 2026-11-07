@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "cavesandcliffsbackport:deepslate_redstone_ore"
+    },
+    "lit=true": {
+      "model": "cavesandcliffsbackport:deepslate_redstone_ore"
+    }
+  }
+}

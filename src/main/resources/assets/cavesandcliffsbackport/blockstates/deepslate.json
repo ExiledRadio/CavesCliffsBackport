@@ -1,0 +1,62 @@
+{
+  "variants": {
+    "axis=x": [
+      {
+        "model": "cavesandcliffsbackport:deepslate",
+        "x": 90,
+        "y": 90
+      },
+      {
+        "model": "cavesandcliffsbackport:deepslate_mirrored",
+        "x": 90,
+        "y": 90
+      },
+      {
+        "model": "cavesandcliffsbackport:deepslate",
+        "y": 90,
+        "x": 90
+      },
+      {
+        "model": "cavesandcliffsbackport:deepslate_mirrored",
+        "y": 90,
+        "x": 90
+      }
+    ],
+    "axis=y": [
+      {
+        "model": "cavesandcliffsbackport:deepslate"
+      },
+      {
+        "model": "cavesandcliffsbackport:deepslate_mirrored"
+      },
+      {
+        "model": "cavesandcliffsbackport:deepslate",
+        "y": 180
+      },
+      {
+        "model": "cavesandcliffsbackport:deepslate_mirrored",
+        "y": 180
+      }
+    ],
+    "axis=z": [
+      {
+        "model": "cavesandcliffsbackport:deepslate",
+        "x": 90
+      },
+      {
+        "model": "cavesandcliffsbackport:deepslate_mirrored",
+        "x": 90
+      },
+      {
+        "model": "cavesandcliffsbackport:deepslate",
+        "y": 180,
+        "x": 90
+      },
+      {
+        "model": "cavesandcliffsbackport:deepslate_mirrored",
+        "y": 180,
+        "x": 90
+      }
+    ]
+  }
+}
