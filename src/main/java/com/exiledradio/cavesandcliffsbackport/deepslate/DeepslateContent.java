@@ -131,10 +131,31 @@ public final class DeepslateContent {
         Block rawGoldBlock = add(r, "raw_gold_block", new BlockBasic(Material.ROCK, MapColor.GOLD, SoundType.STONE, 5.0F, 6.0F), "pickaxe");
         rawGoldBlock.setHarvestLevel("pickaxe", 2);
 
-        com.exiledradio.backportcore.ownership.BlockOwnership.declare(CavesAndCliffsBackport.MOD_ID,
-                BLOCKS.keySet().toArray(new String[0]));
-        com.exiledradio.backportcore.ownership.BlockOwnership.provides(CavesAndCliffsBackport.MOD_ID, DeepslateContent::enabled);
         CavesAndCliffsBackport.LOGGER.info("Registered {} deepslate and stone blocks.", ALL.size());
+    }
+
+    /** Every block name this stream registers, known before registration, for Core's ownership table. */
+    public static String[] blockNames() {
+        List<String> n = new ArrayList<String>();
+        n.add("deepslate");
+        for (String set : SETS) {
+            n.add(full(set));
+            n.add(set + "_stairs");
+            n.add(set + "_slab");
+            n.add(set + "_double_slab");
+            n.add(set + "_wall");
+        }
+        n.addAll(java.util.Arrays.asList("chiseled_deepslate", "cracked_deepslate_bricks", "cracked_deepslate_tiles",
+                "infested_deepslate", "calcite", "tuff", "smooth_basalt", "raw_iron_block", "raw_gold_block"));
+        for (String ore : new String[] {"coal", "iron", "gold", "redstone", "lapis", "diamond", "emerald"}) {
+            n.add("deepslate_" + ore + "_ore");
+        }
+        return n.toArray(new String[0]);
+    }
+
+    /** From the mod's pre-init: tells Core which blocks are ours (or, switched off, that nobody provides them). */
+    public static void preInit() {
+        Owners.declare(enabled(), blockNames());
     }
 
     private static void ore(IForgeRegistry<Block> r, String kind, BlockCCOre block, int level) {

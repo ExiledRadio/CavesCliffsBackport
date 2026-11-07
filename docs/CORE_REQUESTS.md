@@ -90,3 +90,19 @@ Wild Update asks Core for a shared `BlockMultiface` with its faces in a tile ent
 Glow lichen generates on most cave walls in 1.18, so a tile entity per block would be costly; we lean to
 four registered blocks sharing one item (bits in metadata, no tile entity). To settle with Wild Update
 and Core before our lush stream (L) is built.
+
+## 10. Ownership per block, not per mod
+
+`BlockOwnership.provides(modid, BooleanSupplier)` keeps one switch per mod (the last call wins), but each of
+our streams switches off on its own: with copper off and deepslate on, Core answered "Caves & Cliffs provides
+copper" and no later update registered a copy (found by Tricky Trials, 2026-11-07). The table is also
+first-declared-wins, and later updates declare our names for us. Wanted:
+
+```java
+BlockOwnership.provides(String modid, java.util.function.Predicate<String> blockName);
+```
+
+Meanwhile (`common/Owners.declare`): each stream declares its names in our pre-init, and this mod loads
+`before:` Wild Update, Trails & Tales and Tricky Trials so ours come first; a switched-off stream declares its
+names for the owner `cavesandcliffsbackport:switched_off`, which is never a loaded mod, so Core answers that
+nobody provides them. With the predicate, that pseudo-owner goes away.

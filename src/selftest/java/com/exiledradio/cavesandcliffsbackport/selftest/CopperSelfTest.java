@@ -60,6 +60,8 @@ public final class CopperSelfTest implements SelfTest {
     private void registration(Check c) {
         // 3 ores/raw + 32 + 8 double slabs + rod
         c.eq(44, CopperContent.all().size(), "block count");
+        c.eq(new java.util.TreeSet<String>(CopperContent.BLOCKS.keySet()),
+                new java.util.TreeSet<String>(java.util.Arrays.asList(CopperContent.blockNames())), "pre-init name list matches registration");
         String[] expect = {"copper_block", "exposed_copper", "weathered_copper", "oxidized_copper", "cut_copper",
                 "exposed_cut_copper", "oxidized_cut_copper_stairs", "weathered_cut_copper_slab", "waxed_copper_block",
                 "waxed_oxidized_copper", "waxed_exposed_cut_copper_stairs", "waxed_cut_copper_slab",

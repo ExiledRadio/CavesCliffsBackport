@@ -39,6 +39,33 @@ public final class Owners {
     private Owners() {
     }
 
+    /**
+     * The owner recorded in Core's table for the blocks of a stream that is switched off. It is never a loaded
+     * mod, so Core answers "nobody provides it" and later updates register their own copies.
+     */
+    public static final String SWITCHED_OFF = com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.MOD_ID + ":switched_off";
+
+    /**
+     * Tells Core's ownership table about one stream's blocks, from pre-init.
+     *
+     * <h2>Why like this</h2>
+     * Core's table is first-declared-wins, later updates declare our names on our behalf (Rule 1 shims), and
+     * its {@code provides} switch is one per mod, while ours is one per stream. So each stream claims its names
+     * itself, before any later update does (this mod loads {@code before:} them), and a switched-off stream
+     * claims them for {@link #SWITCHED_OFF}. Core's per-name switch is requested in CORE_REQUESTS 10.
+     */
+    public static void declare(boolean enabled, String... names) {
+        String owner = enabled ? com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.MOD_ID : SWITCHED_OFF;
+        for (String n : names) {
+            String had = com.exiledradio.backportcore.ownership.BlockOwnership.owner(n);
+            if (had != null && !had.equals(owner)) {
+                com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.LOGGER.warn(
+                        "Block {} was declared for {} before this mod's pre-init; Core keeps that.", n, had);
+            }
+        }
+        com.exiledradio.backportcore.ownership.BlockOwnership.declare(owner, names);
+    }
+
     /** @return true if the owning mod is installed, so its block is used and ours is never registered */
     public static boolean present(String owner) {
         return Loader.isModLoaded(owner);

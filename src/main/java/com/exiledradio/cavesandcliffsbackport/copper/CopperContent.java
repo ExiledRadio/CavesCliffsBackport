@@ -7,6 +7,7 @@ import com.exiledradio.cavesandcliffsbackport.common.BlockCCOre;
 import com.exiledradio.cavesandcliffsbackport.common.BlockCCSlab;
 import com.exiledradio.cavesandcliffsbackport.common.Content;
 import com.exiledradio.cavesandcliffsbackport.common.ModSounds;
+import com.exiledradio.cavesandcliffsbackport.common.Owners;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.SoundType;
@@ -126,9 +127,28 @@ public final class CopperContent {
         }
 
         GameRegistry.registerTileEntity(BlockLightningRod.TileEntityLightningRod.class, Content.id("lightning_rod"));
-        com.exiledradio.backportcore.ownership.BlockOwnership.declare(CavesAndCliffsBackport.MOD_ID, BLOCKS.keySet().toArray(new String[0]));
-        com.exiledradio.backportcore.ownership.BlockOwnership.provides(CavesAndCliffsBackport.MOD_ID, CopperContent::enabled);
         CavesAndCliffsBackport.LOGGER.info("Registered {} copper blocks.", ALL.size());
+    }
+
+    /** Every block name this stream registers, known before registration, for Core's ownership table. */
+    public static String[] blockNames() {
+        List<String> n = new ArrayList<String>(java.util.Arrays.asList("copper_ore", "deepslate_copper_ore", "raw_copper_block"));
+        for (boolean waxed : new boolean[] {false, true}) {
+            for (CopperStage stage : CopperStage.values()) {
+                for (String shape : SHAPES) {
+                    n.add(name(shape, stage, waxed));
+                }
+                String slab = name("cut_copper_slab", stage, waxed);
+                n.add(slab.substring(0, slab.length() - "_slab".length()) + "_double_slab");
+            }
+        }
+        n.add("lightning_rod");
+        return n.toArray(new String[0]);
+    }
+
+    /** From the mod's pre-init: tells Core which blocks are ours (or, switched off, that nobody provides them). */
+    public static void preInit() {
+        Owners.declare(enabled(), blockNames());
     }
 
     private static <B extends Block> B add(IForgeRegistry<Block> r, String name, B block, int level) {

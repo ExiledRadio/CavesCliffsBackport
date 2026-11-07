@@ -77,10 +77,16 @@ public final class AmethystContent {
             stages[i].next = stages[i + 1];
         }
         tintedGlass = add(r, "tinted_glass", new BlockAmethyst.Tinted(), null);
-        com.exiledradio.backportcore.ownership.BlockOwnership.declare(CavesAndCliffsBackport.MOD_ID,
-                "amethyst_block", "budding_amethyst", "small_amethyst_bud", "medium_amethyst_bud", "large_amethyst_bud",
-                "amethyst_cluster", "tinted_glass");
         CavesAndCliffsBackport.LOGGER.info("Registered {} amethyst blocks.", ALL.size());
+    }
+
+    /** Every block name this stream registers, for Core's ownership table. */
+    public static final String[] BLOCK_NAMES = {"amethyst_block", "budding_amethyst", "small_amethyst_bud",
+            "medium_amethyst_bud", "large_amethyst_bud", "amethyst_cluster", "tinted_glass"};
+
+    /** From the mod's pre-init: tells Core which blocks are ours (or, switched off, that nobody provides them). */
+    public static void preInit() {
+        com.exiledradio.cavesandcliffsbackport.common.Owners.declare(enabled(), BLOCK_NAMES);
     }
 
     /** 1.18's bud sound types: their own break and place, the cluster's step, hit and fall. */

@@ -29,7 +29,8 @@ import org.apache.logging.log4j.Logger;
         name = CavesAndCliffsBackport.MOD_NAME,
         version = CavesAndCliffsBackport.VERSION,
         acceptedMinecraftVersions = "[1.12.2]",
-        dependencies = "required-after:backportcore@[1.0.0,)"
+        // Loads before the later updates of the family, so this mod's ownership declarations come first.
+        dependencies = "required-after:backportcore@[1.0.0,);before:wildupdatebackport;before:trailsandtalesbackport;before:trickytrialsbackport"
 )
 public final class CavesAndCliffsBackport {
 
@@ -45,6 +46,9 @@ public final class CavesAndCliffsBackport {
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         NetworkHandler.init();
+        com.exiledradio.cavesandcliffsbackport.deepslate.DeepslateContent.preInit();
+        com.exiledradio.cavesandcliffsbackport.copper.CopperContent.preInit();
+        com.exiledradio.cavesandcliffsbackport.amethyst.AmethystContent.preInit();
 
         // Client-only setup lives in a class a dedicated server never loads. The call names no client
         // type, so this class verifies on a server - a guarded method here would not.

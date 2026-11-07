@@ -62,6 +62,8 @@ public final class DeepslateSelfTest implements SelfTest {
 
     private void registration(Check c) {
         c.eq(37, DeepslateContent.all().size(), "block count");
+        c.eq(new java.util.TreeSet<String>(DeepslateContent.BLOCKS.keySet()),
+                new java.util.TreeSet<String>(java.util.Arrays.asList(DeepslateContent.blockNames())), "pre-init name list matches registration");
         for (Block block : DeepslateContent.all()) {
             for (IBlockState s : block.getBlockState().getValidStates()) {
                 int meta = block.getMetaFromState(s);
