@@ -106,3 +106,8 @@ Meanwhile (`common/Owners.declare`): each stream declares its names in our pre-i
 `before:` Wild Update, Trails & Tales and Tricky Trials so ours come first; a switched-off stream declares its
 names for the owner `cavesandcliffsbackport:switched_off`, which is never a loaded mod, so Core answers that
 nobody provides them. With the predicate, that pseudo-owner goes away.
+
+This only works if later updates declare our names (their Rule 1 shims) from their **pre-init**, never their
+mod constructor: every mod's constructor runs before anyone's pre-init, so a constructor declaration beats
+ours whatever the load order (Tricky Trials hit this and moved theirs, 7b7e501). Worth a line in Core's API
+docs next to `declare`.
