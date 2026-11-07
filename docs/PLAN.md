@@ -72,6 +72,9 @@ stream calls another's classes; when one needs another's block or item it looks 
 Packet ids 0-4 are `common`'s. Build order: D, Cu, Am, Dr, L, Ps, Ca, Gs, Ax, Gt, X, Mu; T when decided.
 D comes first because copper ore, geodes and dripstone caves sit in its deepslate.
 
+**Status (2026-11-07):** D and Cu built, tested and merged (`docs/streams/deepslate.md`, `copper.md`). Double
+slabs are `<name>_double_slab`, as Village & Pillage's released ones. Next: Am.
+
 ### Shared by the cave streams: `common/CaveRegions`
 
 1.12.2 biomes are per column, so a cave biome cannot be a biome. Instead a 3D region noise (seeded from the
@@ -150,8 +153,9 @@ same noise (the seed reaches the client in our login packet, id 0).
 - **Cave vines** and **glow berries** (light 14 with berries; picking; the berries plant vines and are food).
 - **Big dripleaf** (tilts under an entity, stopped by redstone) and **small dripleaf** (two tall; bone meal).
 - **Glow lichen** (any of six faces, light 7, bone meal spreading, shears): six faces need 64 states and
-  1.12 has 16 metadata values, so it is four registered blocks that share one item (up/down pairs split
-  across them); a world sees one item, one name.
+  1.12 has 16 metadata values. Leaning to four registered blocks that share one item (no tile entity, since
+  1.18 puts lichen on most cave walls); Wild Update asks Core for a tile-entity multiface shared with its
+  sculk vein instead (CORE_REQUESTS 9). Settled before L is built.
 - **Lush regions** (`CaveRegions`): moss floors and ceilings, clay pools with dripleaves, cave vines, spore
   blossoms, azalea trees on the surface above with rooted dirt and hanging roots under them. Glow lichen on
   cave walls everywhere underground.
