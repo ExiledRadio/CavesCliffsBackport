@@ -303,13 +303,17 @@ def port_slab(name):
     return name, double
 
 
-def port_advancement(path, parent, icon, lang):
+def port_advancement(path, parent, icon, lang, requires=None):
     """Writes advancements/<path>.json from 1.18's: its display, a code-granted criterion, the given parent.
 
     @param parent an advancement id 1.12 has ("minecraft:husbandry/root") or one of ours
     @param icon the icon's item id, ours or 1.12's
     @param lang a list the title and description lines are appended to
+    @param requires an item of ours that must exist for the advancement to load (default: the icon, if ours), so
+                    a stream that is switched off leaves no advancement and no loading error behind
     """
+    if requires is None and icon.startswith(MODID + ":"):
+        requires = icon
     data = jar_json("data/minecraft/advancements/%s.json" % path)
     d = data["display"]
     key = path.split("/")[-1]
@@ -324,4 +328,6 @@ def port_advancement(path, parent, icon, lang):
         "parent": parent,
         "criteria": {"code": {"trigger": "minecraft:impossible"}},
     }
+    if requires:
+        out["conditions"] = [{"type": "minecraft:item_exists", "item": requires}]
     write_json("advancements/%s.json" % path, out)
