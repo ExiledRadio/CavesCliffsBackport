@@ -30,7 +30,7 @@ import org.apache.logging.log4j.Logger;
         version = CavesAndCliffsBackport.VERSION,
         acceptedMinecraftVersions = "[1.12.2]",
         // Loads before the later updates of the family, so this mod's ownership declarations come first.
-        dependencies = "required-after:backportcore@[1.0.0,);before:wildupdatebackport;before:trailsandtalesbackport;before:trickytrialsbackport"
+        dependencies = "required-after:backportcore@[1.3.0,);before:wildupdatebackport;before:trailsandtalesbackport;before:trickytrialsbackport"
 )
 public final class CavesAndCliffsBackport {
 
@@ -45,6 +45,9 @@ public final class CavesAndCliffsBackport {
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
+        // This mod's spawn eggs in Miscellaneous where vanilla lists each mob's (Backport Core's creative
+        // placement).
+        com.exiledradio.backportcore.creative.CreativePlacement.placeSpawnEggs(MOD_ID);
         NetworkHandler.init();
         com.exiledradio.cavesandcliffsbackport.deepslate.DeepslateContent.preInit();
         com.exiledradio.cavesandcliffsbackport.copper.CopperContent.preInit();
