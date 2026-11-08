@@ -1,5 +1,4 @@
 # --- common ---
-itemGroup.cavesandcliffsbackport=Caves & Cliffs Backport
 config.cavesandcliffsbackport.deepslate=Deepslate and Stone
 config.cavesandcliffsbackport.deepslate.tooltip=Deepslate and its sets, calcite, tuff, smooth basalt, deepslate ores and raw ores.
 config.cavesandcliffsbackport.copper=Copper
