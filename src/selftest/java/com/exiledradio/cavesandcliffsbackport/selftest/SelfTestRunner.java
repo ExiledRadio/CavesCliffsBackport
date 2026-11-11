@@ -47,6 +47,7 @@ public final class SelfTestRunner {
             new DeepslateSelfTest(),
             new CopperSelfTest(),
             new AmethystSelfTest(),
+            new CandleSelfTest(),
     };
 
     private final List<String> wanted;

@@ -52,6 +52,7 @@ public final class CavesAndCliffsBackport {
         com.exiledradio.cavesandcliffsbackport.deepslate.DeepslateContent.preInit();
         com.exiledradio.cavesandcliffsbackport.copper.CopperContent.preInit();
         com.exiledradio.cavesandcliffsbackport.amethyst.AmethystContent.preInit();
+        com.exiledradio.cavesandcliffsbackport.candle.CandleContent.preInit();
 
         // Client-only setup lives in a class a dedicated server never loads. The call names no client
         // type, so this class verifies on a server - a guarded method here would not.
