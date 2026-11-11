@@ -53,6 +53,7 @@ public final class SelfTestRunner {
             new CandleSelfTest(),
             new GlowSquidSelfTest(),
             new AxolotlSelfTest(),
+            new GoatSelfTest(),
     };
 
     private final List<String> wanted;

@@ -359,6 +359,23 @@ public final class ModConfig {
         @Config.Comment("Goats. Off, nothing is registered.")
         @Config.LangKey("config.cavesandcliffsbackport.goats.enabled")
         public boolean enabled = true;
+
+        @Config.RequiresMcRestart
+        @Config.Comment({"How often goats spawn in the biomes of spawnBiomes, next to those biomes' other animals",
+                "(sheep are 12, cows 8, llamas 5). 0: goats never spawn on their own."})
+        @Config.LangKey("config.cavesandcliffsbackport.goats.spawnWeight")
+        @Config.RangeInt(min = 0, max = 100)
+        public int spawnWeight = 10;
+
+        @Config.RequiresMcRestart
+        @Config.Comment("The biomes goats spawn in, in groups of 1 to 3, on stone, gravel, snow and packed ice.")
+        @Config.LangKey("config.cavesandcliffsbackport.goats.spawnBiomes")
+        public String[] spawnBiomes = {"minecraft:extreme_hills", "minecraft:smaller_extreme_hills", "minecraft:extreme_hills_with_trees",
+                "minecraft:mutated_extreme_hills", "minecraft:mutated_extreme_hills_with_trees"};
+
+        @Config.Comment("Goats ram players and mobs that stand still near them. Off, goats never ram.")
+        @Config.LangKey("config.cavesandcliffsbackport.goats.ramming")
+        public boolean ramming = true;
     }
 
     public static final class Blocks {

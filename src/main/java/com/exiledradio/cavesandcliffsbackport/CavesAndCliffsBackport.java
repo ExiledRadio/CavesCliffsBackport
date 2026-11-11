@@ -79,6 +79,7 @@ public final class CavesAndCliffsBackport {
         com.exiledradio.cavesandcliffsbackport.lush.LushContent.init();
         com.exiledradio.cavesandcliffsbackport.powdersnow.PowderSnowContent.init();
         com.exiledradio.cavesandcliffsbackport.glowsquid.GlowSquidContent.init();
+        com.exiledradio.cavesandcliffsbackport.goat.GoatContent.init();
     }
 
     @Mod.EventHandler
