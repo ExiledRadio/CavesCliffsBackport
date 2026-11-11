@@ -1035,5 +1035,320 @@
       }
     ],
     "subtitle": "subtitles.block.generic.place"
+  },
+  "music_disc.otherside": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:records/otherside",
+        "stream": true
+      }
+    ]
+  },
+  "music.overworld.lush_caves": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:music/game/an_ordinary_day",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/calm1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/calm2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/calm3",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/floating_dream",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/left_to_bloom",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/one_more_day",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "minecraft:music/game/piano3",
+        "stream": true
+      }
+    ]
+  },
+  "music.overworld.dripstone_caves": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:music/game/an_ordinary_day",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal4",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/infinite_amethyst",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "minecraft:music/game/nuance1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/nuance2",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/wending",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      }
+    ]
+  },
+  "music.overworld.meadow": {
+    "sounds": [
+      {
+        "name": "minecraft:music/game/hal1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal3",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal4",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/left_to_bloom",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/one_more_day",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      }
+    ]
+  },
+  "music.overworld.grove": {
+    "sounds": [
+      {
+        "name": "minecraft:music/game/calm1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/calm2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/calm3",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/comforting_memories",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/infinite_amethyst",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "minecraft:music/game/nuance1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/nuance2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano3",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/wending",
+        "stream": true,
+        "volume": 0.4
+      }
+    ]
+  },
+  "music.overworld.snowy_slopes": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:music/game/an_ordinary_day",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "minecraft:music/game/hal1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal3",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/one_more_day",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/stand_tall",
+        "stream": true,
+        "volume": 0.4
+      }
+    ]
+  },
+  "music.overworld.jagged_peaks": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:music/game/floating_dream",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "minecraft:music/game/hal1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/nuance1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/nuance2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano3",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/stand_tall",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/wending",
+        "stream": true,
+        "volume": 0.4
+      }
+    ]
+  },
+  "music.overworld.frozen_peaks": {
+    "sounds": [
+      {
+        "name": "minecraft:music/game/hal1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal3",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal4",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano3",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/stand_tall",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      }
+    ]
+  },
+  "music.overworld.stony_peaks": {
+    "sounds": [
+      {
+        "name": "minecraft:music/game/hal1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal3",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal4",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano3",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/stand_tall",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/wending",
+        "stream": true,
+        "volume": 0.4
+      }
+    ]
   }
 }

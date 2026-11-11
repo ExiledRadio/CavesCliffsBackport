@@ -35,6 +35,7 @@ public final class ClientSetup {
         if (com.exiledradio.cavesandcliffsbackport.ModConfig.amethyst.enabled) {
             com.exiledradio.cavesandcliffsbackport.amethyst.client.SpyglassClient.init();
         }
+        com.exiledradio.cavesandcliffsbackport.music.client.MusicClient.init();
     }
 
     @SubscribeEvent

@@ -267,6 +267,26 @@ public final class ModConfig {
         @Config.Comment("The Otherside music disc and 1.18's music. Off, nothing is registered.")
         @Config.LangKey("config.cavesandcliffsbackport.music.enabled")
         public boolean enabled = true;
+
+        @Config.RequiresMcRestart
+        @Config.Comment({"The four tracks 1.18 added to the game music play among the old ones, in survival and creative:",
+                "Comforting Memories, Floating Dream, Left to Bloom and One More Day."})
+        @Config.LangKey("config.cavesandcliffsbackport.music.gameMusic")
+        public boolean gameMusic = true;
+
+        @Config.Comment("Lush caves, dripstone caves and the mountain biomes play their own selection of tracks, as in 1.18.")
+        @Config.LangKey("config.cavesandcliffsbackport.music.biomeMusic")
+        public boolean biomeMusic = true;
+
+        @Config.RequiresMcRestart
+        @Config.Comment("The five tracks 1.18 added to the title screen music play among the old ones.")
+        @Config.LangKey("config.cavesandcliffsbackport.music.menuMusic")
+        public boolean menuMusic = true;
+
+        @Config.Comment({"The Otherside music disc is found in dungeon chests and in the chests of stronghold corridors.",
+                "Takes effect when the world is next loaded."})
+        @Config.LangKey("config.cavesandcliffsbackport.music.othersideLoot")
+        public boolean othersideLoot = true;
     }
 
     public static final class Caves {

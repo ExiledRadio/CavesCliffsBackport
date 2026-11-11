@@ -1,0 +1,26 @@
+{
+  "music.game": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:music/game/comforting_memories",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/floating_dream",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/left_to_bloom",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/one_more_day",
+        "stream": true,
+        "volume": 0.4
+      }
+    ]
+  }
+}
