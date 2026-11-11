@@ -306,6 +306,16 @@ public final class ModConfig {
         @Config.Comment("Glow squid, glow ink sacs and glow item frames. Off, nothing is registered.")
         @Config.LangKey("config.cavesandcliffsbackport.glowSquid.enabled")
         public boolean enabled = true;
+
+        @Config.Comment("How often glow squid spawn in dark water deep underground, next to other mobs' weights (vanilla: 10). 0 stops them spawning.")
+        @Config.RequiresMcRestart
+        @Config.LangKey("config.cavesandcliffsbackport.glowSquid.spawnWeight")
+        @Config.RangeInt(min = 0, max = 1000)
+        public int spawnWeight = 10;
+
+        @Config.Comment("A glow ink sac used on a sign makes its text glow; an ink sac undoes it.")
+        @Config.LangKey("config.cavesandcliffsbackport.glowSquid.glowingSigns")
+        public boolean glowingSigns = true;
     }
 
     public static final class Axolotls {

@@ -51,6 +51,7 @@ public final class SelfTestRunner {
             new LushSelfTest(),
             new PowderSnowSelfTest(),
             new CandleSelfTest(),
+            new GlowSquidSelfTest(),
     };
 
     private final List<String> wanted;

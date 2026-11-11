@@ -39,6 +39,8 @@ public final class ClientSetup {
             com.exiledradio.cavesandcliffsbackport.dripstone.client.DripstoneClient.init();
         if (com.exiledradio.cavesandcliffsbackport.ModConfig.powderSnow.enabled) {
             com.exiledradio.cavesandcliffsbackport.powdersnow.client.PowderSnowClient.init();
+        if (com.exiledradio.cavesandcliffsbackport.ModConfig.glowSquid.enabled) {
+            com.exiledradio.cavesandcliffsbackport.glowsquid.client.GlowSquidClient.init();
         }
     }
 

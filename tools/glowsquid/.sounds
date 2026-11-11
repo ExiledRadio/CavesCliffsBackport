@@ -1,0 +1,11 @@
+entity.glow_item_frame.add_item
+entity.glow_item_frame.break
+entity.glow_item_frame.place
+entity.glow_item_frame.remove_item
+entity.glow_item_frame.rotate_item
+entity.glow_squid.ambient
+entity.glow_squid.death
+entity.glow_squid.hurt
+entity.glow_squid.squirt
+item.glow_ink_sac.use
+item.ink_sac.use
