@@ -37,6 +37,7 @@ OPTION_NAMES = {
     "maxY": "Highest height",
     "geodeMinY": "Lowest geode height",
     "geodeMaxY": "Highest geode height",
+    "patchMinY": "Lowest patch height",
 }
 
 SRC = os.path.join(assets.ROOT, "src", "main", "java", "com", "exiledradio", assets.MODID, "ModConfig.java")
@@ -58,7 +59,7 @@ def config_lines():
     text = open(SRC, encoding="utf-8").read()
     lines = []
     # Every annotated declaration: a run of annotations, then a field.
-    for block in re.finditer(r"((?:\s*@Config\.\w+(?:\((?:[^()]|\([^()]*\))*\))?)+)\s*public\s+(?:static\s+final\s+)?\w+\s+(\w+)\s*=", text):
+    for block in re.finditer(r"((?:\s*@(?:Config|Setting)\.\w+(?:\((?:[^()]|\([^()]*\))*\))?)+)\s*public\s+(?:static\s+final\s+)?\w+\s+(\w+)\s*=", text):
         annotations, field = block.group(1), block.group(2)
         key = re.search(r'@Config\.LangKey\("([^"]+)"\)', annotations)
         com = re.search(r"@Config\.Comment\(((?:[^()]|\([^()]*\))*)\)", annotations)

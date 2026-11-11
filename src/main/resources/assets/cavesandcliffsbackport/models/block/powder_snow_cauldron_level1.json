@@ -1,0 +1,11 @@
+{
+  "parent": "cavesandcliffsbackport:block/template_cauldron_level1",
+  "textures": {
+    "content": "cavesandcliffsbackport:block/powder_snow",
+    "inside": "cavesandcliffsbackport:block/cauldron_inner",
+    "particle": "cavesandcliffsbackport:block/cauldron_side",
+    "top": "cavesandcliffsbackport:block/cauldron_top",
+    "bottom": "cavesandcliffsbackport:block/cauldron_bottom",
+    "side": "cavesandcliffsbackport:block/cauldron_side"
+  }
+}

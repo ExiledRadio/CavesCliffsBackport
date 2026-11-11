@@ -225,6 +225,51 @@ public final class ModConfig {
         @Config.Comment("Powder snow, its bucket and cauldron, and freezing. Off, nothing is registered.")
         @Config.LangKey("config.cavesandcliffsbackport.powderSnow.enabled")
         public boolean enabled = true;
+
+        @Config.Comment("Entities inside powder snow freeze: after 7 seconds they take damage every 2 seconds. Off, powder snow only slows and sinks.")
+        @Config.LangKey("config.cavesandcliffsbackport.powderSnow.freezing")
+        public boolean freezing = true;
+
+        @Config.Comment("Skeletons that stay in powder snow turn into strays.")
+        @Config.LangKey("config.cavesandcliffsbackport.powderSnow.strayConversion")
+        public boolean strayConversion = true;
+
+        @Config.Comment("Snowfall slowly fills cauldrons under the open sky with powder snow.")
+        @Config.LangKey("config.cavesandcliffsbackport.powderSnow.cauldronSnow")
+        public boolean cauldronSnow = true;
+
+        @Config.Comment("Patches of powder snow generate in snowy high ground in newly generated chunks.")
+        @Setting.NewChunks
+        @Config.LangKey("config.cavesandcliffsbackport.powderSnow.patches")
+        public boolean patches = true;
+
+        @Config.Comment("One chunk in this many looks for a place for a patch. Only snowy ground at or above the lowest height takes one.")
+        @Setting.NewChunks
+        @Config.LangKey("config.cavesandcliffsbackport.powderSnow.patchRarity")
+        @Config.RangeInt(min = 1, max = 1000)
+        public int patchRarity = 2;
+
+        @Config.Comment("Lowest height of a powder snow patch.")
+        @Setting.NewChunks
+        @Config.LangKey("config.cavesandcliffsbackport.powderSnow.patchMinY")
+        @Config.RangeInt(min = 1, max = 255)
+        public int patchMinY = 80;
+
+        @Config.Comment("More items that keep their wearer from freezing, besides leather armor, as item ids. Worn as boots they also walk on powder snow.")
+        @Config.LangKey("config.cavesandcliffsbackport.powderSnow.freezeImmuneWearables")
+        public String[] freezeImmuneWearables = {};
+
+        @Config.Comment("More mobs that never freeze, besides strays, polar bears, snow golems and the wither, as entity ids.")
+        @Config.LangKey("config.cavesandcliffsbackport.powderSnow.freezeImmuneMobs")
+        public String[] freezeImmuneMobs = {};
+
+        @Config.Comment("More mobs that freezing hurts five times as much, besides blazes and magma cubes, as entity ids.")
+        @Config.LangKey("config.cavesandcliffsbackport.powderSnow.freezeHurtsExtraMobs")
+        public String[] freezeHurtsExtraMobs = {};
+
+        @Config.Comment("More mobs that walk on powder snow, besides rabbits, endermites and silverfish, as entity ids.")
+        @Config.LangKey("config.cavesandcliffsbackport.powderSnow.walkableMobs")
+        public String[] walkableMobs = {};
     }
 
     public static final class Candles {
