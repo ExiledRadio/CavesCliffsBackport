@@ -50,6 +50,7 @@ public final class SelfTestRunner {
             new DripstoneSelfTest(),
             new LushSelfTest(),
             new PowderSnowSelfTest(),
+            new CandleSelfTest(),
     };
 
     private final List<String> wanted;

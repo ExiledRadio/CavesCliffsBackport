@@ -1,0 +1,7 @@
+{
+  "parent": "cavesandcliffsbackport:block/template_two_candles",
+  "textures": {
+    "all": "cavesandcliffsbackport:block/cyan_candle",
+    "particle": "cavesandcliffsbackport:block/cyan_candle"
+  }
+}
