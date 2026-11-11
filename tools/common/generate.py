@@ -58,7 +58,8 @@ def config_lines():
     text = open(SRC, encoding="utf-8").read()
     lines = []
     # Every annotated declaration: a run of annotations, then a field.
-    for block in re.finditer(r"((?:\s*@Config\.\w+(?:\((?:[^()]|\([^()]*\))*\))?)+)\s*public\s+(?:static\s+final\s+)?\w+\s+(\w+)\s*=", text):
+    # (Core's @Setting annotations sit among the @Config ones, and a list option's type is "String[]".)
+    for block in re.finditer(r"((?:\s*@(?:Config|Setting)\.\w+(?:\((?:[^()]|\([^()]*\))*\))?)+)\s*public\s+(?:static\s+final\s+)?\w+(?:\[\])?\s+(\w+)\s*=", text):
         annotations, field = block.group(1), block.group(2)
         key = re.search(r'@Config\.LangKey\("([^"]+)"\)', annotations)
         com = re.search(r"@Config\.Comment\(((?:[^()]|\([^()]*\))*)\)", annotations)

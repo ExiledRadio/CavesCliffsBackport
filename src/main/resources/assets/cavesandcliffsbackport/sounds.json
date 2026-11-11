@@ -1035,5 +1035,114 @@
       }
     ],
     "subtitle": "subtitles.block.generic.place"
+  },
+  "entity.axolotl.attack": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:mob/axolotl/attack1",
+        "volume": 0.5
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/axolotl/attack2",
+        "volume": 0.5
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/axolotl/attack3",
+        "volume": 0.5
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/axolotl/attack4",
+        "volume": 0.5
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.axolotl.attack"
+  },
+  "entity.axolotl.death": {
+    "sounds": [
+      "cavesandcliffsbackport:mob/axolotl/death1",
+      "cavesandcliffsbackport:mob/axolotl/death2"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.axolotl.death"
+  },
+  "entity.axolotl.hurt": {
+    "sounds": [
+      "cavesandcliffsbackport:mob/axolotl/hurt1",
+      "cavesandcliffsbackport:mob/axolotl/hurt2",
+      "cavesandcliffsbackport:mob/axolotl/hurt3",
+      "cavesandcliffsbackport:mob/axolotl/hurt4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.axolotl.hurt"
+  },
+  "entity.axolotl.idle_air": {
+    "sounds": [
+      "cavesandcliffsbackport:mob/axolotl/idle_air1",
+      "cavesandcliffsbackport:mob/axolotl/idle_air2",
+      {
+        "name": "cavesandcliffsbackport:mob/axolotl/idle_air3",
+        "pitch": 1.2,
+        "volume": 0.8
+      },
+      "cavesandcliffsbackport:mob/axolotl/idle_air4",
+      "cavesandcliffsbackport:mob/axolotl/idle_air5"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.axolotl.idle_air"
+  },
+  "entity.axolotl.idle_water": {
+    "sounds": [
+      "cavesandcliffsbackport:mob/axolotl/idle1",
+      "cavesandcliffsbackport:mob/axolotl/idle2",
+      "cavesandcliffsbackport:mob/axolotl/idle3",
+      "cavesandcliffsbackport:mob/axolotl/idle4",
+      "cavesandcliffsbackport:mob/axolotl/idle5"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.axolotl.idle_water"
+  },
+  "entity.axolotl.splash": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:mob/dolphin/splash1",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/dolphin/splash2",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/dolphin/splash3",
+        "pitch": 1.2,
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.axolotl.splash"
+  },
+  "entity.axolotl.swim": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/fish/swim5",
+      "cavesandcliffsbackport:entity/fish/swim6",
+      "cavesandcliffsbackport:entity/fish/swim7",
+      "cavesandcliffsbackport:mob/dolphin/swim1",
+      "cavesandcliffsbackport:mob/dolphin/swim2",
+      "cavesandcliffsbackport:mob/dolphin/swim3",
+      "cavesandcliffsbackport:mob/dolphin/swim4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.axolotl.swim"
+  },
+  "item.bucket.fill_axolotl": {
+    "sounds": [
+      "cavesandcliffsbackport:item/bucket/fill_axolotl1",
+      "cavesandcliffsbackport:item/bucket/fill_axolotl2",
+      "cavesandcliffsbackport:item/bucket/fill_axolotl3"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.item.bucket.fill_axolotl"
+  },
+  "item.bucket.empty_axolotl": {
+    "sounds": [
+      "cavesandcliffsbackport:item/bucket/empty_fish1",
+      "cavesandcliffsbackport:item/bucket/empty_fish2",
+      "cavesandcliffsbackport:item/bucket/empty_fish3"
+    ],
+    "subtitle": "subtitles.item.bucket.empty"
   }
 }

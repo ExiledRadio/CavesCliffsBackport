@@ -246,6 +246,35 @@ public final class ModConfig {
         @Config.Comment("Axolotls and the bucket of axolotl. Off, nothing is registered.")
         @Config.LangKey("config.cavesandcliffsbackport.axolotls.enabled")
         public boolean enabled = true;
+
+        @Config.Comment("Axolotls spawn naturally, in underground water above clay.")
+        @Config.LangKey("config.cavesandcliffsbackport.axolotls.spawning")
+        public boolean spawning = true;
+
+        @Config.Comment("The most naturally spawned axolotls around one player.")
+        @Config.LangKey("config.cavesandcliffsbackport.axolotls.spawnCap")
+        @Config.RangeInt(min = 0, max = 100)
+        public int spawnCap = 5;
+
+        @Config.Comment({"The item axolotls breed with when the game has no bucket of tropical fish, as \"mod:item\" or \"mod:item:metadata\".",
+                "With a bucket of tropical fish in the game, only that bucket works."})
+        @Config.LangKey("config.cavesandcliffsbackport.axolotls.breedingItem")
+        public String breedingItem = "minecraft:fish:2";
+
+        @Config.Comment("Mobs axolotls hunt in water, then leave alone for two minutes. Mobs that are not installed are skipped.")
+        @Setting.ListOf(Setting.Kind.ENTITY)
+        @Config.LangKey("config.cavesandcliffsbackport.axolotls.huntTargets")
+        public String[] huntTargets = {"minecraft:squid", "cavesandcliffsbackport:glow_squid", "updateaquaticbackport:cod",
+                "updateaquaticbackport:salmon", "updateaquaticbackport:pufferfish", "updateaquaticbackport:tropical_fish"};
+
+        @Config.Comment("Mobs axolotls always attack in water. Mobs that are not installed are skipped.")
+        @Setting.ListOf(Setting.Kind.ENTITY)
+        @Config.LangKey("config.cavesandcliffsbackport.axolotls.hostileTargets")
+        public String[] hostileTargets = {"minecraft:guardian", "minecraft:elder_guardian", "updateaquaticbackport:drowned"};
+
+        @Config.Comment("The mobs axolotls always attack go after axolotls too.")
+        @Config.LangKey("config.cavesandcliffsbackport.axolotls.hostilesAttackAxolotls")
+        public boolean hostilesAttackAxolotls = true;
     }
 
     public static final class Goats {
