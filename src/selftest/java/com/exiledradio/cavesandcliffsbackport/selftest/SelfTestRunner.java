@@ -48,6 +48,7 @@ public final class SelfTestRunner {
             new CopperSelfTest(),
             new AmethystSelfTest(),
             new DripstoneSelfTest(),
+            new LushSelfTest(),
     };
 
     private final List<String> wanted;

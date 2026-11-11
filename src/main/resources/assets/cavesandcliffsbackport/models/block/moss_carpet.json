@@ -1,0 +1,6 @@
+{
+  "parent": "block/carpet",
+  "textures": {
+    "wool": "cavesandcliffsbackport:block/moss_block"
+  }
+}

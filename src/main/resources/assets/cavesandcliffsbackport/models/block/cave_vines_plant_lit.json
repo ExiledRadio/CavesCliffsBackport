@@ -1,0 +1,6 @@
+{
+  "parent": "block/cross",
+  "textures": {
+    "cross": "cavesandcliffsbackport:block/cave_vines_plant_lit"
+  }
+}

@@ -41,7 +41,7 @@ public final class ModConfig {
     @Config.LangKey("config.cavesandcliffsbackport.dripstone")
     @Config.Comment("Dripstone, pointed dripstone, the lava cauldron and dripstone caves.")
     public static final Dripstone dripstone = new Dripstone();
-    @Setting.Feature(icon = "minecraft:mossy_cobblestone")
+    @Setting.Feature(icon = "cavesandcliffsbackport:moss_block")
     @Config.LangKey("config.cavesandcliffsbackport.lush")
     @Config.Comment("Moss, azalea, cave vines and glow berries, dripleaf, spore blossoms, glow lichen, rooted dirt, hanging roots and lush caves.")
     public static final Lush lush = new Lush();
@@ -224,6 +224,22 @@ public final class ModConfig {
         @Config.Comment("Moss, azaleas, cave vines, dripleaf, spore blossoms, glow lichen, rooted dirt and hanging roots. Off, nothing is registered.")
         @Config.LangKey("config.cavesandcliffsbackport.lush.enabled")
         public boolean enabled = true;
+
+        @Setting.NewChunks
+        @Config.Comment("Glow lichen grows on cave walls in newly generated chunks.")
+        @Config.LangKey("config.cavesandcliffsbackport.lush.glowLichen")
+        public boolean glowLichen = true;
+
+        @Setting.NewChunks
+        @Config.Comment("How many times a chunk a glow lichen is tried underground. Most tries land in solid stone.")
+        @Config.LangKey("config.cavesandcliffsbackport.lush.lichenTries")
+        @Config.RangeInt(min = 0, max = 500)
+        public int lichenTries = 40;
+
+        @Setting.NewChunks
+        @Config.Comment("Azalea trees grow on the surface above lush caves, with rooted dirt running down to the cave.")
+        @Config.LangKey("config.cavesandcliffsbackport.lush.azaleaTrees")
+        public boolean azaleaTrees = true;
     }
 
     public static final class PowderSnow {

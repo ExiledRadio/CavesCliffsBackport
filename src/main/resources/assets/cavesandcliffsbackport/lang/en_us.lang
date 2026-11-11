@@ -130,6 +130,32 @@ subtitles.cavesandcliffsbackport.block.pointed_dripstone.drip_lava_into_cauldron
 subtitles.cavesandcliffsbackport.block.pointed_dripstone.drip_water=Water drips
 subtitles.cavesandcliffsbackport.block.pointed_dripstone.drip_water_into_cauldron=Water drips into Cauldron
 subtitles.cavesandcliffsbackport.block.pointed_dripstone.land=Stalactite crashes down
+# --- lush ---
+item.cavesandcliffsbackport.glow_berries.name=Glow Berries
+tile.cavesandcliffsbackport.azalea.name=Azalea
+tile.cavesandcliffsbackport.azalea_leaves.name=Azalea Leaves
+tile.cavesandcliffsbackport.big_dripleaf.name=Big Dripleaf
+tile.cavesandcliffsbackport.big_dripleaf_stem.name=Big Dripleaf Stem
+tile.cavesandcliffsbackport.cave_vines.name=Cave Vines
+tile.cavesandcliffsbackport.cave_vines_plant.name=Cave Vines Plant
+tile.cavesandcliffsbackport.flowering_azalea.name=Flowering Azalea
+tile.cavesandcliffsbackport.flowering_azalea_leaves.name=Flowering Azalea Leaves
+tile.cavesandcliffsbackport.glow_lichen.name=Glow Lichen
+tile.cavesandcliffsbackport.glow_lichen_down.name=Glow Lichen
+tile.cavesandcliffsbackport.glow_lichen_up.name=Glow Lichen
+tile.cavesandcliffsbackport.glow_lichen_up_down.name=Glow Lichen
+tile.cavesandcliffsbackport.hanging_roots.name=Hanging Roots
+tile.cavesandcliffsbackport.moss_block.name=Moss Block
+tile.cavesandcliffsbackport.moss_carpet.name=Moss Carpet
+tile.cavesandcliffsbackport.potted_azalea_bush.name=Potted Azalea
+tile.cavesandcliffsbackport.potted_flowering_azalea_bush.name=Potted Flowering Azalea
+tile.cavesandcliffsbackport.rooted_dirt.name=Rooted Dirt
+tile.cavesandcliffsbackport.small_dripleaf.name=Small Dripleaf
+tile.cavesandcliffsbackport.spore_blossom.name=Spore Blossom
+subtitles.cavesandcliffsbackport.block.big_dripleaf.tilt_down=Dripleaf tilts down
+subtitles.cavesandcliffsbackport.block.big_dripleaf.tilt_up=Dripleaf tilts up
+subtitles.cavesandcliffsbackport.block.growing_plant.crop=Plant cropped
+subtitles.cavesandcliffsbackport.block.sweet_berry_bush.pick_berries=Berries pop
 
 # --- common ---
 itemGroup.cavesandcliffsbackport=Caves & Cliffs Backport
@@ -209,6 +235,12 @@ config.cavesandcliffsbackport.dripstone.extraCopperVeins=Extra copper veins
 config.cavesandcliffsbackport.dripstone.extraCopperVeins.tooltip=Extra tries at a copper ore vein in each newly generated chunk of a dripstone cave. 0 for none.
 config.cavesandcliffsbackport.lush.enabled=Enabled
 config.cavesandcliffsbackport.lush.enabled.tooltip=Moss, azaleas, cave vines, dripleaf, spore blossoms, glow lichen, rooted dirt and hanging roots. Off, nothing is registered.
+config.cavesandcliffsbackport.lush.glowLichen=Glow lichen
+config.cavesandcliffsbackport.lush.glowLichen.tooltip=Glow lichen grows on cave walls in newly generated chunks.
+config.cavesandcliffsbackport.lush.lichenTries=Lichen tries
+config.cavesandcliffsbackport.lush.lichenTries.tooltip=How many times a chunk a glow lichen is tried underground. Most tries land in solid stone.
+config.cavesandcliffsbackport.lush.azaleaTrees=Azalea trees
+config.cavesandcliffsbackport.lush.azaleaTrees.tooltip=Azalea trees grow on the surface above lush caves, with rooted dirt running down to the cave.
 config.cavesandcliffsbackport.powderSnow.enabled=Enabled
 config.cavesandcliffsbackport.powderSnow.enabled.tooltip=Powder snow, its bucket and cauldron, and freezing. Off, nothing is registered.
 config.cavesandcliffsbackport.candles.enabled=Enabled

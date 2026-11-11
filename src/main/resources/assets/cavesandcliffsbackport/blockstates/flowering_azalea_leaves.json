@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "check_decay=false,decayable=false": {
+      "model": "cavesandcliffsbackport:flowering_azalea_leaves"
+    },
+    "check_decay=false,decayable=true": {
+      "model": "cavesandcliffsbackport:flowering_azalea_leaves"
+    },
+    "check_decay=true,decayable=false": {
+      "model": "cavesandcliffsbackport:flowering_azalea_leaves"
+    },
+    "check_decay=true,decayable=true": {
+      "model": "cavesandcliffsbackport:flowering_azalea_leaves"
+    }
+  }
+}
