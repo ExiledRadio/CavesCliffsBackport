@@ -49,6 +49,7 @@ public final class SelfTestRunner {
             new AmethystSelfTest(),
             new DripstoneSelfTest(),
             new LushSelfTest(),
+            new PowderSnowSelfTest(),
     };
 
     private final List<String> wanted;

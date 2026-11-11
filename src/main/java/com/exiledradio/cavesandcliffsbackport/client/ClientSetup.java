@@ -37,6 +37,8 @@ public final class ClientSetup {
         }
         if (com.exiledradio.cavesandcliffsbackport.ModConfig.dripstone.enabled) {
             com.exiledradio.cavesandcliffsbackport.dripstone.client.DripstoneClient.init();
+        if (com.exiledradio.cavesandcliffsbackport.ModConfig.powderSnow.enabled) {
+            com.exiledradio.cavesandcliffsbackport.powdersnow.client.PowderSnowClient.init();
         }
     }
 

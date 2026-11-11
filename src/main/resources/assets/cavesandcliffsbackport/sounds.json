@@ -2232,5 +2232,177 @@
       "cavesandcliffsbackport:mob/sheep/shear"
     ],
     "subtitle": "subtitles.cavesandcliffsbackport.block.growing_plant.crop"
+  },
+  "block.powder_snow.break": {
+    "sounds": [
+      "cavesandcliffsbackport:block/powder_snow/break1",
+      "cavesandcliffsbackport:block/powder_snow/break2",
+      "cavesandcliffsbackport:block/powder_snow/break3",
+      "cavesandcliffsbackport:block/powder_snow/break4",
+      "cavesandcliffsbackport:block/powder_snow/break5",
+      "cavesandcliffsbackport:block/powder_snow/break6",
+      "cavesandcliffsbackport:block/powder_snow/break7"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.powder_snow.step": {
+    "sounds": [
+      "cavesandcliffsbackport:block/powder_snow/step1",
+      "cavesandcliffsbackport:block/powder_snow/step2",
+      "cavesandcliffsbackport:block/powder_snow/step3",
+      "cavesandcliffsbackport:block/powder_snow/step4",
+      "cavesandcliffsbackport:block/powder_snow/step5",
+      "cavesandcliffsbackport:block/powder_snow/step6",
+      "cavesandcliffsbackport:block/powder_snow/step7",
+      "cavesandcliffsbackport:block/powder_snow/step8",
+      "cavesandcliffsbackport:block/powder_snow/step9",
+      "cavesandcliffsbackport:block/powder_snow/step10"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.powder_snow.place": {
+    "sounds": [
+      "cavesandcliffsbackport:block/powder_snow/break1",
+      "cavesandcliffsbackport:block/powder_snow/break2",
+      "cavesandcliffsbackport:block/powder_snow/break3",
+      "cavesandcliffsbackport:block/powder_snow/break4",
+      "cavesandcliffsbackport:block/powder_snow/break5",
+      "cavesandcliffsbackport:block/powder_snow/break6",
+      "cavesandcliffsbackport:block/powder_snow/break7"
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.powder_snow.hit": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step1",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step2",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step3",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step4",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step5",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step6",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step7",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step8",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step9",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step10",
+        "pitch": 1.3,
+        "volume": 0.83
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.powder_snow.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/powder_snow/step1",
+      "cavesandcliffsbackport:block/powder_snow/step2",
+      "cavesandcliffsbackport:block/powder_snow/step3",
+      "cavesandcliffsbackport:block/powder_snow/step4",
+      "cavesandcliffsbackport:block/powder_snow/step5",
+      "cavesandcliffsbackport:block/powder_snow/step6",
+      "cavesandcliffsbackport:block/powder_snow/step7",
+      "cavesandcliffsbackport:block/powder_snow/step8",
+      "cavesandcliffsbackport:block/powder_snow/step9",
+      "cavesandcliffsbackport:block/powder_snow/step10"
+    ]
+  },
+  "item.bucket.fill_powder_snow": {
+    "sounds": [
+      "cavesandcliffsbackport:item/bucket/fill_powder_snow1",
+      {
+        "name": "cavesandcliffsbackport:item/bucket/fill_powder_snow1",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/bucket/fill_powder_snow1",
+        "pitch": 1.1
+      },
+      "cavesandcliffsbackport:item/bucket/fill_powder_snow2",
+      {
+        "name": "cavesandcliffsbackport:item/bucket/fill_powder_snow2",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/bucket/fill_powder_snow2",
+        "pitch": 1.1
+      }
+    ],
+    "subtitle": "subtitles.item.bucket.fill"
+  },
+  "item.bucket.empty_powder_snow": {
+    "sounds": [
+      "cavesandcliffsbackport:item/bucket/empty_powder_snow1",
+      {
+        "name": "cavesandcliffsbackport:item/bucket/empty_powder_snow1",
+        "pitch": 0.95
+      },
+      {
+        "name": "cavesandcliffsbackport:item/bucket/empty_powder_snow1",
+        "pitch": 1.1
+      },
+      "cavesandcliffsbackport:item/bucket/empty_powder_snow2",
+      {
+        "name": "cavesandcliffsbackport:item/bucket/empty_powder_snow2",
+        "pitch": 0.95
+      },
+      {
+        "name": "cavesandcliffsbackport:item/bucket/empty_powder_snow2",
+        "pitch": 1.1
+      }
+    ],
+    "subtitle": "subtitles.item.bucket.empty"
+  },
+  "entity.player.hurt_freeze": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/player/hurt/freeze_hurt1",
+      "cavesandcliffsbackport:entity/player/hurt/freeze_hurt2",
+      "cavesandcliffsbackport:entity/player/hurt/freeze_hurt3",
+      "cavesandcliffsbackport:entity/player/hurt/freeze_hurt4",
+      "cavesandcliffsbackport:entity/player/hurt/freeze_hurt5"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.player.freeze_hurt"
+  },
+  "entity.skeleton.converted_to_stray": {
+    "sounds": [
+      "cavesandcliffsbackport:mob/stray/convert1",
+      "cavesandcliffsbackport:mob/stray/convert2",
+      "cavesandcliffsbackport:mob/stray/convert3"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.skeleton.converted_to_stray"
   }
 }

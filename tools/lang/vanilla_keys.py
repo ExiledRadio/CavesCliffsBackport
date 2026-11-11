@@ -22,6 +22,8 @@ import assets  # noqa: E402
 M = assets.MODID
 SPECIAL = {
     # vanilla 1.12 keys whose modern name comes from a differently named modern key
+    "death.attack.freeze": "death.attack.freeze",
+    "death.attack.freeze.player": "death.attack.freeze.player",
 }
 
 
