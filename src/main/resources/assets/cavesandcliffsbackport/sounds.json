@@ -1035,5 +1035,157 @@
       }
     ],
     "subtitle": "subtitles.block.generic.place"
+  },
+  "entity.glow_squid.ambient": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/glow_squid/ambient1",
+      "cavesandcliffsbackport:entity/glow_squid/ambient2",
+      "cavesandcliffsbackport:entity/glow_squid/ambient3",
+      "cavesandcliffsbackport:entity/glow_squid/ambient4",
+      "cavesandcliffsbackport:entity/glow_squid/ambient5"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_squid.ambient"
+  },
+  "entity.glow_squid.death": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/glow_squid/death1",
+      "cavesandcliffsbackport:entity/glow_squid/death2",
+      "cavesandcliffsbackport:entity/glow_squid/death3"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_squid.death"
+  },
+  "entity.glow_squid.hurt": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/glow_squid/hurt1",
+      "cavesandcliffsbackport:entity/glow_squid/hurt2",
+      "cavesandcliffsbackport:entity/glow_squid/hurt3",
+      "cavesandcliffsbackport:entity/glow_squid/hurt4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_squid.hurt"
+  },
+  "entity.glow_squid.squirt": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/glow_squid/squirt1",
+      "cavesandcliffsbackport:entity/glow_squid/squirt2",
+      "cavesandcliffsbackport:entity/glow_squid/squirt3"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_squid.squirt"
+  },
+  "entity.glow_item_frame.add_item": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/itemframe/add_item1",
+      "cavesandcliffsbackport:entity/itemframe/add_item2",
+      "cavesandcliffsbackport:entity/itemframe/add_item3",
+      "cavesandcliffsbackport:entity/itemframe/add_item4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_item_frame.add_item"
+  },
+  "entity.glow_item_frame.break": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/itemframe/break1",
+      "cavesandcliffsbackport:entity/itemframe/break2",
+      "cavesandcliffsbackport:entity/itemframe/break3"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_item_frame.break"
+  },
+  "entity.glow_item_frame.place": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/itemframe/place1",
+      "cavesandcliffsbackport:entity/itemframe/place2",
+      "cavesandcliffsbackport:entity/itemframe/place3",
+      "cavesandcliffsbackport:entity/itemframe/place4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_item_frame.place"
+  },
+  "entity.glow_item_frame.remove_item": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/itemframe/remove_item1",
+      "cavesandcliffsbackport:entity/itemframe/remove_item2",
+      "cavesandcliffsbackport:entity/itemframe/remove_item3",
+      "cavesandcliffsbackport:entity/itemframe/remove_item4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_item_frame.remove_item"
+  },
+  "entity.glow_item_frame.rotate_item": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/itemframe/rotate_item1",
+      "cavesandcliffsbackport:entity/itemframe/rotate_item2",
+      "cavesandcliffsbackport:entity/itemframe/rotate_item3",
+      "cavesandcliffsbackport:entity/itemframe/rotate_item4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_item_frame.rotate_item"
+  },
+  "item.glow_ink_sac.use": {
+    "sounds": [
+      "cavesandcliffsbackport:item/ink_sac/ink_sac1",
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac1",
+        "pitch": 0.95
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac1",
+        "pitch": 1.05
+      },
+      "cavesandcliffsbackport:item/ink_sac/ink_sac2",
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac2",
+        "pitch": 0.95
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac2",
+        "pitch": 1.05
+      },
+      "cavesandcliffsbackport:item/ink_sac/ink_sac3",
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac3",
+        "pitch": 0.95
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac3",
+        "pitch": 1.05
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.item.glow_ink_sac.use"
+  },
+  "item.ink_sac.use": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac1",
+        "pitch": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac1",
+        "pitch": 0.88
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac1",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac2",
+        "pitch": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac2",
+        "pitch": 0.88
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac2",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac3",
+        "pitch": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac3",
+        "pitch": 0.88
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac3",
+        "pitch": 0.9
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.item.ink_sac.use"
   }
 }
