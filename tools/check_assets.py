@@ -187,6 +187,18 @@ def check_items(lines, lang):
     return len(lines)
 
 
+_INDEX_112 = None
+
+
+def index_112():
+    """@return 1.12's asset index (the launcher's copy the generators also read), or {} when it is not there."""
+    global _INDEX_112
+    if _INDEX_112 is None:
+        path = "G:/Sort this shit/Minecraft/Install/assets/indexes/1.12.json"
+        _INDEX_112 = json.load(open(path, encoding="utf-8"))["objects"] if os.path.exists(path) else {}
+    return _INDEX_112
+
+
 def check_sounds():
     sounds = json.loads(open(os.path.join(ASSETS, MODID, "sounds.json"), encoding="utf-8").read())
     count = 0
@@ -196,7 +208,9 @@ def check_sounds():
             if isinstance(sound, dict) and sound.get("type") == "event":
                 continue
             sns, spath = split(name)
-            if read_asset(sns, "sounds/%s.ogg" % spath) is None:
+            # 1.12.2's own sounds are not in its jar but in its asset index, which every game has.
+            vanilla = sns == "minecraft" and "minecraft/sounds/%s.ogg" % spath in index_112()
+            if not vanilla and read_asset(sns, "sounds/%s.ogg" % spath) is None:
                 errors.append("sound %s: missing %s" % (event, name))
             count += 1
         if "subtitle" in spec and spec["subtitle"] + "=" not in LANG and spec["subtitle"] not in OLD_LANG:

@@ -1,0 +1,5 @@
+cavesandcliffsbackport:music/game/infinite_amethyst 1
+cavesandcliffsbackport:music/game/left_to_bloom 1
+cavesandcliffsbackport:music/game/one_more_day 1
+cavesandcliffsbackport:music/game/stand_tall 1
+cavesandcliffsbackport:music/game/wending 1

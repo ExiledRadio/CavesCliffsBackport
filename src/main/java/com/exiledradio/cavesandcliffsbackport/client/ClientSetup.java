@@ -48,6 +48,7 @@ public final class ClientSetup {
         if (com.exiledradio.cavesandcliffsbackport.ModConfig.blocks.enabled) {
             com.exiledradio.cavesandcliffsbackport.blocks.client.LightClient.init();
         }
+        com.exiledradio.cavesandcliffsbackport.music.client.MusicClient.init();
     }
 
     @SubscribeEvent

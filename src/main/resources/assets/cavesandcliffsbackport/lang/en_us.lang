@@ -291,6 +291,9 @@ subtitles.cavesandcliffsbackport.entity.axolotl.idle_water=Axolotl chirps
 subtitles.cavesandcliffsbackport.entity.axolotl.splash=Axolotl splashes
 subtitles.cavesandcliffsbackport.entity.axolotl.swim=Axolotl swims
 subtitles.cavesandcliffsbackport.item.bucket.fill_axolotl=Axolotl scooped
+# --- music ---
+item.cavesandcliffsbackport.music_disc_otherside.name=Music Disc
+item.record.cavesandcliffsbackport.otherside.desc=Lena Raine - otherside
 
 # --- common ---
 itemGroup.cavesandcliffsbackport=Caves & Cliffs Backport
@@ -493,3 +496,11 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Goat bellows
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Free fall from the top of the world (build limit) to the bottom of the world and survive
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Caves & Cliffs
 tile.cavesandcliffsbackport.light.name=Light
+config.cavesandcliffsbackport.music.gameMusic=Game music
+config.cavesandcliffsbackport.music.gameMusic.tooltip=The four tracks 1.18 added to the game music play among the old ones, in survival and creative: Comforting Memories, Floating Dream, Left to Bloom and One More Day.
+config.cavesandcliffsbackport.music.biomeMusic=Biome music
+config.cavesandcliffsbackport.music.biomeMusic.tooltip=Lush caves, dripstone caves and the mountain biomes play their own selection of tracks, as in 1.18.
+config.cavesandcliffsbackport.music.menuMusic=Menu music
+config.cavesandcliffsbackport.music.menuMusic.tooltip=The five tracks 1.18 added to the title screen music play among the old ones.
+config.cavesandcliffsbackport.music.othersideLoot=Otherside loot
+config.cavesandcliffsbackport.music.othersideLoot.tooltip=The Otherside music disc is found in dungeon chests and in the chests of stronghold corridors. Takes effect when the world is next loaded.

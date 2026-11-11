@@ -132,3 +132,31 @@ Wild Update's deep dark and Tricky Trials' trial chambers then use 1.18's height
 Also needed (EXTENDED_HEIGHT.md section 3): fluid states outside y 0-255. Fluidlogged API's per-chunk store packs
 y in 8 bits, so either its author widens the key for extended worlds, or Core's `Waterloggable` adapter stores
 those states itself.
+
+## Mu-1. Jukebox comparator signal for discs added after 1.12.2
+
+1.12.2's `BlockJukebox.getComparatorInputOverride` counts the signal from the disc's item id
+(`id + 1 - id(record_13)`), right for vanilla's twelve discs only. Nether Update patches the method for its own
+Pigstep (its patch P2); Otherside (signal 14) needs the same, and so will 1.19's and later discs. This mod has no
+patch for it. Wanted in Core, one patch for the family:
+
+```java
+// com.exiledradio.backportcore.item.ComparatorDisc (an interface for ItemRecord subclasses)
+int comparatorSignal();
+```
+
+and Core's jukebox patch answering with it when the record implements it. Meanwhile `music/ItemMusicDisc` has
+`comparatorSignal()` under that name (14), nobody reads it, and a jukebox playing Otherside gives a comparator
+whatever 1.12.2's id arithmetic comes to.
+
+## Mu-2. Game music additions as a `Contribution` list
+
+1.18 added four tracks to `music.game` (and so to `music.creative`); 1.19, 1.20 and 1.21 add more. Menu music has
+`addMenuMusic`; the game music has no such list, so this mod adds its tracks with a built-in resource pack of its
+own (`music/client/GameMusicPack`: one `minecraft:sounds.json` that adds to `music.game`). Wanted:
+
+```java
+v.addGameMusic("modid:music/game/comforting_memories", 1, 0.4F);   // sound name, weight, volume
+```
+
+resolved like the menu list (a later version can remove a track). Our pack then goes away.

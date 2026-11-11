@@ -138,7 +138,16 @@
     "config.cavesandcliffsbackport.blocks.peacefulLlamas",
     "config.cavesandcliffsbackport.blocks.peacefulLlamas.tooltip",
     "config.cavesandcliffsbackport.blocks.infestedBlocks",
-    "config.cavesandcliffsbackport.blocks.infestedBlocks.tooltip"
+    "config.cavesandcliffsbackport.blocks.infestedBlocks.tooltip",
+    "item.record.cavesandcliffsbackport.otherside.desc",
+    "config.cavesandcliffsbackport.music.gameMusic",
+    "config.cavesandcliffsbackport.music.gameMusic.tooltip",
+    "config.cavesandcliffsbackport.music.biomeMusic",
+    "config.cavesandcliffsbackport.music.biomeMusic.tooltip",
+    "config.cavesandcliffsbackport.music.menuMusic",
+    "config.cavesandcliffsbackport.music.menuMusic.tooltip",
+    "config.cavesandcliffsbackport.music.othersideLoot",
+    "config.cavesandcliffsbackport.music.othersideLoot.tooltip"
   ],
   "vanilla": {
     "advancements.cavesandcliffsbackport.axolotl_in_a_bucket.description": "advancements.husbandry.axolotl_in_a_bucket.description",
@@ -180,6 +189,7 @@
     "item.cavesandcliffsbackport.glow_berries.name": "item.minecraft.glow_berries",
     "item.cavesandcliffsbackport.glow_ink_sac.name": "item.minecraft.glow_ink_sac",
     "item.cavesandcliffsbackport.glow_item_frame.name": "item.minecraft.glow_item_frame",
+    "item.cavesandcliffsbackport.music_disc_otherside.name": "item.minecraft.music_disc_otherside",
     "item.cavesandcliffsbackport.powder_snow_bucket.name": "item.minecraft.powder_snow_bucket",
     "item.cavesandcliffsbackport.raw_copper.name": "item.minecraft.raw_copper",
     "item.cavesandcliffsbackport.raw_gold.name": "item.minecraft.raw_gold",

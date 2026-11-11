@@ -55,6 +55,7 @@ public final class SelfTestRunner {
             new AxolotlSelfTest(),
             new GoatSelfTest(),
             new BlocksSelfTest(),
+            new MusicSelfTest(),
     };
 
     private final List<String> wanted;
