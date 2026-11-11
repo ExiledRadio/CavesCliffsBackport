@@ -66,6 +66,7 @@ public final class CavesAndCliffsBackport {
         com.exiledradio.cavesandcliffsbackport.deepslate.DeepslateContent.init();
         com.exiledradio.cavesandcliffsbackport.copper.CopperContent.init();
         com.exiledradio.cavesandcliffsbackport.amethyst.AmethystContent.init();
+        com.exiledradio.cavesandcliffsbackport.goat.GoatContent.init();
     }
 
     @Mod.EventHandler
