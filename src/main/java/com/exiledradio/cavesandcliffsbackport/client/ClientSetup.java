@@ -37,14 +37,19 @@ public final class ClientSetup {
         }
         if (com.exiledradio.cavesandcliffsbackport.ModConfig.dripstone.enabled) {
             com.exiledradio.cavesandcliffsbackport.dripstone.client.DripstoneClient.init();
+        }
         if (com.exiledradio.cavesandcliffsbackport.ModConfig.powderSnow.enabled) {
             com.exiledradio.cavesandcliffsbackport.powdersnow.client.PowderSnowClient.init();
+        }
         if (com.exiledradio.cavesandcliffsbackport.ModConfig.glowSquid.enabled) {
             com.exiledradio.cavesandcliffsbackport.glowsquid.client.GlowSquidClient.init();
+        }
         if (com.exiledradio.cavesandcliffsbackport.ModConfig.axolotls.enabled) {
             com.exiledradio.cavesandcliffsbackport.axolotl.client.AxolotlClient.init();
+        }
         if (com.exiledradio.cavesandcliffsbackport.ModConfig.goats.enabled) {
             com.exiledradio.cavesandcliffsbackport.goat.client.GoatClient.init();
+        }
         if (com.exiledradio.cavesandcliffsbackport.ModConfig.blocks.enabled) {
             com.exiledradio.cavesandcliffsbackport.blocks.client.LightClient.init();
         }
