@@ -70,38 +70,14 @@ public final class ImprovedNoise {
         return sampleAndLerp(i, j, k, fx, fy - snap, fz, fy);
     }
 
+    /** SimplexNoise.GRADIENT as doubles: x, y, z per hash. */
+    private static final double[] GX = {1, -1, 1, -1, 1, -1, 1, -1, 0, 0, 0, 0, 1, 0, -1, 0};
+    private static final double[] GY = {1, 1, -1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 1, -1, 1, -1};
+    private static final double[] GZ = {0, 0, 0, 0, 1, 1, -1, -1, 1, 1, -1, -1, 0, 1, 0, -1};
+
     private static double grad(int hash, double x, double y, double z) {
-        // SimplexNoise.GRADIENT[hash & 15] dotted with (x, y, z). The terms multiplied by zero are left out:
-        // they only ever add a signed zero, which no caller can tell apart.
-        switch (hash & 15) {
-            case 0:
-            case 12:
-                return x + y;
-            case 1:
-            case 14:
-                return -x + y;
-            case 2:
-                return x - y;
-            case 3:
-                return -x - y;
-            case 4:
-                return x + z;
-            case 5:
-                return -x + z;
-            case 6:
-                return x - z;
-            case 7:
-                return -x - z;
-            case 8:
-                return y + z;
-            case 9:
-            case 13:
-                return -y + z;
-            case 10:
-                return y - z;
-            default:
-                return -y - z;
-        }
+        int h = hash & 15;
+        return GX[h] * x + GY[h] * y + GZ[h] * z;
     }
 
     private double sampleAndLerp(int x, int y, int z, double fx, double fy, double fz, double fySmooth) {

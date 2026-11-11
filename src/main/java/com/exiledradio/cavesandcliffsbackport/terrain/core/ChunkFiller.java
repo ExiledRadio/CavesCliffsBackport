@@ -54,6 +54,8 @@ public final class ChunkFiller {
         this.aquifer = new Aquifer(noise, columns);
     }
 
+    public static long PROF_CORNERS;
+
     private static int corner(int xi, int zi, int yi) {
         return (xi * 5 + zi) * CORNERS_Y + yi;
     }
@@ -66,6 +68,7 @@ public final class ChunkFiller {
         int baseX = cx << 4;
         int baseZ = cz << 4;
         aquifer.begin(cx, cz);
+        long PROF_T0 = System.nanoTime();
         double[] fMain = corners[F_MAIN];
         double[] fNoodle = corners[F_NOODLE];
         double[] fThickness = corners[F_NOODLE_THICKNESS];
@@ -96,6 +99,7 @@ public final class ChunkFiller {
                 }
             }
         }
+        PROF_CORNERS += System.nanoTime() - PROF_T0;
         double[] cell = this.cell;
         for (int xi = 0; xi < 4; xi++) {
             for (int zi = 0; zi < 4; zi++) {
@@ -148,29 +152,115 @@ public final class ChunkFiller {
         return z0 + tz * (z1 - z0);
     }
 
+    /**
+     * An interpolated value lies between the smallest and largest of its 8 corners, give or take rounding far
+     * smaller than this. Corners all above it make every block of the cell positive; all below minus it, negative.
+     */
+    private static final double SURE = 1.0E-6D;
+
+    private static double min8(double[] c, int o) {
+        return Math.min(Math.min(Math.min(c[o], c[o + 1]), Math.min(c[o + 2], c[o + 3])),
+            Math.min(Math.min(c[o + 4], c[o + 5]), Math.min(c[o + 6], c[o + 7])));
+    }
+
+    private static double max8(double[] c, int o) {
+        return Math.max(Math.max(Math.max(c[o], c[o + 1]), Math.max(c[o + 2], c[o + 3])),
+            Math.max(Math.max(c[o + 4], c[o + 5]), Math.max(c[o + 6], c[o + 7])));
+    }
+
+    private static void fillCellWith(byte[] out, int localX, int localZ, int cellY, byte code) {
+        for (int dx = 0; dx < 4; dx++) {
+            for (int dz = 0; dz < 4; dz++) {
+                int at = ((localX + dx) * 16 + localZ + dz) * HEIGHT + (cellY - MIN_Y);
+                Arrays.fill(out, at, at + 8, code);
+            }
+        }
+    }
+
     private void fillCell(int cellX, int cellY, int cellZ, int localX, int localZ, byte[] out) {
-        for (int dy = 7; dy >= 0; dy--) {
-            int y = cellY + dy;
-            double ty = (double) dy / 8.0D;
+        double[] c = cell;
+        double mainMin = min8(c, F_MAIN * 8);
+        double mainMax = max8(c, F_MAIN * 8);
+        // The noodle caves are off wherever their toggle is below 0.
+        boolean noodles = !(max8(c, F_NOODLE * 8) < -SURE);
+        // Ore veins need the toggle's strength to reach 0.4, between y -60 and 50.
+        boolean veins = cellY <= 50 && cellY + 7 >= -60
+            && Math.max(max8(c, F_VEIN * 8), -min8(c, F_VEIN * 8)) >= 0.4D - SURE;
+        if (mainMin > SURE && !noodles) {
+            // Solid throughout.
+            if (!veins) {
+                fillCellWith(out, localX, localZ, cellY, STONE);
+                return;
+            }
             for (int dx = 0; dx < 4; dx++) {
-                int x = cellX + dx;
-                double tx = (double) dx / 4.0D;
+                for (int dz = 0; dz < 4; dz++) {
+                    int at = ((localX + dx) * 16 + localZ + dz) * HEIGHT + (cellY - MIN_Y);
+                    for (int dy = 0; dy < 8; dy++) {
+                        out[at + dy] = (byte) vein(cellX + dx, cellY + dy, cellZ + dz, (double) dx / 4.0D,
+                            (double) dy / 8.0D, (double) dz / 4.0D);
+                    }
+                }
+            }
+            return;
+        }
+        boolean empty = mainMax < -SURE;
+        if (empty) {
+            // Nothing solid from the terrain: air or fluid, unless a barrier between aquifers fills in.
+            int all = aquifer.quickCell(cellX, cellY, cellZ);
+            if (all != Aquifer.UNDECIDED) {
+                fillCellWith(out, localX, localZ, cellY, (byte) all);
+                return;
+            }
+        }
+        double c0 = c[0];
+        double c1 = c[1];
+        double c2 = c[2];
+        double c3 = c[3];
+        double c4 = c[4];
+        double c5 = c[5];
+        double c6 = c[6];
+        double c7 = c[7];
+        for (int dx = 0; dx < 4; dx++) {
+            int x = cellX + dx;
+            double tx = (double) dx / 4.0D;
+            // Mth.lerp3: X first, then Y, then Z.
+            double a0 = c0 + tx * (c1 - c0);
+            double a1 = c2 + tx * (c3 - c2);
+            double a2 = c4 + tx * (c5 - c4);
+            double a3 = c6 + tx * (c7 - c6);
+            for (int dy = 0; dy < 8; dy++) {
+                int y = cellY + dy;
+                double ty = (double) dy / 8.0D;
+                double b0 = a0 + ty * (a1 - a0);
+                double b1 = a2 + ty * (a3 - a2);
                 for (int dz = 0; dz < 4; dz++) {
                     int z = cellZ + dz;
                     double tz = (double) dz / 4.0D;
-                    double main = lerp3(F_MAIN, tx, ty, tz);
-                    double noodle = OverworldNoise.noodleDensity(lerp3(F_NOODLE, tx, ty, tz),
-                        lerp3(F_NOODLE_THICKNESS, tx, ty, tz), lerp3(F_NOODLE_A, tx, ty, tz),
-                        lerp3(F_NOODLE_B, tx, ty, tz));
-                    double density = OverworldNoise.finalDensity(main, noodle);
-                    int code = aquifer.computeSubstance(x, y, z, density);
+                    int code;
+                    if (empty) {
+                        code = aquifer.quick(x, y, z);
+                        if (code == Aquifer.UNDECIDED) {
+                            code = aquifer.full(x, y, z, density(b0 + tz * (b1 - b0), noodles, tx, ty, tz));
+                        }
+                    } else {
+                        code = aquifer.computeSubstance(x, y, z, density(b0 + tz * (b1 - b0), noodles, tx, ty, tz));
+                    }
                     if (code < 0) {
-                        code = vein(x, y, z, tx, ty, tz);
+                        code = veins ? vein(x, y, z, tx, ty, tz) : STONE;
                     }
                     out[((localX + dx) * 16 + localZ + dz) * HEIGHT + (y - MIN_Y)] = (byte) code;
                 }
             }
         }
+    }
+
+    /** final_density at a block of the cell, from the interpolated main density. */
+    private double density(double main, boolean noodles, double tx, double ty, double tz) {
+        double noodle = noodles
+            ? OverworldNoise.noodleDensity(lerp3(F_NOODLE, tx, ty, tz), lerp3(F_NOODLE_THICKNESS, tx, ty, tz),
+                lerp3(F_NOODLE_A, tx, ty, tz), lerp3(F_NOODLE_B, tx, ty, tz))
+            : 64.0D;
+        return OverworldNoise.finalDensity(main, noodle);
     }
 
     /** OreVeinifier: the block of a solid position. */
@@ -251,6 +341,12 @@ public final class ChunkFiller {
             }
             Arrays.fill(located, false);
             Arrays.fill(statusLevel, NOT_COMPUTED);
+            if (summaryState.length != gridSizeY * 4) {
+                summaryState = new byte[gridSizeY * 4];
+                summaryLevel = new int[gridSizeY * 4];
+                summaryLava = new boolean[gridSizeY * 4];
+            }
+            Arrays.fill(summaryState, (byte) 0);
         }
 
         private int index(int gx, int gy, int gz) {
@@ -286,15 +382,137 @@ public final class ChunkFiller {
             return y < LAVA_LEVEL ? LAVA_LEVEL : OverworldNoise.SEA_LEVEL;
         }
 
+        // Summaries of the 12 aquifer centers a position looks at, by (gx0, gy0, gz0). A block's answer comes
+        // from the nearest three of them, so when all 12 agree nothing else needs computing:
+        // - all the same fluid status: every pressure between them is 0, the block is that status at y;
+        // - all levels at least 6 below y: every pressure is negative without the barrier noise, the block is air.
+        private byte[] summaryState = new byte[0];
+        private int[] summaryLevel = new int[0];
+        private boolean[] summaryLava = new boolean[0];
+        private static final byte SUMMARY_UNIFORM = 1;
+        private static final byte SUMMARY_MIXED = 2;
+        /** quick(): the answer needs the full search and the density. */
+        static final int UNDECIDED = -2;
+
+        private int summary(int gx0, int gy0, int gz0) {
+            int key = ((gy0 - minGridY) * 2 + (gz0 - minGridZ)) * 2 + (gx0 - minGridX);
+            if (summaryState[key] == 0) {
+                boolean uniform = true;
+                int level = 0;
+                int max = Integer.MIN_VALUE;
+                boolean lava = false;
+                boolean first = true;
+                for (int ox = 0; ox <= 1; ox++) {
+                    for (int oy = -1; oy <= 1; oy++) {
+                        for (int oz = 0; oz <= 1; oz++) {
+                            int s = status(location(gx0 + ox, gy0 + oy, gz0 + oz));
+                            int l = statusLevel[s];
+                            boolean v = statusLava[s];
+                            if (first) {
+                                level = l;
+                                lava = v;
+                                first = false;
+                            } else if (l != level || v != lava) {
+                                uniform = false;
+                            }
+                            max = Math.max(max, l);
+                        }
+                    }
+                }
+                summaryState[key] = uniform ? SUMMARY_UNIFORM : SUMMARY_MIXED;
+                summaryLevel[key] = uniform ? level : max;
+                summaryLava[key] = lava;
+            }
+            return key;
+        }
+
+        /** The block of a position whose density is not above 0, when the summaries decide it; else UNDECIDED. */
+        int quick(int x, int y, int z) {
+            if (y < LAVA_LEVEL) {
+                // The global status below -54 is lava up to -54.
+                return LAVA;
+            }
+            int key = summary(Math.floorDiv(x - 5, 16), Math.floorDiv(y + 1, 12), Math.floorDiv(z - 5, 16));
+            if (summaryState[key] == SUMMARY_UNIFORM) {
+                return y < summaryLevel[key] ? (summaryLava[key] ? LAVA : WATER) : AIR;
+            }
+            return y - 6 >= summaryLevel[key] ? AIR : UNDECIDED;
+        }
+
+        /**
+         * For a whole cell (4x8x4 from x, y, z) of densities not above 0: AIR, WATER or LAVA when every block in
+         * it is that, else UNDECIDED.
+         */
+        int quickCell(int x, int y, int z) {
+            if (y + 7 < LAVA_LEVEL) {
+                return LAVA;
+            }
+            if (y < LAVA_LEVEL) {
+                return UNDECIDED;
+            }
+            int gxa = Math.floorDiv(x - 5, 16);
+            int gxb = Math.floorDiv(x + 3 - 5, 16);
+            int gya = Math.floorDiv(y + 1, 12);
+            int gyb = Math.floorDiv(y + 7 + 1, 12);
+            int gza = Math.floorDiv(z - 5, 16);
+            int gzb = Math.floorDiv(z + 3 - 5, 16);
+            int result = UNDECIDED;
+            for (int gx = gxa; gx <= gxb; gx++) {
+                for (int gy = gya; gy <= gyb; gy++) {
+                    for (int gz = gza; gz <= gzb; gz++) {
+                        int key = summary(gx, gy, gz);
+                        int level = summaryLevel[key];
+                        int here;
+                        if (summaryState[key] == SUMMARY_UNIFORM) {
+                            if (level <= y) {
+                                here = AIR;
+                            } else if (level > y + 7) {
+                                here = summaryLava[key] ? LAVA : WATER;
+                            } else {
+                                return UNDECIDED;
+                            }
+                        } else if (y - 6 >= level) {
+                            here = AIR;
+                        } else {
+                            return UNDECIDED;
+                        }
+                        if (result == UNDECIDED) {
+                            result = here;
+                        } else if (result != here) {
+                            return UNDECIDED;
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+
+        private long location(int gx, int gy, int gz) {
+            int index = index(gx, gy, gz);
+            if (located[index]) {
+                return locations[index];
+            }
+            Xoroshiro random = noise.aquiferRandom.at(gx, gy, gz);
+            int px = gx * 16 + random.nextInt(10);
+            int py = gy * 12 + random.nextInt(9);
+            int pz = gz * 16 + random.nextInt(10);
+            long pos = pack(px, py, pz);
+            locations[index] = pos;
+            located[index] = true;
+            return pos;
+        }
+
         /** Returns the block code, or -1 for solid (the vein check and stone follow). */
         int computeSubstance(int x, int y, int z, double density) {
             if (density > 0.0D) {
                 return -1;
             }
-            if (y < LAVA_LEVEL) {
-                // The global status below -54 is lava up to -54.
-                return LAVA;
-            }
+            int quick = quick(x, y, z);
+            return quick != UNDECIDED ? quick : full(x, y, z, density);
+        }
+
+        /** The aquifer's full answer for a density not above 0 at y -54 or higher. */
+        int full(int x, int y, int z, double density) {
             int gx0 = Math.floorDiv(x - 5, 16);
             int gy0 = Math.floorDiv(y + 1, 12);
             int gz0 = Math.floorDiv(z - 5, 16);
@@ -310,19 +528,7 @@ public final class ChunkFiller {
                         int gx = gx0 + ox;
                         int gy = gy0 + oy;
                         int gz = gz0 + oz;
-                        int index = index(gx, gy, gz);
-                        long pos;
-                        if (located[index]) {
-                            pos = locations[index];
-                        } else {
-                            Xoroshiro random = noise.aquiferRandom.at(gx, gy, gz);
-                            int px = gx * 16 + random.nextInt(10);
-                            int py = gy * 12 + random.nextInt(9);
-                            int pz = gz * 16 + random.nextInt(10);
-                            pos = pack(px, py, pz);
-                            locations[index] = pos;
-                            located[index] = true;
-                        }
+                        long pos = location(gx, gy, gz);
                         int ddx = unpackX(pos) - x;
                         int ddy = unpackY(pos) - y;
                         int ddz = unpackZ(pos) - z;

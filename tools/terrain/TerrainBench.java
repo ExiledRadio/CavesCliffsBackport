@@ -33,6 +33,7 @@ public final class TerrainBench {
                 ms[round - 1] = took / 1.0E6D / (side * side);
             }
         }
+        System.out.println("corner phase total ms " + ChunkFiller.PROF_CORNERS / 1.0E6D / ((rounds + 1) * side * side) + " per chunk");
         Arrays.sort(ms);
         double median = ms[rounds / 2];
         System.out.println(String.format(java.util.Locale.ROOT,
