@@ -27,7 +27,10 @@ public final class TerrainCheck {
         long bad = 0;
         for (long seed : seeds) {
             bad += points(dir, seed);
-            bad += chunks(dir, seed);
+            bad += chunks(dir, seed, "chunks_");
+            if (new File(dir, "bigchunks_" + seed + ".bin").isFile()) {
+                bad += chunks(dir, seed, "bigchunks_");
+            }
         }
         System.out.println(bad == 0 ? "ALL IDENTICAL" : "DIFFERENCES: " + bad);
         System.exit(bad == 0 ? 0 : 1);
@@ -85,7 +88,7 @@ public final class TerrainCheck {
         return total;
     }
 
-    static long chunks(File dir, long seed) throws Exception {
+    static long chunks(File dir, long seed, String prefix) throws Exception {
         OverworldNoise n = new OverworldNoise(seed);
         ChunkFiller filler = new ChunkFiller(n);
         byte[] ours = new byte[16 * 16 * 384];
@@ -94,7 +97,7 @@ public final class TerrainCheck {
         long[] kinds = new long[256];
         int count;
         try (DataInputStream in = new DataInputStream(new BufferedInputStream(
-                new FileInputStream(new File(dir, "chunks_" + seed + ".bin"))))) {
+                new FileInputStream(new File(dir, prefix + seed + ".bin")), 1 << 20))) {
             count = in.readInt();
             for (int i = 0; i < count; i++) {
                 int cx = in.readInt();
@@ -116,7 +119,7 @@ public final class TerrainCheck {
                 bad += here;
             }
         }
-        System.out.println("seed " + seed + " chunks " + count + ": " + (bad == 0 ? "identical" : bad + " blocks differ")
+        System.out.println("seed " + seed + " " + prefix + " " + count + ": " + (bad == 0 ? "identical" : bad + " blocks differ")
             + "  (air " + kinds[0] + " stone " + kinds[1] + " water " + kinds[2] + " lava " + kinds[3] + " vein blocks "
             + (kinds[4] + kinds[5] + kinds[6] + kinds[7] + kinds[8] + kinds[9]) + " other " + kinds[255] + ")");
         return bad;
