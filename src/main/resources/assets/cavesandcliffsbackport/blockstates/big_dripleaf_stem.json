@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "cavesandcliffsbackport:big_dripleaf_stem",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "cavesandcliffsbackport:big_dripleaf_stem"
+    },
+    "facing=south": {
+      "model": "cavesandcliffsbackport:big_dripleaf_stem",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "cavesandcliffsbackport:big_dripleaf_stem",
+      "y": 270
+    }
+  }
+}

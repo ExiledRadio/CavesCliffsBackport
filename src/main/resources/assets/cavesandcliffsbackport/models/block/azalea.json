@@ -1,0 +1,7 @@
+{
+  "parent": "cavesandcliffsbackport:block/template_azalea",
+  "textures": {
+    "top": "cavesandcliffsbackport:block/azalea_top",
+    "side": "cavesandcliffsbackport:block/azalea_side"
+  }
+}
