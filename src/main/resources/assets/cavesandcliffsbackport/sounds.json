@@ -1035,5 +1035,172 @@
       }
     ],
     "subtitle": "subtitles.block.generic.place"
+  },
+  "block.dripstone_block.break": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/break1",
+      "cavesandcliffsbackport:block/dripstone/break2",
+      "cavesandcliffsbackport:block/dripstone/break3",
+      "cavesandcliffsbackport:block/dripstone/break4",
+      "cavesandcliffsbackport:block/dripstone/break5"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.dripstone_block.step": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/step1",
+      "cavesandcliffsbackport:block/dripstone/step2",
+      "cavesandcliffsbackport:block/dripstone/step3",
+      "cavesandcliffsbackport:block/dripstone/step4",
+      "cavesandcliffsbackport:block/dripstone/step5",
+      "cavesandcliffsbackport:block/dripstone/step6"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.dripstone_block.place": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/break1",
+      "cavesandcliffsbackport:block/dripstone/break2",
+      "cavesandcliffsbackport:block/dripstone/break3",
+      "cavesandcliffsbackport:block/dripstone/break4",
+      "cavesandcliffsbackport:block/dripstone/break5"
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.dripstone_block.hit": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/step1",
+      "cavesandcliffsbackport:block/dripstone/step2",
+      "cavesandcliffsbackport:block/dripstone/step3",
+      "cavesandcliffsbackport:block/dripstone/step4",
+      "cavesandcliffsbackport:block/dripstone/step5",
+      "cavesandcliffsbackport:block/dripstone/step6"
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.dripstone_block.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/step1",
+      "cavesandcliffsbackport:block/dripstone/step2",
+      "cavesandcliffsbackport:block/dripstone/step3",
+      "cavesandcliffsbackport:block/dripstone/step4",
+      "cavesandcliffsbackport:block/dripstone/step5",
+      "cavesandcliffsbackport:block/dripstone/step6"
+    ]
+  },
+  "block.pointed_dripstone.break": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/break1",
+      "cavesandcliffsbackport:block/dripstone/break2",
+      "cavesandcliffsbackport:block/dripstone/break3",
+      "cavesandcliffsbackport:block/dripstone/break4",
+      "cavesandcliffsbackport:block/dripstone/break5"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.pointed_dripstone.step": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/step1",
+      "cavesandcliffsbackport:block/dripstone/step2",
+      "cavesandcliffsbackport:block/dripstone/step3",
+      "cavesandcliffsbackport:block/dripstone/step4",
+      "cavesandcliffsbackport:block/dripstone/step5",
+      "cavesandcliffsbackport:block/dripstone/step6"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.pointed_dripstone.place": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/break1",
+      "cavesandcliffsbackport:block/dripstone/break2",
+      "cavesandcliffsbackport:block/dripstone/break3",
+      "cavesandcliffsbackport:block/dripstone/break4",
+      "cavesandcliffsbackport:block/dripstone/break5"
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.pointed_dripstone.hit": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/step1",
+      "cavesandcliffsbackport:block/dripstone/step2",
+      "cavesandcliffsbackport:block/dripstone/step3",
+      "cavesandcliffsbackport:block/dripstone/step4",
+      "cavesandcliffsbackport:block/dripstone/step5",
+      "cavesandcliffsbackport:block/dripstone/step6"
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.pointed_dripstone.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/step1",
+      "cavesandcliffsbackport:block/dripstone/step2",
+      "cavesandcliffsbackport:block/dripstone/step3",
+      "cavesandcliffsbackport:block/dripstone/step4",
+      "cavesandcliffsbackport:block/dripstone/step5",
+      "cavesandcliffsbackport:block/dripstone/step6"
+    ]
+  },
+  "block.pointed_dripstone.land": {
+    "sounds": [
+      "cavesandcliffsbackport:block/pointed_dripstone/land1",
+      "cavesandcliffsbackport:block/pointed_dripstone/land2",
+      "cavesandcliffsbackport:block/pointed_dripstone/land3",
+      "cavesandcliffsbackport:block/pointed_dripstone/land4",
+      "cavesandcliffsbackport:block/pointed_dripstone/land5"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.block.pointed_dripstone.land"
+  },
+  "block.pointed_dripstone.drip_water": {
+    "sounds": [
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water1",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water2",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water3",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water4",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water5",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water6",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water7",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water8",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water9",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water10",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water11",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water12",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water13",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water14",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water15"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.block.pointed_dripstone.drip_water"
+  },
+  "block.pointed_dripstone.drip_lava": {
+    "sounds": [
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava1",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava2",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava3",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava4",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava5",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava6"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.block.pointed_dripstone.drip_lava"
+  },
+  "block.pointed_dripstone.drip_water_into_cauldron": {
+    "sounds": [
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water_cauldron1",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water_cauldron2",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water_cauldron3",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water_cauldron4",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water_cauldron5",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water_cauldron6",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water_cauldron7",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water_cauldron8"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.block.pointed_dripstone.drip_water_into_cauldron"
+  },
+  "block.pointed_dripstone.drip_lava_into_cauldron": {
+    "sounds": [
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava_cauldron1",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava_cauldron2",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava_cauldron3",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava_cauldron4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.block.pointed_dripstone.drip_lava_into_cauldron"
   }
 }

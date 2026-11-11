@@ -211,6 +211,12 @@ public final class ModConfig {
         @Config.Comment("Dripstone blocks, pointed dripstone and the lava cauldron. Off, nothing is registered.")
         @Config.LangKey("config.cavesandcliffsbackport.dripstone.enabled")
         public boolean enabled = true;
+
+        @Config.Comment("Extra tries at a copper ore vein in each newly generated chunk of a dripstone cave. 0 for none.")
+        @Setting.NewChunks
+        @Config.LangKey("config.cavesandcliffsbackport.dripstone.extraCopperVeins")
+        @Config.RangeInt(min = 0, max = 64)
+        public int extraCopperVeins = 16;
     }
 
     public static final class Lush {

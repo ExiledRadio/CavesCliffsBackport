@@ -325,11 +325,15 @@ public final class CopperSelfTest implements SelfTest {
         c.ok(Math.abs(ours - theirs) < theirs * 0.3, "our veins are vanilla-sized: " + ours / 60.0 + " vs " + theirs / 60.0);
         // Real chunks: count copper ore in a fresh area.
         int base = 9000 + (int) (System.currentTimeMillis() / 1000 % 5000) * 8;
+        // Without the dripstone caves' extra copper, which a third of all places would otherwise add to the count.
+        int extra = com.exiledradio.cavesandcliffsbackport.ModConfig.dripstone.extraCopperVeins;
+        com.exiledradio.cavesandcliffsbackport.ModConfig.dripstone.extraCopperVeins = 0;
         for (int x = 0; x <= 4; x++) {
             for (int z = 0; z <= 4; z++) {
                 c.world.getChunkProvider().provideChunk(base + x, base + z);
             }
         }
+        com.exiledradio.cavesandcliffsbackport.ModConfig.dripstone.extraCopperVeins = extra;
         int ore = 0, deepOre = 0;
         for (int x = 1; x <= 3; x++) {
             for (int z = 1; z <= 3; z++) {

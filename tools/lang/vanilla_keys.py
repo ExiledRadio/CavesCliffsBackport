@@ -40,6 +40,8 @@ def candidates(key):
         return ["item.minecraft." + name, "block.minecraft." + name]
     if key.startswith("subtitles.%s." % M):
         return ["subtitles." + key[len("subtitles.%s." % M):]]
+    if key.startswith("death.attack.%s." % M):
+        return ["death.attack." + key[len("death.attack.%s." % M):]]
     if key.startswith("advancements.%s." % M):
         rest = key[len("advancements.%s." % M):]
         return ["advancements.%s.%s" % (tab, rest) for tab in ("story", "nether", "end", "adventure", "husbandry")]
