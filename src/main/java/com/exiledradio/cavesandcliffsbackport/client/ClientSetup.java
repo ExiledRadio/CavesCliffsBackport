@@ -41,6 +41,8 @@ public final class ClientSetup {
             com.exiledradio.cavesandcliffsbackport.powdersnow.client.PowderSnowClient.init();
         if (com.exiledradio.cavesandcliffsbackport.ModConfig.glowSquid.enabled) {
             com.exiledradio.cavesandcliffsbackport.glowsquid.client.GlowSquidClient.init();
+        if (com.exiledradio.cavesandcliffsbackport.ModConfig.axolotls.enabled) {
+            com.exiledradio.cavesandcliffsbackport.axolotl.client.AxolotlClient.init();
         }
     }
 

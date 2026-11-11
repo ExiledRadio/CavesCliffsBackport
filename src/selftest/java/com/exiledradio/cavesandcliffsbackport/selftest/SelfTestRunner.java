@@ -52,6 +52,7 @@ public final class SelfTestRunner {
             new PowderSnowSelfTest(),
             new CandleSelfTest(),
             new GlowSquidSelfTest(),
+            new AxolotlSelfTest(),
     };
 
     private final List<String> wanted;

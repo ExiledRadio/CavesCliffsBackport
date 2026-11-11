@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "cavesandcliffsbackport:axolotl_bucket"
+    },
+    "title": {
+      "translate": "advancements.cavesandcliffsbackport.axolotl_in_a_bucket.title"
+    },
+    "description": {
+      "translate": "advancements.cavesandcliffsbackport.axolotl_in_a_bucket.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "minecraft:husbandry/root",
+  "criteria": {
+    "code": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "conditions": [
+    {
+      "type": "minecraft:item_exists",
+      "item": "cavesandcliffsbackport:axolotl_bucket"
+    }
+  ]
+}
