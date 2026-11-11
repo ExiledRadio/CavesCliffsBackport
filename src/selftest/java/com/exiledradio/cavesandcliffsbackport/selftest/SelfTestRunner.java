@@ -54,6 +54,7 @@ public final class SelfTestRunner {
             new GlowSquidSelfTest(),
             new AxolotlSelfTest(),
             new GoatSelfTest(),
+            new BlocksSelfTest(),
     };
 
     private final List<String> wanted;

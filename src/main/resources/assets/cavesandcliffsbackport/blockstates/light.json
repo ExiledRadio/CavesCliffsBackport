@@ -1,0 +1,52 @@
+{
+  "variants": {
+    "level=0": {
+      "model": "cavesandcliffsbackport:light_00"
+    },
+    "level=1": {
+      "model": "cavesandcliffsbackport:light_01"
+    },
+    "level=10": {
+      "model": "cavesandcliffsbackport:light_10"
+    },
+    "level=11": {
+      "model": "cavesandcliffsbackport:light_11"
+    },
+    "level=12": {
+      "model": "cavesandcliffsbackport:light_12"
+    },
+    "level=13": {
+      "model": "cavesandcliffsbackport:light_13"
+    },
+    "level=14": {
+      "model": "cavesandcliffsbackport:light_14"
+    },
+    "level=15": {
+      "model": "cavesandcliffsbackport:light_15"
+    },
+    "level=2": {
+      "model": "cavesandcliffsbackport:light_02"
+    },
+    "level=3": {
+      "model": "cavesandcliffsbackport:light_03"
+    },
+    "level=4": {
+      "model": "cavesandcliffsbackport:light_04"
+    },
+    "level=5": {
+      "model": "cavesandcliffsbackport:light_05"
+    },
+    "level=6": {
+      "model": "cavesandcliffsbackport:light_06"
+    },
+    "level=7": {
+      "model": "cavesandcliffsbackport:light_07"
+    },
+    "level=8": {
+      "model": "cavesandcliffsbackport:light_08"
+    },
+    "level=9": {
+      "model": "cavesandcliffsbackport:light_09"
+    }
+  }
+}

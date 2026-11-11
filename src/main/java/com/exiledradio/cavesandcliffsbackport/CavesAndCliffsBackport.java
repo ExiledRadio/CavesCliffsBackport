@@ -61,6 +61,7 @@ public final class CavesAndCliffsBackport {
         com.exiledradio.cavesandcliffsbackport.lush.LushContent.preInit();
         com.exiledradio.cavesandcliffsbackport.powdersnow.PowderSnowContent.preInit();
         com.exiledradio.cavesandcliffsbackport.candle.CandleContent.preInit();
+        com.exiledradio.cavesandcliffsbackport.blocks.BlocksContent.preInit();
 
         // Client-only setup lives in a class a dedicated server never loads. The call names no client
         // type, so this class verifies on a server - a guarded method here would not.
@@ -80,6 +81,7 @@ public final class CavesAndCliffsBackport {
         com.exiledradio.cavesandcliffsbackport.powdersnow.PowderSnowContent.init();
         com.exiledradio.cavesandcliffsbackport.glowsquid.GlowSquidContent.init();
         com.exiledradio.cavesandcliffsbackport.goat.GoatContent.init();
+        com.exiledradio.cavesandcliffsbackport.blocks.BlocksContent.init();
     }
 
     @Mod.EventHandler

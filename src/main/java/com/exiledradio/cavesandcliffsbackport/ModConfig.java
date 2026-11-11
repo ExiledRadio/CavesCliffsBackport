@@ -67,7 +67,7 @@ public final class ModConfig {
     public static final Goats goats = new Goats();
     @Setting.Feature(icon = "minecraft:glowstone")
     @Config.LangKey("config.cavesandcliffsbackport.blocks")
-    @Config.Comment("Smaller 1.17 additions: the light block and the Caves & Cliffs advancement.")
+    @Config.Comment("The light block, the Caves & Cliffs advancement and small 1.17 changes to shovels, shulkers, mob drops, pufferfish, llamas and infested blocks.")
     public static final Blocks blocks = new Blocks();
     @Setting.Feature(icon = "minecraft:jukebox")
     @Config.LangKey("config.cavesandcliffsbackport.music")
@@ -380,9 +380,34 @@ public final class ModConfig {
 
     public static final class Blocks {
         @Config.RequiresMcRestart
-        @Config.Comment("The light block and the other small 1.17 additions. Off, nothing is registered.")
+        @Config.Comment("The light block, the Caves & Cliffs advancement and the small 1.17 changes below. Off, nothing is registered and none of the changes apply.")
         @Config.LangKey("config.cavesandcliffsbackport.blocks.enabled")
         public boolean enabled = true;
+
+        @Config.Comment("A shovel makes a path from dirt, coarse dirt, podzol, mycelium and rooted dirt as well as from grass.")
+        @Config.LangKey("config.cavesandcliffsbackport.blocks.dirtPaths")
+        public boolean dirtPaths = true;
+
+        @Config.Comment("An open shulker hit by another shulker's bullet teleports away and may leave a new shulker behind, less often the more shulkers are nearby.")
+        @Config.LangKey("config.cavesandcliffsbackport.blocks.shulkerDuplication")
+        public boolean shulkerDuplication = true;
+
+        @Config.Comment("Zombies, husks and zombie villagers that die while burning drop baked potatoes, and polar bears and guardians cooked fish.")
+        @Config.LangKey("config.cavesandcliffsbackport.blocks.cookedMobDrops")
+        public boolean cookedMobDrops = true;
+
+        @Config.Comment("Eating a pufferfish gives Poison II instead of Poison IV.")
+        @Config.LangKey("config.cavesandcliffsbackport.blocks.pufferfishPoison")
+        public boolean pufferfishPoison = true;
+
+        @Config.Comment("Llamas do not spit at players in Peaceful difficulty.")
+        @Config.LangKey("config.cavesandcliffsbackport.blocks.peacefulLlamas")
+        public boolean peacefulLlamas = true;
+
+        @Config.RequiresMcRestart
+        @Config.Comment("Infested blocks break faster with a pickaxe, and infested cobblestone takes half as long to break as cobblestone.")
+        @Config.LangKey("config.cavesandcliffsbackport.blocks.infestedBlocks")
+        public boolean infestedBlocks = true;
     }
 
     public static final class Music {

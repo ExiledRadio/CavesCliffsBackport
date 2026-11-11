@@ -45,6 +45,8 @@ public final class ClientSetup {
             com.exiledradio.cavesandcliffsbackport.axolotl.client.AxolotlClient.init();
         if (com.exiledradio.cavesandcliffsbackport.ModConfig.goats.enabled) {
             com.exiledradio.cavesandcliffsbackport.goat.client.GoatClient.init();
+        if (com.exiledradio.cavesandcliffsbackport.ModConfig.blocks.enabled) {
+            com.exiledradio.cavesandcliffsbackport.blocks.client.LightClient.init();
         }
     }
 
