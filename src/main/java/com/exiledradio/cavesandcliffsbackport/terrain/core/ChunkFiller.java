@@ -43,6 +43,31 @@ public final class ChunkFiller {
     private final double[] column = new double[OverworldNoise.COL_SIZE];
     // The 8 corners of the cell being filled, per function: n000 n100 n010 n110 n001 n101 n011 n111.
     private final double[] cell = new double[FUNCTIONS * 8];
+    private final int[] cellCorner = new int[8];
+
+    // Corners are computed only as far as something reads them. Per corner: sloped cheese (the terrain shape
+    // without caves) and what is known from it, then one bit per group of functions computed so far.
+    private final double[] sloped = new double[CORNERS];
+    private final byte[] known = new byte[CORNERS];
+    private final byte[] done = new byte[CORNERS];
+    /** Sloped cheese is negative whatever the 3D noise says (far above the ground): not even that is computed. */
+    private static final byte SKY = 0;
+    /** Sloped cheese is computed and negative, which makes the main density negative: caves are not computed. */
+    private static final byte NEGATIVE = 1;
+    /** Sloped cheese is computed; the main density needs the caves. */
+    private static final byte GROUND = 2;
+    private static final int DONE_MAIN = 1;
+    private static final int DONE_NOODLE_TOGGLE = 2;
+    private static final int DONE_NOODLE = 4;
+    private static final int DONE_VEIN_TOGGLE = 8;
+    private static final int DONE_VEIN = 16;
+    /** The base 3D noise stays inside this: 16 octaves of at most 2 each, weighted to sum under 2. */
+    private static final double BASE_3D_BOUND = 2.001D;
+    private final double[] columnOffset = new double[25];
+    private final double[] columnFactor = new double[25];
+    private final double[] columnJaggedness = new double[25];
+    private int baseX;
+    private int baseZ;
 
     public ChunkFiller(OverworldNoise noise) {
         this(noise, new ColumnCache(noise));
@@ -54,8 +79,6 @@ public final class ChunkFiller {
         this.aquifer = new Aquifer(noise, columns);
     }
 
-    public static long PROF_CORNERS;
-
     private static int corner(int xi, int zi, int yi) {
         return (xi * 5 + zi) * CORNERS_Y + yi;
     }
@@ -65,18 +88,10 @@ public final class ChunkFiller {
      */
     public void fill(int cx, int cz, byte[] out) {
         OverworldNoise noise = this.noise;
-        int baseX = cx << 4;
-        int baseZ = cz << 4;
+        baseX = cx << 4;
+        baseZ = cz << 4;
         aquifer.begin(cx, cz);
-        long PROF_T0 = System.nanoTime();
-        double[] fMain = corners[F_MAIN];
-        double[] fNoodle = corners[F_NOODLE];
-        double[] fThickness = corners[F_NOODLE_THICKNESS];
-        double[] fRidgeA = corners[F_NOODLE_A];
-        double[] fRidgeB = corners[F_NOODLE_B];
-        double[] fVein = corners[F_VEIN];
-        double[] fVeinA = corners[F_VEIN_A];
-        double[] fVeinB = corners[F_VEIN_B];
+        double jaggedMax = noise.jaggedMax();
         for (int xi = 0; xi <= 4; xi++) {
             int x = baseX + xi * 4;
             for (int zi = 0; zi <= 4; zi++) {
@@ -85,44 +100,111 @@ public final class ChunkFiller {
                 double offset = column[OverworldNoise.COL_OFFSET];
                 double factor = column[OverworldNoise.COL_FACTOR];
                 double jaggedness = column[OverworldNoise.COL_JAGGEDNESS];
+                columnOffset[xi * 5 + zi] = offset;
+                columnFactor[xi * 5 + zi] = factor;
+                columnJaggedness[xi * 5 + zi] = jaggedness;
                 int at = corner(xi, zi, 0);
                 for (int yi = 0; yi < CORNERS_Y; yi++) {
                     int y = MIN_Y + yi * 8;
-                    fMain[at + yi] = noise.mainDensity(x, y, z, offset, factor, jaggedness);
-                    fNoodle[at + yi] = noise.noodleToggle(x, y, z);
-                    fThickness[at + yi] = noise.noodleThickness(x, y, z);
-                    fRidgeA[at + yi] = noise.noodleRidgeA(x, y, z);
-                    fRidgeB[at + yi] = noise.noodleRidgeB(x, y, z);
-                    fVein[at + yi] = noise.veinToggle(x, y, z);
-                    fVeinA[at + yi] = noise.veinA(x, y, z);
-                    fVeinB[at + yi] = noise.veinB(x, y, z);
+                    done[at + yi] = 0;
+                    // From y -40 up the bottom slide leaves the density alone, and the top slide only pulls it
+                    // toward a negative value, so a negative sloped cheese means a negative main density.
+                    if (y >= -40 && OverworldNoise.slopedCheeseWithoutNoise(y, offset, factor, jaggedness * jaggedMax)
+                            + BASE_3D_BOUND < 0.0D) {
+                        known[at + yi] = SKY;
+                        continue;
+                    }
+                    double v = noise.slopedCheese(x, y, z, offset, factor, jaggedness);
+                    sloped[at + yi] = v;
+                    known[at + yi] = y >= -40 && v < -2.0D * SURE ? NEGATIVE : GROUND;
                 }
             }
         }
-        PROF_CORNERS += System.nanoTime() - PROF_T0;
-        double[] cell = this.cell;
+        int[] cc = cellCorner;
         for (int xi = 0; xi < 4; xi++) {
             for (int zi = 0; zi < 4; zi++) {
                 for (int yi = CELLS_Y - 1; yi >= 0; yi--) {
-                    int c000 = corner(xi, zi, yi);
-                    int c100 = corner(xi + 1, zi, yi);
-                    int c001 = corner(xi, zi + 1, yi);
-                    int c101 = corner(xi + 1, zi + 1, yi);
-                    for (int f = 0; f < FUNCTIONS; f++) {
-                        double[] v = corners[f];
-                        int o = f * 8;
-                        cell[o] = v[c000];
-                        cell[o + 1] = v[c100];
-                        cell[o + 2] = v[c000 + 1];
-                        cell[o + 3] = v[c100 + 1];
-                        cell[o + 4] = v[c001];
-                        cell[o + 5] = v[c101];
-                        cell[o + 6] = v[c001 + 1];
-                        cell[o + 7] = v[c101 + 1];
-                    }
+                    cc[0] = corner(xi, zi, yi);
+                    cc[1] = corner(xi + 1, zi, yi);
+                    cc[2] = cc[0] + 1;
+                    cc[3] = cc[1] + 1;
+                    cc[4] = corner(xi, zi + 1, yi);
+                    cc[5] = corner(xi + 1, zi + 1, yi);
+                    cc[6] = cc[4] + 1;
+                    cc[7] = cc[5] + 1;
                     fillCell(baseX + xi * 4, MIN_Y + yi * 8, baseZ + zi * 4, xi * 4, zi * 4, out);
                 }
             }
+        }
+    }
+
+    /** Makes sure the given function group is computed at the cell's 8 corners and loads it into cell[]. */
+    private void need(int bit) {
+        OverworldNoise noise = this.noise;
+        int[] cc = cellCorner;
+        for (int i = 0; i < 8; i++) {
+            int c = cc[i];
+            if ((done[c] & bit) == 0) {
+                done[c] |= bit;
+                int column = c / CORNERS_Y;
+                int x = baseX + (column / 5) * 4;
+                int z = baseZ + (column % 5) * 4;
+                int y = MIN_Y + (c % CORNERS_Y) * 8;
+                switch (bit) {
+                    case DONE_MAIN: {
+                        double v = known[c] == SKY
+                            ? noise.slopedCheese(x, y, z, columnOffset[column], columnFactor[column], columnJaggedness[column])
+                            : sloped[c];
+                        corners[F_MAIN][c] = noise.mainDensity(x, y, z, v);
+                        break;
+                    }
+                    case DONE_NOODLE_TOGGLE:
+                        corners[F_NOODLE][c] = noise.noodleToggle(x, y, z);
+                        break;
+                    case DONE_NOODLE:
+                        corners[F_NOODLE_THICKNESS][c] = noise.noodleThickness(x, y, z);
+                        corners[F_NOODLE_A][c] = noise.noodleRidgeA(x, y, z);
+                        corners[F_NOODLE_B][c] = noise.noodleRidgeB(x, y, z);
+                        break;
+                    case DONE_VEIN_TOGGLE:
+                        corners[F_VEIN][c] = noise.veinToggle(x, y, z);
+                        break;
+                    default:
+                        corners[F_VEIN_A][c] = noise.veinA(x, y, z);
+                        corners[F_VEIN_B][c] = noise.veinB(x, y, z);
+                        break;
+                }
+            }
+        }
+        switch (bit) {
+            case DONE_MAIN:
+                load(F_MAIN);
+                break;
+            case DONE_NOODLE_TOGGLE:
+                load(F_NOODLE);
+                break;
+            case DONE_NOODLE:
+                load(F_NOODLE_THICKNESS);
+                load(F_NOODLE_A);
+                load(F_NOODLE_B);
+                break;
+            case DONE_VEIN_TOGGLE:
+                load(F_VEIN);
+                break;
+            default:
+                load(F_VEIN_A);
+                load(F_VEIN_B);
+                break;
+        }
+    }
+
+    private void load(int f) {
+        double[] v = corners[f];
+        double[] c = cell;
+        int[] cc = cellCorner;
+        int o = f * 8;
+        for (int i = 0; i < 8; i++) {
+            c[o + i] = v[cc[i]];
         }
     }
 
@@ -179,31 +261,15 @@ public final class ChunkFiller {
 
     private void fillCell(int cellX, int cellY, int cellZ, int localX, int localZ, byte[] out) {
         double[] c = cell;
-        double mainMin = min8(c, F_MAIN * 8);
-        double mainMax = max8(c, F_MAIN * 8);
-        // The noodle caves are off wherever their toggle is below 0.
-        boolean noodles = !(max8(c, F_NOODLE * 8) < -SURE);
-        // Ore veins need the toggle's strength to reach 0.4, between y -60 and 50.
-        boolean veins = cellY <= 50 && cellY + 7 >= -60
-            && Math.max(max8(c, F_VEIN * 8), -min8(c, F_VEIN * 8)) >= 0.4D - SURE;
-        if (mainMin > SURE && !noodles) {
-            // Solid throughout.
-            if (!veins) {
-                fillCellWith(out, localX, localZ, cellY, STONE);
-                return;
+        int[] cc = cellCorner;
+        boolean empty = true;
+        for (int i = 0; i < 8; i++) {
+            int corner = cc[i];
+            if ((done[corner] & DONE_MAIN) != 0 ? !(corners[F_MAIN][corner] < -SURE) : known[corner] == GROUND) {
+                empty = false;
+                break;
             }
-            for (int dx = 0; dx < 4; dx++) {
-                for (int dz = 0; dz < 4; dz++) {
-                    int at = ((localX + dx) * 16 + localZ + dz) * HEIGHT + (cellY - MIN_Y);
-                    for (int dy = 0; dy < 8; dy++) {
-                        out[at + dy] = (byte) vein(cellX + dx, cellY + dy, cellZ + dz, (double) dx / 4.0D,
-                            (double) dy / 8.0D, (double) dz / 4.0D);
-                    }
-                }
-            }
-            return;
         }
-        boolean empty = mainMax < -SURE;
         if (empty) {
             // Nothing solid from the terrain: air or fluid, unless a barrier between aquifers fills in.
             int all = aquifer.quickCell(cellX, cellY, cellZ);
@@ -212,6 +278,46 @@ public final class ChunkFiller {
                 return;
             }
         }
+        need(DONE_MAIN);
+        empty = max8(c, F_MAIN * 8) < -SURE;
+        boolean noodles = false;
+        boolean veins = false;
+        boolean inVeinRange = cellY <= 50 && cellY + 7 >= -60;
+        if (!empty) {
+            // The noodle caves are off wherever their toggle is below 0.
+            need(DONE_NOODLE_TOGGLE);
+            noodles = !(max8(c, F_NOODLE * 8) < -SURE);
+            if (noodles) {
+                need(DONE_NOODLE);
+            }
+            // Ore veins need the toggle strength to reach 0.4, between y -60 and 50.
+            if (inVeinRange) {
+                need(DONE_VEIN_TOGGLE);
+                veins = Math.max(max8(c, F_VEIN * 8), -min8(c, F_VEIN * 8)) >= 0.4D - SURE;
+                if (veins) {
+                    need(DONE_VEIN);
+                }
+            }
+            if (min8(c, F_MAIN * 8) > SURE && !noodles) {
+                // Solid throughout.
+                if (!veins) {
+                    fillCellWith(out, localX, localZ, cellY, STONE);
+                    return;
+                }
+                for (int dx = 0; dx < 4; dx++) {
+                    for (int dz = 0; dz < 4; dz++) {
+                        int at = ((localX + dx) * 16 + localZ + dz) * HEIGHT + (cellY - MIN_Y);
+                        for (int dy = 0; dy < 8; dy++) {
+                            out[at + dy] = (byte) vein(cellX + dx, cellY + dy, cellZ + dz, (double) dx / 4.0D,
+                                (double) dy / 8.0D, (double) dz / 4.0D);
+                        }
+                    }
+                }
+                return;
+            }
+        }
+        emptyNoodlesPending = empty;
+        boolean emptyVeinsChecked = false;
         double c0 = c[0];
         double c1 = c[1];
         double c2 = c[2];
@@ -240,12 +346,29 @@ public final class ChunkFiller {
                     if (empty) {
                         code = aquifer.quick(x, y, z);
                         if (code == Aquifer.UNDECIDED) {
+                            if (emptyNoodlesPending) {
+                                emptyNoodlesPending = false;
+                                need(DONE_NOODLE_TOGGLE);
+                                noodles = !(max8(c, F_NOODLE * 8) < -SURE);
+                                if (noodles) {
+                                    need(DONE_NOODLE);
+                                }
+                            }
                             code = aquifer.full(x, y, z, density(b0 + tz * (b1 - b0), noodles, tx, ty, tz));
                         }
                     } else {
                         code = aquifer.computeSubstance(x, y, z, density(b0 + tz * (b1 - b0), noodles, tx, ty, tz));
                     }
                     if (code < 0) {
+                        if (empty && inVeinRange && !emptyVeinsChecked) {
+                            // A barrier between aquifers made rock in a cell with none: it can still be a vein.
+                            emptyVeinsChecked = true;
+                            need(DONE_VEIN_TOGGLE);
+                            veins = Math.max(max8(c, F_VEIN * 8), -min8(c, F_VEIN * 8)) >= 0.4D - SURE;
+                            if (veins) {
+                                need(DONE_VEIN);
+                            }
+                        }
                         code = veins ? vein(x, y, z, tx, ty, tz) : STONE;
                     }
                     out[((localX + dx) * 16 + localZ + dz) * HEIGHT + (y - MIN_Y)] = (byte) code;
@@ -253,6 +376,8 @@ public final class ChunkFiller {
             }
         }
     }
+
+    private boolean emptyNoodlesPending;
 
     /** final_density at a block of the cell, from the interpolated main density. */
     private double density(double main, boolean noodles, double tx, double ty, double tz) {

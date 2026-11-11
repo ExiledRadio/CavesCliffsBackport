@@ -328,7 +328,26 @@ public final class OverworldNoise {
 
     /** The function under the main interpolator: terrain and caves, slid at the world's top and bottom. */
     public double mainDensity(int x, int y, int z, double offset, double factor, double jaggedness) {
-        double sloped = slopedCheese(x, y, z, offset, factor, jaggedness);
+        return mainDensity(x, y, z, slopedCheese(x, y, z, offset, factor, jaggedness));
+    }
+
+    /** The largest value the jagged noise can take. */
+    public double jaggedMax() {
+        return jagged.maxValue();
+    }
+
+    /**
+     * Sloped cheese without its base 3D noise, with the jaggedness term replaced by the given upper bound:
+     * nothing here samples noise, and the real value is at most this plus the base 3D noise.
+     */
+    public static double slopedCheeseWithoutNoise(int y, double offset, double factor, double jagUpperBound) {
+        double d = depth(y, offset) + jagUpperBound;
+        double m = d * factor;
+        return (m > 0.0D ? m : m * 0.25D) * 4.0D;
+    }
+
+    /** The same, from the sloped cheese already computed there. */
+    public double mainDensity(int x, int y, int z, double sloped) {
         double roughness = roughness(x, y, z);
         double entrances = entrances(x, y, z, roughness);
         double v;
