@@ -77,6 +77,10 @@ public final class ModConfig {
     @Config.LangKey("config.cavesandcliffsbackport.caves")
     @Config.Comment("Where lush and dripstone caves are: the regions the cave streams decorate.")
     public static final Caves caves = new Caves();
+    @Setting.Feature(icon = "minecraft:bedrock")
+    @Config.LangKey("config.cavesandcliffsbackport.height")
+    @Config.Comment("1.18's world height, y -64 to 319, for new worlds of the Caves & Cliffs world type.")
+    public static final Height height = new Height();
 
     // ------------------------------------------------------------------------------------------
     // Categories. Each stream owns exactly one; caves is common's.
@@ -447,6 +451,23 @@ public final class ModConfig {
         @Setting.NewChunks
         @Config.LangKey("config.cavesandcliffsbackport.caves.dripstoneRegions")
         public boolean dripstoneRegions = true;
+    }
+
+    public static final class Height {
+        @Config.RequiresMcRestart
+        @Config.Comment({"The Caves & Cliffs world type: an overworld from y -64 to 319, as in 1.18. The Nether and the End,",
+                "and every world created before, keep y 0 to 255 for good.",
+                "Removing this mod from such a world keeps everything from y 0 to 255 and loses everything below and above:",
+                "the bedrock is at y -64, so the bottom of the world is then open at y 0.",
+                "Refuses to turn on, and says so in the log, when Alfheim, Phosphor, Cubic Chunks, Caves Not Cliffs or",
+                "Farmer's Future Delight is installed: they change the same parts of the game."})
+        @Config.LangKey("config.cavesandcliffsbackport.height.enabled")
+        public boolean enabled = true;
+
+        @Config.Comment({"New worlds that would get the Default world type get the Caves & Cliffs type instead: in single player",
+                "and on a server whose level-type is DEFAULT. Takes effect for worlds created afterwards."})
+        @Config.LangKey("config.cavesandcliffsbackport.height.defaultForNewWorlds")
+        public boolean defaultForNewWorlds = false;
     }
 
     // ------------------------------------------------------------------------------------------

@@ -56,6 +56,7 @@ public final class SelfTestRunner {
             new GoatSelfTest(),
             new BlocksSelfTest(),
             new MusicSelfTest(),
+            new HeightSelfTest(),
     };
 
     private final List<String> wanted;
