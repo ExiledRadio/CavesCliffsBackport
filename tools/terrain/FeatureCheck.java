@@ -38,13 +38,19 @@ public final class FeatureCheck {
     }
 
     /**
-     * -DlooseBees: a bee nest and air compare equal. BeehiveDecorator shuffles with the JVM's shared random, so
+     * -DlooseBees: a bee nest and air (or a plant) compare equal. BeehiveDecorator shuffles with the JVM's shared random, so
      * vanilla's hive position is not reproducible (every draw from the feature random still is).
      */
     static final boolean looseBees = System.getProperty("looseBees") != null;
 
+    static boolean isBee(int code) {
+        return BlockCodes.name(code).equals("bee_nest");
+    }
+
     static boolean beeOrAir(int code) {
-        return code == BlockCodes.AIR || BlockCodes.name(code).equals("bee_nest");
+        // A plant patch placed after the tree fills the air where the other side's nest went.
+        return code == BlockCodes.AIR || BlockCodes.name(code).equals("bee_nest")
+            || (BlockCodes.flags(code) & BlockCodes.F_BLOCKS_MOTION) == 0 && !BlockCodes.liquid(code);
     }
 
     public static void main(String[] args) throws Exception {
@@ -156,7 +162,7 @@ public final class FeatureCheck {
                         int v = in.readChar();
                         checked++;
                         seen.merge(names[v], 1L, Long::sum);
-                        if (codes[v] != ours.blocks[i] && !(looseBees && beeOrAir(codes[v]) && beeOrAir(ours.blocks[i]))) {
+                        if (codes[v] != ours.blocks[i] && !(looseBees && (isBee(codes[v]) || isBee(ours.blocks[i])) && beeOrAir(codes[v]) && beeOrAir(ours.blocks[i]))) {
                             if (seedDifferences++ < Integer.getInteger("shown", 12)) {
                                 System.out.println("seed " + seed + " chunk " + cx + "," + cz + " block " + ((cx << 4) + i / 384 / 16)
                                     + "," + (i % 384 - 64) + "," + ((cz << 4) + i / 384 % 16) + ": vanilla " + names[v]

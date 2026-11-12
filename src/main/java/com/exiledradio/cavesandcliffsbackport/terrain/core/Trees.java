@@ -117,7 +117,10 @@ final class Trees {
                 RARITY, 100, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
             new Placed("trees_savanna", savanna, COUNT_EXTRA, 1, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
             new Placed("trees_windswept_savanna", savanna, COUNT_EXTRA, 2, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
-            new Placed("trees_grove", new Selector(new float[]{0.33333334F}, new Feature[]{new OnSnow(pine)}, new OnSnow(spruce)),
+            new Placed("trees_birch_and_oak", new Selector(new float[]{0.2F, 0.1F},
+                new Feature[]{birchBees0002Checked, new Checked(fancyOak(0.002F))}, new Checked(oakBees(0.002F))),
+                COUNT_EXTRA, 10, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
+            new Placed("trees_grove",new Selector(new float[]{0.33333334F}, new Feature[]{new OnSnow(pine)}, new OnSnow(spruce)),
                 COUNT_EXTRA, 10, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME));
     }
 
@@ -896,7 +899,22 @@ final class Trees {
                 return snow ? SurfaceFeatures.MYCELIUM_SNOWY : MYCELIUM;
             }
         }
-        return state;
+        if (sameBlock(state, SurfaceFeatures.SNOW)) {
+            return snowSurvives(level.get(x, y - 1, z)) ? state : AIR;
+        }
+        return Vegetation.updateShape(level, state, dir, neighbor, x, y, z);
+    }
+
+    /** SnowLayerBlock.canSurvive (snow below must be 8 layers; freeze_top_layer makes single layers only). */
+    private static boolean snowSurvives(int below) {
+        String n = name(below);
+        if (n.equals("ice") || n.equals("packed_ice") || n.equals("barrier")) {
+            return false;
+        }
+        if (n.equals("honey_block") || n.equals("soul_sand")) {
+            return true;
+        }
+        return faceFull(below, 1) || state(below).equals("snow[layers=8]");
     }
 
     private static boolean hasDistance(int code) {

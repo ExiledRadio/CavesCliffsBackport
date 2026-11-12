@@ -101,7 +101,7 @@ public final class Biomes {
 
     private static final PerlinSimplexNoise TEMPERATURE_NOISE = new PerlinSimplexNoise(1234L, 0, 0);
     private static final PerlinSimplexNoise FROZEN_TEMPERATURE_NOISE = new PerlinSimplexNoise(3456L, -2, 0);
-    private static final PerlinSimplexNoise BIOME_INFO_NOISE = new PerlinSimplexNoise(2345L, 0, 0);
+    static final PerlinSimplexNoise BIOME_INFO_NOISE = new PerlinSimplexNoise(2345L, 0, 0);
 
     /**
      * Every biome's Biome.ClimateSettings from 1.18.2's registry, by biome id (oracle: VanillaBiomeInfoDump,

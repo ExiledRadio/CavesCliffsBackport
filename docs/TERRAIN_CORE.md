@@ -256,6 +256,28 @@ trees_windswept_savanna. Identical on a savanna and a windswept savanna area per
 8,-112/-56,-144; 8675309 -24,-24/-104,144). `DecorationBench` with all 75: 1.43 ms/chunk at seed 42 0,0; 1.74 at
 -72,-72 (savanna).
 
+Vegetation (2026-11-12), in `Vegetation`: every plant of VEGETAL_DECORATION but the trees (VegetationPlacements and
+AquaticPlacements without the trees: random patches of simple blocks and block columns, flowers with
+`NoiseProvider`, `NoiseThresholdProvider` and `DualNoiseProvider` (seed 2345, legacy NormalNoise), grass and ferns,
+mushrooms, dead bushes, lily pads, sugar cane, cactus, melons, pumpkins, berries, the tall plants, forest flowers
+(`SimpleRandomSelector`), bamboo with its podzol, vines, seagrass, kelp, sea pickles and the three coral shapes),
+the placements `NoiseThresholdCountPlacement`, `NoiseBasedCountPlacement` (both on `Biome.BIOME_INFO_NOISE`) and a
+clamped uniform count, and trees_birch_and_oak. Survival is Forge's: `BushBlock.canSurvive` asks
+`canSustainPlant` of the block below, which differs from vanilla for sugar cane (`BEACH`: water next to the block
+below), cactus, lily pads (`WATER`: any water block below) and seagrass (`PLAINS` dirt also counts). Mushrooms
+survive only on mycelium and podzol, since raw brightness is 15 while nothing is lit. seagrass_simple places
+nothing: its `CarvingMaskPlacement(LIQUID)` reads a mask no overworld carver writes. Trees now cut plants that
+earlier VEGETAL features placed, so `Trees.updateShape` asks `Vegetation.updateShape` (BushBlock survival, the
+double plant halves, coral, kelp head and body, snow layers). `FeatureCheck -DlooseBees` with all 140 ported
+features: identical on the default areas (`oracle-out/feat-veg`, side 8), on swamp, sunflower plains, desert, warm
+ocean, beach and eroded badlands per seed (`oracle-out/feat-veg2/<seed>`, side 8, 1,536 chunks: 42
+-16,8/24,-40/-104,-104/-80,-128/8,-16/-120,-128; 12345 -112,-112/-24,32/-144,24/-256,-248/-80,104/-328,-280;
+-7346534567 -48,-144/112,128/-64,-152/8,-152/-24,-32/200,152; 8675309 -48,144/24,80/-48,-64/-64,-64/16,24/240,-152),
+and on all the earlier tree areas again with the plants (`oracle-out/vt1`, `vt2`). `-DlooseBees` now also takes a
+nest against a plant: a patch placed after the tree fills the air where the other side's nest went.
+`DecorationBench` (Java 8, one E-core): 1.43 ms/chunk at seed 42 0,0; 1.94 at -16,8 (swamp); 1.26 at -80,-128
+(warm ocean); 1.50 at 24,-40 (sunflower plains).
+
 Java 8 and `Math.sin`: `OreFeature` takes `Math.sin`/`Math.cos` of a double, as vanilla does. Over all 2^24 angles
 an ore can draw, Java 17, 21 and 25 give the same bits (vanilla's, on Java 17), but Java 8's `Math` differs from
 them in the last bit at about a million angles (`StrictMath` matches neither). On the checks' 704 chunks Java 8
@@ -417,9 +439,9 @@ Done: biomes and surface rules, carvers, the beardifier, structure placement (ab
 1. Features (placed features, GenerationStep.Decoration). Done: the decoration loop, its oracle, every ore,
    springs, disks, underwater magma, lava lakes, monster rooms, the geode, dripstone, lush caves but
    rooted_azalea_tree, glow lichen, freeze_top_layer, icebergs, forest rock, fossils, ice spike / patch, desert
-   well and blue ice, and the first trees with fancy oaks (above): every step but VEGETAL. Left: the other trees
-   (dark oak and huge mushrooms, jungle, mega spruce and pine, swamp oak, azalea and rooted_azalea_tree)
-   and the rest of VEGETAL. Left, as streams on the same framework, each checked with `-Dfeatures` and `FeatureCheck`: cave
+   well and blue ice, and the first trees with fancy oaks (above): every step but VEGETAL. Done since: every plant of VEGETAL
+   (above). Left: the other trees (dark oak and huge mushrooms, jungle, mega spruce and pine, swamp oak, azalea and
+   rooted_azalea_tree). Left, as streams on the same framework, each checked with `-Dfeatures` and `FeatureCheck`: cave
    features (geodes, dripstone clusters / large / pointed, lush caves, monster rooms, fossils (templates), springs,
    lava lakes, underwater magma); surface (disks, icebergs, ice spikes and patches, blue ice, desert wells, forest
    rocks, freeze top layer, which reads block light: the oracle region has no light engine yet, see below); trees

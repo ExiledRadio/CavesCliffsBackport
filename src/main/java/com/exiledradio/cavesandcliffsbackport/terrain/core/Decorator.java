@@ -73,6 +73,9 @@ public final class Decorator {
         for (Placed p : Fossils.placed()) {
             ported.put(p.name, p);
         }
+        for (Placed p : Vegetation.placed()) {
+            ported.put(p.name, p);
+        }
         for (Placed p : Misc.placed()) {
             ported.put(p.name, p);
         }
