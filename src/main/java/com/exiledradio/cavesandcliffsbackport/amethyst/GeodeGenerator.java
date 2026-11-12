@@ -40,6 +40,9 @@ public final class GeodeGenerator implements IWorldGenerator {
 
     @Override
     public void generate(Random random, int chunkX, int chunkZ, World world, IChunkGenerator generator, IChunkProvider provider) {
+        if (com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain.owns(world)) {
+            return; // the 1.18 terrain places its own
+        }
         if (!ModConfig.amethyst.geodes || world.provider.getDimension() != 0 || world.getWorldType() == WorldType.FLAT
                 || ModConfig.amethyst.geodeRarity <= 0 || random.nextInt(ModConfig.amethyst.geodeRarity) != 0) {
             return;

@@ -32,6 +32,9 @@ public final class PowderSnowGenerator implements IWorldGenerator {
 
     @Override
     public void generate(Random random, int chunkX, int chunkZ, World world, IChunkGenerator generator, IChunkProvider provider) {
+        if (com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain.owns(world)) {
+            return; // the 1.18 terrain places its own
+        }
         ModConfig.PowderSnow config = ModConfig.powderSnow;
         if (!config.patches || !world.provider.isSurfaceWorld() || world.getWorldType() == WorldType.FLAT
                 || random.nextInt(config.patchRarity) != 0) {

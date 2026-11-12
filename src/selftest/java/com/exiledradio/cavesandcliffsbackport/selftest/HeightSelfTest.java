@@ -183,8 +183,19 @@ public final class HeightSelfTest implements SelfTest {
             }
         }
         check.eq(256, bedrock, "bedrock columns at y -64");
-        check.eq(256, stone, "stone columns at y -32");
-        check.eq(256, solid, "solid columns at y -1");
+        if (com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain.owns(world)) {
+            // 1.18 terrain: deepslate, caves and aquifers below 0 (TerrainSelfTest checks it block for block).
+            int deep = 0;
+            for (int x = 0; x < 16; x++) {
+                for (int z = 0; z < 16; z++) {
+                    deep += chunk.getBlockState(x, -32, z).getMaterial().blocksMovement() ? 1 : 0;
+                }
+            }
+            check.ok(deep > 0, "rock at y -32 (" + deep + " columns)");
+        } else {
+            check.eq(256, stone, "stone columns at y -32");
+            check.eq(256, solid, "solid columns at y -1");
+        }
         check.eq(Blocks.AIR.getDefaultState(), chunk.getBlockState(0, -65, 0), "below the world is air");
         for (int slot = HeightLayout.FIRST_LOW_SLOT; slot < 24; slot++) {
             ExtendedBlockStorage section = chunk.getBlockStorageArray()[slot];

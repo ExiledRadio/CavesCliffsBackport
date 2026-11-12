@@ -12,9 +12,9 @@ import net.minecraft.world.gen.IChunkGenerator;
 /**
  * The "Caves & Cliffs" world type ({@code cavesandcliffs}): an overworld from y -64 to 319.
  *
- * <p>Until the 1.18 terrain stream replaces it, the terrain is vanilla 1.12's (same seed, same biomes, same
- * structures as the Default type: biomes and generator take this type exactly as Default) with solid stone from y -1
- * down to bedrock at y -64, so the world is complete and usable.
+ * <p>The terrain is 1.18.2's ({@code terrain.ModernGenerator}). A Caves & Cliffs world created before the 1.18
+ * terrain existed keeps the terrain it was made with: vanilla 1.12's (same seed, same biomes, same structures as the
+ * Default type) with solid stone from y -1 down to bedrock at y -64 ({@link Generator}).
  */
 public final class WorldTypeCavesAndCliffs extends WorldType {
 
@@ -26,7 +26,17 @@ public final class WorldTypeCavesAndCliffs extends WorldType {
 
     @Override
     public IChunkGenerator getChunkGenerator(World world, String generatorOptions) {
+        IChunkGenerator modern = com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain.generator(world);
+        if (modern != null) {
+            return modern;
+        }
         return new Generator(world, world.getSeed(), world.getWorldInfo().isMapFeaturesEnabled(), generatorOptions);
+    }
+
+    @Override
+    public net.minecraft.world.biome.BiomeProvider getBiomeProvider(World world) {
+        net.minecraft.world.biome.BiomeProvider modern = com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain.biomeProvider(world);
+        return modern != null ? modern : super.getBiomeProvider(world);
     }
 
     @Override

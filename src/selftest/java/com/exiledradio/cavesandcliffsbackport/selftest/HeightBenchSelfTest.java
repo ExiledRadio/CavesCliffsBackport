@@ -57,7 +57,13 @@ public final class HeightBenchSelfTest implements SelfTest {
         }
         long save = (System.nanoTime() - t1) / 4;
         int n = SIDE * SIDE;
-        String mode = !HeightContent.allowed() ? "vanilla (coremod off)" : Heights.isExtended(world) ? "extended" : "coremod on, Default world";
+        boolean modern = com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain.owns(world);
+        String mode = !HeightContent.allowed() ? "vanilla (coremod off)" : modern ? "1.18 terrain"
+                : Heights.isExtended(world) ? "extended" : "coremod on, Default world";
+        if (modern) {
+            CavesAndCliffsBackport.LOGGER.info("TERRAINSTATS " + ((com.exiledradio.cavesandcliffsbackport.terrain.ModernGenerator)
+                    world.getChunkProvider().chunkGenerator).stats());
+        }
         CavesAndCliffsBackport.LOGGER.info(String.format(java.util.Locale.ROOT,
                 "HEIGHTBENCH mode=%s chunks=%d gen_ms_per_chunk=%.3f save_ms_per_chunk=%.3f chunks_per_s=%.1f",
                 mode, n, gen / 1e6 / n, save / 1e6 / n, n / (gen / 1e9)));

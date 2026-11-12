@@ -84,6 +84,7 @@ public final class CavesAndCliffsBackport {
         com.exiledradio.cavesandcliffsbackport.glowsquid.GlowSquidContent.init();
         com.exiledradio.cavesandcliffsbackport.goat.GoatContent.init();
         com.exiledradio.cavesandcliffsbackport.blocks.BlocksContent.init();
+        com.exiledradio.cavesandcliffsbackport.terrain.ModernStructures.register();
     }
 
     @Mod.EventHandler

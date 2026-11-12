@@ -58,6 +58,7 @@ public final class SelfTestRunner {
             new MusicSelfTest(),
             new WaterlogSelfTest(),
             new HeightSelfTest(),
+            new TerrainSelfTest(),
             new HeightBenchSelfTest(),
     };
 

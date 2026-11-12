@@ -468,6 +468,13 @@ public final class ModConfig {
                 "and on a server whose level-type is DEFAULT. Takes effect for worlds created afterwards."})
         @Config.LangKey("config.cavesandcliffsbackport.height.defaultForNewWorlds")
         public boolean defaultForNewWorlds = false;
+
+        @Config.RequiresWorldRestart
+        @Config.Comment({"Worker threads that build the 1.18 terrain of a Caves & Cliffs world ahead of the server thread.",
+                "0: the computer's cores less two, from 1 to 6."})
+        @Config.LangKey("config.cavesandcliffsbackport.height.terrainThreads")
+        @Config.RangeInt(min = 0, max = 32)
+        public int terrainThreads = 0;
     }
 
     // ------------------------------------------------------------------------------------------
