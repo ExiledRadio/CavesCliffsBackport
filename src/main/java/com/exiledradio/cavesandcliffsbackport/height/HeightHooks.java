@@ -96,7 +96,9 @@ public final class HeightHooks {
         boolean extended = min == HeightLayout.EXTENDED_MIN_Y && max == HeightLayout.EXTENDED_MAX_Y;
         if (extended && ours) {
             extend(world);
-            CavesAndCliffsBackport.LOGGER.info("Extended height: this world runs from y {} to {}.", min, max - 1);
+            if (Heights.isExtended(world)) {
+                CavesAndCliffsBackport.LOGGER.info("Extended height: this world runs from y {} to {}.", min, max - 1);
+            }
         } else if (extended || ours) {
             // A world whose saved height and world type disagree (an edited level.dat): it keeps 0-255, since the
             // clients decide from the world type.
@@ -105,8 +107,52 @@ public final class HeightHooks {
         }
     }
 
+    /** Null until the first extended world; then whether the patched World methods answer the extended range. */
+    @Nullable
+    private static String overridden;
+    private static boolean probed;
+
     private static void extend(World world) {
         ((HeightWorld) world).cavesandcliffsbackport$setHeight(HeightLayout.EXTENDED_MIN_Y, HeightLayout.EXTENDED_MAX_Y);
+        if (!probed) {
+            probed = true;
+            overridden = probe(world);
+            if (overridden != null) {
+                CavesAndCliffsBackport.LOGGER.error("Extended height is OFF: {}. Another mod replaces that method after this "
+                        + "mod's patch (a mixin @Overwrite), so the world keeps y 0-255. StellarCore does this with "
+                        + "B:WorldBlockPosJudgement=true in config/stellar_core.cfg; set it to false.", overridden);
+            }
+        }
+        if (overridden != null) {
+            ((HeightWorld) world).cavesandcliffsbackport$setHeight(0, 256);
+        }
+    }
+
+    /**
+     * Checks that the patched build-height checks answer the extended range in this world. A mixin that overwrites a
+     * patched method after the transformer ran is invisible to the drift report; this is where it shows. Pure calls,
+     * safe while the world is being constructed.
+     */
+    @Nullable
+    private static String probe(World world) {
+        int[][] cases = {{-65, 1}, {-64, 0}, {319, 0}, {320, 1}};
+        for (int[] c : cases) {
+            BlockPos pos = new BlockPos(0, c[0], 0);
+            boolean outside = c[1] == 1;
+            if (world.isOutsideBuildHeight(pos) != outside) {
+                return "World.isOutsideBuildHeight(y " + c[0] + ") answers " + !outside;
+            }
+            if (world.isValid(pos) == outside) {
+                return "World.isValid(y " + c[0] + ") answers " + outside;
+            }
+        }
+        return null;
+    }
+
+    /** Why extended height was turned off at the first extended world, or null. */
+    @Nullable
+    public static String overridden() {
+        return overridden;
     }
 
     @Nullable
@@ -293,6 +339,13 @@ public final class HeightHooks {
     // ---------------------------------------------------------------------------------------------
     // Celeritas
     // ---------------------------------------------------------------------------------------------
+
+    /** Nothirium: {@code WorldUtil.getSection(world, x, sectionY, z)}, by our slots. */
+    @Nullable
+    public static ExtendedBlockStorage sectionAt(World world, int x, int sectionY, int z) {
+        Chunk chunk = world.getChunk(x, z);
+        return chunk == null ? null : sectionAt(chunk, sectionY);
+    }
 
     /** Celeritas's {@code ClonedChunkSection.getChunkSection(chunk, sectionY)}, by our slots. */
     @Nullable

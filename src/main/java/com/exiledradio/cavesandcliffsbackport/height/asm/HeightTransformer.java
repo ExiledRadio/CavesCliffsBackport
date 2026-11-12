@@ -35,6 +35,7 @@ public final class HeightTransformer implements IClassTransformer {
                 new SmallPatches.NetHandlerPlayServerPatch(),
                 new SmallPatches.SpawnerPatch(),
                 new SmallPatches.WorldInfoPatch(),
+                new SmallPatches.VintageFixChunkPatch(),
         };
         if (!client) {
             return common;
@@ -47,6 +48,11 @@ public final class HeightTransformer implements IClassTransformer {
                 new ClientPatches.EntityRendererPatch(),
                 new ClientPatches.CeleritasManagerPatch(),
                 new ClientPatches.CeleritasSectionPatch(),
+                new ClientPatches.CeleritasSlicePatch(),
+                new ClientPatches.NothiriumWorldUtilPatch(),
+                new ClientPatches.NothiriumRenderChunkPatch(),
+                new ClientPatches.NothiriumDirectionPatch(true),
+                new ClientPatches.NothiriumDirectionPatch(false),
         };
         ClassPatch[] out = new ClassPatch[common.length + clientOnly.length];
         System.arraycopy(common, 0, out, 0, common.length);
@@ -58,8 +64,14 @@ public final class HeightTransformer implements IClassTransformer {
     public static Map<String, Boolean> targets(boolean client) {
         Map<String, Boolean> out = new LinkedHashMap<String, Boolean>();
         for (ClassPatch p : all(client)) {
-            // Celeritas's classes exist only with Celeritas installed.
-            out.put(p.target, !p.target.startsWith("org.taumc."));
+            if (p.target.startsWith("org.embeddedt.vintagefix.")) {
+                // A mixin class: Mixin reads it (through the transformers) when it applies it; loading it directly
+                // is an error.
+                continue;
+            }
+            // Celeritas, Nothirium and VintageFix classes exist only with those mods installed.
+            out.put(p.target, !p.target.startsWith("org.taumc.") && !p.target.startsWith("meldexun.")
+                    && !p.target.startsWith("org.embeddedt.vintagefix."));
         }
         return Collections.unmodifiableMap(out);
     }

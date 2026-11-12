@@ -25,6 +25,10 @@ target class. No mixins, no MixinBooter.
     name it falls back to does not match. It was there before this stream.
 4.  `PLAN.md`'s "Build and test" still says "No mixins, no coremod, no ASM"; that is now true of every stream but
     this one.
+5.  **Modpacks (RLCraft Revamped / Dregora):** besides dropping Alfheim, a pack must set StellarCore's
+    `B:WorldBlockPosJudgement=false` (`config/stellar_core.cfg`). That option `@Overwrite`s
+    `World.isOutsideBuildHeight` with vanilla's 0-255 check after our patch ran; the world then stays 0-255 and the
+    log says which option to change (see "Overrides" below). VintageFix and Nothirium need nothing: both are handled.
 
 ## Changelog section
 
@@ -67,7 +71,7 @@ registered and no world is extended; every patched site then computes what vanil
 (an instance). A class with any site not found is left exactly as it was, the site is logged, and extended height is
 off for the session. No patch replaces a method; most change one constant or one shift, and none adds a jump except
 the two head guards below (each with its own frame). Sorting index 1500, after Fluidlogged API's 1401, so its
-patterns see vanilla's code. 67 sites on a server, 96 on a client (with Celeritas: 98).
+patterns see vanilla's code. 73 sites on a dedicated server, 96 on a client; 100 in the Dregora Celeritas pack and 104 in the Fast one (Nothirium and VintageFix).
 
 | Class | Sites |
 | --- | --- |
@@ -87,7 +91,9 @@ patterns see vanilla's code. 67 sites on a server, 96 on a client (with Celerita
 | `ViewFrustum` (client) | 24 render chunks high, index from the bottom |
 | `RenderGlobal` (client) | neighbour walk bounds, the start chunk for a camera above or below the world, render-chunk entity lists |
 | `EntityRenderer` (client) | the fog darkens near the world's bottom (`(y - minY) * voidFogFactor`, as 1.18) |
-| Celeritas (client) | `VintageRenderSectionManager.create`: the world's section range; `ClonedChunkSection.getChunkSection`: our slots (head redirect) |
+| Celeritas 2.5.0 (client) | `VintageRenderSectionManager.create`: the world's section range; `isSectionVisuallyEmpty`, `WorldSlice.prepare`, `ClonedChunkSection.getChunkSection` (head redirect): section y to our slot |
+| Nothirium 0.4.9 (client) | `WorldUtil.getSection` (head redirect): our slots; `RenderChunk.markDirty`, `Direction.UP/DOWN.isFaceCulled`: the world's section range |
+| VintageFix 0.7.0 | its `chunk_access.ChunkMixin` overwrite of `Chunk.getBlockState`: the same three sites as vanilla's |
 
 **Saving** (`HeightHooks`): vanilla's `Sections` gets exactly slots 0-15, written by vanilla's own code; slots 16-23
 go to `cavesandcliffsbackport:Sections` in vanilla's per-section format with a signed `Y` (-4..-1, 16..19). Reading
@@ -104,9 +110,17 @@ same world); after each chunk is generated, its four sections below 0 are filled
 sky light 0 (right under solid stone, so no relight). Vanilla population then reaches a little below 0 here, as it
 would in any world that holds those heights (ore veins, gravel and dirt blobs, a dungeon floor at -1).
 
-**Celeritas** sizes its own section range and reads sections itself; both are patched (see the table), in classes
-only present with Celeritas. Client-only types appear only in `height/asm/ClientPatches` as strings and in the client
-test.
+**Other renderers.** Celeritas and Nothirium replace vanilla's chunk rendering with their own; each reads sections
+and bounds its section range itself, and those few places are patched in their own classes (only present with that
+mod). Client-only types appear only in `height/asm/ClientPatches` as strings and in the client test.
+
+**Overrides.** A mixin `@Overwrite` applied after our transformer replaces a patched method silently, and the drift
+report cannot see it. Two guards: when the first extended world is constructed, `World.isOutsideBuildHeight` and
+`isValid` are probed at y -65, -64, 319 and 320, and if they answer vanilla's range the world stays 0-255 with a log
+line naming the cause (StellarCore's `WorldBlockPosJudgement` is the one found); and the Caves & Cliffs generator reads
+y -64 back from its first chunk and logs an error if a `Chunk.getBlockState` override hides it. VintageFix's
+`chunk_access.ChunkMixin` is such an overwrite (of `Chunk.getBlockState`); since Mixin reads mixin classes through the
+transformer chain, our transformer gives that overwrite the same three sites as vanilla's method.
 
 ## Tested
 
@@ -136,12 +150,30 @@ test.
     y -64 to 304, the client's chunks hold bedrock at -64 and the test's blocks at -62, -59 and 319, the render chunk
     at y -64 compiles with blocks in it (camera in a pocket at y -61), and so does the one at y 304 with the camera
     above the world (y 322).
+*   **Modpacks, through Prism** (copies of the Dregora Cleanroom instances on G:, `G:/VBPTest/cc_height_inst`, the
+    test jar built with `-Pclienttest`, `launch.sh`):
+    *   **As shipped (Alfheim installed)**, both the Celeritas instance (Cleanroom 0.6.13, Celeritas 2.5.0, Demonica)
+        and the Fast one (Cleanroom 0.5.17, Nothirium, VintageFix; plus Backport Core 1.2.0 and Fluidlogged API 3.3.3
+        added, which this mod needs): the game reaches the main menu, the coremod patches nothing, and the log says
+        "Extended height is OFF ... Alfheim is installed".
+    *   **Alfheim removed**: first run, extended height turned itself off ("World.isOutsideBuildHeight(y -64) answers
+        true" - StellarCore); with StellarCore's `WorldBlockPosJudgement=false`, the full client test in a new
+        Caves & Cliffs world: **Celeritas 22/0** (blocks at -64, -62, -59 and 319 on the client; Celeritas's sections
+        span y -4..19 and the ones at y -64 and 304 are built with something to draw), **Fast 15/0** (the same blocks;
+        Nothirium's render chunks at y -64 and 304 compiled and not empty; Nothirium has no vanilla frustum to check).
+        Found and fixed on the way: Celeritas's `WorldSlice.prepare` crashed on section y -4, and
+        `isSectionVisuallyEmpty` would have hidden every section below 0; VintageFix's `Chunk.getBlockState` overwrite
+        hid every block below 0.
 *   **Speed** (EXTENDED_HEIGHT section 4, `python tools/height/bench.py`, E-cores): an extended world generates in
     1.11x vanilla's time per chunk (13.30 vs 11.96 ms), 1.15x with saving; a Default world with the coremod on, 1.04x.
 
 ## Not tested
 
-*   OptiFine (the Shaders instance): not in the brief's list.
+*   OptiFine (the Shaders instances): not in the brief's list.
+*   Looking at the screen in the packs: the checks read the renderers' state (sections built, not empty), not pixels.
+*   Overrides other than the ones found in Dregora: the probes cover `World.isOutsideBuildHeight`/`isValid` and
+    `Chunk.getBlockState`; another mod overwriting another patched method would still go unnoticed until something
+    below 0 misbehaves.
 *   A real second client over the network (the packet path is tested with a capturing connection, the client path
     through the integrated server).
 *   Mods that index sections themselves (EXTENDED_HEIGHT 1.3): none checked yet.

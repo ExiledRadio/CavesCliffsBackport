@@ -159,6 +159,11 @@ public final class HeightClientSelfTest {
 
     private void frustum(Minecraft mc) {
         ViewFrustum frustum = ObfuscationReflectionHelper.getPrivateValue(RenderGlobal.class, mc.renderGlobal, "field_175008_n");
+        if (frustum == null) {
+            // A renderer that replaces vanilla's frustum (Nothirium): its own render chunks are checked in compiled().
+            CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST: no vanilla frustum (another chunk renderer); frustum checks skipped");
+            return;
+        }
         int high = ObfuscationReflectionHelper.<Integer, ViewFrustum>getPrivateValue(ViewFrustum.class, frustum, "field_178168_c");
         eq(24, high, "the render frustum is 24 render chunks high");
         int low = Integer.MAX_VALUE;
@@ -172,6 +177,9 @@ public final class HeightClientSelfTest {
     }
 
     private void compiled(Minecraft mc, BlockPos pos, String what) {
+        if (celeritas(pos, what) || nothirium(pos, what)) {
+            return;
+        }
         ViewFrustum frustum = ObfuscationReflectionHelper.getPrivateValue(RenderGlobal.class, mc.renderGlobal, "field_175008_n");
         RenderChunk found = null;
         BlockPos base = new BlockPos(pos.getX() & ~15, pos.getY() & ~15, pos.getZ() & ~15);
@@ -187,8 +195,86 @@ public final class HeightClientSelfTest {
         ok(c != CompiledChunk.DUMMY && !c.isEmpty(), what + " is compiled with blocks in it");
     }
 
+    /**
+     * With Celeritas, which draws through its own section manager instead of the frustum: the section holding pos
+     * exists, is built and has something to draw, and the manager's sections span y -64..319. False without Celeritas.
+     */
+    private boolean celeritas(BlockPos pos, String what) {
+        Object renderer;
+        try {
+            renderer = Class.forName("org.taumc.celeritas.impl.render.terrain.CeleritasWorldRenderer").getMethod("instance").invoke(null);
+        } catch (Throwable t) {
+            return false;
+        }
+        try {
+            Object manager = renderer.getClass().getMethod("getRenderSectionManager").invoke(renderer);
+            java.util.Collection<?> sections = (java.util.Collection<?>) manager.getClass().getMethod("getAllRenderSections").invoke(manager);
+            Object found = null;
+            int low = Integer.MAX_VALUE;
+            int high = Integer.MIN_VALUE;
+            for (Object section : sections) {
+                Class<?> c = section.getClass();
+                int sx = (Integer) c.getMethod("getChunkX").invoke(section);
+                int sy = (Integer) c.getMethod("getChunkY").invoke(section);
+                int sz = (Integer) c.getMethod("getChunkZ").invoke(section);
+                low = Math.min(low, sy);
+                high = Math.max(high, sy);
+                if (sx == pos.getX() >> 4 && sy == pos.getY() >> 4 && sz == pos.getZ() >> 4) {
+                    found = section;
+                }
+            }
+            eq(-4, low, "Celeritas: the lowest section y");
+            eq(19, high, "Celeritas: the highest section y");
+            if (ok(found != null, "Celeritas: " + what + " exists")) {
+                boolean built = (Boolean) found.getClass().getMethod("isBuilt").invoke(found);
+                boolean draws = (Boolean) found.getClass().getMethod("hasAnythingToRender").invoke(found);
+                ok(built && draws, "Celeritas: " + what + " is built with something to draw (built " + built + ", draws " + draws + ")");
+            }
+        } catch (Throwable t) {
+            fail("Celeritas: reading its sections threw " + t);
+        }
+        return true;
+    }
+
+    /** With Nothirium: the render chunk at pos exists, is compiled (not dirty) and is not empty. False without it. */
+    private boolean nothirium(BlockPos pos, String what) {
+        Object provider;
+        try {
+            provider = Class.forName("meldexun.nothirium.mc.renderer.ChunkRenderManager").getMethod("getProvider").invoke(null);
+        } catch (Throwable t) {
+            return false;
+        }
+        try {
+            java.lang.reflect.Method at = Class.forName("meldexun.nothirium.api.renderer.chunk.IRenderChunkProvider")
+                    .getMethod("getRenderChunkAt", int.class, int.class, int.class);
+            Object chunk = at.invoke(provider, pos.getX() >> 4, pos.getY() >> 4, pos.getZ() >> 4);
+            if (ok(chunk != null, "Nothirium: " + what + " exists")) {
+                boolean dirty = (Boolean) chunk.getClass().getMethod("isDirty").invoke(chunk);
+                boolean empty = (Boolean) chunk.getClass().getMethod("isEmpty").invoke(chunk);
+                ok(!dirty && !empty, "Nothirium: " + what + " is compiled with blocks in it (dirty " + dirty + ", empty " + empty + ")");
+            }
+        } catch (Throwable t) {
+            fail("Nothirium: reading its render chunks threw " + t);
+        }
+        return true;
+    }
+
     private void block(Minecraft mc, int x, int y, int z, Block want) {
-        eq(want, mc.world.getBlockState(new BlockPos(x, y, z)).getBlock(), "client block at y " + y);
+        BlockPos pos = new BlockPos(x, y, z);
+        Block got = mc.world.getBlockState(pos).getBlock();
+        eq(want, got, "client block at y " + y);
+        if (got != want) {
+            // Which layer lost it: the server's world, the client chunk's sections, or the lookup.
+            net.minecraft.world.chunk.Chunk chunk = mc.world.getChunk(pos);
+            net.minecraft.world.chunk.storage.ExtendedBlockStorage[] all = chunk.getBlockStorageArray();
+            int slot = com.exiledradio.cavesandcliffsbackport.height.HeightLayout.slot(y);
+            net.minecraft.world.chunk.storage.ExtendedBlockStorage section = slot < all.length ? all[slot] : null;
+            Block server = mc.getIntegratedServer().getWorld(0).getBlockState(pos).getBlock();
+            CavesAndCliffsBackport.LOGGER.error("CLIENT SELFTEST DIAG y {}: server {}, client chunk {} ({} sections), slot {} section {}{}, chunk.getBlockState {}",
+                    y, server, chunk.getClass().getName(), all.length, slot, section == null ? "null" : "y" + section.getYLocation(),
+                    section == null ? "" : " holding " + section.get(x & 15, y & 15, z & 15).getBlock(),
+                    chunk.getBlockState(pos).getBlock());
+        }
     }
 
     private interface ServerTask {

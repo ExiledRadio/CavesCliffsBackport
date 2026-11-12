@@ -128,4 +128,31 @@ final class SmallPatches {
             }
         }
     }
+
+    /**
+     * VintageFix's {@code chunk_access.ChunkMixin} overwrites {@code Chunk.getBlockState(int, int, int)} with vanilla's
+     * body less the debug-world branch, after our transformer patched Chunk. Mixin reads a mixin class through the
+     * transformer chain, so its overwrite gets the same three sites as ours: the y guard and both section lookups.
+     */
+    static final class VintageFixChunkPatch extends ClassPatch {
+        VintageFixChunkPatch() {
+            super("org.embeddedt.vintagefix.mixin.chunk_access.ChunkMixin");
+        }
+
+        @Override
+        protected void apply(ClassNode node) {
+            MethodNode m = method(node, "getBlockState", "func_186032_a", "(III)Lnet/minecraft/block/state/IBlockState;");
+            P storage = field(Opcodes.GETFIELD, "storageArrays", "field_76652_q");
+            for (AbstractInsnNode n : expect("getBlockState.notBelow", m, 1, iload(2), op(Opcodes.IFLT))) {
+                m.instructions.insert(n, list(layout("notBelow", "(I)I")));
+            }
+            for (AbstractInsnNode n : expect("getBlockState.guard", m, 1, iload(2), icst(4), op(Opcodes.ISHR),
+                    aload(0), storage, op(Opcodes.ARRAYLENGTH))) {
+                shiftToSlot(m, next(n));
+            }
+            for (AbstractInsnNode n : expect("getBlockState.slot", m, 1, storage, iload(2), icst(4), op(Opcodes.ISHR))) {
+                shiftToSlot(m, at(n, 2));
+            }
+        }
+    }
 }

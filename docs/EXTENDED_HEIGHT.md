@@ -140,10 +140,12 @@ Rules for the transformer:
 | --- | --- | --- |
 | **Fluidlogged API** (Core requires it) | Its transformers touch the same `Chunk`/`World` methods (`setBlockState`, `getPrecipitationHeight`, `enqueueRelightChecks`, light lookups); ours change other instructions in them, so both apply in either order. **But** its per-chunk fluid storage packs a position into 16 bits with y as 8 of them (`FluidStateCapabilityVanilla.serializeY` is `y << 8`): fluidlogged blocks below 0 or above 255 would land on the wrong heights. | Needs a fix outside our patches: (a) ask its author for a wider key in extended worlds (it already abstracts the serializer and has a Cubic Chunks path); or (b) Core's `Waterloggable` adapter keeps fluid states outside 0-255 itself. Until then, waterlogging works only within 0-255 in extended worlds. To settle with the Core maintainer. |
 | **Cleanroom** | Runs Forge coremods and plain `IClassTransformer`s. | Test on the Dregora Cleanroom instances. |
-| **Celeritas** | Replaces vanilla's chunk rendering, so our `ViewFrustum`/`RenderGlobal` patches don't apply under it. It sizes its world from `getHeight()` (which we raise to 320) and keeps its own `minSection`. | Above 255 probably draws; below 0 needs Celeritas to take a minimum section. Check its section manager; likely a small compat hook or an upstream ask. |
+| **Celeritas** | Replaces vanilla's chunk rendering and sizes its own section range (it hard-coded 0-16). | **Done (stream H):** its section range, and the three places it reads sections by index, are patched; tested in the Dregora Celeritas instance (blocks and built sections at -64 and 304). |
 | **OptiFine** | Rewrites much of `RenderGlobal` and chunk rendering. A strict pattern miss in a client class turns extended height off with a message, rather than crashing. | Test with the Shaders instance. |
-| **VintageFix** | Models and resources; no chunk or height code seen. | Test with the Fast instance. |
-| **Alfheim / Phosphor** | Replace the lighting engine (1.4). | Read first; compat or incompatible. |
+| **VintageFix** | Its `chunk_access` mixin overwrites `Chunk.getBlockState` with a 0-255 body. | **Done (stream H):** that overwrite gets the same patch as vanilla's method (Mixin reads it through our transformer); tested in the Dregora Fast instance. |
+| **Nothirium** | Its own chunk renderer, camera-centred in y, with three 0-16 section limits. | **Done (stream H):** the limits and its section lookup are patched; tested in the Fast instance. |
+| **StellarCore** | `WorldBlockPosJudgement` overwrites `World.isOutsideBuildHeight` with 0-255. | A pack sets `B:WorldBlockPosJudgement=false`; with it on, a probe at world load keeps the world 0-255 and says so. |
+| **Alfheim / Phosphor** | Replace the lighting engine (1.4); Alfheim packs y in 8 bits. | **Incompatible** (the user, 2026-11-11): extended height refuses to turn on with either installed. |
 | **Cubic Chunks, the other extended-height mods** | Same job, different layouts. | Detected at startup; extended height refuses to turn on, with a message. |
 
 ## 4. Speed

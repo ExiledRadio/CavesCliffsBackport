@@ -37,6 +37,7 @@ public final class WorldTypeCavesAndCliffs extends WorldType {
     /** Vanilla's overworld generator, then the sections below y 0. */
     static final class Generator extends ChunkGeneratorOverworld {
         private final World world;
+        private boolean checked;
 
         Generator(World world, long seed, boolean features, String options) {
             super(world, seed, features, options);
@@ -48,6 +49,17 @@ public final class WorldTypeCavesAndCliffs extends WorldType {
             Chunk chunk = super.generateChunk(x, z);
             if (Heights.isExtended(this.world)) {
                 fillBelowZero(chunk, this.world.provider.hasSkyLight());
+                if (!this.checked) {
+                    this.checked = true;
+                    // A mixin that overwrites a patched Chunk method after our transformer is invisible to the drift
+                    // report; the first chunk shows it.
+                    if (chunk.getBlockState(0, HeightLayout.EXTENDED_MIN_Y, 0).getBlock() != Blocks.BEDROCK) {
+                        com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.LOGGER.error("Extended height is BROKEN in "
+                                + "this game: Chunk.getBlockState answers {} at y -64 where the chunk holds bedrock. Another mod "
+                                + "replaces that method after this mod's patch (a mixin @Overwrite). Remove it or turn that "
+                                + "part of it off, or set height.enabled=false.", chunk.getBlockState(0, -64, 0));
+                    }
+                }
             }
             return chunk;
         }

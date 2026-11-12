@@ -217,6 +217,40 @@ final class ClientPatches {
                 replace(m, n, list(new VarInsnNode(Opcodes.ALOAD, 1), heights("minSection", "(" + WORLD_DESC + ")I")));
                 replace(m, max, list(new VarInsnNode(Opcodes.ALOAD, 1), heights("maxSection", "(" + WORLD_DESC + ")I")));
             }
+            // isSectionVisuallyEmpty(x, sectionY, z) reads chunk.getBlockStorageArray()[sectionY] behind a
+            // 0..length guard: the section y becomes its slot first (a vanilla chunk's guard still rejects 16 and up).
+            m = Asm.method(node, "isSectionVisuallyEmpty", "isSectionVisuallyEmpty", "(III)Z");
+            if (site("isSectionVisuallyEmpty", m != null
+                    && Asm.find(m, invoke(Opcodes.INVOKEVIRTUAL, "getBlockStorageArray", "func_76587_i", null)).size() == 1
+                    && Asm.find(m, iload(2), op(Opcodes.AALOAD)).size() == 2)) {
+                m.instructions.insert(list(new VarInsnNode(Opcodes.ILOAD, 2), layout("sectionSlot", "(I)I"),
+                        new VarInsnNode(Opcodes.ISTORE, 2)));
+            }
+        }
+    }
+
+    /** Celeritas: {@code WorldSlice.prepare} reads {@code chunk.getBlockStorageArray()[sectionY]}: by our slots. */
+    static final class CeleritasSlicePatch extends ClassPatch {
+        CeleritasSlicePatch() {
+            super("org.taumc.celeritas.impl.world.WorldSlice");
+        }
+
+        @Override
+        protected void apply(ClassNode node) {
+            MethodNode m = null;
+            for (MethodNode c : node.methods) {
+                if (c.name.equals("prepare") && c.desc.startsWith("(" + WORLD_DESC)) {
+                    m = c;
+                }
+            }
+            String ebs = "Lnet/minecraft/world/chunk/storage/ExtendedBlockStorage;";
+            for (AbstractInsnNode n : expect("prepare.section", m, 1,
+                    invoke(Opcodes.INVOKEVIRTUAL, "getBlockStorageArray", "func_76587_i", null), aload(-1),
+                    invoke(Opcodes.INVOKEVIRTUAL, "y", "y", "()I"), op(Opcodes.AALOAD))) {
+                AbstractInsnNode aaload = at(n, 3);
+                m.instructions.remove(n);
+                replace(m, aaload, list(hooks("sectionAt", "(Lnet/minecraft/world/chunk/Chunk;I)" + ebs)));
+            }
         }
     }
 
@@ -238,6 +272,89 @@ final class ClientPatches {
                 // The original body follows unreachable; the verifier needs a frame on its first instruction.
                 head.add(new FrameNode(Opcodes.F_SAME, 0, null, 0, null));
                 m.instructions.insert(head);
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // Nothirium (meldexun): its own chunk renderer, camera-centred in y, with three 0-16 section limits.
+    // ------------------------------------------------------------------------------------------
+
+    private static final String NOTH_WORLD = "meldexun/nothirium/mc/util/WorldUtil";
+
+    /** {@code getSectionY()} on a render chunk, through the class or the interface. */
+    private static P sectionY() {
+        return n -> (n.getOpcode() == Opcodes.INVOKEVIRTUAL || n.getOpcode() == Opcodes.INVOKEINTERFACE)
+                && "getSectionY".equals(((org.objectweb.asm.tree.MethodInsnNode) n).name);
+    }
+
+    /** {@code Heights.<name>(WorldUtil.getWorld())}: the client world's section range. */
+    private static InsnList nothiriumWorldInt(String name) {
+        return list(new org.objectweb.asm.tree.MethodInsnNode(Opcodes.INVOKESTATIC, NOTH_WORLD, "getWorld",
+                "()" + WORLD_DESC, false), heights(name, "(" + WORLD_DESC + ")I"));
+    }
+
+    /** {@code WorldUtil.getSection(world, x, sectionY, z)}: by our slots (the original allows 0-15 only). */
+    static final class NothiriumWorldUtilPatch extends ClassPatch {
+        NothiriumWorldUtilPatch() {
+            super("meldexun.nothirium.mc.util.WorldUtil");
+        }
+
+        @Override
+        protected void apply(ClassNode node) {
+            String ebs = "Lnet/minecraft/world/chunk/storage/ExtendedBlockStorage;";
+            MethodNode m = Asm.method(node, "getSection", "getSection", "(" + WORLD_DESC + "III)" + ebs);
+            if (site("getSection", m != null && Asm.find(m, iload(2), op(Opcodes.IFLT)).size() == 1
+                    && Asm.find(m, iload(2), icst(16), op(Opcodes.IF_ICMPLT)).size() == 1)) {
+                InsnList head = list(new VarInsnNode(Opcodes.ALOAD, 0), new VarInsnNode(Opcodes.ILOAD, 1),
+                        new VarInsnNode(Opcodes.ILOAD, 2), new VarInsnNode(Opcodes.ILOAD, 3),
+                        hooks("sectionAt", "(" + WORLD_DESC + "III)" + ebs), insn(Opcodes.ARETURN));
+                // The original body follows unreachable; the verifier needs a frame on its first instruction.
+                head.add(new FrameNode(Opcodes.F_SAME, 0, null, 0, null));
+                m.instructions.insert(head);
+            }
+        }
+    }
+
+    /** {@code RenderChunk.markDirty}: a render chunk outside the world height is all visible (not outside 0-15). */
+    static final class NothiriumRenderChunkPatch extends ClassPatch {
+        NothiriumRenderChunkPatch() {
+            super("meldexun.nothirium.mc.renderer.chunk.RenderChunk");
+        }
+
+        @Override
+        protected void apply(ClassNode node) {
+            MethodNode m = Asm.method(node, "markDirty", "markDirty", "()V");
+            for (AbstractInsnNode n : expect("markDirty.bottom", m, 1, sectionY(), op(Opcodes.IFLT))) {
+                compareWith(m, next(n), nothiriumWorldInt("minSection"));
+            }
+            for (AbstractInsnNode n : expect("markDirty.top", m, 1, sectionY(), icst(16), op(Opcodes.IF_ICMPLT))) {
+                replace(m, next(n), nothiriumWorldInt("maxSection"));
+            }
+        }
+    }
+
+    /** {@code Direction.UP/DOWN.isFaceCulled}: the faces at the world top and bottom section, not 15 and 0. */
+    static final class NothiriumDirectionPatch extends ClassPatch {
+        private final boolean up;
+
+        NothiriumDirectionPatch(boolean up) {
+            super(up ? "meldexun.nothirium.util.Direction$1" : "meldexun.nothirium.util.Direction$2");
+            this.up = up;
+        }
+
+        @Override
+        protected void apply(ClassNode node) {
+            MethodNode m = Asm.method(node, "isFaceCulled", "isFaceCulled",
+                    "(Lmeldexun/nothirium/api/renderer/chunk/IRenderChunk;DDD)Z");
+            if (this.up) {
+                for (AbstractInsnNode n : expect("isFaceCulled.top", m, 1, sectionY(), icst(16), op(Opcodes.IF_ICMPLT))) {
+                    replace(m, next(n), nothiriumWorldInt("maxSection"));
+                }
+            } else {
+                for (AbstractInsnNode n : expect("isFaceCulled.bottom", m, 1, sectionY(), op(Opcodes.IFGE))) {
+                    compareWith(m, next(n), nothiriumWorldInt("minSection"));
+                }
             }
         }
     }
