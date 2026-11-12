@@ -143,9 +143,6 @@ public final class StateMap {
         v("chiseled_sandstone", "minecraft:sandstone[type=chiseled_sandstone]");
         v("cut_red_sandstone", "minecraft:red_sandstone[type=smooth_red_sandstone]");
         v("chiseled_red_sandstone", "minecraft:red_sandstone[type=chiseled_red_sandstone]");
-        v("brown_mushroom_block", "minecraft:brown_mushroom_block[variant=all_outside]");
-        v("red_mushroom_block", "minecraft:red_mushroom_block[variant=all_outside]");
-        v("mushroom_stem", "minecraft:brown_mushroom_block[variant=stem]");
         v("nether_bricks", "minecraft:nether_brick");
         v("water", "minecraft:water");
         v("lava", "minecraft:lava");
@@ -153,6 +150,25 @@ public final class StateMap {
         FALLBACK.put("blue_ice", "minecraft:packed_ice");
         FALLBACK.put("tuff", "minecraft:stone[variant=andesite]");
         FALLBACK.put("calcite", "minecraft:stone[variant=diorite]");
+        // Plants from family backports (Village & Pillage, Buzzy Bees, Update Aquatic), when none is installed: the
+        // nearest 1.12 flower, nothing for a plant 1.12 cannot hold up (bamboo, a nest under leaves), the water a
+        // water plant stands in, and a coral reef's shape in terracotta of the coral's color.
+        FALLBACK.put("cornflower", "minecraft:red_flower[type=blue_orchid]");
+        FALLBACK.put("lily_of_the_valley", "minecraft:red_flower[type=oxeye_daisy]");
+        FALLBACK.put("sweet_berry_bush", "minecraft:tallgrass[type=fern]");
+        FALLBACK.put("bamboo", "minecraft:air");
+        FALLBACK.put("bee_nest", "minecraft:air");
+        for (String plant : new String[]{"kelp", "kelp_plant", "seagrass", "tall_seagrass", "sea_pickle"}) {
+            FALLBACK.put(plant, "minecraft:water");
+        }
+        String[][] corals = {{"tube", "blue"}, {"brain", "pink"}, {"bubble", "magenta"}, {"fire", "red"},
+            {"horn", "yellow"}};
+        for (String[] c : corals) {
+            FALLBACK.put(c[0] + "_coral_block", "minecraft:stained_hardened_clay[color=" + c[1] + "]");
+            FALLBACK.put(c[0] + "_coral", "minecraft:water");
+            FALLBACK.put(c[0] + "_coral_fan", "minecraft:water");
+            FALLBACK.put(c[0] + "_coral_wall_fan", "minecraft:water");
+        }
         SLABS.put("sandstone_slab", new String[]{"minecraft:stone_slab[variant=sand]", "minecraft:double_stone_slab[variant=sand]"});
         SLABS.put("cobblestone_slab", new String[]{"minecraft:stone_slab[variant=cobblestone]", "minecraft:double_stone_slab[variant=cobblestone]"});
         SLABS.put("smooth_stone_slab", new String[]{"minecraft:stone_slab[variant=stone]", "minecraft:double_stone_slab[variant=stone]"});
@@ -287,6 +303,15 @@ public final class StateMap {
                 props.clear();
                 return apply(s, single("upper", String.valueOf("upper".equals(half))));
             }
+            case "brown_mushroom_block":
+            case "red_mushroom_block":
+            case "mushroom_stem": {
+                boolean stem = name.equals("mushroom_stem");
+                String variant = mushroomVariant(stem, props);
+                props.clear();
+                Block block = block(new ResourceLocation(stem ? "minecraft:brown_mushroom_block" : "minecraft:" + name));
+                return block == null ? null : apply(block.getDefaultState(), single("variant", variant));
+            }
             case "water":
             case "lava": {
                 int level = props.containsKey("level") ? Integer.parseInt(props.remove("level")) : 0;
@@ -314,6 +339,34 @@ public final class StateMap {
                 }
                 return null;
         }
+    }
+
+    /**
+     * 1.12's huge mushroom variant for 1.18's face mask (a face is true where it shows the cap, or the stem's bark).
+     * 1.12 names a cap block by the compass corner or edge it sits on (the top shows cap on each); a mask 1.12 has no
+     * name for (both of two opposite sides, three sides) is all_outside, and red's side blocks without a top (up=false)
+     * take their compass variant.
+     */
+    private static String mushroomVariant(boolean stem, Map<String, String> props) {
+        boolean up = "true".equals(props.get("up"));
+        boolean down = "true".equals(props.get("down"));
+        boolean n = "true".equals(props.get("north"));
+        boolean s = "true".equals(props.get("south"));
+        boolean w = "true".equals(props.get("west"));
+        boolean e = "true".equals(props.get("east"));
+        if (stem) {
+            return up && down ? "all_stem" : "stem";
+        }
+        int sides = (n ? 1 : 0) + (s ? 1 : 0) + (w ? 1 : 0) + (e ? 1 : 0);
+        if (sides == 0) {
+            return up || down ? "center" : "all_inside";
+        }
+        if (sides > 2 || n && s || w && e) {
+            return "all_outside";
+        }
+        String ns = n ? "north" : s ? "south" : "";
+        String we = w ? "west" : e ? "east" : "";
+        return ns.isEmpty() ? we : we.isEmpty() ? ns : ns + "_" + we;
     }
 
     /** A 1.12 state written as "namespace:block[prop=value,...]", or null if the block is not there. */

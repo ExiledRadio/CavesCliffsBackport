@@ -177,7 +177,8 @@ extended-height terrain mods about 15 (4.5x slower), on the 14900K, same seed.
   1.12's time per chunk on the 16 E-cores (5.99 vs 9.76 ms/chunk, 167 chunks/s; `tools/terrain/genbench.py`, this
   section's harness) and 0.69x on four E-cores (7.20 vs 10.43 ms). Head-to-head with Chunk Pregenerator on plain
   servers (`tools/terrain/pregenbench.py`): 57.2 chunks/s, vanilla 46.9, Caves Not Cliffs 9.7, Farmer's Future
-  Delight 8.8.
+  Delight 8.8. With trees and vegetation merged (same day): **0.44x** (5.13 vs 11.63 ms/chunk, 195 chunks/s) and
+  57.1 chunks/s against vanilla's 49.6 head-to-head.
 * **Measured** before each part merges: a pregeneration benchmark on a dedicated dev server, fixed seed, a
   fixed square of chunks, chunks/s and ms/chunk against plain vanilla on the same build, run pinned to the
   E-cores (memory note on P-core instability).
