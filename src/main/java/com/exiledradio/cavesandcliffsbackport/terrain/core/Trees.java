@@ -15,7 +15,7 @@ import static com.exiledradio.cavesandcliffsbackport.terrain.core.Decorator.*;
  * placements of VegetationPlacements / TreePlacements). So far: straight and fancy trunks with blob, spruce, pine
  * and fancy foliage, two-layer feature sizes and beehives (trees_snowy, trees_badlands, trees_birch, trees_taiga,
  * trees_grove, birch_tall, trees_plains, trees_water, trees_windswept_hills, trees_windswept_forest,
- * trees_flower_forest, trees_meadow).
+ * trees_flower_forest, trees_meadow) and forking trunks with acacia foliage (trees_savanna, trees_windswept_savanna).
  *
  * <p>TreeFeature keeps three HashSet&lt;BlockPos&gt; (trunk, foliage, decorations) and the decorators read the trunk
  * and foliage sets as lists sorted by y, ties in HashSet order: LushCaves.Pos hashes as Vec3i does, so a
@@ -86,6 +86,8 @@ final class Trees {
         Tree fancyOak = fancyOak(-1.0F);
         Feature oakChecked = new Checked(oak);
         Feature fancyOakChecked = new Checked(fancyOak);
+        Tree acacia = new Tree(LOG[ACACIA][1], LEAVES[ACACIA][7], true, -1.0F, FORKING, 5, 2, 2, ACACIA_FOLIAGE, c(2), c(0), 0, null, 1, 0, 2);
+        Feature savanna = new Selector(new float[]{0.8F}, new Feature[]{new Checked(acacia)}, oakChecked);
         Modifier sapling = (level, random, next, x, y, z) -> {
             if (saplingSurvives(level, x, y, z)) {
                 next.at(x, y, z);
@@ -113,6 +115,8 @@ final class Trees {
                 COUNT_EXTRA, 6, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
             new Placed("trees_meadow", new Selector(new float[]{0.5F}, new Feature[]{new Checked(fancyOak(1.0F))}, new Checked(superBirchBees)),
                 RARITY, 100, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
+            new Placed("trees_savanna", savanna, COUNT_EXTRA, 1, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
+            new Placed("trees_windswept_savanna", savanna, COUNT_EXTRA, 2, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
             new Placed("trees_grove", new Selector(new float[]{0.33333334F}, new Feature[]{new OnSnow(pine)}, new OnSnow(spruce)),
                 COUNT_EXTRA, 10, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME));
     }
@@ -274,6 +278,8 @@ final class Trees {
     static final int PINE_FOLIAGE = 2;
     static final int FANCY_FOLIAGE = 3;
     static final int FANCY = 1;
+    static final int FORKING = 2;
+    static final int ACACIA_FOLIAGE = 4;
 
     /** Per y-axis log code: the wood's x, y, z axis codes. */
     static final java.util.Map<Integer, int[]> LOG_BY_STATE = new java.util.HashMap<>();
@@ -400,6 +406,12 @@ final class Trees {
             if (y >= -64 + 1 && y + i + 1 <= 320) {
                 int i1 = maxFreeTreeHeight(i, x, y, z);
                 if (i1 >= i || minClipped >= 0 && i1 >= minClipped) {
+                    if (trunkType == FORKING) {
+                        for (int[] a : forkingTrunk(random, i1, x, y, z)) {
+                            createFoliage(random, a[0], a[1], a[2], a[3], false, i1, j, l);
+                        }
+                        return true;
+                    }
                     if (trunkType == FANCY) {
                         List<int[]> attachments = fancyTrunk(random, i1, x, y, z);
                         for (int[] a : attachments) {
@@ -421,6 +433,8 @@ final class Trees {
 
         private int foliageHeight(XoroRandom random, int treeHeight) {
             switch (foliageType) {
+                case ACACIA_FOLIAGE:
+                    return 0;
                 case SPRUCE_FOLIAGE:
                     return Math.max(4, treeHeight - foliageInt.sample(random));
                 case PINE_FOLIAGE:
@@ -463,6 +477,69 @@ final class Trees {
             if (validTreePos(level.get(x, y, z))) {
                 trunk(x, y, z, log);
             }
+        }
+
+        // ---- ForkingTrunkPlacer ----
+
+        /** Direction.Plane.HORIZONTAL (north, east, south, west) steps. */
+        private static final int[] HX = {0, 1, 0, -1};
+        private static final int[] HZ = {-1, 0, 1, 0};
+
+        /** Attachments as {x, y, z, radius offset}. */
+        private List<int[]> forkingTrunk(XoroRandom random, int h, int ox, int oy, int oz) {
+            setDirtAt(ox, oy - 1, oz);
+            List<int[]> list = new ArrayList<>();
+            int direction = random.nextInt(4);
+            int i = h - random.nextInt(4) - 1;
+            int j = 3 - random.nextInt(3);
+            int k = ox;
+            int l = oz;
+            int top = Integer.MIN_VALUE;
+            for (int i1 = 0; i1 < h; ++i1) {
+                int j1 = oy + i1;
+                if (i1 >= i && j > 0) {
+                    k += HX[direction];
+                    l += HZ[direction];
+                    --j;
+                }
+                if (placeLogAt(k, j1, l)) {
+                    top = j1 + 1;
+                }
+            }
+            if (top != Integer.MIN_VALUE) {
+                list.add(new int[]{k, top, l, 1});
+            }
+            k = ox;
+            l = oz;
+            int direction1 = random.nextInt(4);
+            if (direction1 != direction) {
+                int j2 = i - random.nextInt(2) - 1;
+                int k1 = 1 + random.nextInt(3);
+                top = Integer.MIN_VALUE;
+                for (int l1 = j2; l1 < h && k1 > 0; --k1) {
+                    if (l1 >= 1) {
+                        int i2 = oy + l1;
+                        k += HX[direction1];
+                        l += HZ[direction1];
+                        if (placeLogAt(k, i2, l)) {
+                            top = i2 + 1;
+                        }
+                    }
+                    ++l1;
+                }
+                if (top != Integer.MIN_VALUE) {
+                    list.add(new int[]{k, top, l, 0});
+                }
+            }
+            return list;
+        }
+
+        private boolean placeLogAt(int x, int y, int z) {
+            if (validTreePos(level.get(x, y, z))) {
+                trunk(x, y, z, log);
+                return true;
+            }
+            return false;
         }
 
         // ---- FancyTrunkPlacer ----
@@ -600,6 +677,13 @@ final class Trees {
                     }
                     return;
                 }
+                case ACACIA_FOLIAGE: {
+                    int by = ay + off;
+                    leavesRow(random, ax, by, az, foliageRadius + radiusOffset, -1 - foliageHeight, doubleTrunk);
+                    leavesRow(random, ax, by, az, foliageRadius - 1, -foliageHeight, doubleTrunk);
+                    leavesRow(random, ax, by, az, foliageRadius + radiusOffset - 1, 0, doubleTrunk);
+                    return;
+                }
                 case FANCY_FOLIAGE:
                     for (int i = off; i >= off - foliageHeight; --i) {
                         int j = foliageRadius + (i != off && i != off - foliageHeight ? 1 : 0);
@@ -617,6 +701,12 @@ final class Trees {
         private boolean skip(XoroRandom random, int dx, int dy, int dz, int r, boolean doubleTrunk) {
             if (foliageType == BLOB) {
                 return dx == r && dz == r && (random.nextInt(2) == 0 || dy == 0);
+            }
+            if (foliageType == ACACIA_FOLIAGE) {
+                if (dy == 0) {
+                    return (dx > 1 || dz > 1) && dx != 0 && dz != 0;
+                }
+                return dx == r && dz == r && r > 0;
             }
             if (foliageType == FANCY_FOLIAGE) {
                 return ((float) dx + 0.5F) * ((float) dx + 0.5F) + ((float) dz + 0.5F) * ((float) dz + 0.5F) > (float) (r * r);

@@ -249,6 +249,13 @@ all 73 ported features: identical on plains, river, windswept hills, windswept f
 seed (`oracle-out/feat-trees2/<seed>`, side 8, 1,536 chunks), and the first tree areas still identical.
 `DecorationBench`: 1.35 ms/chunk at seed 42 24,-24 (plains); 1.71 at -32,-32 (flower forest).
 
+Acacia (2026-11-12): `ForkingTrunkPlacer` (a random horizontal direction, the bent top and an optional branch, each
+attachment one above its last placed log) and `AcaciaFoliagePlacer` in `Trees`: trees_savanna and
+trees_windswept_savanna. Identical on a savanna and a windswept savanna area per seed
+(`oracle-out/feat-trees3/<seed>`, side 8, 512 chunks: 42 -72,-72/-40,16; 12345 -56,-8/72,-240; -7346534567
+8,-112/-56,-144; 8675309 -24,-24/-104,144). `DecorationBench` with all 75: 1.43 ms/chunk at seed 42 0,0; 1.74 at
+-72,-72 (savanna).
+
 Java 8 and `Math.sin`: `OreFeature` takes `Math.sin`/`Math.cos` of a double, as vanilla does. Over all 2^24 angles
 an ore can draw, Java 17, 21 and 25 give the same bits (vanilla's, on Java 17), but Java 8's `Math` differs from
 them in the last bit at about a million angles (`StrictMath` matches neither). On the checks' 704 chunks Java 8
@@ -411,7 +418,7 @@ Done: biomes and surface rules, carvers, the beardifier, structure placement (ab
    springs, disks, underwater magma, lava lakes, monster rooms, the geode, dripstone, lush caves but
    rooted_azalea_tree, glow lichen, freeze_top_layer, icebergs, forest rock, fossils, ice spike / patch, desert
    well and blue ice, and the first trees with fancy oaks (above): every step but VEGETAL. Left: the other trees
-   (acacia, dark oak and huge mushrooms, jungle, mega spruce and pine, swamp oak, azalea and rooted_azalea_tree)
+   (dark oak and huge mushrooms, jungle, mega spruce and pine, swamp oak, azalea and rooted_azalea_tree)
    and the rest of VEGETAL. Left, as streams on the same framework, each checked with `-Dfeatures` and `FeatureCheck`: cave
    features (geodes, dripstone clusters / large / pointed, lush caves, monster rooms, fossils (templates), springs,
    lava lakes, underwater magma); surface (disks, icebergs, ice spikes and patches, blue ice, desert wells, forest
