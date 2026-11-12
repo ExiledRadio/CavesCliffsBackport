@@ -1,8 +1,8 @@
-# Terrain core: 1.18.2's noise fill, exact and fast
+# Terrain core: 1.18.2's noise fill, biomes and surface, exact and fast
 
 Branch `cc-terrain`, package `terrain/core`. The first part of stream T's terrain: what 1.18.2 does in
 `NoiseBasedChunkGenerator.fillFromNoise` (terrain shape, cheese, spaghetti and noodle caves, aquifers, ore veins),
-from y -64 to 319. Plain Java 8 with no Minecraft classes, so it compiles, tests and benchmarks without Gradle or
+`createBiomes` (the multi-noise biome source) and `buildSurface` (surface rules), from y -64 to 319. Plain Java 8 with no Minecraft classes, so it compiles, tests and benchmarks without Gradle or
 a game, and runs on any thread.
 
 Two rules:
@@ -30,6 +30,24 @@ Threads (all 16 E-cores, 32x32 chunks, seed 42, Java 8): 1 thread 453 chunks/s, 
 is the noise fill only. It is not chunks per second in a game: biomes, surface rules, carvers, features,
 structures, lighting and chunk storage are not built yet (see *Not done*).
 
+### Biomes and surface (2026-11-11)
+
+Same machine and method (`SurfaceBench` against `VanillaSurfaceBench`, 12x12 chunks, median of 5). Biomes are
+the stored biomes of every chunk (`ChunkAccess.fillBiomesFromNoise`, all 1,536 quarts); surface is
+`SurfaceSystem.buildSurface` with the overworld rules. Vanilla reads its biomes from stored chunks the way
+`WorldGenRegion` does. The checksum is over every block after surface and is the same on both sides.
+
+| Seed, center chunk | Vanilla biomes | Ours biomes | Vanilla surface | Ours surface (Java 8 / 17) | Ours biomes + fill + surface (Java 8) |
+| --- | --- | --- | --- | --- | --- |
+| 42 at 0,0 | 3.09 ms | 0.054 ms | 13.4 ms | 0.28 / 0.28 ms | 2.52 ms/chunk, 396 chunks/s |
+| 12345 at 500,-300 | 3.65 ms | 0.056 ms | 13.7 ms | 0.28 / 0.26 ms | 3.00 ms/chunk, 333 chunks/s |
+| 8675309 at -2000,1500 | 3.01 ms | 0.055 ms | 13.3 ms | 0.38 / 0.33 ms | 3.16 ms/chunk, 317 chunks/s |
+
+About 55x on biomes and 40x on surface. Vanilla's three steps together come to about 52 ms/chunk (19 chunks/s)
+on this core; ours to about 3 ms/chunk. Seed 42's checksum matches vanilla's only with
+`VanillaSurfaceBench ... cold`: one climate tie in that area is answered differently by vanilla's warm search
+(see *Biome ties*).
+
 For scale, from the earlier pack research: whole-chunk generation in a 1.12.2 server measured 68 chunks/s for
 vanilla 1.12 terrain and about 15 for the existing 1.18-terrain mods, on this machine. Vanilla 1.18.2's noise
 fill alone caps one core at 28 chunks/s; ours leaves that step at about 400.
@@ -43,6 +61,36 @@ fill alone caps one core at 28 chunks/s; ours leaves that step at about 400.
   bit-identical doubles.
 - 256 chunks through `getBaseColumn` and 6,000 chunks through the real `NoiseChunk` (two 20x20 areas per seed and
   scattered chunks out to 30 million blocks): about 615 million blocks, all identical.
+
+Biomes, `tools/terrain/BiomeCheck` against `biomes_SEED.bin.gz` (`VanillaBiomeDump`): every quart of 1,552
+chunks per seed (24x24 around 0,0, 24x24 far out, 400 scattered to 30 million blocks) and a 1024x1024 quart layer
+at y 64: 13.7 million quarts, all 50 overworld biomes, identical. The parameter list has vanilla's 7,578 leaves.
+`BiomeSelfTest` checks the shortcut against the ported tree search on 2 million random climate points, a third
+of them exactly on parameter borders or outside -1..1.
+
+Surface, `tools/terrain/SurfaceCheck` against `surface_SEED.bin.gz` (`VanillaSurfaceDump`, real `ProtoChunk`s
+through vanilla's fill and `SurfaceSystem`): 688 chunks per seed (12x12 around 0,0, 12x12 far, 200 scattered, and
+up to 4 chunks for every biome found on a scan out to 16,384 blocks), 2,752 chunks and 270 million blocks, every
+surface block below present (badlands bands and pillars, icebergs, powder snow, calcite, ...), identical.
+
+### Biome ties
+
+Vanilla's `Climate.RTree.search` starts from the worker thread's previous answer (`lastResult`, a ThreadLocal)
+and keeps it when another leaf is exactly as close. A climate value exactly on a parameter border makes two
+biomes tie, so vanilla's answer there depends on what that thread generated before: not reproducible, by vanilla
+itself or by Chunkbase. In the oracle's runs a warm search in `fillBiomesFromNoise` order differed from a cold one
+at 76 to 643 quarts of 884,736 (about 1 in 2,500). The core always answers as a cold search does (closest leaf,
+ties to the leaf the tree's depth-first order reaches first), which makes biomes a pure function of seed and
+position; the oracle dumps vanilla the same way (it clears `lastResult` before every query).
+
+## Block codes
+
+`BlockCodes` (one byte per block, each the block's default state; `VanillaWorld` maps vanilla's states to the same
+numbers): 0 air, 1 stone, 2 water, 3 lava, 4 copper ore, 5 raw copper block, 6 granite, 7 deepslate iron ore,
+8 raw iron block, 9 tuff (the fill); 10 bedrock, 11 deepslate, 12 dirt, 13 grass block, 14 podzol, 15 coarse dirt,
+16 mycelium, 17 calcite, 18 gravel, 19 sand, 20 sandstone, 21 red sand, 22 red sandstone, 23 packed ice,
+24 snow block, 25 powder snow, 26 ice, 27 terracotta, 28 white, 29 orange, 30 yellow, 31 brown, 32 red,
+33 light gray terracotta (surface). Biome ids (`Biomes`) are the index in 1.18.2's `Biomes.java` declaration order.
 
 ## How it is fast
 
@@ -58,13 +106,38 @@ In the order they were measured (seed 42, ms/chunk):
 
 Why each shortcut is exact is in the comments next to it (`ChunkFiller`, `SURE`, `Aquifer.summary`, `SKY`).
 
+Biomes (`Climate`, `BiomeSource`): a leaf's distance is a sum of one term per parameter, and every surface leaf
+comes as a pair at depth 0 and depth 1. So per quart column the search is done once: the closest depth-0 and
+depth-1 leaves in the other five parameters come from a precomputed grid of the leaves' bounds (20,475 cells,
+lowest depth-first rank per cell; values on a grid line or in an uncovered cell try every leaf), plus the two
+underground leaves. Per y the biome is then a comparison of four numbers. Columns are cached by quart and share
+the fill's column noise; per-quart results are kept, so the surface's zoom reads them for free.
+
+Surface (`SurfaceBuilder`): the rule tree is plain code in Mojang's order. Below the min surface level only the
+bedrock and deepslate gradients can apply, so the column scan stops there and the rest is a short loop over
+y <= 7. The stone-depth-below scan is replaced by asking the block underneath (the overworld only reads
+`ON_CEILING`). The zoom skips the fiddled distances where the 8 candidate quarts hold one biome, which is almost
+everywhere. Stone replaced by a non-air block is a plain write (the heightmap cannot move).
+
 ## Running the tools
 
 ```
 sh tools/terrain/run.sh TerrainCheck E:/MincraftModding/Workspaces/MC1182Reference/oracle-out
 tools\terrain\bench.cmd 8 TerrainBench 42 12 5            (one E-core; 8, 17, 21 or 25 picks the JDK)
 E:\MincraftModding\Workspaces\MC1182Reference\bench-vanilla.cmd 42 12 5
+sh tools/terrain/run.sh BiomeCheck E:/MincraftModding/Workspaces/MC1182Reference/oracle-out
+sh tools/terrain/run.sh SurfaceCheck E:/MincraftModding/Workspaces/MC1182Reference/oracle-out
+sh tools/terrain/run.sh BiomeSelfTest 2000000
+tools\terrain\bench.cmd 8 SurfaceBench 42 12 5
+E:\MincraftModding\Workspaces\MC1182Reference\bench-surface-vanilla.cmd 42 12 5    (append 0 0 cold for a cold search)
 ```
+
+The biome and surface oracle classes (`VanillaWorld`, `VanillaBiomeDump`, `VanillaSurfaceDump`,
+`VanillaSurfaceBench`, copies in `tools/terrain/oracle`) are compiled straight into the reference workspace with
+`javac @javac.args -d build/classes/java/main ...` (JDK 17; `javac.args` is `-cp` and vanilla.args' classpath
+line) and run with `java @vanilla.args net.minecraft.world.level.levelgen.<class>`:
+`VanillaBiomeDump oracle-out 24 400 1024` and `VanillaSurfaceDump oracle-out 12 200 4` wrote the gzipped dumps
+(about 0.1 MB and 1.5 MB per seed).
 
 The oracle is `tools/terrain/oracle/*.java`, copies of the sources that live in the reference workspace
 `Workspaces/MC1182Reference` (ForgeGradle 5, Mojang names, JDK 17): `gradlew oracle`, and `VanillaFillDump` /
@@ -74,13 +147,16 @@ The oracle is `tools/terrain/oracle/*.java`, copies of the sources that live in 
 
 Terrain, in the order to build it, each checked against the oracle the same way:
 
-1. Biomes: the multi-noise biome source (1.18.2's parameter list and its search), on the same climate noises.
-2. Surface rules (grass, sand, deepslate gradient, badlands bands, icebergs), which need the biomes.
-3. Carvers (1.18 caves and canyons), features (ores, trees, geodes, dripstone, lush caves, springs, lakes) and
+Done: biomes and surface rules (above).
+
+1. Carvers (1.18 caves and canyons), features (ores, trees, geodes, dripstone, lush caves, springs, lakes) and
    structure placement with 1.18.2's numbers; the beardifier's terrain adaptation.
-4. The chunk generator around it for 1.12.2: worker threads computing chunks ahead in tiles (sharing border
+2. The chunk generator around it for 1.12.2: worker threads computing chunks ahead in tiles (sharing border
    corners between neighbors saves about a quarter of the corner work), writing sections directly.
-5. The extended-height coremod (`docs/EXTENDED_HEIGHT.md`), without which none of this reaches a world.
+3. The extended-height coremod (`docs/EXTENDED_HEIGHT.md`), without which none of this reaches a world.
+
+Biome temperature (`Biomes.temperature`) is filled in only for the two frozen oceans, the only biomes 1.18.2's
+overworld surface asks about; snow and freezing features will need the rest.
 
 Further speed, measured but not built: noise for a whole column at a time (x and z work shared by its 49
 corners), flattened octave loops for the one-octave cave noises, tiles of chunks.

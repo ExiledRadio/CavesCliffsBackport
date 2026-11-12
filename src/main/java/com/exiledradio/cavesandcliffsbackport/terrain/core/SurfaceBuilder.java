@@ -60,10 +60,6 @@ public final class SurfaceBuilder {
     private int baseZ;
     /** WORLD_SURFACE_WG per column (x * 16 + z): one above the highest non-air block, or MIN_Y. */
     private final int[] heights = new int[256];
-    /** Stored biomes of the quarts the zoom can reach from this chunk: 6 x 6 columns (-1..4) x 96, or -1. */
-    private final byte[] stored = new byte[6 * 6 * 96];
-    private int quartX0;
-    private int quartZ0;
 
     // ---- the column (SurfaceRules.Context's XZ state) ----
     private int column;
@@ -172,9 +168,6 @@ public final class SurfaceBuilder {
         this.blocks = blocks;
         baseX = cx << 4;
         baseZ = cz << 4;
-        quartX0 = (cx << 2) - 1;
-        quartZ0 = (cz << 2) - 1;
-        java.util.Arrays.fill(stored, (byte) -1);
         for (int c = 0; c < 256; c++) {
             int at = c * HEIGHT;
             int h = MIN_Y;
@@ -191,6 +184,7 @@ public final class SurfaceBuilder {
                 column = k * 16 + l;
                 bx = baseX + k;
                 bz = baseZ + l;
+                beginZoomColumn();
                 // ChunkAccess.getHeight is the heightmap's first available y minus one (the top block), plus one.
                 int k1 = heights[column];
                 int top = zoomedBiome(bx, k1, bz);
@@ -232,8 +226,9 @@ public final class SurfaceBuilder {
         // Below the min surface level only the bedrock and deepslate gradients can apply, and they read nothing
         // of the scan: the scan's state is kept only above it.
         int scanTo = Math.max(minSurface, MIN_Y);
-        for (int y = top; y >= scanTo; --y) {
-            int state = get(y);
+        // Above the world everything reads as air, which leaves the scan's state where it starts.
+        for (int y = Math.min(top, MAX_Y); y >= scanTo; --y) {
+            int state = b[at + y];
             if (state == AIR) {
                 i2 = 0;
                 j2 = Integer.MIN_VALUE;
@@ -250,22 +245,24 @@ public final class SurfaceBuilder {
                     this.biome = -1;
                     int r = rule();
                     if (r != NONE) {
-                        set(y, r);
+                        if (r == AIR) {
+                            set(y, r);
+                        } else {
+                            b[at + y] = (byte) r;
+                        }
                     }
                 }
             }
         }
         int deepTop = Math.min(scanTo - 1, Math.min(top, 7));
+        // Stone turned into another non-air block leaves the heightmap as it is (Heightmap.update only moves for
+        // a non-air block above the top or air at the top), so these are plain writes.
         for (int y = deepTop; y >= MIN_Y; --y) {
             if (b[at + y] == STONE) {
-                int r = NONE;
                 if (y <= -64 || y < -59 && gradient(bedrockFloor, y, -64, -59)) {
-                    r = BEDROCK;
+                    b[at + y] = BEDROCK;
                 } else if (y <= 0 || gradient(deepslate, y, 0, 8)) {
-                    r = DEEPSLATE;
-                }
-                if (r != NONE) {
-                    set(y, r);
+                    b[at + y] = DEEPSLATE;
                 }
             }
         }
@@ -862,6 +859,21 @@ public final class SurfaceBuilder {
         return v;
     }
 
+    /** The 4 quart columns the zoom can pick from for the current block column: (l, j1) (l+1, j1) (l, j1+1) (l+1, j1+1). */
+    private int slot00;
+    private int slot10;
+    private int slot01;
+    private int slot11;
+
+    private void beginZoomColumn() {
+        int l = (bx - 2) >> 2;
+        int j1 = (bz - 2) >> 2;
+        slot00 = biomes.slotOf(l, j1);
+        slot10 = biomes.slotOf(l + 1, j1);
+        slot01 = biomes.slotOf(l, j1 + 1);
+        slot11 = biomes.slotOf(l + 1, j1 + 1);
+    }
+
     /** BiomeManager.getBiome at a block, over stored biomes (quart y clamped). */
     int zoomedBiome(int x, int y, int z) {
         int i = x - 2;
@@ -871,10 +883,11 @@ public final class SurfaceBuilder {
         int i1 = j >> 2;
         int j1 = k >> 2;
         // The zoom picks one of the 8 quarts around the position; where they all hold the same biome, that is it.
-        int b = stored(l, i1, j1);
-        if (stored(l + 1, i1, j1) == b && stored(l, i1 + 1, j1) == b && stored(l + 1, i1 + 1, j1) == b
-                && stored(l, i1, j1 + 1) == b && stored(l + 1, i1, j1 + 1) == b && stored(l, i1 + 1, j1 + 1) == b
-                && stored(l + 1, i1 + 1, j1 + 1) == b) {
+        BiomeSource s = biomes;
+        int b = s.storedInSlot(slot00, i1);
+        if (s.storedInSlot(slot10, i1) == b && s.storedInSlot(slot00, i1 + 1) == b && s.storedInSlot(slot10, i1 + 1) == b
+                && s.storedInSlot(slot01, i1) == b && s.storedInSlot(slot11, i1) == b
+                && s.storedInSlot(slot01, i1 + 1) == b && s.storedInSlot(slot11, i1 + 1) == b) {
             return b;
         }
         double d0 = (double) (i & 3) / 4.0D;
@@ -898,22 +911,9 @@ public final class SurfaceBuilder {
                 d3 = d7;
             }
         }
-        int l2 = (k1 & 4) == 0 ? l : l + 1;
         int i3 = (k1 & 2) == 0 ? i1 : i1 + 1;
-        int j3 = (k1 & 1) == 0 ? j1 : j1 + 1;
-        return stored(l2, i3, j3);
-    }
-
-    /** ChunkAccess.getNoiseBiome: the stored biome, quart y clamped to the world. */
-    private int stored(int qx, int qy, int qz) {
-        int y = qy < MIN_QUART_Y ? MIN_QUART_Y : qy > MAX_QUART_Y ? MAX_QUART_Y : qy;
-        int at = ((qx - quartX0) * 6 + (qz - quartZ0)) * 96 + y - MIN_QUART_Y;
-        int b = stored[at];
-        if (b < 0) {
-            b = biomes.biome(qx, y, qz);
-            stored[at] = (byte) b;
-        }
-        return b;
+        int slot = (k1 & 4) == 0 ? (k1 & 1) == 0 ? slot00 : slot01 : (k1 & 1) == 0 ? slot10 : slot11;
+        return s.storedInSlot(slot, i3);
     }
 
     private static long lcg(long a, long b) {

@@ -21,7 +21,8 @@ import java.util.Map;
  * stored biomes of the chunk and its neighbors as WorldGenRegion does). The noise fill in between is done but not
  * timed (VanillaFillBench times it). The checksum is over the blocks after surface.
  *
- * Arguments: [seed] [side] [rounds] [centerChunkX] [centerChunkZ]
+ * Arguments: [seed] [side] [rounds] [centerChunkX] [centerChunkZ] [cold]. With "cold" the biome search starts
+ * cold every time (as the backport and the oracle answer), so the checksum must equal SurfaceBench's.
  */
 public final class VanillaSurfaceBench {
     public static void main(String[] args) throws Exception {
@@ -30,6 +31,7 @@ public final class VanillaSurfaceBench {
         int rounds = args.length > 2 ? Integer.parseInt(args[2]) : 5;
         int centerX = args.length > 3 ? Integer.parseInt(args[3]) : 0;
         int centerZ = args.length > 4 ? Integer.parseInt(args[4]) : 0;
+        boolean cold = args.length > 5 && args[5].equals("cold");
         double[] biomeMs = new double[rounds];
         double[] surfaceMs = new double[rounds];
         long checksum = 0L;
@@ -50,7 +52,12 @@ public final class VanillaSurfaceBench {
                         world.biomes, null);
                     NoiseChunk noiseChunk = chunk.getOrCreateNoiseChunk(world.router,
                         () -> DensityFunctions.BeardifierMarker.INSTANCE, world.settings, world.picker, Blender.empty());
-                    chunk.fillBiomesFromNoise(world.biomeSource::getNoiseBiome, noiseChunk.cachedClimateSampler(world.router));
+                    if (cold) {
+                        chunk.fillBiomesFromNoise((x, y, z, s) -> world.coldBiome(x, y, z), world.sampler);
+                    } else {
+                        chunk.fillBiomesFromNoise(world.biomeSource::getNoiseBiome, noiseChunk.cachedClimateSampler(world.router));
+                    }
+                    chunk.setStatus(net.minecraft.world.level.chunk.ChunkStatus.BIOMES);
                     if (inner) {
                         biomeTime += System.nanoTime() - t;
                     }
@@ -59,7 +66,10 @@ public final class VanillaSurfaceBench {
             }
             BiomeManager manager = new BiomeManager((qx, qy, qz) -> {
                 ProtoChunk c = chunks.get(ChunkPos.asLong(QuartPos.toSection(qx), QuartPos.toSection(qz)));
-                return c != null ? c.getNoiseBiome(qx, qy, qz) : world.warmBiome(qx, Mth.clamp(qy, minQ, maxQ), qz);
+                if (c != null) {
+                    return c.getNoiseBiome(qx, qy, qz);
+                }
+                return cold ? world.coldBiome(qx, Mth.clamp(qy, minQ, maxQ), qz) : world.warmBiome(qx, Mth.clamp(qy, minQ, maxQ), qz);
             }, BiomeManager.obfuscateSeed(seed));
             WorldGenerationContext context = new WorldGenerationContext(world.generator, VanillaWorld.HEIGHT);
             long surfaceTime = 0L;
@@ -87,8 +97,8 @@ public final class VanillaSurfaceBench {
         Arrays.sort(biomeMs);
         Arrays.sort(surfaceMs);
         System.out.println(String.format(java.util.Locale.ROOT,
-            "VANILLA 1.18.2 seed %d, %dx%d chunks at %d,%d, java %s: biomes median %.3f ms/chunk, surface median %.3f ms/chunk, checksum %016x",
-            seed, side, side, centerX, centerZ, System.getProperty("java.version"), biomeMs[rounds / 2],
+            "VANILLA 1.18.2%s seed %d, %dx%d chunks at %d,%d, java %s: biomes median %.3f ms/chunk, surface median %.3f ms/chunk, checksum %016x",
+            cold ? " (cold search)" : "", seed, side, side, centerX, centerZ, System.getProperty("java.version"), biomeMs[rounds / 2],
             surfaceMs[rounds / 2], checksum));
     }
 

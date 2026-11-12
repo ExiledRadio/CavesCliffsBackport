@@ -22,6 +22,8 @@ public final class BiomeSource {
     private final boolean[] present = new boolean[SIZE * SIZE];
     private final Climate.Column[] cached = new Climate.Column[SIZE * SIZE];
     private final double[] offsets = new double[SIZE * SIZE];
+    /** Per column, the biome at each quart y of the world (-16..79), or -1 until asked. */
+    private final byte[] stored = new byte[SIZE * SIZE * QUARTS_Y];
     private final double[] column = new double[OverworldNoise.COL_SIZE];
 
     public BiomeSource(OverworldNoise noise, ColumnCache columns, Climate climate) {
@@ -51,6 +53,7 @@ public final class BiomeSource {
             }
             climate.column(col, t, h, c, e, w);
             offsets[slot] = column[OverworldNoise.COL_OFFSET];
+            java.util.Arrays.fill(stored, slot * QUARTS_Y, (slot + 1) * QUARTS_Y, (byte) -1);
             keys[slot] = key;
             present[slot] = true;
         }
@@ -62,6 +65,34 @@ public final class BiomeSource {
         int slot = slot(qx, qz);
         long depth = Climate.quantize((float) OverworldNoise.depth(qy << 2, offsets[slot]));
         return climate.biome(cached[slot], depth);
+    }
+
+    /**
+     * ChunkAccess.getNoiseBiome: the biome a chunk stores at a quart, quart y clamped to the world's height.
+     */
+    public int stored(int qx, int qy, int qz) {
+        return storedInSlot(slot(qx, qz), qy);
+    }
+
+    /**
+     * The cache slot holding quart column qx, qz, computing it if needed. It stays valid until a look-up of a
+     * column 128 quarts away in x or z (direct-mapped).
+     */
+    public int slotOf(int qx, int qz) {
+        return slot(qx, qz);
+    }
+
+    /** stored() for a column already in the given slot. */
+    public int storedInSlot(int slot, int qy) {
+        int y = qy < MIN_QUART_Y ? 0 : qy >= MIN_QUART_Y + QUARTS_Y ? QUARTS_Y - 1 : qy - MIN_QUART_Y;
+        int at = slot * QUARTS_Y + y;
+        int b = stored[at];
+        if (b < 0) {
+            long depth = Climate.quantize((float) OverworldNoise.depth((y + MIN_QUART_Y) << 2, offsets[slot]));
+            b = climate.biome(cached[slot], depth);
+            stored[at] = (byte) b;
+        }
+        return b;
     }
 
     /**
@@ -77,9 +108,14 @@ public final class BiomeSource {
                 Climate.Column col = cached[slot];
                 double offset = offsets[slot];
                 int at = (qx * 4 + qz) * QUARTS_Y;
+                int from = slot * QUARTS_Y;
                 for (int qy = 0; qy < QUARTS_Y; qy++) {
-                    long depth = Climate.quantize((float) OverworldNoise.depth((qy + MIN_QUART_Y) << 2, offset));
-                    int b = climate.biome(col, depth);
+                    int b = stored[from + qy];
+                    if (b < 0) {
+                        long depth = Climate.quantize((float) OverworldNoise.depth((qy + MIN_QUART_Y) << 2, offset));
+                        b = climate.biome(col, depth);
+                        stored[from + qy] = (byte) b;
+                    }
                     out[at + qy] = (byte) b;
                 }
             }
