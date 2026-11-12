@@ -1,5 +1,6 @@
 package com.exiledradio.cavesandcliffsbackport.lush;
 
+import com.exiledradio.backportcore.waterlog.Waterloggable;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockHorizontal;
 import net.minecraft.block.IGrowable;
@@ -34,7 +35,7 @@ import java.util.Random;
  * Small dripleaf: two blocks tall, on clay or moss. Dropped only for shears. Bone meal turns it into a big
  * dripleaf 2 to 5 blocks tall, facing the same way.
  */
-public class BlockSmallDripleaf extends BlockLushPlant implements IGrowable, IShearable {
+public class BlockSmallDripleaf extends BlockLushPlant implements IGrowable, IShearable, Waterloggable {
 
     public static final PropertyDirection FACING = BlockHorizontal.FACING;
     /** True for the top block (half=upper in current Java). */
@@ -84,14 +85,26 @@ public class BlockSmallDripleaf extends BlockLushPlant implements IGrowable, ISh
             return below.getBlock() == this && !below.getValue(UPPER);
         }
         IBlockState above = world.getBlockState(pos.up());
-        return Soil.smallDripleaf(world.getBlockState(pos.down())) && above.getBlock() == this && above.getValue(UPPER);
+        return Soil.smallDripleaf(world, pos) && above.getBlock() == this && above.getValue(UPPER);
     }
 
     @Override
     public boolean canPlaceBlockAt(World world, BlockPos pos) {
-        return pos.getY() < 255 && world.getBlockState(pos).getBlock().isReplaceable(world, pos)
-                && !world.getBlockState(pos).getMaterial().isLiquid() && world.isAirBlock(pos.up())
-                && Soil.smallDripleaf(world.getBlockState(pos.down()));
+        // Both halves go into air or water (each keeps a water source it is placed in, as 1.18.2's copyWaterloggedFrom).
+        return pos.getY() < 255 && open(world, pos) && open(world, pos.up()) && Soil.smallDripleaf(world, pos);
+    }
+
+    private static boolean open(World world, BlockPos pos) {
+        IBlockState s = world.getBlockState(pos);
+        return s.getBlock().isReplaceable(world, pos) && s.getMaterial() != Material.LAVA;
+    }
+
+    /** On dirt it stands only in a water source: drained, the lower half (and so the upper) breaks. */
+    @Override
+    public void onWaterChanged(World world, BlockPos pos, IBlockState state, boolean hasWater) {
+        if (!hasWater && !world.isRemote && !state.getValue(UPPER) && !canStay(world, pos, state)) {
+            world.destroyBlock(pos, false);
+        }
     }
 
     @Override
@@ -159,10 +172,9 @@ public class BlockSmallDripleaf extends BlockLushPlant implements IGrowable, ISh
 
     @Override
     public void grow(World world, Random rand, BlockPos pos, IBlockState state) {
+        // 1.18.2: a big dripleaf grows in its place (it may replace small dripleaf), keeping any water there.
         BlockPos lower = state.getValue(UPPER) ? pos.down() : pos;
         EnumFacing facing = state.getValue(FACING);
-        world.setBlockState(lower.up(), Blocks.AIR.getDefaultState(), 2 | 16);
-        world.setBlockState(lower, Blocks.AIR.getDefaultState(), 2 | 16);
         BlockBigDripleaf.placeTall(world, rand, lower, facing, 3);
     }
 }

@@ -1,5 +1,6 @@
 package com.exiledradio.cavesandcliffsbackport.copper;
 
+import com.exiledradio.backportcore.waterlog.Waterloggable;
 import com.exiledradio.cavesandcliffsbackport.common.BlockBasic;
 
 import net.minecraft.block.Block;
@@ -32,7 +33,7 @@ import java.util.Random;
  * <p>Its tile entity holds nothing; it only lets the strike code find rods among the loaded tile entities
  * without scanning chunks (1.12 has no points of interest).
  */
-public class BlockLightningRod extends Block implements ITileEntityProvider {
+public class BlockLightningRod extends Block implements ITileEntityProvider, Waterloggable {
 
     public static final PropertyBool POWERED = PropertyBool.create("powered");
 

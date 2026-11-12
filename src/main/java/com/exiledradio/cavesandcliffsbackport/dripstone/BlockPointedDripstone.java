@@ -4,6 +4,9 @@ import com.exiledradio.cavesandcliffsbackport.common.BlockBasic;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockCauldron;
+import com.exiledradio.backportcore.waterlog.Waterloggable;
+import com.exiledradio.backportcore.waterlog.Waterlogging;
+
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.EnumPushReaction;
@@ -58,9 +61,12 @@ import java.util.Random;
  *       below by one (64/5625), up to eight long.</li>
  *   <li>Tips drip particles: always a few, more with a liquid above.</li>
  * </ul>
- * Not waterloggable yet (the plan's waterlogging pass): it is placed in air only and never grows into water.
+ * <h2>Water (1.18.2's {@code waterlogged})</h2>
+ * Through Backport Core's {@link Waterloggable} (Fluidlogged API when installed): placed or grown into a water
+ * source it keeps the water. A waterlogged tip does not drip; water kept in the block above a stalactite's root
+ * fills cauldrons as a water block there would; a tip never grows into water and a drip never falls through it.
  */
-public class BlockPointedDripstone extends Block {
+public class BlockPointedDripstone extends Block implements Waterloggable {
 
     public static final PropertyEnum<Thickness> THICKNESS = PropertyEnum.create("thickness", Thickness.class);
     public static final PropertyDirection VERTICAL_DIRECTION = PropertyDirection.create("vertical_direction", EnumFacing.Plane.VERTICAL);
@@ -218,6 +224,11 @@ public class BlockPointedDripstone extends Block {
         return isStalactite(state) && state.getValue(THICKNESS) == Thickness.TIP;
     }
 
+    /** 1.18.2's {@code canDrip}: a free stalactite tip that is not waterlogged. */
+    public static boolean canDrip(IBlockAccess world, BlockPos pos, IBlockState state) {
+        return canDrip(state) && !Waterlogging.hasWater(world, pos);
+    }
+
     /** @return whether a segment pointing {@code direction} at {@code pos} has something to hold on to */
     public static boolean isValidPlacement(IBlockAccess world, BlockPos pos, EnumFacing direction) {
         BlockPos behind = pos.offset(direction.getOpposite());
@@ -254,7 +265,7 @@ public class BlockPointedDripstone extends Block {
         for (int i = 1; i < maxIterations; i++) {
             m.move(direction);
             IBlockState s = world.getBlockState(m);
-            if (target.test(s)) {
+            if (target.test(s, m)) {
                 return m.toImmutable();
             }
             if (world.isOutsideBuildHeight(m)) {
@@ -268,7 +279,7 @@ public class BlockPointedDripstone extends Block {
     }
 
     private interface Target {
-        boolean test(IBlockState state);
+        boolean test(IBlockState state, BlockPos pos);
     }
 
     @Nullable
@@ -279,7 +290,7 @@ public class BlockPointedDripstone extends Block {
         EnumFacing direction = state.getValue(VERTICAL_DIRECTION);
         return findVertical(world, pos, direction, maxIterations, false, direction, new Target() {
             @Override
-            public boolean test(IBlockState s) {
+            public boolean test(IBlockState s, BlockPos at) {
                 return isTip(s, allowMerged);
             }
         });
@@ -291,7 +302,7 @@ public class BlockPointedDripstone extends Block {
         EnumFacing direction = state.getValue(VERTICAL_DIRECTION);
         return findVertical(world, pos, direction.getOpposite(), maxIterations, false, direction, new Target() {
             @Override
-            public boolean test(IBlockState s) {
+            public boolean test(IBlockState s, BlockPos at) {
                 return !isPointed(s);
             }
         });
@@ -319,12 +330,17 @@ public class BlockPointedDripstone extends Block {
      * this is no stalactite or its root is more than ten segments away
      */
     @Nullable
-    static Fluid fluidAbove(World world, BlockPos pos, IBlockState state) {
+    public static Fluid fluidAbove(World world, BlockPos pos, IBlockState state) {
         if (!isStalactite(state)) {
             return null;
         }
         BlockPos root = findRoot(world, pos, state, MAX_DRIP_LENGTH);
-        return root == null ? null : sourceFluid(world.getBlockState(root.up()));
+        if (root == null) {
+            return null;
+        }
+        // 1.18.2 reads the fluid state there, so water kept in a block (a waterlogged slab) counts as a source.
+        BlockPos above = root.up();
+        return Waterlogging.hasWaterSource(world, above) ? Fluid.WATER : sourceFluid(world.getBlockState(above));
     }
 
     /** @return whether a drip can fall through this block: air, or anything that leaves the column's middle open */
@@ -332,7 +348,7 @@ public class BlockPointedDripstone extends Block {
         if (state.getBlock().isAir(state, world, pos)) {
             return true;
         }
-        if (state.isOpaqueCube() || state.getMaterial().isLiquid()) {
+        if (state.isOpaqueCube() || state.getMaterial().isLiquid() || Waterlogging.hasWater(world, pos)) {
             return false;
         }
         List<AxisAlignedBB> hit = new ArrayList<AxisAlignedBB>();
@@ -352,7 +368,7 @@ public class BlockPointedDripstone extends Block {
     private static BlockPos findCauldronBelow(World world, BlockPos tip, final Fluid fluid) {
         return findVertical(world, tip, EnumFacing.DOWN, MAX_DRIP_LENGTH, true, null, new Target() {
             @Override
-            public boolean test(IBlockState s) {
+            public boolean test(IBlockState s, BlockPos at) {
                 return canReceiveDrip(s, fluid);
             }
         });
@@ -363,8 +379,8 @@ public class BlockPointedDripstone extends Block {
     static BlockPos findTipAboveCauldron(World world, BlockPos cauldron) {
         return findVertical(world, cauldron, EnumFacing.UP, MAX_DRIP_LENGTH, true, null, new Target() {
             @Override
-            public boolean test(IBlockState s) {
-                return canDrip(s);
+            public boolean test(IBlockState s, BlockPos at) {
+                return canDrip(world, at, s);
             }
         });
     }
@@ -520,7 +536,7 @@ public class BlockPointedDripstone extends Block {
             return;
         }
         IBlockState tipState = world.getBlockState(tip);
-        if (canDrip(tipState) && canTipGrow(tipState, world, tip)) {
+        if (canDrip(world, tip, tipState) && canTipGrow(tipState, world, tip)) {
             if (random.nextBoolean()) {
                 grow(world, tip, EnumFacing.DOWN);
             } else {
@@ -533,7 +549,7 @@ public class BlockPointedDripstone extends Block {
         EnumFacing direction = tipState.getValue(VERTICAL_DIRECTION);
         BlockPos aheadPos = tip.offset(direction);
         IBlockState ahead = world.getBlockState(aheadPos);
-        if (ahead.getMaterial().isLiquid()) {
+        if (ahead.getMaterial().isLiquid() || Waterlogging.hasWater(world, aheadPos)) {
             return false;
         }
         return ahead.getBlock().isAir(ahead, world, aheadPos) || isUnmergedTipWithDirection(ahead, direction.getOpposite());
@@ -544,14 +560,14 @@ public class BlockPointedDripstone extends Block {
         for (int i = 0; i < MAX_STALAGMITE_SEARCH; i++) {
             m.move(EnumFacing.DOWN);
             IBlockState s = world.getBlockState(m);
-            if (s.getMaterial().isLiquid()) {
+            if (s.getMaterial().isLiquid() || Waterlogging.hasWater(world, m)) {
                 return;
             }
             if (isUnmergedTipWithDirection(s, EnumFacing.UP) && canTipGrow(s, world, m)) {
                 grow(world, m, EnumFacing.UP);
                 return;
             }
-            if (isValidPlacement(world, m, EnumFacing.UP) && world.getBlockState(m.down()).getMaterial() != Material.WATER) {
+            if (isValidPlacement(world, m, EnumFacing.UP) && !Waterlogging.hasWater(world, m.down())) {
                 grow(world, m.down(), EnumFacing.UP);
                 return;
             }
@@ -569,7 +585,8 @@ public class BlockPointedDripstone extends Block {
             BlockPos down = there.getValue(VERTICAL_DIRECTION) == EnumFacing.UP ? target.up() : target;
             world.setBlockState(down, block.state(EnumFacing.DOWN, Thickness.TIP_MERGE), 3);
             world.setBlockState(down.down(), block.state(EnumFacing.UP, Thickness.TIP_MERGE), 3);
-        } else if (there.getBlock().isAir(there, world, target)) {
+        } else if (there.getBlock().isAir(there, world, target) || there.getBlock() == Blocks.WATER || there.getBlock() == Blocks.FLOWING_WATER) {
+            // Into a water source it keeps the water (1.18.2: waterlogged when the fluid there is water).
             world.setBlockState(target, block.state(direction, Thickness.TIP), 3);
         }
     }
@@ -577,7 +594,7 @@ public class BlockPointedDripstone extends Block {
     @Override
     @SideOnly(Side.CLIENT)
     public void randomDisplayTick(IBlockState state, World world, BlockPos pos, Random rand) {
-        if (!canDrip(state)) {
+        if (!canDrip(world, pos, state)) {
             return;
         }
         float roll = rand.nextFloat();

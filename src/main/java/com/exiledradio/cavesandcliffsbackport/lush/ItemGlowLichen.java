@@ -3,6 +3,7 @@ package com.exiledradio.cavesandcliffsbackport.lush;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.block.Block;
 import net.minecraft.block.SoundType;
+import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -40,7 +41,7 @@ public class ItemGlowLichen extends ItemBlock {
         IBlockState there = world.getBlockState(at);
         boolean joins = there.getBlock() instanceof BlockGlowLichen;
         if (stack.isEmpty() || !player.canPlayerEdit(at, side, stack)
-                || !(joins || (there.getBlock().isReplaceable(world, at) && !there.getMaterial().isLiquid()))) {
+                || !(joins || (there.getBlock().isReplaceable(world, at) && there.getMaterial() != Material.LAVA))) {
             return EnumActionResult.FAIL;
         }
         EnumFacing face = null;

@@ -1,7 +1,9 @@
 package com.exiledradio.cavesandcliffsbackport.lush;
 
+import com.exiledradio.backportcore.waterlog.Waterloggable;
 import net.minecraft.block.Block;
 import net.minecraft.block.IGrowable;
+import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
@@ -44,7 +46,7 @@ import java.util.Random;
  * {@link #faces(IBlockState)}, which speak in one six-bit face mask (bit = {@link EnumFacing#getIndex()}),
  * and all four share the item of the first.
  */
-public class BlockGlowLichen extends BlockLushPlant implements IGrowable, IShearable {
+public class BlockGlowLichen extends BlockLushPlant implements IGrowable, IShearable, Waterloggable {
 
     public static final PropertyBool NORTH = PropertyBool.create("north");
     public static final PropertyBool SOUTH = PropertyBool.create("south");
@@ -306,11 +308,13 @@ public class BlockGlowLichen extends BlockLushPlant implements IGrowable, IShear
         return out;
     }
 
+    /** 1.18.2's {@code canSpreadInto}: air, lichen, or a water source (which the new lichen keeps). */
     private static boolean open(IBlockState s) {
-        return s.getBlock() == Blocks.AIR || s.getBlock() instanceof BlockGlowLichen;
+        return s.getBlock() == Blocks.AIR || s.getBlock() instanceof BlockGlowLichen
+                || (s.getBlock() == Blocks.WATER || s.getBlock() == Blocks.FLOWING_WATER) && s.getValue(BlockLiquid.LEVEL) == 0;
     }
 
-    /** @return true if the space is air or lichen without that face, and the face has something to hold */
+    /** @return true if the space is air, a water source or lichen without that face, and the face has something to hold */
     public static boolean canAdd(World world, BlockPos pos, EnumFacing face) {
         IBlockState s = world.getBlockState(pos);
         return pos.getY() > 0 && pos.getY() < 256 && open(s) && !has(faces(s), face) && supported(world, pos, face);

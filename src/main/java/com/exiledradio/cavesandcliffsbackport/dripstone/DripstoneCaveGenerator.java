@@ -1,5 +1,6 @@
 package com.exiledradio.cavesandcliffsbackport.dripstone;
 
+import com.exiledradio.backportcore.waterlog.Waterlogging;
 import com.exiledradio.cavesandcliffsbackport.ModConfig;
 import com.exiledradio.cavesandcliffsbackport.common.CaveRegions;
 import com.exiledradio.cavesandcliffsbackport.common.Owners;
@@ -186,7 +187,8 @@ public final class DripstoneCaveGenerator implements IWorldGenerator {
 
         /**
          * A stalagmite or stalactite of {@code height} from its first segment at {@code p}: base, middles,
-         * frustum, tip. Only from a dripstone base and only when the whole of it is in air (no waterlogging yet).
+         * frustum, tip. Only from a dripstone base and only into air or water; a segment where water was is
+         * waterlogged (1.18.2's {@code DripstoneUtils.growPointedDripstone}: {@code isWaterAt}, flowing water too).
          */
         void growPointed(BlockPos p, EnumFacing direction, int height, boolean mergeTip) {
             if (!canGrowPointed(p, direction, height)) {
@@ -197,7 +199,12 @@ public final class DripstoneCaveGenerator implements IWorldGenerator {
                 int fromTip = height - 1 - i;
                 Thickness t = fromTip == 0 ? (mergeTip ? Thickness.TIP_MERGE : Thickness.TIP)
                         : fromTip == 1 ? Thickness.FRUSTUM : i == 0 ? Thickness.BASE : Thickness.MIDDLE;
-                set(p.offset(direction, i), block.state(direction, t));
+                BlockPos at = p.offset(direction, i);
+                if (inside(at) && get(at).getMaterial() == Material.WATER) {
+                    Waterlogging.placeWithWater(this.world, at, block.state(direction, t), 2);
+                } else {
+                    set(at, block.state(direction, t));
+                }
             }
         }
 
@@ -206,7 +213,7 @@ public final class DripstoneCaveGenerator implements IWorldGenerator {
                 return false;
             }
             for (int i = 0; i < height; i++) {
-                if (!air(p.offset(direction, i))) {
+                if (!emptyOrWater(get(p.offset(direction, i)))) {
                     return false;
                 }
             }
@@ -522,7 +529,7 @@ public final class DripstoneCaveGenerator implements IWorldGenerator {
             }
             w.placeDripstoneBlock(p.offset(EnumFacing.random(random)));
         }
-        int height = random.nextFloat() < 0.2F && w.air(first.offset(direction)) ? 2 : 1;
+        int height = random.nextFloat() < 0.2F && w.emptyOrWater(w.get(first.offset(direction))) ? 2 : 1;
         w.growPointed(first, direction, height, false);
         return true;
     }

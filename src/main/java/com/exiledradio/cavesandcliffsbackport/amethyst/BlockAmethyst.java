@@ -64,7 +64,7 @@ public class BlockAmethyst extends BlockBasic {
             }
         }
 
-        /** Air or a still water source (1.12 has no waterlogging yet; the bud replaces the water). */
+        /** Air or a still water source, which the bud keeps (waterlogged, with Fluidlogged API installed). */
         public static boolean canGrowInto(IBlockState state) {
             return state.getBlock() == Blocks.AIR
                     || state.getBlock() == Blocks.WATER && state.getValue(net.minecraft.block.BlockLiquid.LEVEL) == 0;

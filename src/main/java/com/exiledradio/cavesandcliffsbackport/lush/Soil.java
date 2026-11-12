@@ -1,5 +1,7 @@
 package com.exiledradio.cavesandcliffsbackport.lush;
 
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.IBlockAccess;
 import com.exiledradio.cavesandcliffsbackport.common.Owners;
 
 import net.minecraft.block.Block;
@@ -31,6 +33,17 @@ public final class Soil {
     /** Small dripleaf out of water: clay and moss only. */
     public static boolean smallDripleaf(IBlockState s) {
         return s.getBlock() == Blocks.CLAY || s.getBlock() == LushContent.moss;
+    }
+
+    /**
+     * 1.18.2's {@code SmallDripleafBlock.mayPlaceOn}: clay or moss, or (with a water source in the dripleaf's own
+     * space) any dirt or farmland.
+     */
+    public static boolean smallDripleaf(IBlockAccess world, BlockPos pos) {
+        IBlockState below = world.getBlockState(pos.down());
+        return smallDripleaf(below) || (dirt(below) || below.getBlock() == Blocks.FARMLAND)
+                && com.exiledradio.backportcore.waterlog.Waterlogging.isAvailable()
+                && com.exiledradio.backportcore.waterlog.Waterlogging.hasWaterSource(world, pos);
     }
 
     /** The overworld base stone: stone of every kind, deepslate and tuff (stream D, by name). */

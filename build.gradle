@@ -47,8 +47,9 @@ dependencies {
     // Plain compile, never deobfCompile: flatDir matches by file name, so deobfCompile would hand
     // ForgeGradle the SRG-named jar and every override of a Minecraft method would fail to compile.
     compile name: "BackportCore-${core_version}-dev"
-    // Fluidlogged API 3.3.3 (CurseForge 485654, file 8445863), which Backport Core 1.1.0 and later require. Core's
-    // dev jar does not carry it, so the run tasks need it here too. Never bundled.
+    // Fluidlogged API 3.3.3 (CurseForge 485654, file 8445863): optional. With it installed, Backport Core's waterlog
+    // API lets our Waterloggable blocks hold water; without it they place dry. Compiled against, never bundled;
+    // -PnoFluidlogged (below) runs without it.
     deobfCompile 'curse.maven:fluidlogged-api-485654:8445863'
 }
 
@@ -163,3 +164,13 @@ deployToInstance.dependsOn reobfJar
 // build LAST: any run task afterwards rewrites build/libs with an unmapped jar.
 reobfJar.outputs.upToDateWhen { false }
 build.finalizedBy deployToInstance
+
+// -PnoFluidlogged: runClient and runServer without Fluidlogged API on the classpath, to test the mod as a game
+// without it (nothing holds water). The classes are compiled as usual (against it), exactly as the release jar is.
+if (project.hasProperty('noFluidlogged')) {
+    afterEvaluate {
+        [runClient, runServer].each { task ->
+            task.classpath = task.classpath.filter { !it.name.contains('fluidlogged') }
+        }
+    }
+}

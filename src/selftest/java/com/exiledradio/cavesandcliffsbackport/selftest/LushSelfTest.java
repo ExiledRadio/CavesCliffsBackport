@@ -605,7 +605,9 @@ public final class LushSelfTest implements SelfTest {
             if (c.world.getBlockState(p).getBlock() == Blocks.WATER) {
                 for (EnumFacing f : EnumFacing.Plane.HORIZONTAL) {
                     IBlockState n = c.world.getBlockState(p.offset(f));
-                    c.ok(n.isNormalCube() || n.getBlock() == Blocks.WATER, "pool water is held in at " + p);
+                    // A dripleaf standing in the pool holds the pool's water itself (waterlogged).
+                    c.ok(n.isNormalCube() || n.getBlock() == Blocks.WATER
+                            || com.exiledradio.backportcore.waterlog.Waterlogging.hasWaterSource(c.world, p.offset(f)), "pool water is held in at " + p);
                 }
             }
         }

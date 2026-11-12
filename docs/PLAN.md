@@ -228,12 +228,10 @@ code in `terrain`). Built after the 1.17 streams.
 
 ## Waterlogging
 
-Waterlogging comes from Backport Core's adapter over Fluidlogged API, which is not built yet. These blocks
-are waterloggable in current Java and are built without it for now (placeable only in air); they move onto
-the adapter in a later pass: candles, pointed dripstone, glow lichen, lightning rods, amethyst buds and
-clusters, hanging roots, small and big dripleaf (and big dripleaf stem), light blocks, deepslate and cut
-copper stairs and slabs, deepslate walls. Small dripleaf generates underwater in 1.18: until then it
-generates on clay at pool edges.
+**Waterlogging (done 2026-11-11, `docs/streams/waterlog.md`):** Backport Core's `waterlog` API, with Fluidlogged
+API as its optional backend. Waterloggable as in 1.18.2: candles, pointed dripstone, glow lichen, lightning rods,
+amethyst buds and clusters, hanging roots, small and big dripleaf and its stem, light blocks, our stairs, slabs
+(not double) and walls. Without Fluidlogged API they place dry, as on 1.12.2.
 
 ## Shared files and rules
 

@@ -1,5 +1,6 @@
 package com.exiledradio.cavesandcliffsbackport.blocks;
 
+import com.exiledradio.backportcore.waterlog.Waterloggable;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFalling;
 import net.minecraft.block.material.EnumPushReaction;
@@ -49,7 +50,7 @@ import java.util.Random;
  * {@link #client}, which only a client sets. A server never targets a light block by itself: it acts on the
  * position a click packet names.
  */
-public final class BlockLight extends Block {
+public final class BlockLight extends Block implements Waterloggable {
 
     public static final PropertyInteger LEVEL = PropertyInteger.create("level", 0, 15);
 

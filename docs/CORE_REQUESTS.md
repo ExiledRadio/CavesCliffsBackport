@@ -133,6 +133,22 @@ Also needed (EXTENDED_HEIGHT.md section 3): fluid states outside y 0-255. Fluidl
 y in 8 bits, so either its author widens the key for extended worlds, or Core's `Waterloggable` adapter stores
 those states itself.
 
+**Status (2026-11-11):** the `WorldHeights` branch and `TerrainSource` (a generator that says where its surface
+is) are on Core branch `cc-heights` (e680f1d), for 1.2.0. **User decision:** Core keeps water outside 0-255
+itself. Design, read from Fluidlogged API 3.3.3:
+- **Where the store is made.** Each chunk's store is created in `PluginChunk$Hooks.createCapabilityInstance(Chunk)`,
+  which already picks a per-cube store under Cubic Chunks. It is held through `IHardcodedCapability`
+  (`get/setFluidStateCapability`). Everything else asks `IFluidStateCapability.getContainer(y)`. The sync packet
+  `SMessageSyncFluidStates` carries an `indexY` for per-section stores, and special-cases only
+  `FluidStateCapabilityVanilla`.
+- **The plan.**
+  - A Core patch at the end of `createCapabilityInstance`: for a chunk of an extended world
+    (`WorldHeights.isCavesAndCliffsExtended`), set a Core `IFluidStateCapability` with one container per
+    16-block section, keyed by signed section y.
+  - Its NBT holds every section.
+  - Rendering, flow, light and sync then work at every height.
+- **When.** To build and test once stream H's extended worlds exist.
+
 ## Mu-1. Jukebox comparator signal for discs added after 1.12.2
 
 1.12.2's `BlockJukebox.getComparatorInputOverride` counts the signal from the disc's item id

@@ -1,5 +1,6 @@
 package com.exiledradio.cavesandcliffsbackport.lush;
 
+import com.exiledradio.backportcore.waterlog.Waterloggable;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
@@ -48,7 +49,7 @@ public class BlockCeilingPlant extends BlockLushPlant {
     }
 
     /** Hanging roots. */
-    public static class Roots extends BlockCeilingPlant implements IShearable {
+    public static class Roots extends BlockCeilingPlant implements IShearable, Waterloggable {
 
         public Roots(SoundType sound) {
             super(Material.VINE, MapColor.DIRT, sound, new AxisAlignedBB(0.125, 0.625, 0.125, 0.875, 1, 0.875));

@@ -1,5 +1,6 @@
 package com.exiledradio.cavesandcliffsbackport.common;
 
+import com.exiledradio.backportcore.waterlog.Waterloggable;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFenceGate;
 import net.minecraft.block.BlockPane;
@@ -35,7 +36,7 @@ import java.util.List;
  * same face shapes, so 1.12's cobblestone walls connect to ours as well. Everything is worked out in
  * {@link #getActualState}; metadata is always 0.
  */
-public class BlockCCWall extends Block {
+public class BlockCCWall extends Block implements Waterloggable {
 
     public enum Side implements IStringSerializable {
         NONE("none"), LOW("low"), TALL("tall");
