@@ -61,7 +61,10 @@ dependencies {
 // package in case a test build's classes are still in build/classes. A test run needs them IN the jar,
 // because FG2's runServer runs from the jar - which is one more reason a release is built last.
 def selftest = project.findProperty('selftest')
-if (selftest) {
+// A client-side test (./gradlew runClient -Pclienttest=height) uses the same test sources, under its own property:
+// the server-side runner stops the server it runs on, which in single player is the client's integrated server.
+def clienttest = project.findProperty('clienttest')
+if (selftest || clienttest) {
     sourceSets.main.java.srcDir 'src/selftest/java'
 } else {
     jar {
@@ -88,6 +91,9 @@ jar {
     task.outputs.upToDateWhen { false }
     if (selftest) {
         task.systemProperty 'cavesandcliffsbackport.selftest', selftest
+    }
+    if (clienttest) {
+        task.systemProperty 'cavesandcliffsbackport.clienttest', clienttest
     }
 }
 

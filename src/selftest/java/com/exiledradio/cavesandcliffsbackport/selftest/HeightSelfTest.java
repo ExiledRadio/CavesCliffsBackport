@@ -73,6 +73,10 @@ public final class HeightSelfTest implements SelfTest {
             vanillaWorld(check);
             return;
         }
+        // Light updates need the chunks 17 blocks around loaded, and a chunk is sent to players only once it has
+        // been populated and ticked: load (and tick) the areas the checks use.
+        prepare(world, X, Z, 6);
+        prepare(world, X + 200, Z, 5);
         ranges(check, world);
         generated(check, world);
         everyHeight(check, world);
@@ -81,7 +85,47 @@ public final class HeightSelfTest implements SelfTest {
         packet(check, world);
         packets(check, world);
         voidFall(check, world);
+        removalMarkers(check, world);
         vanillaWorld(check);
+    }
+
+    /**
+     * Blocks by the spawn (whose chunks a server keeps loaded) for the removal test
+     * ({@code tools/height/removal.sh}): the ones inside 0-255 must still be there on a server without this mod, which
+     * also shows the chunk was read and not regenerated; the ones outside are gone with it.
+     */
+    private static void removalMarkers(Check check, WorldServer world) throws Exception {
+        BlockPos spawn = world.getSpawnPoint();
+        int x = spawn.getX() + 2;
+        int z = spawn.getZ() + 2;
+        Object[][] marks = {{0, Blocks.GOLD_BLOCK, "minecraft:gold_block"}, {200, Blocks.GLASS, "minecraft:glass"},
+                {255, Blocks.COBBLESTONE, "minecraft:cobblestone"}, {-10, Blocks.DIAMOND_BLOCK, "minecraft:diamond_block"},
+                {300, Blocks.IRON_BLOCK, "minecraft:iron_block"}};
+        java.io.PrintWriter out = new java.io.PrintWriter(world.getMinecraftServer().getFile("height-markers.txt"), "UTF-8");
+        for (Object[] m : marks) {
+            BlockPos pos = new BlockPos(x, (Integer) m[0], z);
+            world.setBlockState(pos, ((net.minecraft.block.Block) m[1]).getDefaultState(), 2);
+            check.eq(m[1], world.getBlockState(pos).getBlock(), "removal marker at y " + m[0]);
+            out.println(x + " " + m[0] + " " + z + " " + m[2]);
+        }
+        out.close();
+    }
+
+    private static void prepare(WorldServer world, int x, int z, int radius) {
+        int cx = x >> 4;
+        int cz = z >> 4;
+        for (int dx = -radius - 1; dx <= radius + 1; dx++) {
+            for (int dz = -radius - 1; dz <= radius + 1; dz++) {
+                world.getChunk(cx + dx, cz + dz);
+            }
+        }
+        for (int pass = 0; pass < 2; pass++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    world.getChunk(cx + dx, cz + dz).onTick(false);
+                }
+            }
+        }
     }
 
     /** The pattern-drift report: every site found. */
@@ -127,14 +171,19 @@ public final class HeightSelfTest implements SelfTest {
         check.eq(24, chunk.getBlockStorageArray().length, "a generated chunk's section count");
         int bedrock = 0;
         int stone = 0;
+        int solid = 0;
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 bedrock += chunk.getBlockState(x, -64, z).getBlock() == Blocks.BEDROCK ? 1 : 0;
-                stone += chunk.getBlockState(x, -1, z).getBlock() == Blocks.STONE ? 1 : 0;
+                stone += chunk.getBlockState(x, -32, z).getBlock() == Blocks.STONE ? 1 : 0;
+                // Vanilla population reaches a little below 0 here (ore veins and dirt or gravel blobs around low
+                // centres, a dungeon's floor at y -1), as it would in any world that holds those heights.
+                solid += chunk.getBlockState(x, -1, z).getMaterial().blocksMovement() ? 1 : 0;
             }
         }
         check.eq(256, bedrock, "bedrock columns at y -64");
-        check.eq(256, stone, "stone columns at y -1");
+        check.eq(256, stone, "stone columns at y -32");
+        check.eq(256, solid, "solid columns at y -1");
         check.eq(Blocks.AIR.getDefaultState(), chunk.getBlockState(0, -65, 0), "below the world is air");
         for (int slot = HeightLayout.FIRST_LOW_SLOT; slot < 24; slot++) {
             ExtendedBlockStorage section = chunk.getBlockStorageArray()[slot];

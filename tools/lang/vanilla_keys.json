@@ -7,6 +7,7 @@
     "death.attack.dryout.player",
     "death.attack.dryout",
     "item.record.cavesandcliffsbackport.otherside.desc",
+    "generator.cavesandcliffs",
     "config.cavesandcliffsbackport.deepslate",
     "config.cavesandcliffsbackport.deepslate.tooltip",
     "config.cavesandcliffsbackport.copper",
@@ -33,6 +34,8 @@
     "config.cavesandcliffsbackport.music.tooltip",
     "config.cavesandcliffsbackport.caves",
     "config.cavesandcliffsbackport.caves.tooltip",
+    "config.cavesandcliffsbackport.height",
+    "config.cavesandcliffsbackport.height.tooltip",
     "config.cavesandcliffsbackport.deepslate.enabled",
     "config.cavesandcliffsbackport.deepslate.enabled.tooltip",
     "config.cavesandcliffsbackport.deepslate.rawOreDrops",
@@ -168,7 +171,11 @@
     "config.cavesandcliffsbackport.caves.lushRegions",
     "config.cavesandcliffsbackport.caves.lushRegions.tooltip",
     "config.cavesandcliffsbackport.caves.dripstoneRegions",
-    "config.cavesandcliffsbackport.caves.dripstoneRegions.tooltip"
+    "config.cavesandcliffsbackport.caves.dripstoneRegions.tooltip",
+    "config.cavesandcliffsbackport.height.enabled",
+    "config.cavesandcliffsbackport.height.enabled.tooltip",
+    "config.cavesandcliffsbackport.height.defaultForNewWorlds",
+    "config.cavesandcliffsbackport.height.defaultForNewWorlds.tooltip"
   ],
   "vanilla": {
     "advancements.cavesandcliffsbackport.axolotl_in_a_bucket.description": "advancements.husbandry.axolotl_in_a_bucket.description",
