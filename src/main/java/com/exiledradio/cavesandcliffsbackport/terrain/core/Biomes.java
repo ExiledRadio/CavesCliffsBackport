@@ -104,20 +104,34 @@ public final class Biomes {
     private static final PerlinSimplexNoise BIOME_INFO_NOISE = new PerlinSimplexNoise(2345L, 0, 0);
 
     /**
-     * Biome.getTemperature (getHeightAdjustedTemperature) at a block. Only the frozen oceans are filled in (base
-     * 0.0 and 0.5 with the FROZEN modifier, OverworldBiomes.frozenOcean): they are the only biomes whose
-     * temperature 1.18.2's overworld surface reads.
+     * Every biome's Biome.ClimateSettings from 1.18.2's registry, by biome id (oracle: VanillaBiomeInfoDump,
+     * biome_info.txt, float bits as vanilla stores them): base temperature, FROZEN temperature modifier, downfall,
+     * precipitation (0 none, 1 rain, 2 snow). Ids: the_void plains sunflower_plains snowy_plains ice_spikes desert swamp forest flower_forest birch_forest dark_forest old_growth_birch_forest old_growth_pine_taiga old_growth_spruce_taiga taiga snowy_taiga savanna savanna_plateau windswept_hills windswept_gravelly_hills windswept_forest windswept_savanna jungle sparse_jungle bamboo_jungle badlands eroded_badlands wooded_badlands meadow grove snowy_slopes frozen_peaks jagged_peaks stony_peaks river frozen_river beach snowy_beach stony_shore warm_ocean lukewarm_ocean deep_lukewarm_ocean ocean deep_ocean cold_ocean deep_cold_ocean frozen_ocean deep_frozen_ocean mushroom_fields dripstone_caves lush_caves nether_wastes warped_forest crimson_forest soul_sand_valley basalt_deltas the_end end_highlands end_midlands small_end_islands end_barrens.
      */
+    private static final float[] BASE_TEMPERATURE = {Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1061997773), Float.intBitsToFloat(1061997773), Float.intBitsToFloat(0), Float.intBitsToFloat(0), Float.intBitsToFloat(1073741824), Float.intBitsToFloat(1061997773), Float.intBitsToFloat(1060320051), Float.intBitsToFloat(1060320051), Float.intBitsToFloat(1058642330), Float.intBitsToFloat(1060320051), Float.intBitsToFloat(1058642330), Float.intBitsToFloat(1050253722), Float.intBitsToFloat(1048576000), Float.intBitsToFloat(1048576000), Float.intBitsToFloat(-1090519040), Float.intBitsToFloat(1073741824), Float.intBitsToFloat(1073741824), Float.intBitsToFloat(1045220557), Float.intBitsToFloat(1045220557), Float.intBitsToFloat(1045220557), Float.intBitsToFloat(1073741824), Float.intBitsToFloat(1064514355), Float.intBitsToFloat(1064514355), Float.intBitsToFloat(1064514355), Float.intBitsToFloat(1073741824), Float.intBitsToFloat(1073741824), Float.intBitsToFloat(1073741824), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(-1102263091), Float.intBitsToFloat(-1097229926), Float.intBitsToFloat(-1087163597), Float.intBitsToFloat(-1087163597), Float.intBitsToFloat(1065353216), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(0), Float.intBitsToFloat(1061997773), Float.intBitsToFloat(1028443341), Float.intBitsToFloat(1045220557), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(0), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1063675494), Float.intBitsToFloat(1061997773), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1073741824), Float.intBitsToFloat(1073741824), Float.intBitsToFloat(1073741824), Float.intBitsToFloat(1073741824), Float.intBitsToFloat(1073741824), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608)};
+    private static final boolean[] FROZEN_MODIFIER = {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, true, false, false, false, false, false, false, false, false, false, false, false, false, false};
+    private static final float[] DOWNFALL = {Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1053609165), Float.intBitsToFloat(1053609165), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(0), Float.intBitsToFloat(1063675494), Float.intBitsToFloat(1061997773), Float.intBitsToFloat(1061997773), Float.intBitsToFloat(1058642330), Float.intBitsToFloat(1061997773), Float.intBitsToFloat(1058642330), Float.intBitsToFloat(1061997773), Float.intBitsToFloat(1061997773), Float.intBitsToFloat(1061997773), Float.intBitsToFloat(1053609165), Float.intBitsToFloat(0), Float.intBitsToFloat(0), Float.intBitsToFloat(1050253722), Float.intBitsToFloat(1050253722), Float.intBitsToFloat(1050253722), Float.intBitsToFloat(0), Float.intBitsToFloat(1063675494), Float.intBitsToFloat(1061997773), Float.intBitsToFloat(1063675494), Float.intBitsToFloat(0), Float.intBitsToFloat(0), Float.intBitsToFloat(0), Float.intBitsToFloat(1061997773), Float.intBitsToFloat(1061997773), Float.intBitsToFloat(1063675494), Float.intBitsToFloat(1063675494), Float.intBitsToFloat(1063675494), Float.intBitsToFloat(1050253722), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1053609165), Float.intBitsToFloat(1050253722), Float.intBitsToFloat(1050253722), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1065353216), Float.intBitsToFloat(1053609165), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(0), Float.intBitsToFloat(0), Float.intBitsToFloat(0), Float.intBitsToFloat(0), Float.intBitsToFloat(0), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608), Float.intBitsToFloat(1056964608)};
+    private static final byte[] PRECIPITATION = {0, 1, 1, 2, 2, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 2, 2, 2, 2, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    public static final int PRECIPITATION_NONE = 0;
+    public static final int PRECIPITATION_RAIN = 1;
+    public static final int PRECIPITATION_SNOW = 2;
+
+    public static float baseTemperature(int biome) {
+        return BASE_TEMPERATURE[biome];
+    }
+
+    public static float downfall(int biome) {
+        return DOWNFALL[biome];
+    }
+
+    public static int precipitation(int biome) {
+        return PRECIPITATION[biome];
+    }
+
+    /** Biome.getTemperature (getHeightAdjustedTemperature) at a block, for every biome. */
     public static float temperature(int biome, int x, int y, int z) {
-        float base;
-        if (biome == FROZEN_OCEAN) {
-            base = 0.0F;
-        } else if (biome == DEEP_FROZEN_OCEAN) {
-            base = 0.5F;
-        } else {
-            throw new IllegalArgumentException("temperature not ported for " + name(biome));
-        }
-        float f = frozenModifier(x, z, base);
+        float base = BASE_TEMPERATURE[biome];
+        float f = FROZEN_MODIFIER[biome] ? frozenModifier(x, z, base) : base;
         if (y > 80) {
             float f1 = (float) (TEMPERATURE_NOISE.getValue((double) ((float) x / 8.0F), (double) ((float) z / 8.0F)) * 8.0D);
             return f - (f1 + (float) y - 80.0F) * 0.05F / 40.0F;

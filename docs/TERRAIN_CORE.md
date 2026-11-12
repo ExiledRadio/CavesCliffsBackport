@@ -267,8 +267,10 @@ Done: biomes and surface rules, carvers, the beardifier, structure placement (ab
      (thickness and direction, waterlogged), lush caves (cave vines with berries, dripleaves with facing and tilt,
      glow lichen with six face bits, waterlogged) and vegetation carry properties. Decide on 16-bit codes or a
      side table before porting them.
-   - Biome temperatures (`Biomes.temperature`) are still filled in only for the frozen oceans; freezing, snow
-     and ice need every biome's (and `Biome.getTemperature`'s height adjustment).
+   - Biome climate (done): `Biomes` has every biome's base temperature, FROZEN modifier, downfall and
+     precipitation from vanilla's registry; `temperature` and `coldEnoughToSnow` match vanilla's at 244,000
+     samples (every biome, any height, out to 3 million blocks; `BiomeTemperatureCheck` against
+     `VanillaBiomeInfoDump`).
 2. The chunk generator around it for 1.12.2: worker threads computing chunks ahead in tiles (sharing border
    corners between neighbors saves about a quarter of the corner work), writing sections directly.
 3. The extended-height coremod (`docs/EXTENDED_HEIGHT.md`), without which none of this reaches a world.
