@@ -200,6 +200,26 @@ features: identical on the default areas (`oracle-out/feat-freeze`, 512 chunks) 
 ocean area per seed (`oracle-out/feat-snow/<seed>`, 128 chunks each; seed 42's has 22,376 snow layers and 4,147 ice).
 `DecorationBench`: 1.41 ms/chunk at seed 42 0,0; 1.57 at 320,72 (snowy plains).
 
+Surface features and fossils (2026-11-12): icebergs (iceberg_packed, iceberg_blue: `IcebergFeature` at sea level,
+its `Math.pow`/`cos`/`sin` kept), forest_rock (`BlockBlobFeature`), ice_spike, ice_patch (down to a snow block, then
+`BaseDiskFeature` without the water test), desert_well and blue_ice in `SurfaceFeatures`; fossil_upper and
+fossil_lower in `Fossils` (`FossilFeature`: the 16 templates generated into `FossilTables` by
+`tools/terrain/make_fossil_tables.py` in `loadPalette`'s order, a random rotation, `BlockRotProcessor` drawing a
+float per template block from the feature's random because the settings carry it, every block processed before any
+is placed so `ProtectedBlockProcessor` reads the world as it stood before that template, the diamond rule on the
+lower ones). Two oracle fixes on the way: Forge patches `Feature.isStone` (forest rock's ground test) to the
+`forge:stone` tag, which the oracle's minecraft-only tag binding left empty, so the oracle now binds it to vanilla's
+`base_stone_overworld`; and `VanillaFeatureDump`'s region answers `getLevel()` with a stand-in `ServerLevel` whose
+server's `StructureManager` reads templates from the jar (fossils needed it). One bug found in an older port: the
+monster room skipped the spawner's mob draw (`nextInt(4)`, last in the feature), which moves every later room
+attempt of the placed feature in that chunk; it showed only where two rooms land in one chunk.
+`FeatureCheck` with all 61 ported features: identical on the default areas at side 16 (`oracle-out/feat-fossil`,
+2,048 chunks), on six areas per seed for the surface features (`oracle-out/feat-surf/<seed>`: ice spikes, desert,
+old growth pine taiga, frozen ocean, a desert well chunk and a blue iceberg chunk found with `FindRare`; 1,536
+chunks) and on a desert and a swamp per seed for fossils (`oracle-out/feat-fossil/<seed>`, 1,152 chunks, 1,124 bone
+blocks). Fossils only generate in deserts and swamps. `DecorationBench` (Java 8, one E-core): 1.41 ms/chunk at seed
+42 0,0; 1.38 at 360,64 (frozen ocean, icebergs); 1.19 at -104,-104 (desert).
+
 Java 8 and `Math.sin`: `OreFeature` takes `Math.sin`/`Math.cos` of a double, as vanilla does. Over all 2^24 angles
 an ore can draw, Java 17, 21 and 25 give the same bits (vanilla's, on Java 17), but Java 8's `Math` differs from
 them in the last bit at about a million angles (`StrictMath` matches neither). On the checks' 704 chunks Java 8
@@ -360,8 +380,8 @@ Done: biomes and surface rules, carvers, the beardifier, structure placement (ab
 
 1. Features (placed features, GenerationStep.Decoration). Done: the decoration loop, its oracle, every ore,
    springs, disks, underwater magma, lava lakes, monster rooms, the geode, dripstone, lush caves but
-   rooted_azalea_tree, glow lichen and freeze_top_layer (above). Left in step order: icebergs, forest rock, fossils,
-   ice spike / patch, desert well, blue ice, rooted_azalea_tree, trees and the rest of VEGETAL. Left, as streams on the same framework, each checked with `-Dfeatures` and `FeatureCheck`: cave
+   rooted_azalea_tree, glow lichen, freeze_top_layer, icebergs, forest rock, fossils, ice spike / patch, desert
+   well and blue ice (above): every step but VEGETAL. Left: rooted_azalea_tree, trees and the rest of VEGETAL. Left, as streams on the same framework, each checked with `-Dfeatures` and `FeatureCheck`: cave
    features (geodes, dripstone clusters / large / pointed, lush caves, monster rooms, fossils (templates), springs,
    lava lakes, underwater magma); surface (disks, icebergs, ice spikes and patches, blue ice, desert wells, forest
    rocks, freeze top layer, which reads block light: the oracle region has no light engine yet, see below); trees

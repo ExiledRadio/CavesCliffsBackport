@@ -118,7 +118,7 @@ public final class FeatureCheck {
             for (Chunk c : chunks.values()) {
                 Region.primeHeightmaps(c.blocks, primed);
                 if (!Arrays.equals(primed, c.heights)) {
-                    if (seedDifferences++ < 12) {
+                    if (seedDifferences++ < Integer.getInteger("shown", 12)) {
                         System.out.println("seed " + seed + ": a chunk's live heightmaps differ from its blocks");
                     }
                 }
@@ -145,7 +145,7 @@ public final class FeatureCheck {
                         checked++;
                         seen.merge(names[v], 1L, Long::sum);
                         if (codes[v] != ours.blocks[i]) {
-                            if (seedDifferences++ < 12) {
+                            if (seedDifferences++ < Integer.getInteger("shown", 12)) {
                                 System.out.println("seed " + seed + " chunk " + cx + "," + cz + " block " + ((cx << 4) + i / 384 / 16)
                                     + "," + (i % 384 - 64) + "," + ((cz << 4) + i / 384 % 16) + ": vanilla " + names[v]
                                     + ", ours " + BlockCodes.state(ours.blocks[i]));
