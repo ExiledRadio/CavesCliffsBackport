@@ -146,7 +146,16 @@ final class ClientPatches {
                             + "Lnet/minecraft/client/renderer/chunk/RenderChunk;"),
                     "getRenderChunkOffset", 1, 1, RenderGlobalPatch::world);
 
-            MethodNode m = method(node, "setupTerrain", "func_174970_a",
+            // A render chunk's entities: its chunk's entity list for its section, counted from the world's bottom.
+            MethodNode m = method(node, "renderEntities", "func_180446_a",
+                    "(Lnet/minecraft/entity/Entity;Lnet/minecraft/client/renderer/culling/ICamera;F)V");
+            for (AbstractInsnNode n : expect("renderEntities.list", m, 1, getY(), icst(16), op(Opcodes.IDIV), op(Opcodes.AALOAD))) {
+                InsnList l = worldInt(world(), "minSection");
+                l.add(insn(Opcodes.ISUB));
+                m.instructions.insert(at(n, 2), l);
+            }
+
+            m = method(node, "setupTerrain", "func_174970_a",
                     "(Lnet/minecraft/entity/Entity;DLnet/minecraft/client/renderer/culling/ICamera;IZ)V");
             for (AbstractInsnNode n : expect("setupTerrain.startHeight", m, 1, getY(), op(Opcodes.IFLE), icst(248),
                     op(Opcodes.GOTO), icst(8), istore(-1))) {

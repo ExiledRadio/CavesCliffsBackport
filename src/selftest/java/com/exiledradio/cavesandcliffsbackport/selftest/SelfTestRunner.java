@@ -57,6 +57,7 @@ public final class SelfTestRunner {
             new BlocksSelfTest(),
             new MusicSelfTest(),
             new HeightSelfTest(),
+            new HeightBenchSelfTest(),
     };
 
     private final List<String> wanted;

@@ -12,7 +12,10 @@ public final class HeightTransformer implements IClassTransformer {
     private final Map<String, ClassPatch> patches = new LinkedHashMap<String, ClassPatch>();
 
     public HeightTransformer() {
-        for (ClassPatch p : all(HeightCorePlugin.client)) {
+        // The side from FML directly: FML builds the transformers before it hands the plugin its data.
+        boolean client = net.minecraftforge.fml.relauncher.FMLLaunchHandler.side().isClient();
+        HeightCorePlugin.client = client;
+        for (ClassPatch p : all(client)) {
             this.patches.put(p.target, p);
         }
     }

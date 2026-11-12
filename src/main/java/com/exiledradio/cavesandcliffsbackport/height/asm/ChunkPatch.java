@@ -47,6 +47,38 @@ final class ChunkPatch extends ClassPatch {
             replace(m, n, chunkInt("relightChecks"));
         }
 
+        // Entity lists: one per section, from the bottom; an entity's chunkCoordY stays its section y.
+        for (AbstractInsnNode n : expect("<init>.entityLists", m, 1, icst(16),
+                x -> x.getOpcode() == Opcodes.ANEWARRAY && "net/minecraft/util/ClassInheritanceMultiMap".equals(((TypeInsnNode) x).desc))) {
+            replace(m, n, list(new VarInsnNode(Opcodes.ALOAD, 1), heights("sections", "(" + WORLD_DESC + ")I")));
+        }
+        m = method(node, "addEntity", "func_76612_a", "(Lnet/minecraft/entity/Entity;)V");
+        for (AbstractInsnNode n : expect("addEntity.list", m, 1, field(Opcodes.GETFIELD, "posY", "field_70163_u"), dcst(16.0D),
+                op(Opcodes.DDIV), floor(), istore(-1))) {
+            m.instructions.insert(at(n, 3), minus(minSection()));
+        }
+        for (AbstractInsnNode n : expect("addEntity.chunkCoordY", m, 1, aload(1), iload(-1),
+                field(Opcodes.PUTFIELD, "chunkCoordY", "field_70162_ai"))) {
+            InsnList plus = minSection();
+            plus.add(insn(Opcodes.IADD));
+            m.instructions.insert(next(n), plus);
+        }
+        m = method(node, "removeEntityAtIndex", "func_76608_a", "(Lnet/minecraft/entity/Entity;I)V");
+        if (site("removeEntityAtIndex.head", m != null)) {
+            InsnList head = list(new VarInsnNode(Opcodes.ILOAD, 2));
+            head.add(minus(minSection()));
+            head.add(new VarInsnNode(Opcodes.ISTORE, 2));
+            m.instructions.insert(head);
+        }
+        String aabb = "Lnet/minecraft/util/math/AxisAlignedBB;Ljava/util/List;Lcom/google/common/base/Predicate;)V";
+        for (String[] q : new String[][] {{"getEntitiesWithinAABBForEntity", "func_177414_a", "(Lnet/minecraft/entity/Entity;" + aabb},
+                {"getEntitiesOfTypeWithinAABB", "func_177430_a", "(Ljava/lang/Class;" + aabb}}) {
+            m = method(node, q[0], q[1], q[2]);
+            for (AbstractInsnNode n : expect(q[0] + ".lists", m, 2, floor())) {
+                m.instructions.insert(n, minus(minSection()));
+            }
+        }
+
         // The highest section by height, not by index: slots 20-23 (below y 0) sit after the top ones.
         m = method(node, "getLastExtendedBlockStorage", "func_186031_y", "()L" + EBS + ";");
         for (AbstractInsnNode n : expect("getLastExtendedBlockStorage", m, 2, storage(), iload(1), op(Opcodes.AALOAD))) {
@@ -152,6 +184,20 @@ final class ChunkPatch extends ClassPatch {
         for (AbstractInsnNode n : expect("getPrecipitationHeight.bottom", m, 1, getY(), op(Opcodes.IFLE))) {
             compareWith(m, next(n), minY());
         }
+    }
+
+    private static P floor() {
+        return invoke(Opcodes.INVOKESTATIC, "floor", "func_76128_c", "(D)I");
+    }
+
+    private static InsnList minSection() {
+        return worldInt(self(worldField()), "minSection");
+    }
+
+    /** The list, then {@code isub}. */
+    private static InsnList minus(InsnList value) {
+        value.add(insn(Opcodes.ISUB));
+        return value;
     }
 
     /** Every {@code storageArrays[v >> 4]} of the method (exactly {@code count}) indexes by slot instead. */

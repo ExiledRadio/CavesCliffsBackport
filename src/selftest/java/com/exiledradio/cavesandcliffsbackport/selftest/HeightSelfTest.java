@@ -85,6 +85,7 @@ public final class HeightSelfTest implements SelfTest {
         packet(check, world);
         packets(check, world);
         voidFall(check, world);
+        entities(check, world);
         removalMarkers(check, world);
         vanillaWorld(check);
     }
@@ -375,6 +376,28 @@ public final class HeightSelfTest implements SelfTest {
             check.eq(20, high, "single-block packets for 20 changes above y 255");
         } finally {
             map.removePlayer(player);
+        }
+    }
+
+    /** Entities below 0 and above 255 sit in their own section's list, and area queries find them. */
+    private static void entities(Check check, WorldServer world) {
+        Chunk chunk = world.getChunk(new BlockPos(X, 0, Z));
+        check.eq(24, chunk.getEntityLists().length, "an extended chunk's entity lists");
+        int[][] cases = {{-30, -2}, {-64, -4}, {300, 18}, {64, 4}};
+        for (int[] c : cases) {
+            EntityItem item = item(world, c[0] + 0.5D);
+            world.spawnEntity(item);
+            check.eq(c[1], item.chunkCoordY, "chunkCoordY of an entity at y " + c[0]);
+            int index = c[1] - Heights.minSection(world);
+            check.ok(chunk.getEntityLists()[index].contains(item), "the entity at y " + c[0] + " is in list " + index);
+            List<EntityItem> near = world.getEntitiesWithinAABB(EntityItem.class,
+                    new net.minecraft.util.math.AxisAlignedBB(X, c[0] - 1, Z, X + 1, c[0] + 2, Z + 1));
+            check.ok(near.contains(item), "an area query at y " + c[0] + " finds the entity");
+            List<EntityItem> away = world.getEntitiesWithinAABB(EntityItem.class,
+                    new net.minecraft.util.math.AxisAlignedBB(X, c[0] + 40, Z, X + 1, c[0] + 42, Z + 1));
+            check.ok(!away.contains(item), "an area query 40 blocks above y " + c[0] + " does not");
+            world.removeEntityDangerously(item);
+            check.ok(!chunk.getEntityLists()[index].contains(item), "the entity at y " + c[0] + " is removed from its list");
         }
     }
 
