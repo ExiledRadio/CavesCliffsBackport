@@ -52,6 +52,9 @@ public final class DripstoneCaveGenerator implements IWorldGenerator {
 
     @Override
     public void generate(Random random, int chunkX, int chunkZ, World world, IChunkGenerator generator, IChunkProvider provider) {
+        if (com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain.owns(world)) {
+            return; // the 1.18 terrain places its own
+        }
         if (!ModConfig.caves.dripstoneRegions || world.provider.getDimension() != 0 || world.getWorldType() == WorldType.FLAT
                 || DripstoneContent.dripstone == null || !regionNear(world.getSeed(), chunkX, chunkZ)) {
             return;

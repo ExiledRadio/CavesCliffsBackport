@@ -9,16 +9,16 @@ import java.util.Arrays;
  * One instance per thread; it keeps its scratch arrays between chunks.
  */
 public final class ChunkFiller {
-    public static final byte AIR = 0;
-    public static final byte STONE = 1;
-    public static final byte WATER = 2;
-    public static final byte LAVA = 3;
-    public static final byte COPPER_ORE = 4;
-    public static final byte RAW_COPPER_BLOCK = 5;
-    public static final byte GRANITE = 6;
-    public static final byte DEEPSLATE_IRON_ORE = 7;
-    public static final byte RAW_IRON_BLOCK = 8;
-    public static final byte TUFF = 9;
+    public static final char AIR = 0;
+    public static final char STONE = 1;
+    public static final char WATER = 2;
+    public static final char LAVA = 3;
+    public static final char COPPER_ORE = 4;
+    public static final char RAW_COPPER_BLOCK = 5;
+    public static final char GRANITE = 6;
+    public static final char DEEPSLATE_IRON_ORE = 7;
+    public static final char RAW_IRON_BLOCK = 8;
+    public static final char TUFF = 9;
 
     private static final int MIN_Y = OverworldNoise.MIN_Y;
     private static final int HEIGHT = OverworldNoise.HEIGHT;
@@ -84,58 +84,136 @@ public final class ChunkFiller {
     }
 
     /**
-     * Fills out (16 * 16 * 384 bytes, index (x * 16 + z) * 384 + (y + 64)) with the block codes of chunk cx, cz.
+     * Fills out (16 * 16 * 384 chars, index (x * 16 + z) * 384 + (y + 64)) with the block codes of chunk cx, cz.
      */
-    public void fill(int cx, int cz, byte[] out) {
-        OverworldNoise noise = this.noise;
+    public void fill(int cx, int cz, char[] out) {
+        fill(cx, cz, out, null);
+    }
+
+    /**
+     * fill with structure terrain adaptation: beard (Beardifier.forChunk for this chunk, or null for none) is added
+     * to the final density of every block, as vanilla's NoiseChunk adds the beardifier.
+     */
+    public void fill(int cx, int cz, char[] out, Beardifier beard) {
+        this.beard = beard;
         baseX = cx << 4;
         baseZ = cz << 4;
         aquifer.begin(cx, cz);
-        double jaggedMax = noise.jaggedMax();
         for (int xi = 0; xi <= 4; xi++) {
-            int x = baseX + xi * 4;
             for (int zi = 0; zi <= 4; zi++) {
-                int z = baseZ + zi * 4;
-                columns.get(x, z, column);
-                double offset = column[OverworldNoise.COL_OFFSET];
-                double factor = column[OverworldNoise.COL_FACTOR];
-                double jaggedness = column[OverworldNoise.COL_JAGGEDNESS];
-                columnOffset[xi * 5 + zi] = offset;
-                columnFactor[xi * 5 + zi] = factor;
-                columnJaggedness[xi * 5 + zi] = jaggedness;
-                int at = corner(xi, zi, 0);
-                for (int yi = 0; yi < CORNERS_Y; yi++) {
-                    int y = MIN_Y + yi * 8;
-                    done[at + yi] = 0;
-                    // From y -40 up the bottom slide leaves the density alone, and the top slide only pulls it
-                    // toward a negative value, so a negative sloped cheese means a negative main density.
-                    if (y >= -40 && OverworldNoise.slopedCheeseWithoutNoise(y, offset, factor, jaggedness * jaggedMax)
-                            + BASE_3D_BOUND < 0.0D) {
-                        known[at + yi] = SKY;
-                        continue;
-                    }
-                    double v = noise.slopedCheese(x, y, z, offset, factor, jaggedness);
-                    sloped[at + yi] = v;
-                    known[at + yi] = y >= -40 && v < -2.0D * SURE ? NEGATIVE : GROUND;
-                }
+                prepareCornerColumn(xi, zi);
             }
         }
-        int[] cc = cellCorner;
         for (int xi = 0; xi < 4; xi++) {
             for (int zi = 0; zi < 4; zi++) {
                 for (int yi = CELLS_Y - 1; yi >= 0; yi--) {
-                    cc[0] = corner(xi, zi, yi);
-                    cc[1] = corner(xi + 1, zi, yi);
-                    cc[2] = cc[0] + 1;
-                    cc[3] = cc[1] + 1;
-                    cc[4] = corner(xi, zi + 1, yi);
-                    cc[5] = corner(xi + 1, zi + 1, yi);
-                    cc[6] = cc[4] + 1;
-                    cc[7] = cc[5] + 1;
-                    fillCell(baseX + xi * 4, MIN_Y + yi * 8, baseZ + zi * 4, xi * 4, zi * 4, out);
+                    fillCellAt(xi, zi, yi, out);
                 }
             }
         }
+    }
+
+    /** Sloped cheese and what is known from it for one column of corners (xi, zi of the chunk's 5 x 5). */
+    private void prepareCornerColumn(int xi, int zi) {
+        OverworldNoise noise = this.noise;
+        double jaggedMax = noise.jaggedMax();
+        int x = baseX + xi * 4;
+        int z = baseZ + zi * 4;
+        columns.get(x, z, column);
+        double offset = column[OverworldNoise.COL_OFFSET];
+        double factor = column[OverworldNoise.COL_FACTOR];
+        double jaggedness = column[OverworldNoise.COL_JAGGEDNESS];
+        columnOffset[xi * 5 + zi] = offset;
+        columnFactor[xi * 5 + zi] = factor;
+        columnJaggedness[xi * 5 + zi] = jaggedness;
+        int at = corner(xi, zi, 0);
+        for (int yi = 0; yi < CORNERS_Y; yi++) {
+            int y = MIN_Y + yi * 8;
+            done[at + yi] = 0;
+            // From y -40 up the bottom slide leaves the density alone, and the top slide only pulls it
+            // toward a negative value, so a negative sloped cheese means a negative main density.
+            if (y >= -40 && OverworldNoise.slopedCheeseWithoutNoise(y, offset, factor, jaggedness * jaggedMax)
+                    + BASE_3D_BOUND < 0.0D) {
+                known[at + yi] = SKY;
+                continue;
+            }
+            double v = noise.slopedCheese(x, y, z, offset, factor, jaggedness);
+            sloped[at + yi] = v;
+            known[at + yi] = y >= -40 && v < -2.0D * SURE ? NEGATIVE : GROUND;
+        }
+    }
+
+    private void fillCellAt(int xi, int zi, int yi, char[] out) {
+        int[] cc = cellCorner;
+        cc[0] = corner(xi, zi, yi);
+        cc[1] = corner(xi + 1, zi, yi);
+        cc[2] = cc[0] + 1;
+        cc[3] = cc[1] + 1;
+        cc[4] = corner(xi, zi + 1, yi);
+        cc[5] = corner(xi + 1, zi + 1, yi);
+        cc[6] = cc[4] + 1;
+        cc[7] = cc[5] + 1;
+        fillCell(baseX + xi * 4, MIN_Y + yi * 8, baseZ + zi * 4, xi * 4, zi * 4, out);
+    }
+
+    private char[] columnScratch;
+
+    /**
+     * NoiseBasedChunkGenerator.getBaseColumn at block x, z: the column's blocks from the noise fill alone (no
+     * structures, surface or carvers), out[y + 64] for y -64..319. Only the noise cell column holding x, z is
+     * computed (fill's blocks there are the same cell by cell).
+     */
+    public void baseColumn(int x, int z, char[] out) {
+        int local = startColumn(x, z);
+        for (int yi = CELLS_Y - 1; yi >= 0; yi--) {
+            fillCellAt(columnXi, columnZi, yi, columnScratch);
+        }
+        System.arraycopy(columnScratch, local * HEIGHT, out, 0, HEIGHT);
+    }
+
+    /**
+     * NoiseBasedChunkGenerator.getBaseHeight at block x, z for WORLD_SURFACE_WG (oceanFloor false: one above the
+     * highest non-air block) or OCEAN_FLOOR_WG (true: one above the highest block that blocks motion, neither air
+     * nor fluid), or -64 if there is none. Fills cells from the top only until the answer is known.
+     */
+    public int baseHeight(int x, int z, boolean oceanFloor) {
+        int local = startColumn(x, z);
+        char[] b = columnScratch;
+        int at = local * HEIGHT;
+        for (int yi = CELLS_Y - 1; yi >= 0; yi--) {
+            fillCellAt(columnXi, columnZi, yi, b);
+            for (int i = yi * 8 + 7; i >= yi * 8; i--) {
+                int code = b[at + i];
+                if (oceanFloor ? code != AIR && code != WATER && code != LAVA : code != AIR) {
+                    return MIN_Y + i + 1;
+                }
+            }
+        }
+        return MIN_Y;
+    }
+
+    private int columnXi;
+    private int columnZi;
+
+    /** Sets up the cell column holding x, z; returns the column's index in the chunk (local x * 16 + local z). */
+    private int startColumn(int x, int z) {
+        if (columnScratch == null) {
+            columnScratch = new char[16 * 16 * HEIGHT];
+        }
+        beard = null;
+        int cx = x >> 4;
+        int cz = z >> 4;
+        baseX = cx << 4;
+        baseZ = cz << 4;
+        aquifer.begin(cx, cz);
+        columnXi = (x & 15) >> 2;
+        columnZi = (z & 15) >> 2;
+        for (int xi = columnXi; xi <= columnXi + 1; xi++) {
+            for (int zi = columnZi; zi <= columnZi + 1; zi++) {
+                prepareCornerColumn(xi, zi);
+            }
+        }
+        return (x & 15) * 16 + (z & 15);
     }
 
     /** Makes sure the given function group is computed at the cell's 8 corners and loads it into cell[]. */
@@ -250,7 +328,7 @@ public final class ChunkFiller {
             Math.max(Math.max(c[o + 4], c[o + 5]), Math.max(c[o + 6], c[o + 7])));
     }
 
-    private static void fillCellWith(byte[] out, int localX, int localZ, int cellY, byte code) {
+    private static void fillCellWith(char[] out, int localX, int localZ, int cellY, char code) {
         for (int dx = 0; dx < 4; dx++) {
             for (int dz = 0; dz < 4; dz++) {
                 int at = ((localX + dx) * 16 + localZ + dz) * HEIGHT + (cellY - MIN_Y);
@@ -259,7 +337,13 @@ public final class ChunkFiller {
         }
     }
 
-    private void fillCell(int cellX, int cellY, int cellZ, int localX, int localZ, byte[] out) {
+    private Beardifier beard;
+
+    private void fillCell(int cellX, int cellY, int cellZ, int localX, int localZ, char[] out) {
+        if (beard != null && beard.touches(cellX, cellY, cellZ, cellX + 3, cellY + 7, cellZ + 3)) {
+            fillCellBeard(cellX, cellY, cellZ, localX, localZ, out);
+            return;
+        }
         double[] c = cell;
         int[] cc = cellCorner;
         boolean empty = true;
@@ -274,7 +358,7 @@ public final class ChunkFiller {
             // Nothing solid from the terrain: air or fluid, unless a barrier between aquifers fills in.
             int all = aquifer.quickCell(cellX, cellY, cellZ);
             if (all != Aquifer.UNDECIDED) {
-                fillCellWith(out, localX, localZ, cellY, (byte) all);
+                fillCellWith(out, localX, localZ, cellY, (char) all);
                 return;
             }
         }
@@ -308,7 +392,7 @@ public final class ChunkFiller {
                     for (int dz = 0; dz < 4; dz++) {
                         int at = ((localX + dx) * 16 + localZ + dz) * HEIGHT + (cellY - MIN_Y);
                         for (int dy = 0; dy < 8; dy++) {
-                            out[at + dy] = (byte) vein(cellX + dx, cellY + dy, cellZ + dz, (double) dx / 4.0D,
+                            out[at + dy] = (char) vein(cellX + dx, cellY + dy, cellZ + dz, (double) dx / 4.0D,
                                 (double) dy / 8.0D, (double) dz / 4.0D);
                         }
                     }
@@ -371,13 +455,69 @@ public final class ChunkFiller {
                         }
                         code = veins ? vein(x, y, z, tx, ty, tz) : STONE;
                     }
-                    out[((localX + dx) * 16 + localZ + dz) * HEIGHT + (y - MIN_Y)] = (byte) code;
+                    out[((localX + dx) * 16 + localZ + dz) * HEIGHT + (y - MIN_Y)] = (char) code;
                 }
             }
         }
     }
 
     private boolean emptyNoodlesPending;
+
+    /**
+     * A cell some structure piece's terrain adaptation reaches: every block the long way, final density plus the
+     * beardifier, as vanilla does it. The functions needed are the same as in fillCell (noodles where their
+     * toggle can reach 0, veins where their toggle can reach 0.4); only the whole-cell answers are left out.
+     */
+    private void fillCellBeard(int cellX, int cellY, int cellZ, int localX, int localZ, char[] out) {
+        double[] c = cell;
+        need(DONE_MAIN);
+        need(DONE_NOODLE_TOGGLE);
+        boolean noodles = !(max8(c, F_NOODLE * 8) < -SURE);
+        if (noodles) {
+            need(DONE_NOODLE);
+        }
+        boolean veins = false;
+        if (cellY <= 50 && cellY + 7 >= -60) {
+            need(DONE_VEIN_TOGGLE);
+            veins = Math.max(max8(c, F_VEIN * 8), -min8(c, F_VEIN * 8)) >= 0.4D - SURE;
+            if (veins) {
+                need(DONE_VEIN);
+            }
+        }
+        double c0 = c[0];
+        double c1 = c[1];
+        double c2 = c[2];
+        double c3 = c[3];
+        double c4 = c[4];
+        double c5 = c[5];
+        double c6 = c[6];
+        double c7 = c[7];
+        Beardifier beard = this.beard;
+        for (int dx = 0; dx < 4; dx++) {
+            int x = cellX + dx;
+            double tx = (double) dx / 4.0D;
+            double a0 = c0 + tx * (c1 - c0);
+            double a1 = c2 + tx * (c3 - c2);
+            double a2 = c4 + tx * (c5 - c4);
+            double a3 = c6 + tx * (c7 - c6);
+            for (int dy = 0; dy < 8; dy++) {
+                int y = cellY + dy;
+                double ty = (double) dy / 8.0D;
+                double b0 = a0 + ty * (a1 - a0);
+                double b1 = a2 + ty * (a3 - a2);
+                for (int dz = 0; dz < 4; dz++) {
+                    int z = cellZ + dz;
+                    double tz = (double) dz / 4.0D;
+                    double d = density(b0 + tz * (b1 - b0), noodles, tx, ty, tz) + beard.compute(x, y, z);
+                    int code = aquifer.computeSubstance(x, y, z, d);
+                    if (code < 0) {
+                        code = veins ? vein(x, y, z, tx, ty, tz) : STONE;
+                    }
+                    out[((localX + dx) * 16 + localZ + dz) * HEIGHT + (y - MIN_Y)] = (char) code;
+                }
+            }
+        }
+    }
 
     /** final_density at a block of the cell, from the interpolated main density. */
     private double density(double main, boolean noodles, double tx, double ty, double tz) {

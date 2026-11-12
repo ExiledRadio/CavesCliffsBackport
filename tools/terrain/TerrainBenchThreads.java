@@ -25,7 +25,7 @@ public final class TerrainBenchThreads {
                     @Override
                     public void run() {
                         ChunkFiller filler = new ChunkFiller(noise);
-                        byte[] out = new byte[16 * 16 * 384];
+                        char[] out = new char[16 * 16 * 384];
                         int i;
                         while ((i = next.getAndIncrement()) < side * side) {
                             filler.fill(i / side - side / 2, i % side - side / 2, out);

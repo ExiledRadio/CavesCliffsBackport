@@ -87,7 +87,8 @@ public final class DeepslateLayer implements IWorldGenerator {
     // Tracking
 
     static boolean eligible(World world) {
-        if (world.isRemote || !DeepslateContent.enabled() || !ModConfig.deepslate.generate) {
+        if (world.isRemote || !DeepslateContent.enabled() || !ModConfig.deepslate.generate
+                || com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain.owns(world)) {
             return false;
         }
         int dim = world.provider.getDimension();

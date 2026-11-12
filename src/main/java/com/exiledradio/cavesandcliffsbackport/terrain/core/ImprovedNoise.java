@@ -11,6 +11,26 @@ public final class ImprovedNoise {
     /** The permutation, doubled plus one, so {@code p[p[i] + j]} needs no wrap for j in 0..256. */
     private final int[] p = new int[514];
 
+    /** The same from a LegacyRandomSource (GeodeFeature's noise). */
+    public ImprovedNoise(LegacyRandom random) {
+        xo = random.nextDouble() * 256.0D;
+        yo = random.nextDouble() * 256.0D;
+        zo = random.nextDouble() * 256.0D;
+        byte[] t = new byte[256];
+        for (int i = 0; i < 256; i++) {
+            t[i] = (byte) i;
+        }
+        for (int k = 0; k < 256; k++) {
+            int j = random.nextInt(256 - k);
+            byte b = t[k];
+            t[k] = t[k + j];
+            t[k + j] = b;
+        }
+        for (int i = 0; i < 514; i++) {
+            p[i] = t[i & 255] & 255;
+        }
+    }
+
     public ImprovedNoise(Xoroshiro random) {
         xo = random.nextDouble() * 256.0D;
         yo = random.nextDouble() * 256.0D;

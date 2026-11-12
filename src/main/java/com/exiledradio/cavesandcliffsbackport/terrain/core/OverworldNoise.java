@@ -15,6 +15,8 @@ public final class OverworldNoise {
     public final long seed;
     public final Xoroshiro.Positional aquiferRandom;
     public final Xoroshiro.Positional oreRandom;
+    /** The world's root positional random (XOROSHIRO seeded with the world seed, forked), shared by surface rules. */
+    public final Xoroshiro.Positional positional;
 
     final DoubleNoise shift;
     final DoubleNoise temperature;
@@ -78,6 +80,7 @@ public final class OverworldNoise {
     public OverworldNoise(long seed) {
         this.seed = seed;
         Xoroshiro.Positional positional = Xoroshiro.ofSeed(seed).forkPositional();
+        this.positional = positional;
         shift = noise(positional, "offset", -3, 1, 1, 1, 0);
         temperature = noise(positional, "temperature", -10, 1.5, 0, 1, 0, 0, 0);
         vegetation = noise(positional, "vegetation", -8, 1, 1, 0, 0, 0, 0);

@@ -65,6 +65,21 @@ public final class OctaveNoise {
         return new OctaveNoise(levels, amplitudes, firstOctave);
     }
 
+    /**
+     * PerlinNoise.create over a LegacyRandomSource: its positional factory is seeded by one nextLong, each octave
+     * by ("octave_" + octave).hashCode() ^ that seed.
+     */
+    public static OctaveNoise create(LegacyRandom random, int firstOctave, double[] amplitudes) {
+        ImprovedNoise[] levels = new ImprovedNoise[amplitudes.length];
+        long seed = random.nextLong();
+        for (int k = 0; k < amplitudes.length; k++) {
+            if (amplitudes[k] != 0.0D) {
+                levels[k] = new ImprovedNoise(new LegacyRandom((long) ("octave_" + (firstOctave + k)).hashCode() ^ seed));
+            }
+        }
+        return new OctaveNoise(levels, amplitudes, firstOctave);
+    }
+
     /** PerlinNoise.createLegacyForBlendedNoise(random, firstOctave..0): octaves drawn in sequence, highest first. */
     public static OctaveNoise createLegacy(Xoroshiro random, int firstOctave) {
         int count = -firstOctave + 1;

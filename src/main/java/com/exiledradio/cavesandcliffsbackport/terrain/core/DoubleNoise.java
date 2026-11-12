@@ -10,8 +10,17 @@ public final class DoubleNoise {
     private final double maxValue;
 
     public DoubleNoise(Xoroshiro random, int firstOctave, double... amplitudes) {
-        first = OctaveNoise.create(random, firstOctave, amplitudes);
-        second = OctaveNoise.create(random, firstOctave, amplitudes);
+        this(OctaveNoise.create(random, firstOctave, amplitudes), OctaveNoise.create(random, firstOctave, amplitudes), amplitudes);
+    }
+
+    /** NormalNoise.create over a LegacyRandomSource (GeodeFeature). */
+    public DoubleNoise(LegacyRandom random, int firstOctave, double... amplitudes) {
+        this(OctaveNoise.create(random, firstOctave, amplitudes), OctaveNoise.create(random, firstOctave, amplitudes), amplitudes);
+    }
+
+    private DoubleNoise(OctaveNoise first, OctaveNoise second, double[] amplitudes) {
+        this.first = first;
+        this.second = second;
         int min = Integer.MAX_VALUE;
         int max = Integer.MIN_VALUE;
         for (int i = 0; i < amplitudes.length; i++) {

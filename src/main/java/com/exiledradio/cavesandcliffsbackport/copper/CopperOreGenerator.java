@@ -28,6 +28,9 @@ public final class CopperOreGenerator implements IWorldGenerator {
 
     @Override
     public void generate(Random random, int chunkX, int chunkZ, World world, IChunkGenerator generator, IChunkProvider provider) {
+        if (com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain.owns(world)) {
+            return; // the 1.18 terrain places its own
+        }
         if (!ModConfig.copper.generate || world.provider.getDimension() != 0
                 || world.getWorldType() == net.minecraft.world.WorldType.FLAT) {
             return;
