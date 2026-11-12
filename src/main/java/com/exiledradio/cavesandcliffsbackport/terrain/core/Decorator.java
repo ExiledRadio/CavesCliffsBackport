@@ -67,7 +67,13 @@ public final class Decorator {
         for (Placed p : Caves.placed()) {
             ported.put(p.name, p);
         }
+        for (Placed p : Trees.placed()) {
+            ported.put(p.name, p);
+        }
         for (Placed p : Fossils.placed()) {
+            ported.put(p.name, p);
+        }
+        for (Placed p : Vegetation.placed()) {
             ported.put(p.name, p);
         }
         for (Placed p : Misc.placed()) {
@@ -211,6 +217,11 @@ public final class Decorator {
     /** A Modifier from Placed.mods, argument: its index. */
     static final int CUSTOM = 11;
 
+    /** CountPlacement over PlacementUtils.countExtra: arguments base, total weight (1 / chance), extra. */
+    static final int COUNT_EXTRA = 12;
+    /** SurfaceWaterDepthFilter, argument: max depth (live WORLD_SURFACE - OCEAN_FLOOR). */
+    static final int WATER_DEPTH = 13;
+
     static final int WG_OCEAN_FLOOR = 4;
     static final int WG_WORLD_SURFACE = 5;
 
@@ -333,6 +344,19 @@ public final class Decorator {
                 }
                 return;
             }
+            case COUNT_EXTRA: {
+                // WeightedListInt: nextInt(total weight), (base, total - 1) then (base + extra, 1).
+                int n = random.nextInt(ops[at + 2]) < ops[at + 2] - 1 ? ops[at + 1] : ops[at + 1] + ops[at + 3];
+                for (int i = 0; i < n; i++) {
+                    run(p, at + 4, x, y, z);
+                }
+                return;
+            }
+            case WATER_DEPTH:
+                if (region.height(Region.WORLD_SURFACE, x, z) - region.height(Region.OCEAN_FLOOR, x, z) <= ops[at + 1]) {
+                    run(p, at + 2, x, y, z);
+                }
+                return;
             case CUSTOM: {
                 Next n = new Next();
                 n.decorator = this;

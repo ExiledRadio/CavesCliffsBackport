@@ -123,7 +123,7 @@ final class LushCaves {
     // ---- placement: EnvironmentScanPlacement(dir, target, ONLY_IN_AIR, 12), RandomOffsetPlacement.vertical(offset) ----
 
     /** dy 1 scans up, -1 down; target solid, or hasSturdyFace(DOWN) when sturdyDown. */
-    private static Modifier scan(int dy, boolean sturdyDown, int offset) {
+    static Modifier scan(int dy, boolean sturdyDown, int offset) {
         return (level, random, next, x, y, z) -> {
             if (level.get(x, y, z) != AIR) {
                 return;
@@ -150,7 +150,7 @@ final class LushCaves {
     }
 
     private static boolean target(int code, boolean sturdyDown) {
-        return sturdyDown ? faceFull(code, 0) : solid(code);
+        return sturdyDown ? sturdyFace(code, 0) : solid(code);
     }
 
     // ---- tags ----
@@ -299,7 +299,7 @@ final class LushCaves {
         private static boolean exposed(Region level, Pos p) {
             return !sturdy(level.get(p.x, p.y, p.z - 1)) || !sturdy(level.get(p.x + 1, p.y, p.z))
                 || !sturdy(level.get(p.x, p.y, p.z + 1)) || !sturdy(level.get(p.x - 1, p.y, p.z))
-                || !faceFull(level.get(p.x, p.y - 1, p.z), 1);
+                || !sturdyFace(level.get(p.x, p.y - 1, p.z), 1);
         }
 
         private HashSet<Pos> placeGroundPatch(Region level, XoroRandom random, int x, int y, int z, int xr, int zr) {
@@ -323,7 +323,7 @@ final class LushCaves {
                             my -= d;
                         }
                         int gy = my + d;
-                        if (isAir(level.get(mx, my, mz)) && faceFull(level.get(mx, gy, mz), ceiling ? 0 : 1)) {
+                        if (isAir(level.get(mx, my, mz)) && sturdyFace(level.get(mx, gy, mz), ceiling ? 0 : 1)) {
                             int l = (depthConstant > 0 ? depthConstant : random.between(depthMin, depthMax))
                                 + (extraBottomBlockChance > 0.0F && random.nextFloat() < extraBottomBlockChance ? 1 : 0);
                             if (placeGround(level, mx, gy, mz, l, d)) {
@@ -580,7 +580,7 @@ final class LushCaves {
     static final class SporeBlossom implements Feature {
         @Override
         public boolean place(Region level, XoroRandom random, int x, int y, int z) {
-            if (!faceFull(level.get(x, y + 1, z), 0) || isWater(level.get(x, y, z))) {
+            if (!sturdyFace(level.get(x, y + 1, z), 0) || isWater(level.get(x, y, z))) {
                 return false;
             }
             level.set(x, y, z, SPORE_BLOSSOM);

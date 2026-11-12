@@ -220,6 +220,96 @@ chunks) and on a desert and a swamp per seed for fossils (`oracle-out/feat-fossi
 blocks). Fossils only generate in deserts and swamps. `DecorationBench` (Java 8, one E-core): 1.41 ms/chunk at seed
 42 0,0; 1.38 at 360,64 (frozen ocean, icebergs); 1.19 at -104,-104 (desert).
 
+Trees, first part (2026-11-12), in `Trees`: `TreeFeature` with straight trunks, blob, spruce and pine foliage,
+two-layer feature sizes and the beehive decorator, the `*_checked` sapling filter, `RANDOM_SELECTOR` and the grove's
+snow scan: trees_snowy, trees_badlands, trees_birch, trees_taiga, trees_grove, birch_tall. `Decorator` gained
+`COUNT_EXTRA` (countExtra's weighted list: `nextInt(1 / chance)`) and `WATER_DEPTH` (`SurfaceWaterDepthFilter` on the
+live WORLD_SURFACE and OCEAN_FLOOR maps); `BlockCodes` the `REPLACEABLE_PLANT` flag (`validTreePos`). What matters
+for exactness: the trunk, foliage and decoration sets are `HashSet<BlockPos>`s (`LushCaves.Pos`), the dirt under the
+trunk goes into the trunk set, the decorators see the sets sorted by y with ties in hash order, `updateLeaves` sets
+leaf distances by BFS from the trunk set (other trees' leaves too; the rest stay 7) and
+`StructureTemplate.updateShapeAtEdge` runs over the changed shape in `DiscreteVoxelShape.forAllFaces`' order (z, then
+y, then x faces), which takes the snow off snowy grass under new leaves (a neighbor's freeze_top_layer runs before).
+`BeehiveDecorator` shuffles its candidates with `Collections.shuffle(list)`, the JVM's shared random, so vanilla's
+hive position cannot be reproduced; ours shuffles with a position-seeded random, and every draw from the feature's
+random (the chance, the bees) is vanilla's. `FeatureCheck -DlooseBees` compares a bee nest and air as equal.
+Also: `ProtoChunk.getBlockState` answers air for every section that holds only air-like blocks, so a surface lake's
+cave air above the ground reads (and dumps) as air; `Region.get` does the same and FeatureCheck compares through
+`Region.readAsVanilla` (found as 73 blocks at y 64 in a wooded badlands lake). `FeatureCheck` with all 67 ported
+features: identical on six areas per seed (`oracle-out/feat-trees/<seed>`, side 8, 1,536 chunks: snowy plains,
+wooded badlands, birch forest, old growth birch forest, taiga, grove; centers in the hand-over note and below) and
+still on every earlier check. `DecorationBench` (Java 8, one E-core): 1.37 ms/chunk at seed 42 0,0; 1.43 at -16,0
+(birch forest); 1.38 at 48,-56 (taiga). Vanilla's timer over the same features there (unpinned Java 17): 3.4-4.2.
+
+Fancy oaks (2026-11-12): `FancyTrunkPlacer` (limbs stepped in floats from the block's corner, branch logs with x or
+z axes, `minClippedHeight` 4) and `FancyFoliagePlacer` in `Trees`, unlocking trees_plains (inline placed fancy oak
+and oak with 5% bees, its own modifier order: the oak sapling filter before the biome), trees_water,
+trees_windswept_hills, trees_windswept_forest, trees_flower_forest and trees_meadow. `FeatureCheck -DlooseBees` with
+all 73 ported features: identical on plains, river, windswept hills, windswept forest, flower forest and meadow per
+seed (`oracle-out/feat-trees2/<seed>`, side 8, 1,536 chunks), and the first tree areas still identical.
+`DecorationBench`: 1.35 ms/chunk at seed 42 24,-24 (plains); 1.71 at -32,-32 (flower forest).
+
+Acacia (2026-11-12): `ForkingTrunkPlacer` (a random horizontal direction, the bent top and an optional branch, each
+attachment one above its last placed log) and `AcaciaFoliagePlacer` in `Trees`: trees_savanna and
+trees_windswept_savanna. Identical on a savanna and a windswept savanna area per seed
+(`oracle-out/feat-trees3/<seed>`, side 8, 512 chunks: 42 -72,-72/-40,16; 12345 -56,-8/72,-240; -7346534567
+8,-112/-56,-144; 8675309 -24,-24/-104,144). `DecorationBench` with all 75: 1.43 ms/chunk at seed 42 0,0; 1.74 at
+-72,-72 (savanna).
+
+Vegetation (2026-11-12), in `Vegetation`: every plant of VEGETAL_DECORATION but the trees (VegetationPlacements and
+AquaticPlacements without the trees: random patches of simple blocks and block columns, flowers with
+`NoiseProvider`, `NoiseThresholdProvider` and `DualNoiseProvider` (seed 2345, legacy NormalNoise), grass and ferns,
+mushrooms, dead bushes, lily pads, sugar cane, cactus, melons, pumpkins, berries, the tall plants, forest flowers
+(`SimpleRandomSelector`), bamboo with its podzol, vines, seagrass, kelp, sea pickles and the three coral shapes),
+the placements `NoiseThresholdCountPlacement`, `NoiseBasedCountPlacement` (both on `Biome.BIOME_INFO_NOISE`) and a
+clamped uniform count, and trees_birch_and_oak. Survival is Forge's: `BushBlock.canSurvive` asks
+`canSustainPlant` of the block below, which differs from vanilla for sugar cane (`BEACH`: water next to the block
+below), cactus, lily pads (`WATER`: any water block below) and seagrass (`PLAINS` dirt also counts). Mushrooms
+survive only on mycelium and podzol, since raw brightness is 15 while nothing is lit. seagrass_simple places
+nothing: its `CarvingMaskPlacement(LIQUID)` reads a mask no overworld carver writes. Trees now cut plants that
+earlier VEGETAL features placed, so `Trees.updateShape` asks `Vegetation.updateShape` (BushBlock survival, the
+double plant halves, coral, kelp head and body, snow layers). `FeatureCheck -DlooseBees` with all 140 ported
+features: identical on the default areas (`oracle-out/feat-veg`, side 8), on swamp, sunflower plains, desert, warm
+ocean, beach and eroded badlands per seed (`oracle-out/feat-veg2/<seed>`, side 8, 1,536 chunks: 42
+-16,8/24,-40/-104,-104/-80,-128/8,-16/-120,-128; 12345 -112,-112/-24,32/-144,24/-256,-248/-80,104/-328,-280;
+-7346534567 -48,-144/112,128/-64,-152/8,-152/-24,-32/200,152; 8675309 -48,144/24,80/-48,-64/-64,-64/16,24/240,-152),
+and on all the earlier tree areas again with the plants (`oracle-out/vt1`, `vt2`). `-DlooseBees` now also takes a
+nest against a plant: a patch placed after the tree fills the air where the other side's nest went.
+`DecorationBench` (Java 8, one E-core): 1.43 ms/chunk at seed 42 0,0; 1.94 at -16,8 (swamp); 1.26 at -80,-128
+(warm ocean); 1.50 at 24,-40 (sunflower plains).
+
+Trees, last part (2026-11-12), in `Trees`: every remaining overworld tree, so all 144 placed features of the
+overworld's 11 steps are ported. `DarkOakTrunkPlacer` with `DarkOakFoliagePlacer` (its signed skip of the double
+trunk's corners) and `ThreeLayersFeatureSize`; huge red and brown mushrooms (`AbstractHugeMushroomFeature`, the
+red one's position test never widens: `getTreeRadiusForHeight(-1, -1, ...)`) for dark_forest_vegetation and
+mushroom_island_vegetation; the jungle tree with `CocoaDecorator`, `TrunkVineDecorator` and `LeaveVineDecorator`,
+the jungle bush (`BushFoliagePlacer`) and the mega jungle tree (`MegaJungleTrunkPlacer`'s branches on `Mth`'s sine
+table, `MegaJungleFoliagePlacer`) for trees_jungle, trees_sparse_jungle and bamboo_vegetation; `GiantTrunkPlacer`
+with `MegaPineFoliagePlacer` and `AlterGroundDecorator(podzol)` for the old growth taigas; the swamp oak with leaf
+vines (trees_swamp, its own modifier order); the azalea tree (`BendingTrunkPlacer`, `RandomSpreadFoliagePlacer`,
+weighted azalea leaves, forced rooted dirt) inside `RootSystemFeature` (rooted_azalea_tree: rooted dirt down the
+column, hanging roots). Tree edges now also update vines (`VineBlock.getUpdatedState`), cocoa and hanging roots.
+One fix on the way, found by a per-chunk and then per-feature hash trace of both sides (`FeatureCheck -Dtrace=file`,
+`VanillaFeatureDump -Dtrace=file -Dtracechunk=x,z [-Dtracefeat=name]`): leaves have an empty support shape
+(`LeavesBlock.getBlockSupportShape`), so `isFaceSturdy` is false on them while their collision faces are full.
+`BlockCodes.sturdyFace` (support shape: vegetation patches, spore blossoms, hanging roots, seagrass, kelp, coral) is
+now apart from `faceFull` (collision shape: vines, glow lichen, snow layers, sea pickles); a lush cave ceiling under
+mega jungle leaves showed it. `FeatureCheck -DlooseBees` with all 144 features, every dump made with the full list
+(`oracle-out/<dir>/<seed>`, side 8): identical on the default areas at side 16 (`fdef`, 2,048 chunks, the four seeds
+in one JVM as vanilla's glow lichen order carries over), `fveg2` (the vegetation areas above), `fvt1` and `fvt2`
+(every earlier tree area), `vt3` (dark forest, jungle, bamboo jungle, mushroom fields, old growth spruce taiga, old
+growth pine taiga, sparse jungle, lush caves: 42 -8,0/88,80/80,88/184,-24/80,-128/80,-48/8,80/0,0; 12345
+0,-16/-40,-32/-88,-24/272,272/40,-24/16,-32/-40,-40/0,0; -7346534567
+-128,-120/48,-120/-128,-136/96,-208/-88,-72/-88,-48/-120,-136/0,0; 8675309
+32,-32/24,-40/32,-48/48,-200/120,40/128,80/-48,48/16,-8) and `vf` (ice spikes, frozen ocean, snowy slopes, stony
+shore, deep lukewarm ocean, cold ocean, dripstone caves, a desert well chunk: 42
+344,104/360,64/40,-40/48,-32/-40,80/40,-16/-24,-32/-106,-112; 12345 48,-48/56,48/-24,48/-16,-16/-120,88/16,24/32,-40/-233,-276;
+-7346534567 -48,8/-8,-8/-32,32/0,16/-40,-112/0,0/-64,0/-56,-150; 8675309
+-8,272/144,40/88,-64/0,-24/0,-64/48,-8/-8,-8/-30,-97): 11,264 chunks. `DecorationBench` (Java 8, one E-core, 12x12,
+all 144 features): 1.87 ms/chunk at seed 42 0,0; 2.52 at 88,80 (jungle); 2.03 at -8,0 (dark forest); 1.93 at -16,8
+(swamp); 1.79 at 80,-128 (old growth spruce taiga); 1.12 at 184,-24 (mushroom fields); 2.00 at seed 12345 500,-300.
+Vanilla's own timer over the same features in the oracle (unpinned Java 17): 2.9-3.6 ms/chunk.
+
 Java 8 and `Math.sin`: `OreFeature` takes `Math.sin`/`Math.cos` of a double, as vanilla does. Over all 2^24 angles
 an ore can draw, Java 17, 21 and 25 give the same bits (vanilla's, on Java 17), but Java 8's `Math` differs from
 them in the last bit at about a million angles (`StrictMath` matches neither). On the checks' 704 chunks Java 8
@@ -381,7 +471,9 @@ Done: biomes and surface rules, carvers, the beardifier, structure placement (ab
 1. Features (placed features, GenerationStep.Decoration). Done: the decoration loop, its oracle, every ore,
    springs, disks, underwater magma, lava lakes, monster rooms, the geode, dripstone, lush caves but
    rooted_azalea_tree, glow lichen, freeze_top_layer, icebergs, forest rock, fossils, ice spike / patch, desert
-   well and blue ice (above): every step but VEGETAL. Left: rooted_azalea_tree, trees and the rest of VEGETAL. Left, as streams on the same framework, each checked with `-Dfeatures` and `FeatureCheck`: cave
+   well and blue ice, and the first trees with fancy oaks (above): every step but VEGETAL. Done since: every plant and
+   tree of VEGETAL (above): all 144 overworld placed features are identical to vanilla. Left: structure pieces in
+   each step. Left, as streams on the same framework, each checked with `-Dfeatures` and `FeatureCheck`: cave
    features (geodes, dripstone clusters / large / pointed, lush caves, monster rooms, fossils (templates), springs,
    lava lakes, underwater magma); surface (disks, icebergs, ice spikes and patches, blue ice, desert wells, forest
    rocks, freeze top layer, which reads block light: the oracle region has no light engine yet, see below); trees
