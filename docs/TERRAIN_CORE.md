@@ -137,7 +137,10 @@ Structures, `tools/terrain/StructureCheck` against `structures_SEED.bin.gz` (`Va
 candidate chunk of every set in chunks -512..511 (mineshafts and buried treasure, which have a candidate in every
 chunk: -128..127), strongholds' 128 ring positions, through vanilla's own `createStructures` choice and
 `ConfiguredStructureFeature.generate`, pieces and all, with the templates read from the jar): every start of every
-structure type identical on the 4 seeds (11,855 starts). The oracle binds the data pack's biome tags
+structure type identical on the 4 seeds (11,855 starts). A second, wider dump
+(`-Dsets=... VanillaStructureDump oracle-out/wide 2048 128`: chunks -2048..2047 for the rarer sets, desert
+pyramids, igloos, jungle temples, swamp huts, outposts, monuments and mansions) adds 15,824 identical starts,
+192 of them mansions. The oracle binds the data pack's biome tags
 (`VanillaWorld.bindBiomeTags`; `RegistryAccess.builtinCopy()` has none) and makes every biome search cold.
 
 ### Biome ties
