@@ -87,6 +87,7 @@ public final class SelfTestRunner {
         for (SelfTest test : TESTS) {
             if (this.wanted.contains("all") || this.wanted.contains(test.name())) {
                 check.section(test.name());
+                clearEntities(world);
                 try {
                     test.run(check);
                 } catch (Throwable t) {
@@ -106,6 +107,19 @@ public final class SelfTestRunner {
         } catch (Exception ignored) {
         }
         server.initiateShutdown();
+    }
+
+    /**
+     * Removes every loaded entity but players, at once (not just marked dead), so a test never meets the mobs, items
+     * or projectiles an earlier stream's test left behind: rabbits wander into the next areas, and a goat rams
+     * anything within 16 blocks.
+     */
+    private static void clearEntities(WorldServer world) {
+        for (net.minecraft.entity.Entity e : new ArrayList<net.minecraft.entity.Entity>(world.loadedEntityList)) {
+            if (!(e instanceof net.minecraft.entity.player.EntityPlayer)) {
+                world.removeEntityDangerously(e);
+            }
+        }
     }
 
     private static void dumpStates(File file) throws Exception {

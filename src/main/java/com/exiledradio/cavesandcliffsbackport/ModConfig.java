@@ -324,7 +324,7 @@ public final class ModConfig {
         @Config.LangKey("config.cavesandcliffsbackport.axolotls.enabled")
         public boolean enabled = true;
 
-        @Config.Comment("Axolotls spawn naturally, in underground water above clay.")
+        @Config.Comment("Axolotls spawn naturally in lush caves, in water above clay.")
         @Config.LangKey("config.cavesandcliffsbackport.axolotls.spawning")
         public boolean spawning = true;
 

@@ -262,7 +262,6 @@ advancements.cavesandcliffsbackport.fall_from_world_height.title=Caves & Cliffs
 tile.cavesandcliffsbackport.light.name=Light
 
 # --- common ---
-itemGroup.cavesandcliffsbackport=Caves & Cliffs Backport
 config.cavesandcliffsbackport.deepslate=Deepslate and Stone
 config.cavesandcliffsbackport.deepslate.tooltip=Deepslate and its sets, calcite, tuff, smooth basalt, deepslate ores and raw ores.
 config.cavesandcliffsbackport.copper=Copper
@@ -378,7 +377,7 @@ config.cavesandcliffsbackport.glowSquid.glowingSigns.tooltip=A glow ink sac used
 config.cavesandcliffsbackport.axolotls.enabled=Enabled
 config.cavesandcliffsbackport.axolotls.enabled.tooltip=Axolotls and the bucket of axolotl. Off, nothing is registered.
 config.cavesandcliffsbackport.axolotls.spawning=Spawning
-config.cavesandcliffsbackport.axolotls.spawning.tooltip=Axolotls spawn naturally, in underground water above clay.
+config.cavesandcliffsbackport.axolotls.spawning.tooltip=Axolotls spawn naturally in lush caves, in water above clay.
 config.cavesandcliffsbackport.axolotls.spawnCap=Spawn cap
 config.cavesandcliffsbackport.axolotls.spawnCap.tooltip=The most naturally spawned axolotls around one player.
 config.cavesandcliffsbackport.axolotls.breedingItem=Breeding item

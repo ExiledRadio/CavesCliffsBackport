@@ -91,6 +91,9 @@ public final class MusicContent {
         if (!enabled()) {
             return;
         }
+        if (ModConfig.music.biomeMusic) {
+            MusicRegions.setLocator(MusicRegions.CAVES);
+        }
         Contribution v118 = Presentation.version("1.18");
         if (ModConfig.music.menuMusic) {
             for (String[] track : menuTracks()) {

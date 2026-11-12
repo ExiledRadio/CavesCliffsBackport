@@ -5,7 +5,7 @@ import com.exiledradio.cavesandcliffsbackport.dripstone.DripstoneCaveGenerator;
 import com.exiledradio.cavesandcliffsbackport.dripstone.DripstoneContent;
 import com.exiledradio.cavesandcliffsbackport.dripstone.DripstoneEvents;
 import com.exiledradio.cavesandcliffsbackport.dripstone.EntityFallingStalactite;
-import com.exiledradio.cavesandcliffsbackport.dripstone.Regions;
+import com.exiledradio.cavesandcliffsbackport.common.CaveRegions;
 import com.exiledradio.cavesandcliffsbackport.dripstone.Thickness;
 
 import net.minecraft.block.Block;
@@ -497,21 +497,21 @@ public final class DripstoneSelfTest implements SelfTest {
         Random r = new Random(3);
         int dripstone = 0, lush = 0, n = 40000;
         for (int i = 0; i < n; i++) {
-            Regions.Region at = Regions.at(seed, r.nextInt(100000) - 50000, 6 + r.nextInt(58), r.nextInt(100000) - 50000);
-            if (at == Regions.Region.DRIPSTONE) {
+            CaveRegions.Region at = CaveRegions.at(seed, r.nextInt(100000) - 50000, 6 + r.nextInt(58), r.nextInt(100000) - 50000);
+            if (at == CaveRegions.Region.DRIPSTONE) {
                 dripstone++;
-            } else if (at == Regions.Region.LUSH) {
+            } else if (at == CaveRegions.Region.LUSH) {
                 lush++;
             }
         }
         c.ok(dripstone > n * 0.05 && dripstone < n * 0.14, "dripstone regions are about 9% of the underground: " + 100.0 * dripstone / n);
         c.ok(lush > n * 0.05 && lush < n * 0.14, "lush regions too: " + 100.0 * lush / n);
-        c.eq(Regions.at(seed, 123, 30, -456), Regions.at(seed, 123, 30, -456), "the same answer twice");
+        c.eq(CaveRegions.at(seed, 123, 30, -456), CaveRegions.at(seed, 123, 30, -456), "the same answer twice");
         // Coherent: a block's neighbor is nearly always in the same region.
         int same = 0;
         for (int i = 0; i < 2000; i++) {
             int x = r.nextInt(20000), y = 10 + r.nextInt(40), z = r.nextInt(20000);
-            if (Regions.at(seed, x, y, z) == Regions.at(seed, x + 1, y, z)) {
+            if (CaveRegions.at(seed, x, y, z) == CaveRegions.at(seed, x + 1, y, z)) {
                 same++;
             }
         }
@@ -619,7 +619,7 @@ public final class DripstoneSelfTest implements SelfTest {
                 int inside = 0;
                 for (int y = 12; y <= 52; y += 8) {
                     for (int d = -48; d <= 48; d += 48) {
-                        if (Regions.at(seed, x + d, y, z + d) == Regions.Region.DRIPSTONE) {
+                        if (CaveRegions.at(seed, x + d, y, z + d) == CaveRegions.Region.DRIPSTONE) {
                             inside++;
                         }
                     }
@@ -681,7 +681,7 @@ public final class DripstoneSelfTest implements SelfTest {
                 for (int y = 6; y <= 70 && !any; y += 4) {
                     for (int dx = -64; dx <= 64 && !any; dx += 16) {
                         for (int dz = -64; dz <= 64 && !any; dz += 16) {
-                            any = Regions.noise(seed, x + dx, y, z + dz) > Regions.THRESHOLD - 0.05;
+                            any = CaveRegions.noise(seed, x + dx, y, z + dz) > CaveRegions.THRESHOLD - 0.05;
                         }
                     }
                 }
@@ -710,7 +710,7 @@ public final class DripstoneSelfTest implements SelfTest {
         for (int dx = -12; dx <= 12; dx += 4) {
             for (int dz = -12; dz <= 12; dz += 4) {
                 for (int dy = -12; dy <= 12; dy += 4) {
-                    if (Regions.at(seed, p.getX() + dx, p.getY() + dy, p.getZ() + dz) == Regions.Region.DRIPSTONE) {
+                    if (CaveRegions.at(seed, p.getX() + dx, p.getY() + dy, p.getZ() + dz) == CaveRegions.Region.DRIPSTONE) {
                         return true;
                     }
                 }

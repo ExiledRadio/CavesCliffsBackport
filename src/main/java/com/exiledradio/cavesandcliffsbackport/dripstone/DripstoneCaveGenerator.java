@@ -1,6 +1,7 @@
 package com.exiledradio.cavesandcliffsbackport.dripstone;
 
 import com.exiledradio.cavesandcliffsbackport.ModConfig;
+import com.exiledradio.cavesandcliffsbackport.common.CaveRegions;
 import com.exiledradio.cavesandcliffsbackport.common.Owners;
 
 import net.minecraft.block.Block;
@@ -22,7 +23,7 @@ import java.util.Random;
 
 /**
  * Dripstone caves: what 1.18 puts in its dripstone caves biome, in the caves of our dripstone
- * {@link Regions}.
+ * {@link com.exiledradio.cavesandcliffsbackport.common.CaveRegions}.
  *
  * <h2>Features (1.18's settings)</h2>
  * <ul>
@@ -82,7 +83,7 @@ public final class DripstoneCaveGenerator implements IWorldGenerator {
             for (int i = 0; i < ModConfig.dripstone.extraCopperVeins; i++) {
                 // The vein generator itself adds 8 to x and z. Heights: a triangle over 0-96, 1.18's -16..112 in this world.
                 BlockPos at = new BlockPos(chunkX * 16 + random.nextInt(16), random.nextInt(49) + random.nextInt(49), chunkZ * 16 + random.nextInt(16));
-                if (at.getY() > 0 && Regions.dripstone(world, at.getX() + 8, at.getY(), at.getZ() + 8)) {
+                if (at.getY() > 0 && CaveRegions.dripstone(world, at.getX() + 8, at.getY(), at.getZ() + 8)) {
                     vein.generate(world, random, at);
                 }
             }
@@ -99,7 +100,7 @@ public final class DripstoneCaveGenerator implements IWorldGenerator {
         for (int dx = 4; dx < 32; dx += 12) {
             for (int dz = 4; dz < 32; dz += 12) {
                 for (int y = MIN_Y; y <= MAX_Y; y += 8) {
-                    if (Regions.at(seed, chunkX * 16 + dx, y, chunkZ * 16 + dz) == Regions.Region.DRIPSTONE) {
+                    if (CaveRegions.at(seed, chunkX * 16 + dx, y, chunkZ * 16 + dz) == CaveRegions.Region.DRIPSTONE) {
                         return true;
                     }
                 }
@@ -148,7 +149,7 @@ public final class DripstoneCaveGenerator implements IWorldGenerator {
 
         /** A feature starts in air or water, underground, in a dripstone region. */
         boolean start(BlockPos p) {
-            return emptyOrWater(get(p)) && Regions.dripstone(this.world, p.getX(), p.getY(), p.getZ()) && Regions.underground(this.world, p);
+            return emptyOrWater(get(p)) && CaveRegions.dripstone(this.world, p.getX(), p.getY(), p.getZ()) && CaveRegions.underground(this.world, p);
         }
 
         boolean air(BlockPos p) {

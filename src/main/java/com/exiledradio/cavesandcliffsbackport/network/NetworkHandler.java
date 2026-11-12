@@ -33,6 +33,8 @@ public final class NetworkHandler {
     public static void init() {
         channel = NetworkRegistry.INSTANCE.newSimpleChannel(CHANNEL);
         // Streams register their packets below, in id order.
+        channel.registerMessage(com.exiledradio.cavesandcliffsbackport.common.PacketCaveRegions.Handler.class,
+                com.exiledradio.cavesandcliffsbackport.common.PacketCaveRegions.class, 0, net.minecraftforge.fml.relauncher.Side.CLIENT);
         channel.registerMessage(com.exiledradio.cavesandcliffsbackport.powdersnow.PacketFreeze.Handler.class,
                 com.exiledradio.cavesandcliffsbackport.powdersnow.PacketFreeze.class, 30, net.minecraftforge.fml.relauncher.Side.CLIENT);
         channel.registerMessage(com.exiledradio.cavesandcliffsbackport.glowsquid.PacketGlowInk.Handler.class,

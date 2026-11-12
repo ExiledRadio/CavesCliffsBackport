@@ -73,6 +73,9 @@ annotations or are lists; on `main` it dropped their language lines (see *For th
 
 ## For the integrator
 
+**Done on merge:** `AxolotlHabitat.LushCaves` (a lush region of `common/CaveRegions`, underground) is the default
+habitat; the stand-in stays for the pool self-tests. The generator regex is merged and both generators were rerun.
+
 *   **Lush regions.** Where axolotls may spawn is one interface, `axolotl/AxolotlHabitat`:
 
         boolean canSpawnAt(World world, BlockPos pos);   // pos: a water block with clay below, chunk loaded

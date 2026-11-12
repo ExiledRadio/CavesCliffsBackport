@@ -1,5 +1,7 @@
 package com.exiledradio.cavesandcliffsbackport.music;
 
+import com.exiledradio.cavesandcliffsbackport.common.CaveRegions;
+
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -13,7 +15,7 @@ import net.minecraft.world.World;
  * <pre>{@code
  * MusicRegions.setLocator((world, pos) -> CaveRegions.isLush(world, pos) ? MusicRegions.Region.LUSH_CAVES : ...);
  * }</pre>
- * Until then every position is {@link Region#NONE} and only the game music plays.
+ * {@link MusicContent} installs {@link #CAVES}; until something is installed every position is {@link Region#NONE}.
  */
 public final class MusicRegions {
 
@@ -45,6 +47,23 @@ public final class MusicRegions {
     private static final Locator NOWHERE = new Locator() {
         @Override
         public Region at(World world, BlockPos pos) {
+            return Region.NONE;
+        }
+    };
+
+    /**
+     * Lush and dripstone caves, from {@link CaveRegions}: underground in one of its regions. On a client this is
+     * what the server sent at login, so it costs one noise sample and loads nothing (the player's chunk is loaded).
+     */
+    public static final Locator CAVES = new Locator() {
+        @Override
+        public Region at(World world, BlockPos pos) {
+            if (CaveRegions.lush(world, pos.getX(), pos.getY(), pos.getZ())) {
+                return CaveRegions.underground(world, pos) ? Region.LUSH_CAVES : Region.NONE;
+            }
+            if (CaveRegions.dripstone(world, pos.getX(), pos.getY(), pos.getZ())) {
+                return CaveRegions.underground(world, pos) ? Region.DRIPSTONE_CAVES : Region.NONE;
+            }
             return Region.NONE;
         }
     };

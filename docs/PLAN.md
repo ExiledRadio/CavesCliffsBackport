@@ -72,8 +72,9 @@ stream calls another's classes; when one needs another's block or item it looks 
 Packet ids 0-4 are `common`'s. Build order: D, Cu, Am, Dr, L, Ps, Ca, Gs, Ax, Gt, X, Mu; T when decided.
 D comes first because copper ore, geodes and dripstone caves sit in its deepslate.
 
-**Status (2026-11-07):** D, Cu and Am built, tested and merged (`docs/streams/deepslate.md`, `copper.md`,
-`amethyst.md`). Double slabs are `<name>_double_slab`, as Village & Pillage's released ones. Next: Dr.
+**Status (2026-11-11):** every 1.17 stream and Mu built, tested and merged (`docs/streams/*.md`). Double slabs
+are `<name>_double_slab`, as Village & Pillage's released ones. `common/CaveRegions` is in and wired (below).
+Left: T (terrain core on branch `cc-terrain`, `docs/TERRAIN_CORE.md`) and the waterlogging pass.
 
 ### Shared by the cave streams: `common/CaveRegions`
 
@@ -85,6 +86,11 @@ axolotls only there; Dr adds the extra copper ore and Cu reads it. It also answe
 (no sky, below the surface height recorded when the chunk generated). Config `caves`: region frequency and
 size, `lushRegions`, `dripstoneRegions`. Biome-specific music (stream Mu) uses it client-side through the
 same noise (the seed reaches the client in our login packet, id 0).
+
+**As built:** one value noise, dripstone above +0.40 and lush below -0.40 (9% of the underground each, never
+touching), from stream Dr. It is keyed by a SHA-256 of the seed, and packet 0 (`PacketCaveRegions`) sends
+clients that key and the two switches, never the seed. "Underground" is 4 blocks under the height map. Not
+built: config for region frequency and size.
 
 ### D. Deepslate, stone and ores
 

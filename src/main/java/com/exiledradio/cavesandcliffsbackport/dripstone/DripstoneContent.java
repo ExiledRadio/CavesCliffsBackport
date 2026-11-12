@@ -33,7 +33,7 @@ import java.util.Random;
 /**
  * Stream Dr: the dripstone block, pointed dripstone ({@link BlockPointedDripstone}, falling as
  * {@link EntityFallingStalactite}), the lava cauldron, and dripstone caves ({@link DripstoneCaveGenerator}
- * in the {@link Regions}).
+ * in the {@link com.exiledradio.cavesandcliffsbackport.common.CaveRegions}).
  */
 @Mod.EventBusSubscriber(modid = CavesAndCliffsBackport.MOD_ID)
 public final class DripstoneContent {

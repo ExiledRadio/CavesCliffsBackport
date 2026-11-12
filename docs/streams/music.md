@@ -7,6 +7,9 @@ class's pre-init, `ClientSetup.init` and `SelfTestRunner.TESTS`; `tools/check_as
 
 ## For the integrator
 
+**Done on merge:** `MusicRegions.CAVES` answers lush and dripstone caves from `common/CaveRegions` (the client
+uses the key the server sends at login) and `MusicContent.preInit` installs it when `biomeMusic` is on.
+
 1.  **Cave regions are not wired.** `music/MusicRegions` is the one question this stream asks: which music biome is
     a position in. It answers `NONE` everywhere until someone installs a locator, so today only the game music
     plays. Once `common/CaveRegions` is on `main`, one call from common code (it names no client type; it is asked

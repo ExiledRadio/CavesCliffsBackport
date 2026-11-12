@@ -19,6 +19,9 @@ integrator should know about:
 
 ## For the integrator: `Regions` is the plan's `common/CaveRegions`
 
+**Done on merge:** lifted as `common/CaveRegions`, keyed by a hash of the seed, with `lush(...)`, a
+`mayContain` and the client side. The note below is kept as written.
+
 `dripstone/Regions.java` is the region lookup streams L and Ax need too. It already answers for both kinds:
 one 3D value noise of the world seed, **dripstone above +0.40, lush below -0.40**, so the two never overlap.
 Each is 9% of the underground. Lift it into `common` unchanged, add a `lush(World, x, y, z)`, and point

@@ -1,4 +1,4 @@
-"""The shared language lines: the creative tab, and every config category and option.
+"""The shared language lines: every config category and option.
 
 Config lines are read from ModConfig.java, so a stream that adds an option only reruns this:
 
@@ -80,5 +80,5 @@ def config_lines():
     return lines
 
 
-assets.merge_lang("common", ["itemGroup.%s=Caves & Cliffs Backport" % assets.MODID] + config_lines())
+assets.merge_lang("common", config_lines())
 print("common: %d config lines" % (len(config_lines())))

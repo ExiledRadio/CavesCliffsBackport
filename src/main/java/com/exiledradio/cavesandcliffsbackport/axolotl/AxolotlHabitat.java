@@ -1,5 +1,7 @@
 package com.exiledradio.cavesandcliffsbackport.axolotl;
 
+import com.exiledradio.cavesandcliffsbackport.common.CaveRegions;
+
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -7,9 +9,8 @@ import net.minecraft.world.World;
  * Where axolotls may spawn naturally: the one question {@link AxolotlSpawning} asks about a place, beyond the
  * axolotl's own rule (water, with clay right below).
  *
- * <p>In 1.18 the answer is "inside a lush cave". The lush regions belong to {@code common/CaveRegions}, which
- * this stream does not link against: the integrator sets {@link AxolotlSpawning#habitat} to an implementation
- * that asks it. Until then {@link DarkUndergroundWater} stands in.
+ * <p>In 1.18 the answer is "inside a lush cave": {@link LushCaves}, the default. {@link DarkUndergroundWater}
+ * was the stand-in before the cave regions existed.
  */
 public interface AxolotlHabitat {
 
@@ -18,6 +19,14 @@ public interface AxolotlHabitat {
      * @return true if axolotls spawn there
      */
     boolean canSpawnAt(World world, BlockPos pos);
+
+    /** 1.18's: in a lush region of {@link CaveRegions}, underground. */
+    final class LushCaves implements AxolotlHabitat {
+        @Override
+        public boolean canSpawnAt(World world, BlockPos pos) {
+            return CaveRegions.lush(world, pos.getX(), pos.getY(), pos.getZ()) && CaveRegions.underground(world, pos);
+        }
+    }
 
     /** The stand-in: underground (below the top solid block of its column) and completely dark. */
     final class DarkUndergroundWater implements AxolotlHabitat {

@@ -625,6 +625,45 @@ public final class AxolotlSelfTest implements SelfTest {
     }
 
     private void spawning(Check c) {
+        // The default habitat is the lush caves of CaveRegions; the pool checks below use the stand-in, which takes
+        // any dark underground water, so they do not depend on where the test area falls.
+        c.ok(AxolotlSpawning.habitat instanceof com.exiledradio.cavesandcliffsbackport.axolotl.AxolotlHabitat.LushCaves,
+                "axolotls spawn in lush caves by default");
+        lushHabitat(c);
+        com.exiledradio.cavesandcliffsbackport.axolotl.AxolotlHabitat installed = AxolotlSpawning.habitat;
+        AxolotlSpawning.habitat = new com.exiledradio.cavesandcliffsbackport.axolotl.AxolotlHabitat.DarkUndergroundWater();
+        try {
+            spawningPools(c);
+        } finally {
+            AxolotlSpawning.habitat = installed;
+        }
+    }
+
+    private void lushHabitat(Check c) {
+        com.exiledradio.cavesandcliffsbackport.axolotl.AxolotlHabitat lushCaves =
+                new com.exiledradio.cavesandcliffsbackport.axolotl.AxolotlHabitat.LushCaves();
+        long seed = c.world.getSeed();
+        BlockPos lush = null, other = null;
+        for (int x = 0; x < 20000 && (lush == null || other == null); x += 64) {
+            com.exiledradio.cavesandcliffsbackport.common.CaveRegions.Region r =
+                    com.exiledradio.cavesandcliffsbackport.common.CaveRegions.at(seed, x, 12, 0);
+            if (r == com.exiledradio.cavesandcliffsbackport.common.CaveRegions.Region.LUSH && lush == null) {
+                lush = new BlockPos(x, 12, 0);
+            } else if (r == com.exiledradio.cavesandcliffsbackport.common.CaveRegions.Region.NONE && other == null) {
+                other = new BlockPos(x, 12, 0);
+            }
+        }
+        if (c.ok(lush != null && other != null, "a lush region and plain underground along the x axis")) {
+            // Spawning only asks in loaded chunks; an unloaded one has no height map, so nothing in it is underground.
+            c.world.getChunk(lush);
+            c.world.getChunk(other);
+            c.ok(lushCaves.canSpawnAt(c.world, lush), "the lush habitat accepts a lush region underground");
+            c.ok(!lushCaves.canSpawnAt(c.world, other), "...and refuses plain underground");
+            c.ok(!lushCaves.canSpawnAt(c.world, new BlockPos(lush.getX(), 255, 0)), "...and the sky over a lush region");
+        }
+    }
+
+    private void spawningPools(Check c) {
         WorldServer w = c.world;
         BlockPos o = c.area().add(4, 0, 4);
         // An underground pool: 20x20, two deep, on clay, closed in stone.
@@ -698,6 +737,7 @@ public final class AxolotlSelfTest implements SelfTest {
         EntityGuardian fresh = new EntityGuardian(c.world);
         int before = fresh.targetTasks.taskEntries.size();
         EntityGuardian guardian = spawn(c, new EntityGuardian(c.world), o.getX() + 7.5, o.getY() + 1.5, o.getZ() + 2.5);
+        guardian.getRNG().setSeed(42L);  // its target picks are dice; seeded, the test repeats
         c.eq(before + 1, guardian.targetTasks.taskEntries.size(), "a guardian joining the world learns to target axolotls");
         EntitySquid squid = spawn(c, new EntitySquid(c.world), o.getX() + 7.5, o.getY() + 2.5, o.getZ() + 2.5);
         c.eq(0, countTargetTasks(squid), "a squid does not");

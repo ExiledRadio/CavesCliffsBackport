@@ -451,6 +451,8 @@ public final class BlocksSelfTest implements SelfTest {
         EntityShulker s = new EntityShulker(c.world);
         s.setPosition(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
         s.setAttachmentPos(at);
+        // Seeded: its teleports (and so whether it multiplies) are dice, and a test should repeat.
+        s.getRNG().setSeed(at.toLong());
         c.world.spawnEntity(s);
         return s;
     }
@@ -458,6 +460,7 @@ public final class BlocksSelfTest implements SelfTest {
     private static void bullet(Check c, EntityShulker target) {
         EntityShulkerBullet bullet = new EntityShulkerBullet(c.world);
         target.hurtResistantTime = 0;
+        c.world.rand.setSeed(target.getEntityId());  // the multiplying roll is the world's
         target.attackEntityFrom(DamageSource.causeIndirectDamage(bullet, (EntityLivingBase) null).setProjectile(), 4.0F);
         BlocksContent.changes.settleHits();
     }

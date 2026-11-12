@@ -198,7 +198,7 @@ public class EntityAIGoatLongJump extends EntityAIBase {
             }
             last = point;
         }
-        return new Vec3d(forward * cosYaw, up, forward * sinYaw).scale(0.95D);
+        return new Vec3d(forward * cosYaw, up, forward * sinYaw).scale((double) 0.95F);
     }
 
     /** @return whether the goat, at its jumping size, fits everywhere between two points of the arc */
@@ -209,7 +209,7 @@ public class EntityAIGoatLongJump extends EntityAIBase {
         Vec3d delta = to.subtract(from);
         double stride = Math.min(width, height);
         int steps = MathHelper.ceil(delta.length() / stride);
-        Vec3d step = delta.normalize().scale(stride * 0.9D);
+        Vec3d step = delta.normalize().scale(stride * (double) 0.9F);
         Vec3d at = from;
         for (int i = 0; i < steps; i++) {
             at = i == steps - 1 ? to : at.add(step);

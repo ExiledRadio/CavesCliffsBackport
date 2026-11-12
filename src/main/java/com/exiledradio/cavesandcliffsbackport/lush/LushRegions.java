@@ -1,68 +1,38 @@
 package com.exiledradio.cavesandcliffsbackport.lush;
 
-import com.exiledradio.cavesandcliffsbackport.ModConfig;
+import com.exiledradio.cavesandcliffsbackport.common.CaveRegions;
 
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldType;
 
 /**
- * Where the lush caves are.
- *
- * <p>1.12 biomes are whole columns, so a cave biome cannot be one. This is a smooth 3D noise over the world,
- * made from the world seed alone (no saved state, the same answer on server and client): where it is above
- * {@link #THRESHOLD} the underground is lush. Its cells are {@value #CELL_XZ} blocks wide and
- * {@value #CELL_Y} tall, which gives regions one to two hundred blocks across and a few tens tall, over
- * about a tenth of the underground.
- *
- * <p><b>For the integrator:</b> this stands in for the planned {@code common/CaveRegions}, which did not
- * exist when stream L was built. Everything in this package asks only {@link #isLush(long, int, int, int)},
- * {@link #isLush(World, BlockPos)} and {@link #mayContain}; moving them onto the shared class (and making
- * lush and dripstone regions exclude each other there) touches this file alone.
+ * Where the lush caves are: the lush tail of {@link CaveRegions}, the regions shared with dripstone caves, axolotl
+ * spawning and cave music. Dripstone regions are the other tail of the same noise, so the two never overlap.
+ * Everything in this package asks only these methods; {@link #patch} is this package's own noise.
  */
 public final class LushRegions {
-
-    public static final int CELL_XZ = 144;
-    public static final int CELL_Y = 48;
-    public static final double THRESHOLD = 0.74;
-
-    /** Mixed into the world seed so other region kinds made the same way do not line up with this one. */
-    private static final long SALT = 0x4C555348L;
 
     private LushRegions() {
     }
 
     /** @return true if lush regions are on and this position of this world is in one (above ground or below) */
     public static boolean isLush(World world, BlockPos pos) {
-        return ModConfig.caves.lushRegions && world.provider.getDimension() == 0 && world.getWorldType() != WorldType.FLAT
-                && isLush(world.getSeed(), pos.getX(), pos.getY(), pos.getZ());
+        return CaveRegions.lush(world, pos.getX(), pos.getY(), pos.getZ());
     }
 
+    /** @return whether a block of a world with this seed is in a lush region, by the noise alone */
     public static boolean isLush(long seed, int x, int y, int z) {
-        return value(seed, x, y, z) > THRESHOLD;
+        return CaveRegions.at(seed, x, y, z) == CaveRegions.Region.LUSH;
     }
 
-    /** The region noise, 0 to 1. */
+    /** The region noise, -1 to 1; lush below {@code -CaveRegions.THRESHOLD}. */
     public static double value(long seed, int x, int y, int z) {
-        return noise(seed ^ SALT, x / (double) CELL_XZ, y / (double) CELL_Y, z / (double) CELL_XZ);
+        return CaveRegions.noise(seed, x, y, z);
     }
 
-    /**
-     * A cheap test for a whole 16x16 column of blocks from {@code minX, minZ}, between two heights.
-     *
-     * @return false only if no block of it can be lush (the noise changes by at most 0.15 between samples)
-     */
+    /** @return false only if no block of the 16x16 area from {@code minX, minZ} between the heights can be lush */
     public static boolean mayContain(long seed, int minX, int minZ, int minY, int maxY) {
-        for (int x = minX; x <= minX + 16; x += 8) {
-            for (int z = minZ; z <= minZ + 16; z += 8) {
-                for (int y = minY; y <= maxY + 3; y += 4) {
-                    if (value(seed, x, y, z) > THRESHOLD - 0.15) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+        return CaveRegions.mayContain(seed, CaveRegions.Region.LUSH, minX, minZ, minY, maxY);
     }
 
     /** A 2D noise, 0 to 1, for laying patches (moss, clay, pools) over a region's floors and ceilings. */

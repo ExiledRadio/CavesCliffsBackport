@@ -38,7 +38,7 @@ public final class AxolotlSpawning {
      * Where axolotls may spawn. The stand-in is dark underground water; the integrator replaces it with the
      * lush regions of {@code common/CaveRegions} (see {@code docs/streams/axolotl.md}).
      */
-    public static AxolotlHabitat habitat = new AxolotlHabitat.DarkUndergroundWater();
+    public static AxolotlHabitat habitat = new AxolotlHabitat.LushCaves();
 
     private static final int CHUNK_RANGE = 8;
     private static final int MAX_GROUP = 4;

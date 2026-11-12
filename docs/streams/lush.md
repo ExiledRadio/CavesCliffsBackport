@@ -63,6 +63,9 @@ category's settings icon in `ModConfig` is now our moss block.
 
 ### Lush regions (for the integrator)
 
+**Done on merge:** `LushRegions` now delegates to `common/CaveRegions`, so lush regions are the other tail of
+dripstone's noise (9% of the underground, never overlapping it). `patch` stays here. The note below is kept as written.
+
 `common/CaveRegions` did not exist, so the region lookup is `lush/LushRegions`: a 3D value noise from the world
 seed alone (cells 144 blocks wide, 48 tall; lush where it is above 0.74, 10.8% of the underground on the test seed),
 with `isLush(seed, x, y, z)`, `isLush(world, pos)` (config, dimension and world type included) and `mayContain`

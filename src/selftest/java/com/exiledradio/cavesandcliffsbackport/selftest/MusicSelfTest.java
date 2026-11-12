@@ -322,6 +322,7 @@ public final class MusicSelfTest implements SelfTest {
 
     private void regions(Check c) {
         BlockPos here = new BlockPos(0, 20, 0);
+        MusicRegions.setLocator(null);
         c.eq(MusicRegions.Region.NONE, MusicRegions.at(c.world, here), "no locator: none");
         try {
             MusicRegions.setLocator(new MusicRegions.Locator() {
@@ -344,6 +345,29 @@ public final class MusicSelfTest implements SelfTest {
             MusicRegions.setLocator(null);
         }
         c.eq(MusicRegions.Region.NONE, MusicRegions.at(c.world, here), "locator removed: none");
+        // The cave regions' locator: underground in a lush or dripstone region, nothing above ground.
+        long seed = c.world.getSeed();
+        BlockPos lush = null, drip = null;
+        for (int x = 0; x < 20000 && (lush == null || drip == null); x += 64) {
+            com.exiledradio.cavesandcliffsbackport.common.CaveRegions.Region r =
+                    com.exiledradio.cavesandcliffsbackport.common.CaveRegions.at(seed, x, 12, 0);
+            if (r == com.exiledradio.cavesandcliffsbackport.common.CaveRegions.Region.LUSH && lush == null) {
+                lush = new BlockPos(x, 12, 0);
+            } else if (r == com.exiledradio.cavesandcliffsbackport.common.CaveRegions.Region.DRIPSTONE && drip == null) {
+                drip = new BlockPos(x, 12, 0);
+            }
+        }
+        if (c.ok(lush != null && drip != null, "a lush and a dripstone region along the x axis")) {
+            // The player's own chunk is always loaded; an unloaded one has no height map, so nothing is underground.
+            c.world.getChunk(lush);
+            c.world.getChunk(drip);
+            c.eq(MusicRegions.Region.LUSH_CAVES, MusicRegions.CAVES.at(c.world, lush), "a lush region underground: lush caves");
+            c.eq(MusicRegions.Region.DRIPSTONE_CAVES, MusicRegions.CAVES.at(c.world, drip), "a dripstone region underground: dripstone caves");
+            c.eq(MusicRegions.Region.NONE, MusicRegions.CAVES.at(c.world, new BlockPos(lush.getX(), 255, 0)), "above ground: none");
+        }
+        if (ModConfig.music.biomeMusic) {
+            MusicRegions.setLocator(MusicRegions.CAVES);
+        }
         c.ok(Items.RECORD_13 != MusicContent.otherside, "sanity");
     }
 }
