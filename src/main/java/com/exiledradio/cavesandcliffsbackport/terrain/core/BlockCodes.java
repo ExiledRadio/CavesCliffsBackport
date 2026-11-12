@@ -89,6 +89,9 @@ public final class BlockCodes {
     private static int count;
     /** Per code: the F_* bits (Material properties, fluid, leaves). */
     private static short[] flags = new short[256];
+    /** Per code: its block's index (states of one block share it). */
+    private static int[] blockOf = new int[256];
+    private static final Map<String, Integer> BLOCKS = new HashMap<>();
 
     public static final int F_NOT_AIR = 1;
     /** Material.blocksMotion. */
@@ -131,9 +134,18 @@ public final class BlockCodes {
         if (count == states.length) {
             states = java.util.Arrays.copyOf(states, count * 2);
             flags = java.util.Arrays.copyOf(flags, count * 2);
+            blockOf = java.util.Arrays.copyOf(blockOf, count * 2);
         }
         states[count] = state;
         flags[count] = (short) materialFlags(state);
+        int bi = state.indexOf('[');
+        String block = bi < 0 ? state : state.substring(0, bi);
+        Integer b = BLOCKS.get(block);
+        if (b == null) {
+            b = BLOCKS.size();
+            BLOCKS.put(block, b);
+        }
+        blockOf[count] = b;
         BY_STATE.put(state, count);
         return count++;
     }
@@ -262,6 +274,11 @@ public final class BlockCodes {
         String s = state(code);
         int i = s.indexOf('[');
         return i < 0 ? s : s.substring(0, i);
+    }
+
+    /** BlockState.is(other.getBlock()): the same block, any properties. */
+    public static boolean sameBlock(int a, int b) {
+        return blockOf[a] == blockOf[b];
     }
 
     public static boolean sturdy(int code) {

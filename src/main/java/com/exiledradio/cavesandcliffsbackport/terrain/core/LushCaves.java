@@ -156,8 +156,9 @@ final class LushCaves {
     // ---- tags ----
 
     static boolean dirt(int code) {
-        return code == DIRT || code == GRASS_BLOCK || code == PODZOL || code == COARSE_DIRT || code == MYCELIUM
-            || code == MOSS_BLOCK || name(code).equals("rooted_dirt");
+        // BlockTags.DIRT matches blocks: snowy grass, podzol and mycelium too.
+        return code == DIRT || sameBlock(code, GRASS_BLOCK) || sameBlock(code, PODZOL) || code == COARSE_DIRT
+            || sameBlock(code, MYCELIUM) || code == MOSS_BLOCK || name(code).equals("rooted_dirt");
     }
 
     static boolean caveVines(int code) {

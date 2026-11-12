@@ -132,7 +132,8 @@ final class Misc {
 
         @Override
         public boolean place(Region level, XoroRandom random, int x, int y, int z) {
-            if (level.get(x, y, z) != WATER) {
+            // getFluidState(origin).is(FluidTags.WATER): water, waterlogged blocks and water plants.
+            if ((flags(level.get(x, y, z)) & F_WATER) == 0) {
                 return false;
             }
             boolean flag = false;
@@ -150,7 +151,7 @@ final class Misc {
                             boolean flag3 = false;
                             if (i2 > k) {
                                 for (int t : targets) {
-                                    if (t == block) {
+                                    if (sameBlock(t, block)) {
                                         level.set(i1, i2, j1, state);
                                         flag = true;
                                         flag3 = true;

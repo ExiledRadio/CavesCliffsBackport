@@ -189,6 +189,17 @@ waits for trees. `FeatureCheck` with all 51 then ported features: identical on t
 (`oracle-out/feat-lush2`, 64 chunks). `DecorationBench` (with freeze_top_layer): 1.42 ms/chunk at seed 42 0,0,
 1.51 at seed 8675309 16,-8 (vanilla's unpinned timer there: 5.9).
 
+freeze_top_layer (2026-11-11), in `SurfaceFeatures`: `SnowAndFreezeFeature` over the chunk's columns at the live
+MOTION_BLOCKING height, the zoomed biome at the top block, ice on still water where it is not warm enough to rain
+at that block, then a snow layer where `SnowLayerBlock.canSurvive` (after the ice) and the block below snowy. Block
+light is always below 10 here (see *Heightmaps and light*). On the way: features match blocks, not states, where
+vanilla writes `is(target.getBlock())` or a block tag (`BlockCodes.sameBlock`: disks replace snowy grass a neighbor's
+freeze already made; `BlockTags.DIRT` holds snowy grass, podzol and mycelium), and the disks' origin test is
+`FluidTags.WATER` (waterlogged blocks and water plants from neighbors count). `FeatureCheck` with all 52 ported
+features: identical on the default areas (`oracle-out/feat-freeze`, 512 chunks) and on a snowy plains plus a frozen
+ocean area per seed (`oracle-out/feat-snow/<seed>`, 128 chunks each; seed 42's has 22,376 snow layers and 4,147 ice).
+`DecorationBench`: 1.41 ms/chunk at seed 42 0,0; 1.57 at 320,72 (snowy plains).
+
 Java 8 and `Math.sin`: `OreFeature` takes `Math.sin`/`Math.cos` of a double, as vanilla does. Over all 2^24 angles
 an ore can draw, Java 17, 21 and 25 give the same bits (vanilla's, on Java 17), but Java 8's `Math` differs from
 them in the last bit at about a million angles (`StrictMath` matches neither). On the checks' 704 chunks Java 8
@@ -347,8 +358,10 @@ Terrain, in the order to build it, each checked against the oracle the same way:
 
 Done: biomes and surface rules, carvers, the beardifier, structure placement (above).
 
-1. Features (placed features, GenerationStep.Decoration). Done: the decoration loop, its oracle and every ore
-   (above). Left, as streams on the same framework, each checked with `-Dfeatures` and `FeatureCheck`: cave
+1. Features (placed features, GenerationStep.Decoration). Done: the decoration loop, its oracle, every ore,
+   springs, disks, underwater magma, lava lakes, monster rooms, the geode, dripstone, lush caves but
+   rooted_azalea_tree, glow lichen and freeze_top_layer (above). Left in step order: icebergs, forest rock, fossils,
+   ice spike / patch, desert well, blue ice, rooted_azalea_tree, trees and the rest of VEGETAL. Left, as streams on the same framework, each checked with `-Dfeatures` and `FeatureCheck`: cave
    features (geodes, dripstone clusters / large / pointed, lush caves, monster rooms, fossils (templates), springs,
    lava lakes, underwater magma); surface (disks, icebergs, ice spikes and patches, blue ice, desert wells, forest
    rocks, freeze top layer, which reads block light: the oracle region has no light engine yet, see below); trees
