@@ -286,8 +286,17 @@ public final class BlockCodes {
         return blockOf[a] == blockOf[b];
     }
 
+    /** isFaceSturdy on every side (the support shape): full collision cubes but leaves, whose support shape is empty. */
     public static boolean sturdy(int code) {
-        return (flags[code] & F_STURDY) != 0;
+        return (flags[code] & (F_STURDY | F_LEAVES)) == F_STURDY;
+    }
+
+    /**
+     * BlockState.isFaceSturdy(face) / Block.canSupportCenter: the support shape, which is the collision shape except
+     * for leaves (empty). {@link #faceFull} is the collision shape's face (vines, glow lichen, snow layers).
+     */
+    public static boolean sturdyFace(int code, int face) {
+        return faceFull(code, face) && (flags[code] & F_LEAVES) == 0;
     }
 
     /**

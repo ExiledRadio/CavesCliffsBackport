@@ -53,6 +53,49 @@ public final class FeatureCheck {
             || (BlockCodes.flags(code) & BlockCodes.F_BLOCKS_MOTION) == 0 && !BlockCodes.liquid(code);
     }
 
+    /** -Dtrace=file: after each chunk, MultifaceBlock.DIRECTIONS' order (glow lichen's process-global shuffle). */
+    static final java.io.PrintStream TRACE = traceStream();
+
+    private static java.io.PrintStream traceStream() {
+        String f = System.getProperty("trace");
+        try {
+            return f == null ? null : new java.io.PrintStream(new java.io.FileOutputStream(f));
+        } catch (java.io.IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static final String[] DIRECTION_NAMES = {"down", "up", "north", "south", "west", "east"};
+
+    static String traceHash(Region region, int cx, int cz) {
+        StringBuilder b = new StringBuilder();
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                int h = 0;
+                for (int x = 0; x < 16; x++) {
+                    for (int z = 0; z < 16; z++) {
+                        for (int y = -64; y < 320; y++) {
+                            h = h * 31 + BlockCodes.state(region.get(((cx + dx) << 4) + x, y, ((cz + dz) << 4) + z)).hashCode();
+                        }
+                    }
+                }
+                b.append(Integer.toHexString(h)).append(' ');
+            }
+        }
+        return b.toString();
+    }
+
+    static String traceDirections() throws ReflectiveOperationException {
+        java.lang.reflect.Field d = Class.forName("com.exiledradio.cavesandcliffsbackport.terrain.core.LushCaves").getDeclaredField("DIRECTIONS");
+        d.setAccessible(true);
+        int[] a = (int[]) d.get(null);
+        StringBuilder b = new StringBuilder("[");
+        for (int i = 0; i < a.length; i++) {
+            b.append(i == 0 ? "" : ", ").append(DIRECTION_NAMES[a[i]]);
+        }
+        return b.append("]").toString();
+    }
+
     public static void main(String[] args) throws Exception {
         File dir = new File(args[0]);
         int side = Integer.parseInt(args[1]);
@@ -79,6 +122,7 @@ public final class FeatureCheck {
             Carvers carvers = new Carvers(noise, columns, surface);
             Decorator decorator = new Decorator(noise, biomes);
             decorator.only(only);
+            String tc = System.getProperty("tracechunk");
             Map<Long, Chunk> chunks = new HashMap<>();
             Random rnd = new Random(seed * 31L + 5L);
             int[][] centers = {{0, 0}, {rnd.nextInt(20000) - 10000, rnd.nextInt(20000) - 10000}};
@@ -126,6 +170,9 @@ public final class FeatureCheck {
                 long t = System.nanoTime();
                 decorator.decorate(region);
                 nanos += System.nanoTime() - t;
+                if (TRACE != null) {
+                    TRACE.println(p[0] + "," + p[1] + " " + traceDirections() + " " + traceHash(region, p[0], p[1]));
+                }
                 decoratedTotal++;
             }
             long seedDifferences = 0L;

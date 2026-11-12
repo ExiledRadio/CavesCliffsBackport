@@ -91,8 +91,13 @@ public final class VanillaFeatureDump {
             return centerPos;
         }
 
+        static boolean LOGSET;
+
         @Override
         public boolean setBlock(BlockPos pos, BlockState state, int flags, int recursion) {
+            if (LOGSET && TRACE != null) {
+                TRACE.println("S " + pos.getX() + "," + pos.getY() + "," + pos.getZ() + " " + stateName(state));
+            }
             // WorldGenRegion.setBlock without ServerLevel.onBlockStateChange (points of interest only).
             if (!this.ensureCanWrite(pos)) {
                 return false;
@@ -282,6 +287,47 @@ public final class VanillaFeatureDump {
         });
     }
 
+    static final java.io.PrintStream TRACE = traceStream();
+
+    private static java.io.PrintStream traceStream() {
+        String f = System.getProperty("trace");
+        try {
+            return f == null ? null : new java.io.PrintStream(new java.io.FileOutputStream(f));
+        } catch (java.io.IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static String traceHash(net.minecraft.world.level.LevelReader region, int cx, int cz) {
+        StringBuilder b = new StringBuilder();
+        net.minecraft.core.BlockPos.MutableBlockPos m = new net.minecraft.core.BlockPos.MutableBlockPos();
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                int h = 0;
+                for (int x = 0; x < 16; x++) {
+                    for (int z = 0; z < 16; z++) {
+                        for (int y = -64; y < 320; y++) {
+                            m.set(((cx + dx) << 4) + x, y, ((cz + dz) << 4) + z);
+                            h = h * 31 + stateName(region.getBlockState(m)).hashCode();
+                        }
+                    }
+                }
+                b.append(Integer.toHexString(h)).append(' ');
+            }
+        }
+        return b.toString();
+    }
+
+    static String traceDirections() {
+        try {
+            java.lang.reflect.Field d = net.minecraft.world.level.block.MultifaceBlock.class.getDeclaredField("DIRECTIONS");
+            d.setAccessible(true);
+            return java.util.Arrays.toString((Object[]) d.get(null));
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /** ChunkGenerator.applyBiomeDecoration, features only, with the allowlist. */
     static void decorate(VanillaWorld world, Region region, ProtoChunk chunk) {
         ChunkPos chunkpos = chunk.getPos();
@@ -340,7 +386,19 @@ public final class VanillaFeatureDump {
                         continue;
                     }
                     worldgenrandom.setFeatureSeed(i, l1, k);
+                    Region.LOGSET = (chunkpos.x + "," + chunkpos.z).equals(System.getProperty("tracechunk")) && key.equals(System.getProperty("tracefeat"));
                     pf.placeWithBiomeCheck(region, world.generator, worldgenrandom, blockpos);
+                    Region.LOGSET = false;
+                    if (TRACE != null && (chunkpos.x + "," + chunkpos.z).equals(System.getProperty("tracechunk"))) {
+                        TRACE.println("F " + key + " " + traceHash(region, chunkpos.x, chunkpos.z));
+                        if (key.equals(System.getProperty("tracefeat")) || ("before:" + key).equals(System.getProperty("tracefeat"))) {
+                            BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
+                            for (int x = (chunkpos.x - 1) << 4; x < (chunkpos.x + 2) << 4; x++)
+                                for (int z = (chunkpos.z - 1) << 4; z < (chunkpos.z + 2) << 4; z++)
+                                    for (int y = -64; y < 320; y++)
+                                        TRACE.println("B " + x + "," + y + "," + z + " " + stateName(region.getBlockState(m.set(x, y, z))));
+                        }
+                    }
                 }
             }
         }
@@ -449,6 +507,9 @@ public final class VanillaFeatureDump {
                 long t = System.nanoTime();
                 decorate(world, region, target);
                 decorateNanos += System.nanoTime() - t;
+                if (TRACE != null) {
+                    TRACE.println(p.x + "," + p.z + " " + traceDirections() + " " + traceHash(region, p.x, p.z));
+                }
             }
             System.out.println(String.format(java.util.Locale.ROOT, "seed %d: vanilla decoration %.3f ms/chunk", seed,
                 decorateNanos / 1.0E6D / order.size()));

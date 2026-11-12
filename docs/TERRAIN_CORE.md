@@ -278,6 +278,38 @@ nest against a plant: a patch placed after the tree fills the air where the othe
 `DecorationBench` (Java 8, one E-core): 1.43 ms/chunk at seed 42 0,0; 1.94 at -16,8 (swamp); 1.26 at -80,-128
 (warm ocean); 1.50 at 24,-40 (sunflower plains).
 
+Trees, last part (2026-11-12), in `Trees`: every remaining overworld tree, so all 144 placed features of the
+overworld's 11 steps are ported. `DarkOakTrunkPlacer` with `DarkOakFoliagePlacer` (its signed skip of the double
+trunk's corners) and `ThreeLayersFeatureSize`; huge red and brown mushrooms (`AbstractHugeMushroomFeature`, the
+red one's position test never widens: `getTreeRadiusForHeight(-1, -1, ...)`) for dark_forest_vegetation and
+mushroom_island_vegetation; the jungle tree with `CocoaDecorator`, `TrunkVineDecorator` and `LeaveVineDecorator`,
+the jungle bush (`BushFoliagePlacer`) and the mega jungle tree (`MegaJungleTrunkPlacer`'s branches on `Mth`'s sine
+table, `MegaJungleFoliagePlacer`) for trees_jungle, trees_sparse_jungle and bamboo_vegetation; `GiantTrunkPlacer`
+with `MegaPineFoliagePlacer` and `AlterGroundDecorator(podzol)` for the old growth taigas; the swamp oak with leaf
+vines (trees_swamp, its own modifier order); the azalea tree (`BendingTrunkPlacer`, `RandomSpreadFoliagePlacer`,
+weighted azalea leaves, forced rooted dirt) inside `RootSystemFeature` (rooted_azalea_tree: rooted dirt down the
+column, hanging roots). Tree edges now also update vines (`VineBlock.getUpdatedState`), cocoa and hanging roots.
+One fix on the way, found by a per-chunk and then per-feature hash trace of both sides (`FeatureCheck -Dtrace=file`,
+`VanillaFeatureDump -Dtrace=file -Dtracechunk=x,z [-Dtracefeat=name]`): leaves have an empty support shape
+(`LeavesBlock.getBlockSupportShape`), so `isFaceSturdy` is false on them while their collision faces are full.
+`BlockCodes.sturdyFace` (support shape: vegetation patches, spore blossoms, hanging roots, seagrass, kelp, coral) is
+now apart from `faceFull` (collision shape: vines, glow lichen, snow layers, sea pickles); a lush cave ceiling under
+mega jungle leaves showed it. `FeatureCheck -DlooseBees` with all 144 features, every dump made with the full list
+(`oracle-out/<dir>/<seed>`, side 8): identical on the default areas at side 16 (`fdef`, 2,048 chunks, the four seeds
+in one JVM as vanilla's glow lichen order carries over), `fveg2` (the vegetation areas above), `fvt1` and `fvt2`
+(every earlier tree area), `vt3` (dark forest, jungle, bamboo jungle, mushroom fields, old growth spruce taiga, old
+growth pine taiga, sparse jungle, lush caves: 42 -8,0/88,80/80,88/184,-24/80,-128/80,-48/8,80/0,0; 12345
+0,-16/-40,-32/-88,-24/272,272/40,-24/16,-32/-40,-40/0,0; -7346534567
+-128,-120/48,-120/-128,-136/96,-208/-88,-72/-88,-48/-120,-136/0,0; 8675309
+32,-32/24,-40/32,-48/48,-200/120,40/128,80/-48,48/16,-8) and `vf` (ice spikes, frozen ocean, snowy slopes, stony
+shore, deep lukewarm ocean, cold ocean, dripstone caves, a desert well chunk: 42
+344,104/360,64/40,-40/48,-32/-40,80/40,-16/-24,-32/-106,-112; 12345 48,-48/56,48/-24,48/-16,-16/-120,88/16,24/32,-40/-233,-276;
+-7346534567 -48,8/-8,-8/-32,32/0,16/-40,-112/0,0/-64,0/-56,-150; 8675309
+-8,272/144,40/88,-64/0,-24/0,-64/48,-8/-8,-8/-30,-97): 11,264 chunks. `DecorationBench` (Java 8, one E-core, 12x12,
+all 144 features): 1.87 ms/chunk at seed 42 0,0; 2.52 at 88,80 (jungle); 2.03 at -8,0 (dark forest); 1.93 at -16,8
+(swamp); 1.79 at 80,-128 (old growth spruce taiga); 1.12 at 184,-24 (mushroom fields); 2.00 at seed 12345 500,-300.
+Vanilla's own timer over the same features in the oracle (unpinned Java 17): 2.9-3.6 ms/chunk.
+
 Java 8 and `Math.sin`: `OreFeature` takes `Math.sin`/`Math.cos` of a double, as vanilla does. Over all 2^24 angles
 an ore can draw, Java 17, 21 and 25 give the same bits (vanilla's, on Java 17), but Java 8's `Math` differs from
 them in the last bit at about a million angles (`StrictMath` matches neither). On the checks' 704 chunks Java 8
@@ -439,9 +471,9 @@ Done: biomes and surface rules, carvers, the beardifier, structure placement (ab
 1. Features (placed features, GenerationStep.Decoration). Done: the decoration loop, its oracle, every ore,
    springs, disks, underwater magma, lava lakes, monster rooms, the geode, dripstone, lush caves but
    rooted_azalea_tree, glow lichen, freeze_top_layer, icebergs, forest rock, fossils, ice spike / patch, desert
-   well and blue ice, and the first trees with fancy oaks (above): every step but VEGETAL. Done since: every plant of VEGETAL
-   (above). Left: the other trees (dark oak and huge mushrooms, jungle, mega spruce and pine, swamp oak, azalea and
-   rooted_azalea_tree). Left, as streams on the same framework, each checked with `-Dfeatures` and `FeatureCheck`: cave
+   well and blue ice, and the first trees with fancy oaks (above): every step but VEGETAL. Done since: every plant and
+   tree of VEGETAL (above): all 144 overworld placed features are identical to vanilla. Left: structure pieces in
+   each step. Left, as streams on the same framework, each checked with `-Dfeatures` and `FeatureCheck`: cave
    features (geodes, dripstone clusters / large / pointed, lush caves, monster rooms, fossils (templates), springs,
    lava lakes, underwater magma); surface (disks, icebergs, ice spikes and patches, blue ice, desert wells, forest
    rocks, freeze top layer, which reads block light: the oracle region has no light engine yet, see below); trees

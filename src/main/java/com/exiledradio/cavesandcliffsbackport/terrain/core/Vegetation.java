@@ -49,7 +49,7 @@ final class Vegetation {
     static final int TALL_SEAGRASS_UPPER = register("tall_seagrass[half=upper]");
     static final int KELP_PLANT = register("kelp_plant");
     /** kelp[age], age 20..23 (KelpFeature's nextInt(4) + 20). */
-    static final int[] KELP = new int[26];
+    static final int[] KELP = new int[24];
     /** sea_pickle[pickles=n,waterlogged=true], n 1..4. */
     static final int[] SEA_PICKLE = new int[5];
     static final int BAMBOO_TRUNK = register("bamboo[age=1,leaves=none,stage=0]");
@@ -77,7 +77,7 @@ final class Vegetation {
     }
 
     static {
-        for (int a = 20; a <= 25; a++) {
+        for (int a = 20; a <= 23; a++) {
             KELP[a] = register("kelp[age=" + a + "]");
         }
         for (int n = 1; n <= 4; n++) {
@@ -283,7 +283,7 @@ final class Vegetation {
             case K_SEAGRASS:
             case K_TALL_SEAGRASS_LOWER: {
                 int below = level.get(x, y - 1, z);
-                boolean ok = faceFull(below, 1) && below != MAGMA_BLOCK
+                boolean ok = sturdyFace(below, 1) && below != MAGMA_BLOCK
                     || sameBlock(below, GRASS_BLOCK) || LushCaves.dirt(below) || name(below).equals("farmland");
                 if (kind(code) == K_SEAGRASS) {
                     return ok;
@@ -299,17 +299,17 @@ final class Vegetation {
                     return false;
                 }
                 int kb = kind(below);
-                return kb == K_KELP || kb == K_KELP_PLANT || faceFull(below, 1);
+                return kb == K_KELP || kb == K_KELP_PLANT || sturdyFace(below, 1);
             }
             case K_SEA_PICKLE:
                 return faceFull(level.get(x, y - 1, z), 1);
             case K_CORAL_PLANT:
-                return faceFull(level.get(x, y - 1, z), 1);
+                return sturdyFace(level.get(x, y - 1, z), 1);
             case K_CORAL_WALL: {
                 int f = wallFacing(code);
                 int bx = x - LushCaves.DX[f];
                 int bz = z - LushCaves.DZ[f];
-                return faceFull(level.get(bx, y, bz), f);
+                return sturdyFace(level.get(bx, y, bz), f);
             }
             case K_BAMBOO: {
                 int below = level.get(x, y - 1, z);
@@ -393,8 +393,7 @@ final class Vegetation {
             && sameBlock(level.get(x, y - 1, z), GRASS_BLOCK), simple(MELON)));
         Feature berries = patch(96, 7, 3, new Filtered(onGrassInAir(), simple(SWEET_BERRY_BUSH)));
         Feature pumpkin = patch(96, 7, 3, new Filtered(onGrassInAir(), simple(PUMPKIN)));
-        Feature grassJungle = patch(32, 7, 3, new Filtered((level, x, y, z) -> level.get(x, y, z) == AIR
-            && !sameBlock(level.get(x, y - 1, z), PODZOL), weighted(new int[]{GRASS, 3, FERN, 1})));
+        Feature grassJungle = grassJungle();
         Feature seagrassShort = new Seagrass(0.3F);
 
         l.add(new Placed("bamboo_light", new Bamboo(0.0F), RARITY, 4, IN_SQUARE, HEIGHTMAP, mb, BIOME));
@@ -474,6 +473,12 @@ final class Vegetation {
         l.add(new Placed("warm_ocean_vegetation", new SimpleRandom(new CoralTree(), new CoralClaw(), new CoralMushroom()),
             CUSTOM, 0, IN_SQUARE, HEIGHTMAP, top, BIOME).mods(noiseBased(20, 400.0D, 0.0D)));
         return l;
+    }
+
+    /** patch_grass_jungle (also bamboo_vegetation's default). */
+    static Feature grassJungle() {
+        return patch(32, 7, 3, new Filtered((level, x, y, z) -> level.get(x, y, z) == AIR
+            && !sameBlock(level.get(x, y - 1, z), PODZOL), weighted(new int[]{GRASS, 3, FERN, 1})));
     }
 
     private static Placed mushroom(String name, Feature f, int count, int rarity) {
