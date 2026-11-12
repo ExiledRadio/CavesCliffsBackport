@@ -96,55 +96,124 @@ public final class ChunkFiller {
      */
     public void fill(int cx, int cz, byte[] out, Beardifier beard) {
         this.beard = beard;
-        OverworldNoise noise = this.noise;
         baseX = cx << 4;
         baseZ = cz << 4;
         aquifer.begin(cx, cz);
-        double jaggedMax = noise.jaggedMax();
         for (int xi = 0; xi <= 4; xi++) {
-            int x = baseX + xi * 4;
             for (int zi = 0; zi <= 4; zi++) {
-                int z = baseZ + zi * 4;
-                columns.get(x, z, column);
-                double offset = column[OverworldNoise.COL_OFFSET];
-                double factor = column[OverworldNoise.COL_FACTOR];
-                double jaggedness = column[OverworldNoise.COL_JAGGEDNESS];
-                columnOffset[xi * 5 + zi] = offset;
-                columnFactor[xi * 5 + zi] = factor;
-                columnJaggedness[xi * 5 + zi] = jaggedness;
-                int at = corner(xi, zi, 0);
-                for (int yi = 0; yi < CORNERS_Y; yi++) {
-                    int y = MIN_Y + yi * 8;
-                    done[at + yi] = 0;
-                    // From y -40 up the bottom slide leaves the density alone, and the top slide only pulls it
-                    // toward a negative value, so a negative sloped cheese means a negative main density.
-                    if (y >= -40 && OverworldNoise.slopedCheeseWithoutNoise(y, offset, factor, jaggedness * jaggedMax)
-                            + BASE_3D_BOUND < 0.0D) {
-                        known[at + yi] = SKY;
-                        continue;
-                    }
-                    double v = noise.slopedCheese(x, y, z, offset, factor, jaggedness);
-                    sloped[at + yi] = v;
-                    known[at + yi] = y >= -40 && v < -2.0D * SURE ? NEGATIVE : GROUND;
-                }
+                prepareCornerColumn(xi, zi);
             }
         }
-        int[] cc = cellCorner;
         for (int xi = 0; xi < 4; xi++) {
             for (int zi = 0; zi < 4; zi++) {
                 for (int yi = CELLS_Y - 1; yi >= 0; yi--) {
-                    cc[0] = corner(xi, zi, yi);
-                    cc[1] = corner(xi + 1, zi, yi);
-                    cc[2] = cc[0] + 1;
-                    cc[3] = cc[1] + 1;
-                    cc[4] = corner(xi, zi + 1, yi);
-                    cc[5] = corner(xi + 1, zi + 1, yi);
-                    cc[6] = cc[4] + 1;
-                    cc[7] = cc[5] + 1;
-                    fillCell(baseX + xi * 4, MIN_Y + yi * 8, baseZ + zi * 4, xi * 4, zi * 4, out);
+                    fillCellAt(xi, zi, yi, out);
                 }
             }
         }
+    }
+
+    /** Sloped cheese and what is known from it for one column of corners (xi, zi of the chunk's 5 x 5). */
+    private void prepareCornerColumn(int xi, int zi) {
+        OverworldNoise noise = this.noise;
+        double jaggedMax = noise.jaggedMax();
+        int x = baseX + xi * 4;
+        int z = baseZ + zi * 4;
+        columns.get(x, z, column);
+        double offset = column[OverworldNoise.COL_OFFSET];
+        double factor = column[OverworldNoise.COL_FACTOR];
+        double jaggedness = column[OverworldNoise.COL_JAGGEDNESS];
+        columnOffset[xi * 5 + zi] = offset;
+        columnFactor[xi * 5 + zi] = factor;
+        columnJaggedness[xi * 5 + zi] = jaggedness;
+        int at = corner(xi, zi, 0);
+        for (int yi = 0; yi < CORNERS_Y; yi++) {
+            int y = MIN_Y + yi * 8;
+            done[at + yi] = 0;
+            // From y -40 up the bottom slide leaves the density alone, and the top slide only pulls it
+            // toward a negative value, so a negative sloped cheese means a negative main density.
+            if (y >= -40 && OverworldNoise.slopedCheeseWithoutNoise(y, offset, factor, jaggedness * jaggedMax)
+                    + BASE_3D_BOUND < 0.0D) {
+                known[at + yi] = SKY;
+                continue;
+            }
+            double v = noise.slopedCheese(x, y, z, offset, factor, jaggedness);
+            sloped[at + yi] = v;
+            known[at + yi] = y >= -40 && v < -2.0D * SURE ? NEGATIVE : GROUND;
+        }
+    }
+
+    private void fillCellAt(int xi, int zi, int yi, byte[] out) {
+        int[] cc = cellCorner;
+        cc[0] = corner(xi, zi, yi);
+        cc[1] = corner(xi + 1, zi, yi);
+        cc[2] = cc[0] + 1;
+        cc[3] = cc[1] + 1;
+        cc[4] = corner(xi, zi + 1, yi);
+        cc[5] = corner(xi + 1, zi + 1, yi);
+        cc[6] = cc[4] + 1;
+        cc[7] = cc[5] + 1;
+        fillCell(baseX + xi * 4, MIN_Y + yi * 8, baseZ + zi * 4, xi * 4, zi * 4, out);
+    }
+
+    private byte[] columnScratch;
+
+    /**
+     * NoiseBasedChunkGenerator.getBaseColumn at block x, z: the column's blocks from the noise fill alone (no
+     * structures, surface or carvers), out[y + 64] for y -64..319. Only the noise cell column holding x, z is
+     * computed (fill's blocks there are the same cell by cell).
+     */
+    public void baseColumn(int x, int z, byte[] out) {
+        int local = startColumn(x, z);
+        for (int yi = CELLS_Y - 1; yi >= 0; yi--) {
+            fillCellAt(columnXi, columnZi, yi, columnScratch);
+        }
+        System.arraycopy(columnScratch, local * HEIGHT, out, 0, HEIGHT);
+    }
+
+    /**
+     * NoiseBasedChunkGenerator.getBaseHeight at block x, z for WORLD_SURFACE_WG (oceanFloor false: one above the
+     * highest non-air block) or OCEAN_FLOOR_WG (true: one above the highest block that blocks motion, neither air
+     * nor fluid), or -64 if there is none. Fills cells from the top only until the answer is known.
+     */
+    public int baseHeight(int x, int z, boolean oceanFloor) {
+        int local = startColumn(x, z);
+        byte[] b = columnScratch;
+        int at = local * HEIGHT;
+        for (int yi = CELLS_Y - 1; yi >= 0; yi--) {
+            fillCellAt(columnXi, columnZi, yi, b);
+            for (int i = yi * 8 + 7; i >= yi * 8; i--) {
+                int code = b[at + i];
+                if (oceanFloor ? code != AIR && code != WATER && code != LAVA : code != AIR) {
+                    return MIN_Y + i + 1;
+                }
+            }
+        }
+        return MIN_Y;
+    }
+
+    private int columnXi;
+    private int columnZi;
+
+    /** Sets up the cell column holding x, z; returns the column's index in the chunk (local x * 16 + local z). */
+    private int startColumn(int x, int z) {
+        if (columnScratch == null) {
+            columnScratch = new byte[16 * 16 * HEIGHT];
+        }
+        beard = null;
+        int cx = x >> 4;
+        int cz = z >> 4;
+        baseX = cx << 4;
+        baseZ = cz << 4;
+        aquifer.begin(cx, cz);
+        columnXi = (x & 15) >> 2;
+        columnZi = (z & 15) >> 2;
+        for (int xi = columnXi; xi <= columnXi + 1; xi++) {
+            for (int zi = columnZi; zi <= columnZi + 1; zi++) {
+                prepareCornerColumn(xi, zi);
+            }
+        }
+        return (x & 15) * 16 + (z & 15);
     }
 
     /** Makes sure the given function group is computed at the cell's 8 corners and loads it into cell[]. */

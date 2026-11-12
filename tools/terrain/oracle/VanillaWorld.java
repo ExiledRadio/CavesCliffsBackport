@@ -241,6 +241,60 @@ final class VanillaWorld {
         return lists.toString();
     }
 
+    private static boolean tagsBound;
+
+    /**
+     * Binds the biome tags of the jar's data pack (data/minecraft/tags/worldgen/biome, has_structure/* and is_*),
+     * which a server loads at start and RegistryAccess.builtinCopy() leaves empty. Structures and features test them.
+     */
+    static synchronized void bindBiomeTags() throws Exception {
+        if (tagsBound) {
+            return;
+        }
+        Registry<Biome> registry = access.registryOrThrow(Registry.BIOME_REGISTRY);
+        java.util.Map<String, java.util.List<String>> raw = new java.util.TreeMap<>();
+        java.net.URL root = VanillaWorld.class.getResource("/data/minecraft/tags/worldgen/biome/is_ocean.json");
+        java.net.JarURLConnection connection = (java.net.JarURLConnection) root.openConnection();
+        try (java.util.jar.JarFile jar = connection.getJarFile()) {
+            java.util.Enumeration<java.util.jar.JarEntry> entries = jar.entries();
+            String prefix = "data/minecraft/tags/worldgen/biome/";
+            while (entries.hasMoreElements()) {
+                java.util.jar.JarEntry e = entries.nextElement();
+                if (e.getName().startsWith(prefix) && e.getName().endsWith(".json")) {
+                    String name = e.getName().substring(prefix.length(), e.getName().length() - 5);
+                    try (java.io.Reader r = new java.io.InputStreamReader(jar.getInputStream(e), java.nio.charset.StandardCharsets.UTF_8)) {
+                        com.google.gson.JsonObject o = com.google.gson.JsonParser.parseReader(r).getAsJsonObject();
+                        java.util.List<String> values = new ArrayList<>();
+                        for (com.google.gson.JsonElement v : o.getAsJsonArray("values")) {
+                            values.add(v.getAsString());
+                        }
+                        raw.put(name, values);
+                    }
+                }
+            }
+        }
+        java.util.Map<net.minecraft.tags.TagKey<Biome>, List<Holder<Biome>>> bound = new java.util.HashMap<>();
+        for (String name : raw.keySet()) {
+            java.util.LinkedHashSet<Holder<Biome>> out = new java.util.LinkedHashSet<>();
+            resolveTag(name, raw, registry, out);
+            bound.put(net.minecraft.tags.TagKey.create(Registry.BIOME_REGISTRY, new net.minecraft.resources.ResourceLocation(name)),
+                new ArrayList<>(out));
+        }
+        ((net.minecraft.core.MappedRegistry<Biome>) registry).bindTags(bound);
+        tagsBound = true;
+    }
+
+    private static void resolveTag(String name, java.util.Map<String, java.util.List<String>> raw, Registry<Biome> registry,
+                                   java.util.Set<Holder<Biome>> out) {
+        for (String v : raw.get(name)) {
+            if (v.startsWith("#")) {
+                resolveTag(new net.minecraft.resources.ResourceLocation(v.substring(1)).getPath(), raw, registry, out);
+            } else {
+                out.add(registry.getHolderOrThrow(ResourceKey.create(Registry.BIOME_REGISTRY, new net.minecraft.resources.ResourceLocation(v))));
+            }
+        }
+    }
+
     /** A hash of Mth's sine table, as McMath.sinTableHash. */
     static long sinTableHash() throws Exception {
         Field f = Mth.class.getDeclaredField("SIN");
