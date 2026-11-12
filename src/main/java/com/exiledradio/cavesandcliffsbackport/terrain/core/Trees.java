@@ -12,9 +12,10 @@ import static com.exiledradio.cavesandcliffsbackport.terrain.core.Decorator.*;
 
 /**
  * Trees as 1.18.2 places them (TreeFeature, its trunk and foliage placers, feature sizes and decorators; the tree
- * placements of VegetationPlacements / TreePlacements). So far: straight trunks with blob, spruce and pine foliage,
- * two-layer feature sizes and beehives (trees_snowy, trees_badlands, trees_birch, trees_taiga, trees_grove,
- * birch_tall).
+ * placements of VegetationPlacements / TreePlacements). So far: straight and fancy trunks with blob, spruce, pine
+ * and fancy foliage, two-layer feature sizes and beehives (trees_snowy, trees_badlands, trees_birch, trees_taiga,
+ * trees_grove, birch_tall, trees_plains, trees_water, trees_windswept_hills, trees_windswept_forest,
+ * trees_flower_forest, trees_meadow).
  *
  * <p>TreeFeature keeps three HashSet&lt;BlockPos&gt; (trunk, foliage, decorations) and the decorators read the trunk
  * and foliage sets as lists sorted by y, ties in HashSet order: LushCaves.Pos hashes as Vec3i does, so a
@@ -78,6 +79,13 @@ final class Trees {
         Feature pineChecked = new Checked(pine);
         Feature birchBees0002Checked = new Checked(birchBees0002);
         Feature superBirchBees0002Checked = new Checked(superBirchBees0002);
+        Tree oakBees005 = oakBees(0.05F);
+        Tree oakBees002 = oakBees(0.02F);
+        Tree birchBees002 = new Tree(LOG[BIRCH][1], LEAVES[BIRCH][7], true, 0.02F, STRAIGHT, 5, 2, 0, BLOB, c(2), c(0), 3, null, 1, 0, 1);
+        Tree superBirchBees = new Tree(LOG[BIRCH][1], LEAVES[BIRCH][7], true, 1.0F, STRAIGHT, 5, 2, 6, BLOB, c(2), c(0), 3, null, 1, 0, 1);
+        Tree fancyOak = fancyOak(-1.0F);
+        Feature oakChecked = new Checked(oak);
+        Feature fancyOakChecked = new Checked(fancyOak);
         Modifier sapling = (level, random, next, x, y, z) -> {
             if (saplingSurvives(level, x, y, z)) {
                 next.at(x, y, z);
@@ -92,8 +100,36 @@ final class Trees {
                 COUNT_EXTRA, 10, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
             new Placed("birch_tall", new Selector(new float[]{0.5F}, new Feature[]{superBirchBees0002Checked}, birchBees0002Checked),
                 COUNT_EXTRA, 10, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
+            new Placed("trees_plains", new Selector(new float[]{0.33333334F}, new Feature[]{inline(fancyOak(0.05F))}, inline(oakBees005)),
+                COUNT_EXTRA, 0, 20, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, CUSTOM, 0, BIOME).mods(sapling),
+            new Placed("trees_water", new Selector(new float[]{0.1F}, new Feature[]{fancyOakChecked}, oakChecked),
+                COUNT_EXTRA, 0, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
+            new Placed("trees_windswept_hills", new Selector(new float[]{0.666F, 0.1F}, new Feature[]{spruceChecked, fancyOakChecked}, oakChecked),
+                COUNT_EXTRA, 0, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
+            new Placed("trees_windswept_forest", new Selector(new float[]{0.666F, 0.1F}, new Feature[]{spruceChecked, fancyOakChecked}, oakChecked),
+                COUNT_EXTRA, 3, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
+            new Placed("trees_flower_forest", new Selector(new float[]{0.2F, 0.1F},
+                new Feature[]{new Checked(birchBees002), new Checked(fancyOak(0.02F))}, new Checked(oakBees002)),
+                COUNT_EXTRA, 6, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
+            new Placed("trees_meadow", new Selector(new float[]{0.5F}, new Feature[]{new Checked(fancyOak(1.0F))}, new Checked(superBirchBees)),
+                RARITY, 100, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
             new Placed("trees_grove", new Selector(new float[]{0.33333334F}, new Feature[]{new OnSnow(pine)}, new OnSnow(spruce)),
                 COUNT_EXTRA, 10, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME));
+    }
+
+    private static Tree oakBees(float bees) {
+        return new Tree(LOG[OAK][1], LEAVES[OAK][7], true, bees, STRAIGHT, 4, 2, 0, BLOB, c(2), c(0), 3, null, 1, 0, 1);
+    }
+
+    /** createFancyOak: FancyTrunkPlacer(3, 11, 0), FancyFoliagePlacer(2, 4, 4), TwoLayers(0, 0, 0, min clipped 4). */
+    private static Tree fancyOak(float bees) {
+        return new Tree(LOG[OAK][1], LEAVES[OAK][7], true, bees, FANCY, 3, 11, 0, FANCY_FOLIAGE, c(2), c(4), 4, null, 0, 0, 0)
+            .minClipped(4);
+    }
+
+    /** PlacementUtils.inlinePlaced: no modifiers, then the feature (ensureCanWrite first). */
+    private static Feature inline(Feature f) {
+        return (level, random, x, y, z) -> LushCaves.placeInline(f, level, random, x, y, z);
     }
 
     /** BlockPredicate.wouldSurvive(sapling): BushBlock.mayPlaceOn the block below (dirt tag or farmland). */
@@ -236,6 +272,17 @@ final class Trees {
     static final int BLOB = 0;
     static final int SPRUCE_FOLIAGE = 1;
     static final int PINE_FOLIAGE = 2;
+    static final int FANCY_FOLIAGE = 3;
+    static final int FANCY = 1;
+
+    /** Per y-axis log code: the wood's x, y, z axis codes. */
+    static final java.util.Map<Integer, int[]> LOG_BY_STATE = new java.util.HashMap<>();
+
+    static {
+        for (int[] axes : LOG) {
+            LOG_BY_STATE.put(axes[1], axes);
+        }
+    }
 
     static final class Tree implements Feature {
         final int log;
@@ -257,6 +304,13 @@ final class Trees {
         final int sizeLimit;
         final int sizeLower;
         final int sizeUpper;
+        /** FeatureSize.minClippedHeight, or -1. */
+        int minClipped = -1;
+
+        Tree minClipped(int h) {
+            minClipped = h;
+            return this;
+        }
 
         private HashSet<LushCaves.Pos> trunk;
         private HashSet<LushCaves.Pos> foliage;
@@ -345,7 +399,14 @@ final class Trees {
             int l = foliageRadius(random, k);
             if (y >= -64 + 1 && y + i + 1 <= 320) {
                 int i1 = maxFreeTreeHeight(i, x, y, z);
-                if (i1 >= i) {
+                if (i1 >= i || minClipped >= 0 && i1 >= minClipped) {
+                    if (trunkType == FANCY) {
+                        List<int[]> attachments = fancyTrunk(random, i1, x, y, z);
+                        for (int[] a : attachments) {
+                            createFoliage(random, a[0], a[1], a[2], 0, false, i1, j, l);
+                        }
+                        return true;
+                    }
                     // StraightTrunkPlacer
                     setDirtAt(x, y - 1, z);
                     for (int q = 0; q < i1; ++q) {
@@ -404,6 +465,107 @@ final class Trees {
             }
         }
 
+        // ---- FancyTrunkPlacer ----
+
+        /** Attachments as {x, y, z, branch base}. */
+        private List<int[]> fancyTrunk(XoroRandom random, int h, int ox, int oy, int oz) {
+            int j = h + 2;
+            int k = McMath.floor((double) j * 0.618D);
+            setDirtAt(ox, oy - 1, oz);
+            int l = Math.min(1, McMath.floor(1.382D + Math.pow(1.0D * (double) j / 13.0D, 2.0D)));
+            int i1 = oy + k;
+            int j1 = j - 5;
+            List<int[]> list = new ArrayList<>();
+            list.add(new int[]{ox, oy + j1, oz, i1});
+            for (; j1 >= 0; --j1) {
+                float f = treeShape(j, j1);
+                if (!(f < 0.0F)) {
+                    for (int k1 = 0; k1 < l; ++k1) {
+                        double d2 = 1.0D * (double) f * ((double) random.nextFloat() + 0.328D);
+                        double d3 = (double) (random.nextFloat() * 2.0F) * Math.PI;
+                        double d4 = d2 * Math.sin(d3) + 0.5D;
+                        double d5 = d2 * Math.cos(d3) + 0.5D;
+                        int bx = McMath.floor((double) ox + d4);
+                        int by = oy + (j1 - 1);
+                        int bz = McMath.floor((double) oz + d5);
+                        if (makeLimb(random, bx, by, bz, bx, by + 5, bz, false)) {
+                            int l1 = ox - bx;
+                            int i2 = oz - bz;
+                            double d6 = (double) by - Math.sqrt((double) (l1 * l1 + i2 * i2)) * 0.381D;
+                            int j2 = d6 > (double) i1 ? i1 : (int) d6;
+                            if (makeLimb(random, ox, j2, oz, bx, by, bz, false)) {
+                                list.add(new int[]{bx, by, bz, j2});
+                            }
+                        }
+                    }
+                }
+            }
+            makeLimb(random, ox, oy, oz, ox, oy + k, oz, true);
+            for (int[] c : list) {
+                int i = c[3];
+                if (!(ox == c[0] && i == c[1] && oz == c[2]) && trimBranches(j, i - oy)) {
+                    makeLimb(random, ox, i, oz, c[0], c[1], c[2], true);
+                }
+            }
+            List<int[]> out = new ArrayList<>();
+            for (int[] c : list) {
+                if (trimBranches(j, c[3] - oy)) {
+                    out.add(c);
+                }
+            }
+            return out;
+        }
+
+        private boolean makeLimb(XoroRandom random, int sx, int sy, int sz, int ex, int ey, int ez, boolean place) {
+            if (!place && sx == ex && sy == ey && sz == ez) {
+                return true;
+            }
+            int dx = ex - sx;
+            int dy = ey - sy;
+            int dz = ez - sz;
+            int i = Math.max(Math.abs(dx), Math.max(Math.abs(dy), Math.abs(dz)));
+            float f = (float) dx / (float) i;
+            float f1 = (float) dy / (float) i;
+            float f2 = (float) dz / (float) i;
+            for (int j = 0; j <= i; ++j) {
+                int x = McMath.floor((double) sx + (double) (0.5F + (float) j * f));
+                int y = McMath.floor((double) sy + (double) (0.5F + (float) j * f1));
+                int z = McMath.floor((double) sz + (double) (0.5F + (float) j * f2));
+                if (place) {
+                    if (validTreePos(level.get(x, y, z))) {
+                        // getLogAxis(start, this block)
+                        int ax = Math.abs(x - sx);
+                        int az = Math.abs(z - sz);
+                        int m = Math.max(ax, az);
+                        int axis = m > 0 ? (ax == m ? 0 : 2) : 1;
+                        trunk(x, y, z, LOG_BY_STATE.get(log)[axis]);
+                    }
+                } else if (!isFree(level.get(x, y, z))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static boolean trimBranches(int h, int y) {
+            return (double) y >= (double) h * 0.2D;
+        }
+
+        private static float treeShape(int h, int y) {
+            if ((float) y < (float) h * 0.3F) {
+                return -1.0F;
+            }
+            float f = (float) h / 2.0F;
+            float f1 = f - (float) y;
+            float f2 = (float) Math.sqrt((double) (f * f - f1 * f1));
+            if (f1 == 0.0F) {
+                f2 = f;
+            } else if (Math.abs(f1) >= f) {
+                return 0.0F;
+            }
+            return f2 * 0.5F;
+        }
+
         // ---- foliage placers ----
 
         private void createFoliage(XoroRandom random, int ax, int ay, int az, int radiusOffset, boolean doubleTrunk,
@@ -438,6 +600,12 @@ final class Trees {
                     }
                     return;
                 }
+                case FANCY_FOLIAGE:
+                    for (int i = off; i >= off - foliageHeight; --i) {
+                        int j = foliageRadius + (i != off && i != off - foliageHeight ? 1 : 0);
+                        leavesRow(random, ax, ay, az, j, i, doubleTrunk);
+                    }
+                    return;
                 default:
                     for (int i = off; i >= off - foliageHeight; --i) {
                         int j = Math.max(foliageRadius + radiusOffset - 1 - i / 2, 0);
@@ -449,6 +617,9 @@ final class Trees {
         private boolean skip(XoroRandom random, int dx, int dy, int dz, int r, boolean doubleTrunk) {
             if (foliageType == BLOB) {
                 return dx == r && dz == r && (random.nextInt(2) == 0 || dy == 0);
+            }
+            if (foliageType == FANCY_FOLIAGE) {
+                return ((float) dx + 0.5F) * ((float) dx + 0.5F) + ((float) dz + 0.5F) * ((float) dz + 0.5F) > (float) (r * r);
             }
             // spruce, pine
             return dx == r && dz == r && r > 0;

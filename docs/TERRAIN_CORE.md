@@ -241,6 +241,14 @@ wooded badlands, birch forest, old growth birch forest, taiga, grove; centers in
 still on every earlier check. `DecorationBench` (Java 8, one E-core): 1.37 ms/chunk at seed 42 0,0; 1.43 at -16,0
 (birch forest); 1.38 at 48,-56 (taiga). Vanilla's timer over the same features there (unpinned Java 17): 3.4-4.2.
 
+Fancy oaks (2026-11-12): `FancyTrunkPlacer` (limbs stepped in floats from the block's corner, branch logs with x or
+z axes, `minClippedHeight` 4) and `FancyFoliagePlacer` in `Trees`, unlocking trees_plains (inline placed fancy oak
+and oak with 5% bees, its own modifier order: the oak sapling filter before the biome), trees_water,
+trees_windswept_hills, trees_windswept_forest, trees_flower_forest and trees_meadow. `FeatureCheck -DlooseBees` with
+all 73 ported features: identical on plains, river, windswept hills, windswept forest, flower forest and meadow per
+seed (`oracle-out/feat-trees2/<seed>`, side 8, 1,536 chunks), and the first tree areas still identical.
+`DecorationBench`: 1.35 ms/chunk at seed 42 24,-24 (plains); 1.71 at -32,-32 (flower forest).
+
 Java 8 and `Math.sin`: `OreFeature` takes `Math.sin`/`Math.cos` of a double, as vanilla does. Over all 2^24 angles
 an ore can draw, Java 17, 21 and 25 give the same bits (vanilla's, on Java 17), but Java 8's `Math` differs from
 them in the last bit at about a million angles (`StrictMath` matches neither). On the checks' 704 chunks Java 8
@@ -402,8 +410,9 @@ Done: biomes and surface rules, carvers, the beardifier, structure placement (ab
 1. Features (placed features, GenerationStep.Decoration). Done: the decoration loop, its oracle, every ore,
    springs, disks, underwater magma, lava lakes, monster rooms, the geode, dripstone, lush caves but
    rooted_azalea_tree, glow lichen, freeze_top_layer, icebergs, forest rock, fossils, ice spike / patch, desert
-   well and blue ice, and the first trees (above): every step but VEGETAL. Left: the other trees (fancy oak,
-   acacia, dark oak, jungle, mega spruce and pine, swamp oak, azalea and rooted_azalea_tree) and the rest of VEGETAL. Left, as streams on the same framework, each checked with `-Dfeatures` and `FeatureCheck`: cave
+   well and blue ice, and the first trees with fancy oaks (above): every step but VEGETAL. Left: the other trees
+   (acacia, dark oak and huge mushrooms, jungle, mega spruce and pine, swamp oak, azalea and rooted_azalea_tree)
+   and the rest of VEGETAL. Left, as streams on the same framework, each checked with `-Dfeatures` and `FeatureCheck`: cave
    features (geodes, dripstone clusters / large / pointed, lush caves, monster rooms, fossils (templates), springs,
    lava lakes, underwater magma); surface (disks, icebergs, ice spikes and patches, blue ice, desert wells, forest
    rocks, freeze top layer, which reads block light: the oracle region has no light engine yet, see below); trees
