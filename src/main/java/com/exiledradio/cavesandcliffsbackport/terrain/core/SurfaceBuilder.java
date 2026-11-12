@@ -93,6 +93,8 @@ public final class SurfaceBuilder {
     private int stoneDepthAbove;
     private int waterHeight;
     private int biome;
+    /** In topMaterial (see there). */
+    private boolean topMode;
 
     public SurfaceBuilder(OverworldNoise noise, ColumnCache columns, BiomeSource biomes) {
         this.noise = noise;
@@ -202,6 +204,73 @@ public final class SurfaceBuilder {
         this.blocks = null;
     }
 
+    /**
+     * SurfaceSystem.topMaterial (CarvingContext.topMaterial): the overworld rules at one block with stone depth
+     * above and below 1 and the water height one above it when the carved block above is a fluid, else none. The
+     * carvers ask it for dirt under a carved column that held grass or mycelium. Returns a block code, or -1 when
+     * no rule applies (the dirt stays).
+     */
+    public int topMaterial(int cx, int cz, byte[] blocks, int x, int y, int z, boolean fluidAbove) {
+        this.blocks = blocks;
+        baseX = cx << 4;
+        baseZ = cz << 4;
+        column = (x - baseX) * 16 + (z - baseZ);
+        bx = x;
+        bz = z;
+        topMode = true;
+        try {
+            beginZoomColumn();
+            updateXZ();
+            this.y = y;
+            stoneDepthAbove = 1;
+            waterHeight = fluidAbove ? y + 1 : Integer.MIN_VALUE;
+            biome = -1;
+            if (y <= -64 || y < -59 && gradient(bedrockFloor, y, -64, -59)) {
+                return BEDROCK;
+            }
+            if (y >= minSurfaceLevel) {
+                int r = surface();
+                if (r != NONE) {
+                    return r;
+                }
+            }
+            if (y <= 0 || y < 8 && gradient(deepslate, y, 0, 8)) {
+                return DEEPSLATE;
+            }
+            return NONE;
+        } finally {
+            topMode = false;
+            this.blocks = null;
+        }
+    }
+
+    /** BiomeManager.getBiome straight from the biome source, for quart y below the world (topMaterial only). */
+    private int unclampedBiome(int x, int y, int z) {
+        int i = x - 2;
+        int j = y - 2;
+        int k = z - 2;
+        int l = i >> 2;
+        int i1 = j >> 2;
+        int j1 = k >> 2;
+        double d0 = (double) (i & 3) / 4.0D;
+        double d1 = (double) (j & 3) / 4.0D;
+        double d2 = (double) (k & 3) / 4.0D;
+        int k1 = 0;
+        double d3 = Double.POSITIVE_INFINITY;
+        for (int l1 = 0; l1 < 8; ++l1) {
+            boolean flag = (l1 & 4) == 0;
+            boolean flag1 = (l1 & 2) == 0;
+            boolean flag2 = (l1 & 1) == 0;
+            double d7 = fiddledDistance(zoomSeed, flag ? l : l + 1, flag1 ? i1 : i1 + 1, flag2 ? j1 : j1 + 1,
+                flag ? d0 : d0 - 1.0D, flag1 ? d1 : d1 - 1.0D, flag2 ? d2 : d2 - 1.0D);
+            if (d3 > d7) {
+                k1 = l1;
+                d3 = d7;
+            }
+        }
+        return biomes.biome((k1 & 4) == 0 ? l : l + 1, (k1 & 2) == 0 ? i1 : i1 + 1, (k1 & 1) == 0 ? j1 : j1 + 1);
+    }
+
     private void updateXZ() {
         surfaceDepth = surfaceDepth(bx, bz);
         surfaceSecondaryDone = false;
@@ -300,7 +369,7 @@ public final class SurfaceBuilder {
 
     private int biome() {
         if (biome < 0) {
-            biome = zoomedBiome(bx, y, bz);
+            biome = topMode && (y - 2) >> 2 < MIN_QUART_Y ? unclampedBiome(bx, y, bz) : zoomedBiome(bx, y, bz);
         }
         return biome;
     }
@@ -316,6 +385,10 @@ public final class SurfaceBuilder {
      * block gives the same answer without the scan (no other rule reads the depth below).
      */
     private boolean onCeiling() {
+        if (topMode) {
+            // topMaterial: stone depth below 1.
+            return true;
+        }
         int s = get(y - 1);
         return s == AIR || isFluid(s);
     }
@@ -435,21 +508,39 @@ public final class SurfaceBuilder {
             int j = bz & 15;
             int k = Math.max(j - 1, 0);
             int l = Math.min(j + 1, 15);
-            int i1 = heights[i * 16 + k];
-            int j1 = heights[i * 16 + l];
+            int i1 = height(i * 16 + k);
+            int j1 = height(i * 16 + l);
             boolean s;
             if (j1 >= i1 + 4) {
                 s = true;
             } else {
                 int k1 = Math.max(i - 1, 0);
                 int l1 = Math.min(i + 1, 15);
-                int i2 = heights[k1 * 16 + j];
-                int j2 = heights[l1 * 16 + j];
+                int i2 = height(k1 * 16 + j);
+                int j2 = height(l1 * 16 + j);
                 s = i2 >= j2 + 4;
             }
             steep = s ? 1 : 0;
         }
         return steep == 1;
+    }
+
+    /**
+     * WORLD_SURFACE_WG at a column. In topMaterial the carvers have changed the chunk since build, and vanilla's
+     * heightmap follows every setBlockState exactly (it is always one above the highest non-air block), so the
+     * column is scanned.
+     */
+    private int height(int c) {
+        if (!topMode) {
+            return heights[c];
+        }
+        int at = c * HEIGHT;
+        for (int i = HEIGHT - 1; i >= 0; i--) {
+            if (blocks[at + i] != AIR) {
+                return MIN_Y + i + 1;
+            }
+        }
+        return MIN_Y;
     }
 
     /** grass: c7 ? grass : dirt. */

@@ -189,6 +189,70 @@ final class VanillaWorld {
             settings.surfaceRule());
     }
 
+    /**
+     * NoiseBasedChunkGenerator.applyCarvers (GenerationStep.Carving.AIR) on a chunk after surface, with the
+     * region's look-ups answered directly: a start chunk's carver biome from the biome source at quart y 0, the
+     * biome manager over the biome source (no clamp), the world's obfuscated seed.
+     */
+    final Map<Long, Holder<Biome>> carverBiomes = new java.util.HashMap<>();
+
+    void carve(ProtoChunk chunk) {
+        BiomeManager manager = new BiomeManager((qx, qy, qz) -> coldBiome(qx, qy, qz), BiomeManager.obfuscateSeed(seed));
+        net.minecraft.world.level.levelgen.WorldgenRandom random = new net.minecraft.world.level.levelgen.WorldgenRandom(
+            new net.minecraft.world.level.levelgen.LegacyRandomSource(0L));
+        NoiseChunk noiseChunk = chunk.getOrCreateNoiseChunk(router, () -> DensityFunctions.BeardifierMarker.INSTANCE,
+            settings, picker, Blender.empty());
+        Aquifer aquifer = noiseChunk.aquifer();
+        net.minecraft.world.level.levelgen.carver.CarvingContext context =
+            new net.minecraft.world.level.levelgen.carver.CarvingContext(generator, access, HEIGHT, noiseChunk);
+        net.minecraft.world.level.chunk.CarvingMask mask = chunk.getOrCreateCarvingMask(GenerationStep.Carving.AIR);
+        ChunkPos pos = chunk.getPos();
+        for (int j = -8; j <= 8; ++j) {
+            for (int k = -8; k <= 8; ++k) {
+                ChunkPos start = new ChunkPos(pos.x + j, pos.z + k);
+                // ChunkAccess.carverBiome: computed once per chunk and kept.
+                Holder<Biome> biome = carverBiomes.computeIfAbsent(start.toLong(),
+                    x -> coldBiome(QuartPos.fromBlock(start.getMinBlockX()), 0, QuartPos.fromBlock(start.getMinBlockZ())));
+                int l = 0;
+                for (Holder<net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver<?>> holder
+                        : biome.value().getGenerationSettings().getCarvers(GenerationStep.Carving.AIR)) {
+                    net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver<?> carver = holder.value();
+                    random.setLargeFeatureSeed(seed + (long) l, start.x, start.z);
+                    if (carver.isStartChunk(random)) {
+                        carver.carve(context, chunk, manager::getBiome, random, aquifer, start, mask);
+                    }
+                    ++l;
+                }
+            }
+        }
+    }
+
+    /** The carver lists of every overworld biome, one line per distinct list (the core assumes one). */
+    String carverLists() {
+        Map<String, List<String>> lists = new java.util.TreeMap<>();
+        for (Holder<Biome> h : holders) {
+            StringBuilder b = new StringBuilder();
+            for (Holder<net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver<?>> c
+                    : h.value().getGenerationSettings().getCarvers(GenerationStep.Carving.AIR)) {
+                b.append(c.unwrapKey().map(k -> k.location().getPath()).orElse("?")).append(' ');
+            }
+            lists.computeIfAbsent(b.toString(), x -> new ArrayList<>()).add(h.unwrapKey().get().location().getPath());
+        }
+        return lists.toString();
+    }
+
+    /** A hash of Mth's sine table, as McMath.sinTableHash. */
+    static long sinTableHash() throws Exception {
+        Field f = Mth.class.getDeclaredField("SIN");
+        f.setAccessible(true);
+        float[] table = (float[]) f.get(null);
+        long h = 1L;
+        for (float v : table) {
+            h = h * 31L + Float.floatToIntBits(v);
+        }
+        return h;
+    }
+
     /** The chunk's blocks as codes, index (x * 16 + z) * 384 + y + 64. */
     static void read(ProtoChunk chunk, byte[] out) {
         net.minecraft.core.BlockPos.MutableBlockPos p = new net.minecraft.core.BlockPos.MutableBlockPos();

@@ -87,6 +87,15 @@ public final class ChunkFiller {
      * Fills out (16 * 16 * 384 bytes, index (x * 16 + z) * 384 + (y + 64)) with the block codes of chunk cx, cz.
      */
     public void fill(int cx, int cz, byte[] out) {
+        fill(cx, cz, out, null);
+    }
+
+    /**
+     * fill with structure terrain adaptation: beard (Beardifier.forChunk for this chunk, or null for none) is added
+     * to the final density of every block, as vanilla's NoiseChunk adds the beardifier.
+     */
+    public void fill(int cx, int cz, byte[] out, Beardifier beard) {
+        this.beard = beard;
         OverworldNoise noise = this.noise;
         baseX = cx << 4;
         baseZ = cz << 4;
@@ -259,7 +268,13 @@ public final class ChunkFiller {
         }
     }
 
+    private Beardifier beard;
+
     private void fillCell(int cellX, int cellY, int cellZ, int localX, int localZ, byte[] out) {
+        if (beard != null && beard.touches(cellX, cellY, cellZ, cellX + 3, cellY + 7, cellZ + 3)) {
+            fillCellBeard(cellX, cellY, cellZ, localX, localZ, out);
+            return;
+        }
         double[] c = cell;
         int[] cc = cellCorner;
         boolean empty = true;
@@ -378,6 +393,62 @@ public final class ChunkFiller {
     }
 
     private boolean emptyNoodlesPending;
+
+    /**
+     * A cell some structure piece's terrain adaptation reaches: every block the long way, final density plus the
+     * beardifier, as vanilla does it. The functions needed are the same as in fillCell (noodles where their
+     * toggle can reach 0, veins where their toggle can reach 0.4); only the whole-cell answers are left out.
+     */
+    private void fillCellBeard(int cellX, int cellY, int cellZ, int localX, int localZ, byte[] out) {
+        double[] c = cell;
+        need(DONE_MAIN);
+        need(DONE_NOODLE_TOGGLE);
+        boolean noodles = !(max8(c, F_NOODLE * 8) < -SURE);
+        if (noodles) {
+            need(DONE_NOODLE);
+        }
+        boolean veins = false;
+        if (cellY <= 50 && cellY + 7 >= -60) {
+            need(DONE_VEIN_TOGGLE);
+            veins = Math.max(max8(c, F_VEIN * 8), -min8(c, F_VEIN * 8)) >= 0.4D - SURE;
+            if (veins) {
+                need(DONE_VEIN);
+            }
+        }
+        double c0 = c[0];
+        double c1 = c[1];
+        double c2 = c[2];
+        double c3 = c[3];
+        double c4 = c[4];
+        double c5 = c[5];
+        double c6 = c[6];
+        double c7 = c[7];
+        Beardifier beard = this.beard;
+        for (int dx = 0; dx < 4; dx++) {
+            int x = cellX + dx;
+            double tx = (double) dx / 4.0D;
+            double a0 = c0 + tx * (c1 - c0);
+            double a1 = c2 + tx * (c3 - c2);
+            double a2 = c4 + tx * (c5 - c4);
+            double a3 = c6 + tx * (c7 - c6);
+            for (int dy = 0; dy < 8; dy++) {
+                int y = cellY + dy;
+                double ty = (double) dy / 8.0D;
+                double b0 = a0 + ty * (a1 - a0);
+                double b1 = a2 + ty * (a3 - a2);
+                for (int dz = 0; dz < 4; dz++) {
+                    int z = cellZ + dz;
+                    double tz = (double) dz / 4.0D;
+                    double d = density(b0 + tz * (b1 - b0), noodles, tx, ty, tz) + beard.compute(x, y, z);
+                    int code = aquifer.computeSubstance(x, y, z, d);
+                    if (code < 0) {
+                        code = veins ? vein(x, y, z, tx, ty, tz) : STONE;
+                    }
+                    out[((localX + dx) * 16 + localZ + dz) * HEIGHT + (y - MIN_Y)] = (byte) code;
+                }
+            }
+        }
+    }
 
     /** final_density at a block of the cell, from the interpolated main density. */
     private double density(double main, boolean noodles, double tx, double ty, double tz) {
