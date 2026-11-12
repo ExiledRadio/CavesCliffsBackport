@@ -126,6 +126,15 @@ features on the same E-core (`VanillaFeatureDump`'s timer, 128 chunks, one pass)
 the ore spheres themselves (`doPlace`); each chunk's stored-biome set is cached (it is in nine 3x3 unions) and the
 zoom answers without fiddled distances where its 8 quarts agree.
 
+Also ported: springs (spring_water, spring_lava, spring_lava_frozen: `VeryBiasedToBottomHeight`), disks
+(disk_sand, disk_clay, disk_gravel: `HeightmapPlacement` on OCEAN_FLOOR_WG, sandstone under falling disks over air)
+and underwater magma (`SurfaceRelativeThresholdFilter`, the column scan, a draw per box position in x, y, z
+order); `Misc`. `FeatureCheck` with ores plus these 7 (`oracle-out/feat-misc`, 512 chunks): identical.
+`DecorationBench` with all of them: 1.04 ms/chunk (Java 8), 0.97 (Java 17); fill + surface + carvers unchanged
+(2.41 + 0.28). Writes through `Region.set` are dropped outside the writable 3x3 and the world's height as
+`WorldGenRegion.setBlock` drops them; the POST_FEATURES heightmaps they would move are not kept yet (nothing ported
+reads them; freeze_top_layer and trees will).
+
 Java 8 and `Math.sin`: `OreFeature` takes `Math.sin`/`Math.cos` of a double, as vanilla does. Over all 2^24 angles
 an ore can draw, Java 17, 21 and 25 give the same bits (vanilla's, on Java 17), but Java 8's `Math` differs from
 them in the last bit at about a million angles (`StrictMath` matches neither). On the checks' 704 chunks Java 8

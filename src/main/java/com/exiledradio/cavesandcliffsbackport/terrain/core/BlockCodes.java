@@ -68,7 +68,9 @@ public final class BlockCodes {
     public static final int DIORITE = 50;
     public static final int ANDESITE = 51;
     public static final int CLAY = 52;
-    public static final int COUNT = 53;
+    // Springs, disks, underwater magma.
+    public static final int MAGMA_BLOCK = 53;
+    public static final int COUNT = 54;
 
     private static final String[] STATES = {"air", "stone", "water[level=0]", "lava[level=0]", "copper_ore",
         "raw_copper_block", "granite", "deepslate_iron_ore", "raw_iron_block", "tuff", "bedrock", "deepslate[axis=y]",
@@ -79,7 +81,7 @@ public final class BlockCodes {
         "coal_ore", "deepslate_coal_ore", "iron_ore", "deepslate_copper_ore", "gold_ore", "deepslate_gold_ore",
         "redstone_ore[lit=false]", "deepslate_redstone_ore[lit=false]", "emerald_ore", "deepslate_emerald_ore",
         "lapis_ore", "deepslate_lapis_ore", "diamond_ore", "deepslate_diamond_ore", "infested_stone",
-        "infested_deepslate[axis=y]", "diorite", "andesite", "clay"};
+        "infested_deepslate[axis=y]", "diorite", "andesite", "clay", "magma_block"};
 
     private static final Map<String, Integer> BY_STATE = new HashMap<>();
 

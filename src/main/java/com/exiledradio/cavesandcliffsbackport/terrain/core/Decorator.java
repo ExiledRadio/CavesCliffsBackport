@@ -52,6 +52,9 @@ public final class Decorator {
         for (Placed p : Ores.placed()) {
             ported.put(p.name, p);
         }
+        for (Placed p : Misc.placed()) {
+            ported.put(p.name, p);
+        }
         Map<String, Integer> ids = new HashMap<>();
         for (int k = 0; k < STEPS; k++) {
             String[] names = FeatureTables.STEPS[k];
@@ -168,6 +171,9 @@ public final class Decorator {
     static final int HEIGHT_UNIFORM = 4;
     static final int HEIGHT_TRAPEZOID = 5;
     static final int BIOME = 6;
+    static final int HEIGHTMAP_OCEAN_FLOOR = 7;
+    static final int SURFACE_THRESHOLD_OCEAN_FLOOR = 8;
+    static final int HEIGHT_VERY_BIASED = 9;
 
     /** A placed feature: its placement modifiers as ops (opcode, then its arguments) and its feature. */
     static final class Placed {
@@ -235,6 +241,27 @@ public final class Decorator {
                     run(p, at + 1, x, y, z);
                 }
                 return;
+            case HEIGHTMAP_OCEAN_FLOOR: {
+                // HeightmapPlacement(OCEAN_FLOOR_WG)
+                int k = region.oceanFloor(x, z);
+                if (k > MIN_Y) {
+                    run(p, at + 1, x, k, z);
+                }
+                return;
+            }
+            case SURFACE_THRESHOLD_OCEAN_FLOOR: {
+                // SurfaceRelativeThresholdFilter(OCEAN_FLOOR_WG, min, max), in longs as vanilla
+                long i = (long) region.oceanFloor(x, z);
+                long j = i + (long) ops[at + 1];
+                long k = i + (long) ops[at + 2];
+                if (j <= (long) y && (long) y <= k) {
+                    run(p, at + 3, x, y, z);
+                }
+                return;
+            }
+            case HEIGHT_VERY_BIASED:
+                run(p, at + 4, x, veryBiasedHeight(ops[at + 1], ops[at + 2], ops[at + 3]), z);
+                return;
             default:
                 throw new IllegalStateException("op " + ops[at]);
         }
@@ -243,6 +270,20 @@ public final class Decorator {
     /** UniformHeight.sample (anchors already resolved). */
     private int uniformHeight(int i, int j) {
         return i > j ? i : random.between(i, j);
+    }
+
+    /** VeryBiasedToBottomHeight.sample (Mth.nextInt: min when min >= max). */
+    private int veryBiasedHeight(int i, int j, int inner) {
+        if (j - i - inner + 1 <= 0) {
+            return i;
+        }
+        int k = nextInt(i + inner, j);
+        int l = nextInt(i, k - 1);
+        return nextInt(i, l - 1 + inner);
+    }
+
+    private int nextInt(int min, int max) {
+        return min >= max ? min : random.nextInt(max - min + 1) + min;
     }
 
     /** TrapezoidHeight.sample. */

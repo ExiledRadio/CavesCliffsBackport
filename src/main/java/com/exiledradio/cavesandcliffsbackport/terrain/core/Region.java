@@ -68,6 +68,19 @@ public final class Region {
         blocks[chunk(x, z)][((x & 15) * 16 + (z & 15)) * HEIGHT + y - MIN_Y] = (char) code;
     }
 
+    /**
+     * WorldGenRegion.setBlock: dropped outside the writable 3x3 (ensureCanWrite) or the world's height
+     * (ProtoChunk.setBlockState). The POST_FEATURES heightmaps it would move are not kept yet: no ported feature
+     * reads them.
+     */
+    public boolean set(int x, int y, int z, int code) {
+        if (!canWrite(x, z) || outsideBuildHeight(y)) {
+            return false;
+        }
+        setRaw(x, y, z, code);
+        return true;
+    }
+
     /** WorldGenRegion.ensureCanWrite: within one chunk of the center. */
     public boolean canWrite(int x, int z) {
         return Math.abs((x >> 4) - centerX) <= 1 && Math.abs((z >> 4) - centerZ) <= 1;
