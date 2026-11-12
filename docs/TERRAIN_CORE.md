@@ -132,8 +132,20 @@ and underwater magma (`SurfaceRelativeThresholdFilter`, the column scan, a draw 
 order); `Misc`. `FeatureCheck` with ores plus these 7 (`oracle-out/feat-misc`, 512 chunks): identical.
 `DecorationBench` with all of them: 1.04 ms/chunk (Java 8), 0.97 (Java 17); fill + surface + carvers unchanged
 (2.41 + 0.28). Writes through `Region.set` are dropped outside the writable 3x3 and the world's height as
-`WorldGenRegion.setBlock` drops them; the POST_FEATURES heightmaps they would move are not kept yet (nothing ported
-reads them; freeze_top_layer and trees will).
+`WorldGenRegion.setBlock` drops them.
+
+Heightmaps and light (2026-11-11): `Region` keeps every chunk's POST_FEATURES heightmaps (WORLD_SURFACE, OCEAN_FLOOR,
+MOTION_BLOCKING, MOTION_BLOCKING_NO_LEAVES; `Region.height`) the way `ProtoChunk.setBlockState` does, with
+`Heightmap.update` on every `set` and none on section writes. Vanilla primes them lazily; since every setBlock keeps
+them exact and no section write changes a predicate, priming once after carving (`Region.primeHeightmaps`) gives the
+same number at every read, and `FeatureCheck` checks the live ones against freshly primed ones after decoration. The
+predicates come from per-code flags (`BlockCodes.flags`: not air, `Material.blocksMotion`, a fluid, leaves) that
+`BlockCodes.register` derives from the state name; features register their states in class initializers.
+Light: while a chunk is decorated no chunk within one of it is lit (LIGHT needs all neighbors at FEATURES), so
+vanilla answers block light 0 and sky light 15 (no data layers) with sky darkening 0; `Region.blockLight` /
+`rawBrightness` and the oracle region's `getBrightness` / `getRawBrightness` give exactly that. (A neighbor
+chunk's sections can get data layers early when a chunk two away is lit, which depends on the server's generation
+order; the center chunk never does.) No measurable cost: `DecorationBench` 1.05 ms/chunk (Java 8).
 
 Java 8 and `Math.sin`: `OreFeature` takes `Math.sin`/`Math.cos` of a double, as vanilla does. Over all 2^24 angles
 an ore can draw, Java 17, 21 and 25 give the same bits (vanilla's, on Java 17), but Java 8's `Math` differs from

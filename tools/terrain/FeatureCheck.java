@@ -34,6 +34,7 @@ public final class FeatureCheck {
     static final class Chunk {
         final char[] blocks = new char[16 * 16 * 384];
         final int[] oceanFloor = new int[256];
+        final int[] heights = new int[Region.HEIGHTMAPS * 256];
     }
 
     public static void main(String[] args) throws Exception {
@@ -84,6 +85,7 @@ public final class FeatureCheck {
             Region region = new Region();
             char[][] b9 = new char[9][];
             int[][] h9 = new int[9][];
+            int[][] m9 = new int[9][];
             for (int[] p : order) {
                 for (int dx = -1; dx <= 1; dx++) {
                     for (int dz = -1; dz <= 1; dz++) {
@@ -95,19 +97,31 @@ public final class FeatureCheck {
                             surface.build(p[0] + dx, p[1] + dz, c.blocks);
                             carvers.carve(p[0] + dx, p[1] + dz, c.blocks);
                             Region.oceanFloorHeights(c.blocks, c.oceanFloor);
+                            Region.primeHeightmaps(c.blocks, c.heights);
                             chunks.put(key, c);
                         }
                         b9[(dx + 1) * 3 + dz + 1] = c.blocks;
                         h9[(dx + 1) * 3 + dz + 1] = c.oceanFloor;
+                        m9[(dx + 1) * 3 + dz + 1] = c.heights;
                     }
                 }
-                region.set(p[0], p[1], b9, h9);
+                region.set(p[0], p[1], b9, h9, m9);
                 long t = System.nanoTime();
                 decorator.decorate(region);
                 nanos += System.nanoTime() - t;
                 decoratedTotal++;
             }
             long seedDifferences = 0L;
+            // The live heightmaps must equal freshly primed ones (no section write may change a predicate).
+            int[] primed = new int[Region.HEIGHTMAPS * 256];
+            for (Chunk c : chunks.values()) {
+                Region.primeHeightmaps(c.blocks, primed);
+                if (!Arrays.equals(primed, c.heights)) {
+                    if (seedDifferences++ < 12) {
+                        System.out.println("seed " + seed + ": a chunk's live heightmaps differ from its blocks");
+                    }
+                }
+            }
             try (DataInputStream in = new DataInputStream(new BufferedInputStream(new GZIPInputStream(
                     new FileInputStream(new File(dir, "features_" + seed + ".bin.gz")), 1 << 16), 1 << 16))) {
                 int n = in.readInt();

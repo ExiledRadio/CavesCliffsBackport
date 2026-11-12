@@ -70,7 +70,8 @@ public final class BlockCodes {
     public static final int CLAY = 52;
     // Springs, disks, underwater magma.
     public static final int MAGMA_BLOCK = 53;
-    public static final int COUNT = 54;
+    /** The fixed codes above; features add theirs with {@link #register} (in class initializers) from here on. */
+    public static final int FIXED = 54;
 
     private static final String[] STATES = {"air", "stone", "water[level=0]", "lava[level=0]", "copper_ore",
         "raw_copper_block", "granite", "deepslate_iron_ore", "raw_iron_block", "tuff", "bedrock", "deepslate[axis=y]",
@@ -84,19 +85,87 @@ public final class BlockCodes {
         "infested_deepslate[axis=y]", "diorite", "andesite", "clay", "magma_block"};
 
     private static final Map<String, Integer> BY_STATE = new HashMap<>();
+    private static String[] states = new String[256];
+    private static int count;
+    /** Per code: NOT_AIR, BLOCKS_MOTION, FLUID, LEAVES bits (the heightmap predicates' inputs). */
+    private static byte[] flags = new byte[256];
 
-    static {
-        if (STATES.length != COUNT) {
-            throw new IllegalStateException("BlockCodes: " + STATES.length + " states for " + COUNT + " codes");
+    public static final int F_NOT_AIR = 1;
+    /** Material.blocksMotion. */
+    public static final int F_BLOCKS_MOTION = 2;
+    /** A non-empty fluid state (water, lava, waterlogged, water plants). */
+    public static final int F_FLUID = 4;
+    /** LeavesBlock. */
+    public static final int F_LEAVES = 8;
+
+    /** How many codes exist so far. */
+    public static int count() {
+        return count;
+    }
+
+    /**
+     * The code of a vanilla state named as state() names it (block path, properties sorted), registering it if new.
+     * Call from class initializers only (not thread safe).
+     */
+    public static synchronized int register(String state) {
+        Integer c = BY_STATE.get(state);
+        if (c != null) {
+            return c;
         }
-        for (int i = 0; i < STATES.length; i++) {
-            BY_STATE.put(STATES[i], i);
+        if (count == states.length) {
+            states = java.util.Arrays.copyOf(states, count * 2);
+            flags = java.util.Arrays.copyOf(flags, count * 2);
         }
+        states[count] = state;
+        flags[count] = (byte) materialFlags(state);
+        BY_STATE.put(state, count);
+        return count++;
+    }
+
+    /** Blocks whose Material does not block motion (besides air and fluids): plants, snow layers, decorations. */
+    private static final java.util.Set<String> NO_MOTION = new java.util.HashSet<>(java.util.Arrays.asList(
+        "powder_snow", "snow", "grass", "fern", "tall_grass", "large_fern", "dead_bush", "seagrass", "tall_seagrass",
+        "kelp", "kelp_plant", "sea_pickle", "lily_pad", "vine", "glow_lichen", "cave_vines", "cave_vines_plant",
+        "spore_blossom", "big_dripleaf", "big_dripleaf_stem", "small_dripleaf", "hanging_roots", "moss_carpet",
+        "azalea", "flowering_azalea", "dandelion", "poppy", "blue_orchid", "allium", "azure_bluet", "red_tulip",
+        "orange_tulip", "white_tulip", "pink_tulip", "oxeye_daisy", "cornflower", "lily_of_the_valley",
+        "wither_rose", "sunflower", "lilac", "rose_bush", "peony", "brown_mushroom", "red_mushroom", "sugar_cane",
+        "sweet_berry_bush", "oak_sapling", "spruce_sapling", "birch_sapling", "jungle_sapling", "acacia_sapling",
+        "dark_oak_sapling", "bamboo_sapling", "torch", "wall_torch", "cobweb", "fire", "bubble_column",
+        "tube_coral", "brain_coral", "bubble_coral", "fire_coral", "horn_coral", "tube_coral_fan",
+        "brain_coral_fan", "bubble_coral_fan", "fire_coral_fan", "horn_coral_fan", "tube_coral_wall_fan",
+        "brain_coral_wall_fan", "bubble_coral_wall_fan", "fire_coral_wall_fan", "horn_coral_wall_fan",
+        "structure_void", "light"));
+    private static final java.util.Set<String> FLUID_BLOCKS = new java.util.HashSet<>(java.util.Arrays.asList(
+        "water", "lava", "seagrass", "tall_seagrass", "kelp", "kelp_plant", "bubble_column"));
+
+    private static int materialFlags(String state) {
+        int i = state.indexOf('[');
+        String name = i < 0 ? state : state.substring(0, i);
+        if (name.equals("air") || name.equals("cave_air") || name.equals("void_air")) {
+            return 0;
+        }
+        int f = F_NOT_AIR;
+        if (!NO_MOTION.contains(name) && !FLUID_BLOCKS.contains(name)) {
+            f |= F_BLOCKS_MOTION;
+        }
+        if (FLUID_BLOCKS.contains(name) || state.contains("waterlogged=true")) {
+            f |= F_FLUID;
+        }
+        if (name.endsWith("_leaves")) {
+            f |= F_LEAVES;
+        }
+        return f;
+    }
+
+    /** The code's heightmap flags (F_*). */
+    public static int flags(int code) {
+        return flags[code];
     }
 
     /** The code's state: block path, then properties sorted by name ("grass_block[snowy=false]"). */
     public static String state(int code) {
-        return code >= 0 && code < STATES.length ? STATES[code] : "code " + code;
+        return code >= 0 && code < count ? states[code] : "code " + code;
     }
 
     /** The code of a state named as state() names it, or -1. */
@@ -114,11 +183,21 @@ public final class BlockCodes {
 
     /** Material.isAir. */
     public static boolean isAir(int code) {
-        return code == AIR;
+        return (flags[code] & F_NOT_AIR) == 0;
     }
 
     /** Material.blocksMotion: what OCEAN_FLOOR_WG and MOTION_BLOCKING count (neither air, fluid nor powder snow). */
     public static boolean blocksMotion(int code) {
-        return code != AIR && code != WATER && code != LAVA && code != POWDER_SNOW;
+        return (flags[code] & F_BLOCKS_MOTION) != 0;
+    }
+
+    // Last: register() needs the sets above.
+    static {
+        for (String st : STATES) {
+            register(st);
+        }
+        if (count != FIXED) {
+            throw new IllegalStateException("BlockCodes: " + count + " states for " + FIXED + " codes");
+        }
     }
 }

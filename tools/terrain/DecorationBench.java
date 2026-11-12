@@ -37,6 +37,7 @@ public final class DecorationBench {
         int z0 = centerZ - side / 2 - 1;
         char[][] pristine = new char[n * n][];
         int[][] floors = new int[n * n][];
+        int[][] pristineHeights = new int[n * n][];
         for (int i = 0; i < n * n; i++) {
             pristine[i] = new char[16 * 16 * 384];
             floors[i] = new int[256];
@@ -44,16 +45,21 @@ public final class DecorationBench {
             surface.build(x0 + i / n, z0 + i % n, pristine[i]);
             carvers.carve(x0 + i / n, z0 + i % n, pristine[i]);
             Region.oceanFloorHeights(pristine[i], floors[i]);
+            pristineHeights[i] = new int[Region.HEIGHTMAPS * 256];
+            Region.primeHeightmaps(pristine[i], pristineHeights[i]);
         }
         double[] ms = new double[rounds];
         long checksum = 0L;
         char[][] work = new char[n * n][];
+        int[][] workHeights = new int[n * n][];
         Region region = new Region();
         char[][] b9 = new char[9][];
         int[][] h9 = new int[9][];
+        int[][] m9 = new int[9][];
         for (int round = 0; round <= rounds; round++) {
             for (int i = 0; i < n * n; i++) {
                 work[i] = pristine[i].clone();
+                workHeights[i] = pristineHeights[i].clone();
             }
             Decorator decorator = new Decorator(noise, new BiomeSource(noise, columns, climate));
             decorator.only(only.equals("all") ? null : new HashSet<>(Arrays.asList(only.split(","))));
@@ -64,9 +70,10 @@ public final class DecorationBench {
                         for (int dz = -1; dz <= 1; dz++) {
                             b9[(dx + 1) * 3 + dz + 1] = work[(a + dx) * n + b + dz];
                             h9[(dx + 1) * 3 + dz + 1] = floors[(a + dx) * n + b + dz];
+                            m9[(dx + 1) * 3 + dz + 1] = workHeights[(a + dx) * n + b + dz];
                         }
                     }
-                    region.set(x0 + a, z0 + b, b9, h9);
+                    region.set(x0 + a, z0 + b, b9, h9, m9);
                     decorator.decorate(region);
                 }
             }

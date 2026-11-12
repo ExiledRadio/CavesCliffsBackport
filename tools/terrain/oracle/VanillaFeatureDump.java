@@ -138,6 +138,24 @@ public final class VanillaFeatureDump {
         public long getSeed() {
             return world.seed;
         }
+
+        // Light at FEATURES: no chunk within one of the one being decorated is lit yet (LIGHT needs its neighbors
+        // at FEATURES), so their sections have no data layers: block light 0 (BlockLightSectionStorage), sky light
+        // 15 (SkyLightSectionStorage, a column without top sections), sky darkening 0 (WorldGenRegion).
+        @Override
+        public int getBrightness(net.minecraft.world.level.LightLayer layer, BlockPos pos) {
+            return layer == net.minecraft.world.level.LightLayer.SKY ? 15 : 0;
+        }
+
+        @Override
+        public int getRawBrightness(BlockPos pos, int amount) {
+            return Math.max(0, 15 - amount);
+        }
+
+        @Override
+        public net.minecraft.world.level.lighting.LevelLightEngine getLightEngine() {
+            throw new UnsupportedOperationException("light engine read at FEATURES");
+        }
     }
 
     static sun.misc.Unsafe unsafe() throws Exception {

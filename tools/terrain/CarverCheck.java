@@ -34,7 +34,7 @@ public final class CarverCheck {
         long checked = 0L;
         long chunksChecked = 0L;
         long carvedBlocks = 0L;
-        long[] counts = new long[BlockCodes.COUNT];
+        long[] counts = new long[1 << 16];
         byte[] expected = new byte[16 * 16 * 384];
         char[] actual = new char[16 * 16 * 384];
         char[] before = new char[16 * 16 * 384];
