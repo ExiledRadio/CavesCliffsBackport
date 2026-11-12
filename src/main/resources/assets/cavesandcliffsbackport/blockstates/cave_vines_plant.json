@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "berries=false": {
+      "model": "cavesandcliffsbackport:cave_vines_plant"
+    },
+    "berries=true": {
+      "model": "cavesandcliffsbackport:cave_vines_plant_lit"
+    }
+  }
+}

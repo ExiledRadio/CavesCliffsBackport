@@ -1,0 +1,49 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "cavesandcliffsbackport:glow_lichen"
+      },
+      "when": {
+        "north": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "cavesandcliffsbackport:glow_lichen",
+        "y": 90,
+        "uvlock": true
+      },
+      "when": {
+        "east": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "cavesandcliffsbackport:glow_lichen",
+        "y": 180,
+        "uvlock": true
+      },
+      "when": {
+        "south": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "cavesandcliffsbackport:glow_lichen",
+        "y": 270,
+        "uvlock": true
+      },
+      "when": {
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "cavesandcliffsbackport:glow_lichen",
+        "x": 270,
+        "uvlock": true
+      }
+    }
+  ]
+}

@@ -1035,5 +1035,2615 @@
       }
     ],
     "subtitle": "subtitles.block.generic.place"
+  },
+  "block.dripstone_block.break": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/break1",
+      "cavesandcliffsbackport:block/dripstone/break2",
+      "cavesandcliffsbackport:block/dripstone/break3",
+      "cavesandcliffsbackport:block/dripstone/break4",
+      "cavesandcliffsbackport:block/dripstone/break5"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.dripstone_block.step": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/step1",
+      "cavesandcliffsbackport:block/dripstone/step2",
+      "cavesandcliffsbackport:block/dripstone/step3",
+      "cavesandcliffsbackport:block/dripstone/step4",
+      "cavesandcliffsbackport:block/dripstone/step5",
+      "cavesandcliffsbackport:block/dripstone/step6"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.dripstone_block.place": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/break1",
+      "cavesandcliffsbackport:block/dripstone/break2",
+      "cavesandcliffsbackport:block/dripstone/break3",
+      "cavesandcliffsbackport:block/dripstone/break4",
+      "cavesandcliffsbackport:block/dripstone/break5"
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.dripstone_block.hit": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/step1",
+      "cavesandcliffsbackport:block/dripstone/step2",
+      "cavesandcliffsbackport:block/dripstone/step3",
+      "cavesandcliffsbackport:block/dripstone/step4",
+      "cavesandcliffsbackport:block/dripstone/step5",
+      "cavesandcliffsbackport:block/dripstone/step6"
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.dripstone_block.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/step1",
+      "cavesandcliffsbackport:block/dripstone/step2",
+      "cavesandcliffsbackport:block/dripstone/step3",
+      "cavesandcliffsbackport:block/dripstone/step4",
+      "cavesandcliffsbackport:block/dripstone/step5",
+      "cavesandcliffsbackport:block/dripstone/step6"
+    ]
+  },
+  "block.pointed_dripstone.break": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/break1",
+      "cavesandcliffsbackport:block/dripstone/break2",
+      "cavesandcliffsbackport:block/dripstone/break3",
+      "cavesandcliffsbackport:block/dripstone/break4",
+      "cavesandcliffsbackport:block/dripstone/break5"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.pointed_dripstone.step": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/step1",
+      "cavesandcliffsbackport:block/dripstone/step2",
+      "cavesandcliffsbackport:block/dripstone/step3",
+      "cavesandcliffsbackport:block/dripstone/step4",
+      "cavesandcliffsbackport:block/dripstone/step5",
+      "cavesandcliffsbackport:block/dripstone/step6"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.pointed_dripstone.place": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/break1",
+      "cavesandcliffsbackport:block/dripstone/break2",
+      "cavesandcliffsbackport:block/dripstone/break3",
+      "cavesandcliffsbackport:block/dripstone/break4",
+      "cavesandcliffsbackport:block/dripstone/break5"
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.pointed_dripstone.hit": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/step1",
+      "cavesandcliffsbackport:block/dripstone/step2",
+      "cavesandcliffsbackport:block/dripstone/step3",
+      "cavesandcliffsbackport:block/dripstone/step4",
+      "cavesandcliffsbackport:block/dripstone/step5",
+      "cavesandcliffsbackport:block/dripstone/step6"
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.pointed_dripstone.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/dripstone/step1",
+      "cavesandcliffsbackport:block/dripstone/step2",
+      "cavesandcliffsbackport:block/dripstone/step3",
+      "cavesandcliffsbackport:block/dripstone/step4",
+      "cavesandcliffsbackport:block/dripstone/step5",
+      "cavesandcliffsbackport:block/dripstone/step6"
+    ]
+  },
+  "block.pointed_dripstone.land": {
+    "sounds": [
+      "cavesandcliffsbackport:block/pointed_dripstone/land1",
+      "cavesandcliffsbackport:block/pointed_dripstone/land2",
+      "cavesandcliffsbackport:block/pointed_dripstone/land3",
+      "cavesandcliffsbackport:block/pointed_dripstone/land4",
+      "cavesandcliffsbackport:block/pointed_dripstone/land5"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.block.pointed_dripstone.land"
+  },
+  "block.pointed_dripstone.drip_water": {
+    "sounds": [
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water1",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water2",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water3",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water4",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water5",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water6",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water7",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water8",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water9",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water10",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water11",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water12",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water13",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water14",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water15"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.block.pointed_dripstone.drip_water"
+  },
+  "block.pointed_dripstone.drip_lava": {
+    "sounds": [
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava1",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava2",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava3",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava4",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava5",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava6"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.block.pointed_dripstone.drip_lava"
+  },
+  "block.pointed_dripstone.drip_water_into_cauldron": {
+    "sounds": [
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water_cauldron1",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water_cauldron2",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water_cauldron3",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water_cauldron4",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water_cauldron5",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water_cauldron6",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water_cauldron7",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_water_cauldron8"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.block.pointed_dripstone.drip_water_into_cauldron"
+  },
+  "block.pointed_dripstone.drip_lava_into_cauldron": {
+    "sounds": [
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava_cauldron1",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava_cauldron2",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava_cauldron3",
+      "cavesandcliffsbackport:block/pointed_dripstone/drip_lava_cauldron4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.block.pointed_dripstone.drip_lava_into_cauldron"
+  },
+  "block.moss.break": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/moss/break1",
+        "volume": 0.95
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/break2",
+        "volume": 0.93
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/break3",
+        "volume": 0.93
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/break4",
+        "volume": 0.93
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/break5",
+        "volume": 0.93
+      }
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.moss.step": {
+    "sounds": [
+      "cavesandcliffsbackport:block/moss/step1",
+      "cavesandcliffsbackport:block/moss/step2",
+      "cavesandcliffsbackport:block/moss/step3",
+      "cavesandcliffsbackport:block/moss/step4",
+      "cavesandcliffsbackport:block/moss/step5",
+      "cavesandcliffsbackport:block/moss/step6"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.moss.place": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/moss/break1",
+        "volume": 0.93
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/break2",
+        "volume": 0.93
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/break3",
+        "volume": 0.93
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/break4",
+        "volume": 0.93
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/break5",
+        "volume": 0.93
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.moss.hit": {
+    "sounds": [
+      "cavesandcliffsbackport:block/moss/step1",
+      "cavesandcliffsbackport:block/moss/step2",
+      "cavesandcliffsbackport:block/moss/step3",
+      "cavesandcliffsbackport:block/moss/step4",
+      "cavesandcliffsbackport:block/moss/step5",
+      "cavesandcliffsbackport:block/moss/step6"
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.moss.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/moss/step1",
+      "cavesandcliffsbackport:block/moss/step2",
+      "cavesandcliffsbackport:block/moss/step3",
+      "cavesandcliffsbackport:block/moss/step4",
+      "cavesandcliffsbackport:block/moss/step5",
+      "cavesandcliffsbackport:block/moss/step6"
+    ]
+  },
+  "block.moss_carpet.break": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/moss/break1",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/break2",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/break3",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/break4",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/break5",
+        "pitch": 1.1,
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.moss_carpet.step": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/moss/step1",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/step2",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/step3",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/step4",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/step5",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/step6",
+        "pitch": 1.1,
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.moss_carpet.place": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/moss/break1",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/break2",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/break3",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/break4",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/break5",
+        "pitch": 1.1,
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.moss_carpet.hit": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/moss/step1",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/step2",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/step3",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/step4",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/step5",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/step6",
+        "pitch": 1.1,
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.moss_carpet.fall": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/moss/step1",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/step2",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/step3",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/step4",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/step5",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/moss/step6",
+        "pitch": 1.1,
+        "volume": 0.9
+      }
+    ]
+  },
+  "block.azalea.break": {
+    "sounds": [
+      "cavesandcliffsbackport:block/azalea/break1",
+      "cavesandcliffsbackport:block/azalea/break2",
+      "cavesandcliffsbackport:block/azalea/break3",
+      "cavesandcliffsbackport:block/azalea/break4",
+      "cavesandcliffsbackport:block/azalea/break5",
+      "cavesandcliffsbackport:block/azalea/break6"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.azalea.step": {
+    "sounds": [
+      "cavesandcliffsbackport:block/azalea/step1",
+      "cavesandcliffsbackport:block/azalea/step2",
+      "cavesandcliffsbackport:block/azalea/step3",
+      "cavesandcliffsbackport:block/azalea/step4",
+      "cavesandcliffsbackport:block/azalea/step5",
+      "cavesandcliffsbackport:block/azalea/step6"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.azalea.place": {
+    "sounds": [
+      "cavesandcliffsbackport:block/azalea/break1",
+      "cavesandcliffsbackport:block/azalea/break2",
+      "cavesandcliffsbackport:block/azalea/break3",
+      "cavesandcliffsbackport:block/azalea/break4",
+      "cavesandcliffsbackport:block/azalea/break5",
+      "cavesandcliffsbackport:block/azalea/break6"
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.azalea.hit": {
+    "sounds": [
+      "cavesandcliffsbackport:block/azalea/step1",
+      "cavesandcliffsbackport:block/azalea/step2",
+      "cavesandcliffsbackport:block/azalea/step3",
+      "cavesandcliffsbackport:block/azalea/step4",
+      "cavesandcliffsbackport:block/azalea/step5",
+      "cavesandcliffsbackport:block/azalea/step6"
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.azalea.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/azalea/step1",
+      "cavesandcliffsbackport:block/azalea/step2",
+      "cavesandcliffsbackport:block/azalea/step3",
+      "cavesandcliffsbackport:block/azalea/step4",
+      "cavesandcliffsbackport:block/azalea/step5",
+      "cavesandcliffsbackport:block/azalea/step6"
+    ]
+  },
+  "block.flowering_azalea.break": {
+    "sounds": [
+      "cavesandcliffsbackport:block/azalea/break1",
+      "cavesandcliffsbackport:block/azalea/break2",
+      "cavesandcliffsbackport:block/azalea/break3",
+      "cavesandcliffsbackport:block/azalea/break4",
+      "cavesandcliffsbackport:block/azalea/break5",
+      "cavesandcliffsbackport:block/azalea/break6"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.flowering_azalea.step": {
+    "sounds": [
+      "cavesandcliffsbackport:block/azalea/step1",
+      "cavesandcliffsbackport:block/azalea/step2",
+      "cavesandcliffsbackport:block/azalea/step3",
+      "cavesandcliffsbackport:block/azalea/step4",
+      "cavesandcliffsbackport:block/azalea/step5",
+      "cavesandcliffsbackport:block/azalea/step6"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.flowering_azalea.place": {
+    "sounds": [
+      "cavesandcliffsbackport:block/azalea/break1",
+      "cavesandcliffsbackport:block/azalea/break2",
+      "cavesandcliffsbackport:block/azalea/break3",
+      "cavesandcliffsbackport:block/azalea/break4",
+      "cavesandcliffsbackport:block/azalea/break5",
+      "cavesandcliffsbackport:block/azalea/break6"
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.flowering_azalea.hit": {
+    "sounds": [
+      "cavesandcliffsbackport:block/azalea/step1",
+      "cavesandcliffsbackport:block/azalea/step2",
+      "cavesandcliffsbackport:block/azalea/step3",
+      "cavesandcliffsbackport:block/azalea/step4",
+      "cavesandcliffsbackport:block/azalea/step5",
+      "cavesandcliffsbackport:block/azalea/step6"
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.flowering_azalea.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/azalea/step1",
+      "cavesandcliffsbackport:block/azalea/step2",
+      "cavesandcliffsbackport:block/azalea/step3",
+      "cavesandcliffsbackport:block/azalea/step4",
+      "cavesandcliffsbackport:block/azalea/step5",
+      "cavesandcliffsbackport:block/azalea/step6"
+    ]
+  },
+  "block.azalea_leaves.break": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break1",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break1",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break2",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break2",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break3",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break3",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break4",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break4",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break5",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break5",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break6",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break6",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break7",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break7",
+        "pitch": 0.92,
+        "volume": 0.85
+      }
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.azalea_leaves.step": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/step1",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/step2",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/step3",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/step4",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/step5",
+        "volume": 0.85
+      }
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.azalea_leaves.place": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break1",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break1",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break2",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break2",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break3",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break3",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break4",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break4",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break5",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break5",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break6",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break6",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break7",
+        "volume": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/break7",
+        "pitch": 0.92,
+        "volume": 0.85
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.azalea_leaves.hit": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/step1",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/step2",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/step3",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/step4",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:block/azalea_leaves/step5",
+        "volume": 0.8
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.azalea_leaves.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/azalea_leaves/step1",
+      "cavesandcliffsbackport:block/azalea_leaves/step2",
+      "cavesandcliffsbackport:block/azalea_leaves/step3",
+      "cavesandcliffsbackport:block/azalea_leaves/step4",
+      "cavesandcliffsbackport:block/azalea_leaves/step5"
+    ]
+  },
+  "block.rooted_dirt.break": {
+    "sounds": [
+      "cavesandcliffsbackport:block/rooted_dirt/break1",
+      "cavesandcliffsbackport:block/rooted_dirt/break2",
+      "cavesandcliffsbackport:block/rooted_dirt/break3",
+      "cavesandcliffsbackport:block/rooted_dirt/break4"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.rooted_dirt.step": {
+    "sounds": [
+      "cavesandcliffsbackport:block/rooted_dirt/step1",
+      "cavesandcliffsbackport:block/rooted_dirt/step2",
+      "cavesandcliffsbackport:block/rooted_dirt/step3",
+      "cavesandcliffsbackport:block/rooted_dirt/step4",
+      "cavesandcliffsbackport:block/rooted_dirt/step5",
+      "cavesandcliffsbackport:block/rooted_dirt/step6"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.rooted_dirt.place": {
+    "sounds": [
+      "cavesandcliffsbackport:block/rooted_dirt/break1",
+      "cavesandcliffsbackport:block/rooted_dirt/break2",
+      "cavesandcliffsbackport:block/rooted_dirt/break3",
+      "cavesandcliffsbackport:block/rooted_dirt/break4"
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.rooted_dirt.hit": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/rooted_dirt/step1",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:block/rooted_dirt/step2",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:block/rooted_dirt/step3",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:block/rooted_dirt/step4",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:block/rooted_dirt/step5",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:block/rooted_dirt/step6",
+        "volume": 0.8
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.rooted_dirt.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/rooted_dirt/step1",
+      "cavesandcliffsbackport:block/rooted_dirt/step2",
+      "cavesandcliffsbackport:block/rooted_dirt/step3",
+      "cavesandcliffsbackport:block/rooted_dirt/step4",
+      "cavesandcliffsbackport:block/rooted_dirt/step5",
+      "cavesandcliffsbackport:block/rooted_dirt/step6"
+    ]
+  },
+  "block.hanging_roots.break": {
+    "sounds": [
+      "cavesandcliffsbackport:block/hanging_roots/break1",
+      "cavesandcliffsbackport:block/hanging_roots/break2",
+      "cavesandcliffsbackport:block/hanging_roots/break3",
+      "cavesandcliffsbackport:block/hanging_roots/break4"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.hanging_roots.step": {
+    "sounds": [
+      "cavesandcliffsbackport:block/hanging_roots/step1",
+      "cavesandcliffsbackport:block/hanging_roots/step2",
+      "cavesandcliffsbackport:block/hanging_roots/step3",
+      "cavesandcliffsbackport:block/hanging_roots/step4",
+      "cavesandcliffsbackport:block/hanging_roots/step5",
+      "cavesandcliffsbackport:block/hanging_roots/step6"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.hanging_roots.place": {
+    "sounds": [
+      "cavesandcliffsbackport:block/hanging_roots/break1",
+      "cavesandcliffsbackport:block/hanging_roots/break2",
+      "cavesandcliffsbackport:block/hanging_roots/break3",
+      "cavesandcliffsbackport:block/hanging_roots/break4"
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.hanging_roots.hit": {
+    "sounds": [
+      "cavesandcliffsbackport:block/hanging_roots/step1",
+      "cavesandcliffsbackport:block/hanging_roots/step2",
+      "cavesandcliffsbackport:block/hanging_roots/step3",
+      "cavesandcliffsbackport:block/hanging_roots/step4",
+      "cavesandcliffsbackport:block/hanging_roots/step5",
+      "cavesandcliffsbackport:block/hanging_roots/step6"
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.hanging_roots.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/hanging_roots/step1",
+      "cavesandcliffsbackport:block/hanging_roots/step2",
+      "cavesandcliffsbackport:block/hanging_roots/step3",
+      "cavesandcliffsbackport:block/hanging_roots/step4",
+      "cavesandcliffsbackport:block/hanging_roots/step5",
+      "cavesandcliffsbackport:block/hanging_roots/step6"
+    ]
+  },
+  "block.spore_blossom.break": {
+    "sounds": [
+      "cavesandcliffsbackport:block/spore_blossom/break1",
+      "cavesandcliffsbackport:block/spore_blossom/break2",
+      "cavesandcliffsbackport:block/spore_blossom/break3",
+      "cavesandcliffsbackport:block/spore_blossom/break4",
+      "cavesandcliffsbackport:block/spore_blossom/break5"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.spore_blossom.step": {
+    "sounds": [
+      "cavesandcliffsbackport:block/spore_blossom/step1",
+      "cavesandcliffsbackport:block/spore_blossom/step2",
+      "cavesandcliffsbackport:block/spore_blossom/step3",
+      "cavesandcliffsbackport:block/spore_blossom/step4",
+      "cavesandcliffsbackport:block/spore_blossom/step5",
+      "cavesandcliffsbackport:block/spore_blossom/step6"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.spore_blossom.place": {
+    "sounds": [
+      "cavesandcliffsbackport:block/spore_blossom/break1",
+      "cavesandcliffsbackport:block/spore_blossom/break2",
+      "cavesandcliffsbackport:block/spore_blossom/break3",
+      "cavesandcliffsbackport:block/spore_blossom/break4",
+      "cavesandcliffsbackport:block/spore_blossom/break5"
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.spore_blossom.hit": {
+    "sounds": [
+      "cavesandcliffsbackport:block/spore_blossom/step1",
+      "cavesandcliffsbackport:block/spore_blossom/step2",
+      "cavesandcliffsbackport:block/spore_blossom/step3",
+      "cavesandcliffsbackport:block/spore_blossom/step4",
+      "cavesandcliffsbackport:block/spore_blossom/step5",
+      "cavesandcliffsbackport:block/spore_blossom/step6"
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.spore_blossom.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/spore_blossom/step1",
+      "cavesandcliffsbackport:block/spore_blossom/step2",
+      "cavesandcliffsbackport:block/spore_blossom/step3",
+      "cavesandcliffsbackport:block/spore_blossom/step4",
+      "cavesandcliffsbackport:block/spore_blossom/step5",
+      "cavesandcliffsbackport:block/spore_blossom/step6"
+    ]
+  },
+  "block.cave_vines.break": {
+    "sounds": [
+      "cavesandcliffsbackport:block/cave_vines/break1",
+      "cavesandcliffsbackport:block/cave_vines/break2",
+      "cavesandcliffsbackport:block/cave_vines/break3",
+      "cavesandcliffsbackport:block/cave_vines/break4",
+      "cavesandcliffsbackport:block/cave_vines/break5"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.cave_vines.step": {
+    "sounds": [
+      "cavesandcliffsbackport:block/vine/climb1",
+      "cavesandcliffsbackport:block/vine/climb2",
+      "cavesandcliffsbackport:block/vine/climb3",
+      "cavesandcliffsbackport:block/vine/climb4",
+      "cavesandcliffsbackport:block/vine/climb5"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.cave_vines.place": {
+    "sounds": [
+      "cavesandcliffsbackport:block/cave_vines/break1",
+      "cavesandcliffsbackport:block/cave_vines/break2",
+      "cavesandcliffsbackport:block/cave_vines/break3",
+      "cavesandcliffsbackport:block/cave_vines/break4",
+      "cavesandcliffsbackport:block/cave_vines/break5"
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.cave_vines.hit": {
+    "sounds": [
+      "cavesandcliffsbackport:block/vine/climb1",
+      "cavesandcliffsbackport:block/vine/climb2",
+      "cavesandcliffsbackport:block/vine/climb3",
+      "cavesandcliffsbackport:block/vine/climb4",
+      "cavesandcliffsbackport:block/vine/climb5"
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.cave_vines.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/vine/climb1",
+      "cavesandcliffsbackport:block/vine/climb2",
+      "cavesandcliffsbackport:block/vine/climb3",
+      "cavesandcliffsbackport:block/vine/climb4",
+      "cavesandcliffsbackport:block/vine/climb5"
+    ]
+  },
+  "block.big_dripleaf.break": {
+    "sounds": [
+      "cavesandcliffsbackport:block/big_dripleaf/break1",
+      "cavesandcliffsbackport:block/big_dripleaf/break2",
+      "cavesandcliffsbackport:block/big_dripleaf/break3",
+      "cavesandcliffsbackport:block/big_dripleaf/break4",
+      "cavesandcliffsbackport:block/big_dripleaf/break5",
+      "cavesandcliffsbackport:block/big_dripleaf/break6"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.big_dripleaf.step": {
+    "sounds": [
+      "cavesandcliffsbackport:block/big_dripleaf/step1",
+      "cavesandcliffsbackport:block/big_dripleaf/step2",
+      "cavesandcliffsbackport:block/big_dripleaf/step3",
+      "cavesandcliffsbackport:block/big_dripleaf/step4",
+      "cavesandcliffsbackport:block/big_dripleaf/step5",
+      "cavesandcliffsbackport:block/big_dripleaf/step6"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.big_dripleaf.place": {
+    "sounds": [
+      "cavesandcliffsbackport:block/big_dripleaf/break1",
+      "cavesandcliffsbackport:block/big_dripleaf/break2",
+      "cavesandcliffsbackport:block/big_dripleaf/break3",
+      "cavesandcliffsbackport:block/big_dripleaf/break4",
+      "cavesandcliffsbackport:block/big_dripleaf/break5",
+      "cavesandcliffsbackport:block/big_dripleaf/break6"
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.big_dripleaf.hit": {
+    "sounds": [
+      "cavesandcliffsbackport:block/big_dripleaf/step1",
+      "cavesandcliffsbackport:block/big_dripleaf/step2",
+      "cavesandcliffsbackport:block/big_dripleaf/step3",
+      "cavesandcliffsbackport:block/big_dripleaf/step4",
+      "cavesandcliffsbackport:block/big_dripleaf/step5",
+      "cavesandcliffsbackport:block/big_dripleaf/step6"
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.big_dripleaf.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/big_dripleaf/step1",
+      "cavesandcliffsbackport:block/big_dripleaf/step2",
+      "cavesandcliffsbackport:block/big_dripleaf/step3",
+      "cavesandcliffsbackport:block/big_dripleaf/step4",
+      "cavesandcliffsbackport:block/big_dripleaf/step5",
+      "cavesandcliffsbackport:block/big_dripleaf/step6"
+    ]
+  },
+  "block.small_dripleaf.break": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/break1",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/break2",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/break3",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/break4",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/break5",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/break6",
+        "pitch": 1.2,
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.small_dripleaf.step": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step1",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step2",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step3",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step4",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step5",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step6",
+        "pitch": 1.2,
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.small_dripleaf.place": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/break1",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/break2",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/break3",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/break4",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/break5",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/break6",
+        "pitch": 1.2,
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.small_dripleaf.hit": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step1",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step2",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step3",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step4",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step5",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step6",
+        "pitch": 1.2,
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.small_dripleaf.fall": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step1",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step2",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step3",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step4",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step5",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:block/big_dripleaf/step6",
+        "pitch": 1.2,
+        "volume": 0.9
+      }
+    ]
+  },
+  "block.cave_vines.pick_berries": {
+    "sounds": [
+      {
+        "name": "block.sweet_berry_bush.pick_berries",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.block.sweet_berry_bush.pick_berries"
+  },
+  "block.big_dripleaf.tilt_down": {
+    "sounds": [
+      "cavesandcliffsbackport:block/big_dripleaf/tilt_down1",
+      "cavesandcliffsbackport:block/big_dripleaf/tilt_down2",
+      "cavesandcliffsbackport:block/big_dripleaf/tilt_down3",
+      "cavesandcliffsbackport:block/big_dripleaf/tilt_down4",
+      "cavesandcliffsbackport:block/big_dripleaf/tilt_down5"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.block.big_dripleaf.tilt_down"
+  },
+  "block.big_dripleaf.tilt_up": {
+    "sounds": [
+      "cavesandcliffsbackport:block/big_dripleaf/tilt_up1",
+      "cavesandcliffsbackport:block/big_dripleaf/tilt_up2",
+      "cavesandcliffsbackport:block/big_dripleaf/tilt_up3",
+      "cavesandcliffsbackport:block/big_dripleaf/tilt_up4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.block.big_dripleaf.tilt_up"
+  },
+  "block.growing_plant.crop": {
+    "sounds": [
+      "cavesandcliffsbackport:mob/sheep/shear"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.block.growing_plant.crop"
+  },
+  "block.powder_snow.break": {
+    "sounds": [
+      "cavesandcliffsbackport:block/powder_snow/break1",
+      "cavesandcliffsbackport:block/powder_snow/break2",
+      "cavesandcliffsbackport:block/powder_snow/break3",
+      "cavesandcliffsbackport:block/powder_snow/break4",
+      "cavesandcliffsbackport:block/powder_snow/break5",
+      "cavesandcliffsbackport:block/powder_snow/break6",
+      "cavesandcliffsbackport:block/powder_snow/break7"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.powder_snow.step": {
+    "sounds": [
+      "cavesandcliffsbackport:block/powder_snow/step1",
+      "cavesandcliffsbackport:block/powder_snow/step2",
+      "cavesandcliffsbackport:block/powder_snow/step3",
+      "cavesandcliffsbackport:block/powder_snow/step4",
+      "cavesandcliffsbackport:block/powder_snow/step5",
+      "cavesandcliffsbackport:block/powder_snow/step6",
+      "cavesandcliffsbackport:block/powder_snow/step7",
+      "cavesandcliffsbackport:block/powder_snow/step8",
+      "cavesandcliffsbackport:block/powder_snow/step9",
+      "cavesandcliffsbackport:block/powder_snow/step10"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.powder_snow.place": {
+    "sounds": [
+      "cavesandcliffsbackport:block/powder_snow/break1",
+      "cavesandcliffsbackport:block/powder_snow/break2",
+      "cavesandcliffsbackport:block/powder_snow/break3",
+      "cavesandcliffsbackport:block/powder_snow/break4",
+      "cavesandcliffsbackport:block/powder_snow/break5",
+      "cavesandcliffsbackport:block/powder_snow/break6",
+      "cavesandcliffsbackport:block/powder_snow/break7"
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.powder_snow.hit": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step1",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step2",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step3",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step4",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step5",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step6",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step7",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step8",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step9",
+        "pitch": 1.3,
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:block/powder_snow/step10",
+        "pitch": 1.3,
+        "volume": 0.83
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.powder_snow.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/powder_snow/step1",
+      "cavesandcliffsbackport:block/powder_snow/step2",
+      "cavesandcliffsbackport:block/powder_snow/step3",
+      "cavesandcliffsbackport:block/powder_snow/step4",
+      "cavesandcliffsbackport:block/powder_snow/step5",
+      "cavesandcliffsbackport:block/powder_snow/step6",
+      "cavesandcliffsbackport:block/powder_snow/step7",
+      "cavesandcliffsbackport:block/powder_snow/step8",
+      "cavesandcliffsbackport:block/powder_snow/step9",
+      "cavesandcliffsbackport:block/powder_snow/step10"
+    ]
+  },
+  "item.bucket.fill_powder_snow": {
+    "sounds": [
+      "cavesandcliffsbackport:item/bucket/fill_powder_snow1",
+      {
+        "name": "cavesandcliffsbackport:item/bucket/fill_powder_snow1",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/bucket/fill_powder_snow1",
+        "pitch": 1.1
+      },
+      "cavesandcliffsbackport:item/bucket/fill_powder_snow2",
+      {
+        "name": "cavesandcliffsbackport:item/bucket/fill_powder_snow2",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/bucket/fill_powder_snow2",
+        "pitch": 1.1
+      }
+    ],
+    "subtitle": "subtitles.item.bucket.fill"
+  },
+  "item.bucket.empty_powder_snow": {
+    "sounds": [
+      "cavesandcliffsbackport:item/bucket/empty_powder_snow1",
+      {
+        "name": "cavesandcliffsbackport:item/bucket/empty_powder_snow1",
+        "pitch": 0.95
+      },
+      {
+        "name": "cavesandcliffsbackport:item/bucket/empty_powder_snow1",
+        "pitch": 1.1
+      },
+      "cavesandcliffsbackport:item/bucket/empty_powder_snow2",
+      {
+        "name": "cavesandcliffsbackport:item/bucket/empty_powder_snow2",
+        "pitch": 0.95
+      },
+      {
+        "name": "cavesandcliffsbackport:item/bucket/empty_powder_snow2",
+        "pitch": 1.1
+      }
+    ],
+    "subtitle": "subtitles.item.bucket.empty"
+  },
+  "entity.player.hurt_freeze": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/player/hurt/freeze_hurt1",
+      "cavesandcliffsbackport:entity/player/hurt/freeze_hurt2",
+      "cavesandcliffsbackport:entity/player/hurt/freeze_hurt3",
+      "cavesandcliffsbackport:entity/player/hurt/freeze_hurt4",
+      "cavesandcliffsbackport:entity/player/hurt/freeze_hurt5"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.player.freeze_hurt"
+  },
+  "entity.skeleton.converted_to_stray": {
+    "sounds": [
+      "cavesandcliffsbackport:mob/stray/convert1",
+      "cavesandcliffsbackport:mob/stray/convert2",
+      "cavesandcliffsbackport:mob/stray/convert3"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.skeleton.converted_to_stray"
+  },
+  "block.candle.break": {
+    "sounds": [
+      "cavesandcliffsbackport:block/candle/break1",
+      "cavesandcliffsbackport:block/candle/break2",
+      "cavesandcliffsbackport:block/candle/break3",
+      "cavesandcliffsbackport:block/candle/break4",
+      "cavesandcliffsbackport:block/candle/break5"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.candle.step": {
+    "sounds": [
+      "cavesandcliffsbackport:block/candle/step1",
+      "cavesandcliffsbackport:block/candle/step2",
+      "cavesandcliffsbackport:block/candle/step3",
+      "cavesandcliffsbackport:block/candle/step4",
+      "cavesandcliffsbackport:block/candle/step5"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.candle.place": {
+    "sounds": [
+      "cavesandcliffsbackport:block/candle/break1",
+      "cavesandcliffsbackport:block/candle/break2",
+      "cavesandcliffsbackport:block/candle/break3",
+      "cavesandcliffsbackport:block/candle/break4",
+      "cavesandcliffsbackport:block/candle/break5"
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.candle.hit": {
+    "sounds": [
+      "cavesandcliffsbackport:block/candle/step1",
+      "cavesandcliffsbackport:block/candle/step2",
+      "cavesandcliffsbackport:block/candle/step3",
+      "cavesandcliffsbackport:block/candle/step4",
+      "cavesandcliffsbackport:block/candle/step5"
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.candle.fall": {
+    "sounds": [
+      "cavesandcliffsbackport:block/candle/step1",
+      "cavesandcliffsbackport:block/candle/step2",
+      "cavesandcliffsbackport:block/candle/step3",
+      "cavesandcliffsbackport:block/candle/step4",
+      "cavesandcliffsbackport:block/candle/step5"
+    ]
+  },
+  "block.candle.ambient": {
+    "sounds": [
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient1"
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient1",
+        "pitch": 0.8,
+        "volume": 0.7
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient1",
+        "pitch": 0.9,
+        "volume": 0.8
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient2"
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient2",
+        "pitch": 0.8,
+        "volume": 0.7
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient2",
+        "pitch": 0.9,
+        "volume": 0.8
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient3"
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient3",
+        "pitch": 0.8,
+        "volume": 0.7
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient3",
+        "pitch": 0.9,
+        "volume": 0.8
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient4"
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient4",
+        "pitch": 0.8,
+        "volume": 0.7
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient4",
+        "pitch": 0.9,
+        "volume": 0.8
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient5"
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient5",
+        "pitch": 0.8,
+        "volume": 0.7
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient5",
+        "pitch": 0.9,
+        "volume": 0.8
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient6"
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient6",
+        "pitch": 0.8,
+        "volume": 0.7
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient6",
+        "pitch": 0.9,
+        "volume": 0.8
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient7"
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient7",
+        "pitch": 0.8,
+        "volume": 0.7
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient7",
+        "pitch": 0.9,
+        "volume": 0.8
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient8"
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient8",
+        "pitch": 0.8,
+        "volume": 0.7
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient8",
+        "pitch": 0.9,
+        "volume": 0.8
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient9"
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient9",
+        "pitch": 0.8,
+        "volume": 0.7
+      },
+      {
+        "attenuation_distance": 3,
+        "name": "cavesandcliffsbackport:block/candle/ambient9",
+        "pitch": 0.9,
+        "volume": 0.8
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.block.candle.crackle"
+  },
+  "block.candle.extinguish": {
+    "sounds": [
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish1"
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish1",
+        "volume": 0.9
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish1",
+        "pitch": 0.9
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish1",
+        "pitch": 0.9,
+        "volume": 0.9
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish1",
+        "pitch": 1.1
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish1",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish2"
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish2",
+        "volume": 0.9
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish2",
+        "pitch": 0.9
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish2",
+        "pitch": 0.9,
+        "volume": 0.9
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish2",
+        "pitch": 1.1
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish2",
+        "pitch": 1.1,
+        "volume": 0.9
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish3"
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish3",
+        "volume": 0.9
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish3",
+        "pitch": 0.9
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish3",
+        "pitch": 0.9,
+        "volume": 0.9
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish3",
+        "pitch": 1.1
+      },
+      {
+        "attenuation_distance": 8,
+        "name": "cavesandcliffsbackport:block/candle/extinguish3",
+        "pitch": 1.1,
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "subtitles.block.fire.extinguish"
+  },
+  "block.cake.add_candle": {
+    "sounds": [
+      "cavesandcliffsbackport:block/cake/add_candle1",
+      "cavesandcliffsbackport:block/cake/add_candle2",
+      "cavesandcliffsbackport:block/cake/add_candle3"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.block.cake.add_candle"
+  },
+  "entity.glow_squid.ambient": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/glow_squid/ambient1",
+      "cavesandcliffsbackport:entity/glow_squid/ambient2",
+      "cavesandcliffsbackport:entity/glow_squid/ambient3",
+      "cavesandcliffsbackport:entity/glow_squid/ambient4",
+      "cavesandcliffsbackport:entity/glow_squid/ambient5"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_squid.ambient"
+  },
+  "entity.glow_squid.death": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/glow_squid/death1",
+      "cavesandcliffsbackport:entity/glow_squid/death2",
+      "cavesandcliffsbackport:entity/glow_squid/death3"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_squid.death"
+  },
+  "entity.glow_squid.hurt": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/glow_squid/hurt1",
+      "cavesandcliffsbackport:entity/glow_squid/hurt2",
+      "cavesandcliffsbackport:entity/glow_squid/hurt3",
+      "cavesandcliffsbackport:entity/glow_squid/hurt4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_squid.hurt"
+  },
+  "entity.glow_squid.squirt": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/glow_squid/squirt1",
+      "cavesandcliffsbackport:entity/glow_squid/squirt2",
+      "cavesandcliffsbackport:entity/glow_squid/squirt3"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_squid.squirt"
+  },
+  "entity.glow_item_frame.add_item": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/itemframe/add_item1",
+      "cavesandcliffsbackport:entity/itemframe/add_item2",
+      "cavesandcliffsbackport:entity/itemframe/add_item3",
+      "cavesandcliffsbackport:entity/itemframe/add_item4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_item_frame.add_item"
+  },
+  "entity.glow_item_frame.break": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/itemframe/break1",
+      "cavesandcliffsbackport:entity/itemframe/break2",
+      "cavesandcliffsbackport:entity/itemframe/break3"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_item_frame.break"
+  },
+  "entity.glow_item_frame.place": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/itemframe/place1",
+      "cavesandcliffsbackport:entity/itemframe/place2",
+      "cavesandcliffsbackport:entity/itemframe/place3",
+      "cavesandcliffsbackport:entity/itemframe/place4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_item_frame.place"
+  },
+  "entity.glow_item_frame.remove_item": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/itemframe/remove_item1",
+      "cavesandcliffsbackport:entity/itemframe/remove_item2",
+      "cavesandcliffsbackport:entity/itemframe/remove_item3",
+      "cavesandcliffsbackport:entity/itemframe/remove_item4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_item_frame.remove_item"
+  },
+  "entity.glow_item_frame.rotate_item": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/itemframe/rotate_item1",
+      "cavesandcliffsbackport:entity/itemframe/rotate_item2",
+      "cavesandcliffsbackport:entity/itemframe/rotate_item3",
+      "cavesandcliffsbackport:entity/itemframe/rotate_item4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.glow_item_frame.rotate_item"
+  },
+  "item.glow_ink_sac.use": {
+    "sounds": [
+      "cavesandcliffsbackport:item/ink_sac/ink_sac1",
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac1",
+        "pitch": 0.95
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac1",
+        "pitch": 1.05
+      },
+      "cavesandcliffsbackport:item/ink_sac/ink_sac2",
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac2",
+        "pitch": 0.95
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac2",
+        "pitch": 1.05
+      },
+      "cavesandcliffsbackport:item/ink_sac/ink_sac3",
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac3",
+        "pitch": 0.95
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac3",
+        "pitch": 1.05
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.item.glow_ink_sac.use"
+  },
+  "item.ink_sac.use": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac1",
+        "pitch": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac1",
+        "pitch": 0.88
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac1",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac2",
+        "pitch": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac2",
+        "pitch": 0.88
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac2",
+        "pitch": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac3",
+        "pitch": 0.85
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac3",
+        "pitch": 0.88
+      },
+      {
+        "name": "cavesandcliffsbackport:item/ink_sac/ink_sac3",
+        "pitch": 0.9
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.item.ink_sac.use"
+  },
+  "entity.axolotl.attack": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:mob/axolotl/attack1",
+        "volume": 0.5
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/axolotl/attack2",
+        "volume": 0.5
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/axolotl/attack3",
+        "volume": 0.5
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/axolotl/attack4",
+        "volume": 0.5
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.axolotl.attack"
+  },
+  "entity.axolotl.death": {
+    "sounds": [
+      "cavesandcliffsbackport:mob/axolotl/death1",
+      "cavesandcliffsbackport:mob/axolotl/death2"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.axolotl.death"
+  },
+  "entity.axolotl.hurt": {
+    "sounds": [
+      "cavesandcliffsbackport:mob/axolotl/hurt1",
+      "cavesandcliffsbackport:mob/axolotl/hurt2",
+      "cavesandcliffsbackport:mob/axolotl/hurt3",
+      "cavesandcliffsbackport:mob/axolotl/hurt4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.axolotl.hurt"
+  },
+  "entity.axolotl.idle_air": {
+    "sounds": [
+      "cavesandcliffsbackport:mob/axolotl/idle_air1",
+      "cavesandcliffsbackport:mob/axolotl/idle_air2",
+      {
+        "name": "cavesandcliffsbackport:mob/axolotl/idle_air3",
+        "pitch": 1.2,
+        "volume": 0.8
+      },
+      "cavesandcliffsbackport:mob/axolotl/idle_air4",
+      "cavesandcliffsbackport:mob/axolotl/idle_air5"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.axolotl.idle_air"
+  },
+  "entity.axolotl.idle_water": {
+    "sounds": [
+      "cavesandcliffsbackport:mob/axolotl/idle1",
+      "cavesandcliffsbackport:mob/axolotl/idle2",
+      "cavesandcliffsbackport:mob/axolotl/idle3",
+      "cavesandcliffsbackport:mob/axolotl/idle4",
+      "cavesandcliffsbackport:mob/axolotl/idle5"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.axolotl.idle_water"
+  },
+  "entity.axolotl.splash": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:mob/dolphin/splash1",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/dolphin/splash2",
+        "pitch": 1.2,
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/dolphin/splash3",
+        "pitch": 1.2,
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.axolotl.splash"
+  },
+  "entity.axolotl.swim": {
+    "sounds": [
+      "cavesandcliffsbackport:entity/fish/swim5",
+      "cavesandcliffsbackport:entity/fish/swim6",
+      "cavesandcliffsbackport:entity/fish/swim7",
+      "cavesandcliffsbackport:mob/dolphin/swim1",
+      "cavesandcliffsbackport:mob/dolphin/swim2",
+      "cavesandcliffsbackport:mob/dolphin/swim3",
+      "cavesandcliffsbackport:mob/dolphin/swim4"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.axolotl.swim"
+  },
+  "item.bucket.fill_axolotl": {
+    "sounds": [
+      "cavesandcliffsbackport:item/bucket/fill_axolotl1",
+      "cavesandcliffsbackport:item/bucket/fill_axolotl2",
+      "cavesandcliffsbackport:item/bucket/fill_axolotl3"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.item.bucket.fill_axolotl"
+  },
+  "item.bucket.empty_axolotl": {
+    "sounds": [
+      "cavesandcliffsbackport:item/bucket/empty_fish1",
+      "cavesandcliffsbackport:item/bucket/empty_fish2",
+      "cavesandcliffsbackport:item/bucket/empty_fish3"
+    ],
+    "subtitle": "subtitles.item.bucket.empty"
+  },
+  "entity.goat.ambient": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:mob/goat/idle1",
+        "volume": 0.82
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/idle2",
+        "volume": 0.82
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/idle3",
+        "volume": 0.84
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/idle4",
+        "volume": 0.84
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/idle5",
+        "volume": 0.84
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/idle6",
+        "volume": 0.84
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/idle7",
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/idle8",
+        "volume": 0.84
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.goat.ambient"
+  },
+  "entity.goat.screaming.ambient": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:mob/goat/idle1",
+        "volume": 0.82
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/idle2",
+        "volume": 0.82
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/idle3",
+        "volume": 0.84
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/idle4",
+        "volume": 0.84
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/idle5",
+        "volume": 0.84
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/idle6",
+        "volume": 0.84
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/idle7",
+        "volume": 0.83
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/idle8",
+        "volume": 0.84
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/scream1",
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/scream2",
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/scream3",
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/scream4",
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/scream5",
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/scream6",
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/scream7",
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/scream8",
+        "volume": 0.9
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/scream9",
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient"
+  },
+  "entity.goat.death": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:mob/goat/death1",
+        "volume": 0.65
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/death2",
+        "volume": 0.65
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/death3",
+        "volume": 0.65
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/death4",
+        "volume": 0.65
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/death5",
+        "volume": 0.65
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.goat.death"
+  },
+  "entity.goat.screaming.death": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:mob/goat/screaming_death1",
+        "volume": 0.65
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/screaming_death2",
+        "volume": 0.65
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/screaming_death3",
+        "volume": 0.65
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.goat.death"
+  },
+  "entity.goat.eat": {
+    "sounds": [
+      "cavesandcliffsbackport:mob/goat/eat1",
+      "cavesandcliffsbackport:mob/goat/eat2",
+      "cavesandcliffsbackport:mob/goat/eat3"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.goat.eat"
+  },
+  "entity.goat.screaming.eat": {
+    "sounds": [
+      "cavesandcliffsbackport:mob/goat/eat1",
+      "cavesandcliffsbackport:mob/goat/eat2",
+      "cavesandcliffsbackport:mob/goat/eat3"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.goat.eat"
+  },
+  "entity.goat.hurt": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:mob/goat/hurt1",
+        "volume": 0.65
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/hurt2",
+        "volume": 0.65
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/hurt3",
+        "volume": 0.65
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/hurt4",
+        "volume": 0.65
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.goat.hurt"
+  },
+  "entity.goat.screaming.hurt": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:mob/goat/screaming_hurt1",
+        "volume": 0.65
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/screaming_hurt2",
+        "volume": 0.65
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/screaming_hurt3",
+        "volume": 0.65
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.goat.hurt"
+  },
+  "entity.goat.long_jump": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:mob/goat/jump1",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/jump1",
+        "pitch": 0.8,
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/jump2",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/jump2",
+        "pitch": 0.8,
+        "volume": 0.8
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.goat.long_jump"
+  },
+  "entity.goat.screaming.long_jump": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:mob/goat/jump1",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/jump1",
+        "pitch": 0.8,
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/jump2",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/jump2",
+        "pitch": 0.8,
+        "volume": 0.8
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.goat.long_jump"
+  },
+  "entity.goat.milk": {
+    "sounds": [
+      "cavesandcliffsbackport:mob/mooshroom/milk1",
+      "cavesandcliffsbackport:mob/mooshroom/milk2",
+      "cavesandcliffsbackport:mob/mooshroom/milk3"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.goat.milk"
+  },
+  "entity.goat.screaming.milk": {
+    "sounds": [
+      "cavesandcliffsbackport:mob/goat/screaming_milk1",
+      "cavesandcliffsbackport:mob/goat/screaming_milk2",
+      "cavesandcliffsbackport:mob/goat/screaming_milk3",
+      "cavesandcliffsbackport:mob/goat/screaming_milk4",
+      "cavesandcliffsbackport:mob/goat/screaming_milk5"
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.goat.milk"
+  },
+  "entity.goat.prepare_ram": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:mob/goat/pre_ram1",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/pre_ram2",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/pre_ram3",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/pre_ram4",
+        "volume": 0.8
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.goat.prepare_ram"
+  },
+  "entity.goat.screaming.prepare_ram": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:mob/goat/screaming_pre_ram1",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/screaming_pre_ram2",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/screaming_pre_ram3",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/screaming_pre_ram4",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/screaming_pre_ram5",
+        "volume": 0.8
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.goat.prepare_ram"
+  },
+  "entity.goat.ram_impact": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:mob/goat/impact1",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/impact2",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/impact2",
+        "volume": 0.8
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.goat.ram_impact"
+  },
+  "entity.goat.screaming.ram_impact": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:mob/goat/impact1",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/impact2",
+        "volume": 0.8
+      },
+      {
+        "name": "cavesandcliffsbackport:mob/goat/impact2",
+        "volume": 0.8
+      }
+    ],
+    "subtitle": "subtitles.cavesandcliffsbackport.entity.goat.ram_impact"
+  },
+  "entity.goat.step": {
+    "sounds": [
+      "cavesandcliffsbackport:mob/goat/step1",
+      "cavesandcliffsbackport:mob/goat/step2",
+      "cavesandcliffsbackport:mob/goat/step3",
+      "cavesandcliffsbackport:mob/goat/step4",
+      "cavesandcliffsbackport:mob/goat/step5",
+      "cavesandcliffsbackport:mob/goat/step6"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "music_disc.otherside": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:records/otherside",
+        "stream": true
+      }
+    ]
+  },
+  "music.overworld.lush_caves": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:music/game/an_ordinary_day",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/calm1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/calm2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/calm3",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/floating_dream",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/left_to_bloom",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/one_more_day",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "minecraft:music/game/piano3",
+        "stream": true
+      }
+    ]
+  },
+  "music.overworld.dripstone_caves": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:music/game/an_ordinary_day",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal4",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/infinite_amethyst",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "minecraft:music/game/nuance1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/nuance2",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/wending",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      }
+    ]
+  },
+  "music.overworld.meadow": {
+    "sounds": [
+      {
+        "name": "minecraft:music/game/hal1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal3",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal4",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/left_to_bloom",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/one_more_day",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      }
+    ]
+  },
+  "music.overworld.grove": {
+    "sounds": [
+      {
+        "name": "minecraft:music/game/calm1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/calm2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/calm3",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/comforting_memories",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/infinite_amethyst",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "minecraft:music/game/nuance1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/nuance2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano3",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/wending",
+        "stream": true,
+        "volume": 0.4
+      }
+    ]
+  },
+  "music.overworld.snowy_slopes": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:music/game/an_ordinary_day",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "minecraft:music/game/hal1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal3",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/one_more_day",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/stand_tall",
+        "stream": true,
+        "volume": 0.4
+      }
+    ]
+  },
+  "music.overworld.jagged_peaks": {
+    "sounds": [
+      {
+        "name": "cavesandcliffsbackport:music/game/floating_dream",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "minecraft:music/game/hal1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/nuance1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/nuance2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano3",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/stand_tall",
+        "stream": true,
+        "volume": 0.4
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/wending",
+        "stream": true,
+        "volume": 0.4
+      }
+    ]
+  },
+  "music.overworld.frozen_peaks": {
+    "sounds": [
+      {
+        "name": "minecraft:music/game/hal1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal3",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal4",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano3",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/stand_tall",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      }
+    ]
+  },
+  "music.overworld.stony_peaks": {
+    "sounds": [
+      {
+        "name": "minecraft:music/game/hal1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal3",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/hal4",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano1",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano2",
+        "stream": true
+      },
+      {
+        "name": "minecraft:music/game/piano3",
+        "stream": true
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/stand_tall",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      },
+      {
+        "name": "cavesandcliffsbackport:music/game/wending",
+        "stream": true,
+        "volume": 0.4
+      }
+    ]
   }
 }

@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "normal": [
+      {
+        "model": "cavesandcliffsbackport:rooted_dirt"
+      },
+      {
+        "model": "cavesandcliffsbackport:rooted_dirt",
+        "y": 90
+      },
+      {
+        "model": "cavesandcliffsbackport:rooted_dirt",
+        "y": 180
+      },
+      {
+        "model": "cavesandcliffsbackport:rooted_dirt",
+        "y": 270
+      }
+    ]
+  }
+}

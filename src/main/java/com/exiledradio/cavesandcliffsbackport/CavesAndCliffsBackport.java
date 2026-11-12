@@ -43,6 +43,11 @@ public final class CavesAndCliffsBackport {
     @Mod.Instance(MOD_ID)
     public static CavesAndCliffsBackport instance;
 
+    /** Before any mod's pre-init: what must exist before the first spawn list is read. */
+    public CavesAndCliffsBackport() {
+        com.exiledradio.cavesandcliffsbackport.glowsquid.GlowSquidContent.construct();
+    }
+
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         // This mod's spawn eggs in Miscellaneous where vanilla lists each mob's (Backport Core's creative
@@ -52,6 +57,12 @@ public final class CavesAndCliffsBackport {
         com.exiledradio.cavesandcliffsbackport.deepslate.DeepslateContent.preInit();
         com.exiledradio.cavesandcliffsbackport.copper.CopperContent.preInit();
         com.exiledradio.cavesandcliffsbackport.amethyst.AmethystContent.preInit();
+        com.exiledradio.cavesandcliffsbackport.dripstone.DripstoneContent.preInit();
+        com.exiledradio.cavesandcliffsbackport.lush.LushContent.preInit();
+        com.exiledradio.cavesandcliffsbackport.powdersnow.PowderSnowContent.preInit();
+        com.exiledradio.cavesandcliffsbackport.candle.CandleContent.preInit();
+        com.exiledradio.cavesandcliffsbackport.blocks.BlocksContent.preInit();
+        com.exiledradio.cavesandcliffsbackport.music.MusicContent.preInit();
 
         // Client-only setup lives in a class a dedicated server never loads. The call names no client
         // type, so this class verifies on a server - a guarded method here would not.
@@ -66,6 +77,12 @@ public final class CavesAndCliffsBackport {
         com.exiledradio.cavesandcliffsbackport.deepslate.DeepslateContent.init();
         com.exiledradio.cavesandcliffsbackport.copper.CopperContent.init();
         com.exiledradio.cavesandcliffsbackport.amethyst.AmethystContent.init();
+        com.exiledradio.cavesandcliffsbackport.dripstone.DripstoneContent.init();
+        com.exiledradio.cavesandcliffsbackport.lush.LushContent.init();
+        com.exiledradio.cavesandcliffsbackport.powdersnow.PowderSnowContent.init();
+        com.exiledradio.cavesandcliffsbackport.glowsquid.GlowSquidContent.init();
+        com.exiledradio.cavesandcliffsbackport.goat.GoatContent.init();
+        com.exiledradio.cavesandcliffsbackport.blocks.BlocksContent.init();
     }
 
     @Mod.EventHandler

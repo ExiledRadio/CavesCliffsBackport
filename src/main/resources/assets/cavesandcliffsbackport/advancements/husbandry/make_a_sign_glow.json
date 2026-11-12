@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "cavesandcliffsbackport:glow_ink_sac"
+    },
+    "title": {
+      "translate": "advancements.cavesandcliffsbackport.make_a_sign_glow.title"
+    },
+    "description": {
+      "translate": "advancements.cavesandcliffsbackport.make_a_sign_glow.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "minecraft:husbandry/root",
+  "criteria": {
+    "code": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "conditions": [
+    {
+      "type": "minecraft:item_exists",
+      "item": "cavesandcliffsbackport:glow_ink_sac"
+    }
+  ]
+}
