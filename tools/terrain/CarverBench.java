@@ -20,7 +20,7 @@ public final class CarverBench {
         int rounds = args.length > 2 ? Integer.parseInt(args[2]) : 5;
         int centerX = args.length > 3 ? Integer.parseInt(args[3]) : 0;
         int centerZ = args.length > 4 ? Integer.parseInt(args[4]) : 0;
-        byte[] out = new byte[16 * 16 * 384];
+        char[] out = new char[16 * 16 * 384];
         double[] baseMs = new double[rounds];
         double[] carveMs = new double[rounds];
         long checksum = 0L;

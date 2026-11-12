@@ -72,7 +72,7 @@ public final class Carvers {
     private static final Path[] NONE = new Path[0];
 
     // ---- the chunk being carved ----
-    private byte[] blocks;
+    private char[] blocks;
     private int cx;
     private int cz;
     private int minX;
@@ -90,7 +90,7 @@ public final class Carvers {
     /**
      * Carves chunk cx, cz in blocks (ChunkFiller's layout), which ChunkFiller.fill and SurfaceBuilder.build made.
      */
-    public void carve(int cx, int cz, byte[] blocks) {
+    public void carve(int cx, int cz, char[] blocks) {
         this.blocks = blocks;
         this.cx = cx;
         this.cz = cz;
@@ -420,7 +420,7 @@ public final class Carvers {
 
     /** WorldCarver.carveBlock; returns the column's grass flag. */
     private boolean carveBlock(int column, int x, int y, int z, boolean grass) {
-        byte[] b = blocks;
+        char[] b = blocks;
         int at = column + y;
         int state = b[at];
         if (state == GRASS_BLOCK || state == MYCELIUM) {
@@ -433,11 +433,11 @@ public final class Carvers {
         if (carved < 0) {
             return grass;
         }
-        b[at] = (byte) carved;
+        b[at] = (char) carved;
         if (grass && b[at - 1] == DIRT) {
             int top = surface.topMaterial(cx, cz, b, x, y - 1, z, carved != AIR);
             if (top >= 0) {
-                b[at - 1] = (byte) top;
+                b[at - 1] = (char) top;
             }
         }
         return grass;

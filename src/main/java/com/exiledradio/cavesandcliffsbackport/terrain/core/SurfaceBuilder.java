@@ -55,7 +55,7 @@ public final class SurfaceBuilder {
     private final DoubleNoise iceNoise;
 
     // ---- the chunk ----
-    private byte[] blocks;
+    private char[] blocks;
     private int baseX;
     private int baseZ;
     /** WORLD_SURFACE_WG per column (x * 16 + z): one above the highest non-air block, or MIN_Y. */
@@ -138,7 +138,7 @@ public final class SurfaceBuilder {
         if (y < MIN_Y || y > MAX_Y) {
             return;
         }
-        blocks[column * HEIGHT + y - MIN_Y] = (byte) code;
+        blocks[column * HEIGHT + y - MIN_Y] = (char) code;
         int h = heights[column];
         if (y <= h - 2) {
             return;
@@ -166,7 +166,7 @@ public final class SurfaceBuilder {
     /**
      * Builds the surface of chunk cx, cz in blocks (ChunkFiller's layout, index (x * 16 + z) * 384 + y + 64).
      */
-    public void build(int cx, int cz, byte[] blocks) {
+    public void build(int cx, int cz, char[] blocks) {
         this.blocks = blocks;
         baseX = cx << 4;
         baseZ = cz << 4;
@@ -210,7 +210,7 @@ public final class SurfaceBuilder {
      * carvers ask it for dirt under a carved column that held grass or mycelium. Returns a block code, or -1 when
      * no rule applies (the dirt stays).
      */
-    public int topMaterial(int cx, int cz, byte[] blocks, int x, int y, int z, boolean fluidAbove) {
+    public int topMaterial(int cx, int cz, char[] blocks, int x, int y, int z, boolean fluidAbove) {
         this.blocks = blocks;
         baseX = cx << 4;
         baseZ = cz << 4;
@@ -291,7 +291,7 @@ public final class SurfaceBuilder {
         int j2 = Integer.MIN_VALUE;
         int minSurface = minSurfaceLevel;
         int at = column * HEIGHT - MIN_Y;
-        byte[] b = blocks;
+        char[] b = blocks;
         // Below the min surface level only the bedrock and deepslate gradients can apply, and they read nothing
         // of the scan: the scan's state is kept only above it.
         int scanTo = Math.max(minSurface, MIN_Y);
@@ -317,7 +317,7 @@ public final class SurfaceBuilder {
                         if (r == AIR) {
                             set(y, r);
                         } else {
-                            b[at + y] = (byte) r;
+                            b[at + y] = (char) r;
                         }
                     }
                 }

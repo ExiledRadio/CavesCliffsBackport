@@ -91,7 +91,7 @@ public final class TerrainCheck {
     static long chunks(File dir, long seed, String prefix) throws Exception {
         OverworldNoise n = new OverworldNoise(seed);
         ChunkFiller filler = new ChunkFiller(n);
-        byte[] ours = new byte[16 * 16 * 384];
+        char[] ours = new char[16 * 16 * 384];
         byte[] theirs = new byte[16 * 16 * 384];
         long bad = 0;
         long[] kinds = new long[256];

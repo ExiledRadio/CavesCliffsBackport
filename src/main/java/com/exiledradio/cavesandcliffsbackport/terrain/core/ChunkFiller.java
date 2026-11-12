@@ -9,16 +9,16 @@ import java.util.Arrays;
  * One instance per thread; it keeps its scratch arrays between chunks.
  */
 public final class ChunkFiller {
-    public static final byte AIR = 0;
-    public static final byte STONE = 1;
-    public static final byte WATER = 2;
-    public static final byte LAVA = 3;
-    public static final byte COPPER_ORE = 4;
-    public static final byte RAW_COPPER_BLOCK = 5;
-    public static final byte GRANITE = 6;
-    public static final byte DEEPSLATE_IRON_ORE = 7;
-    public static final byte RAW_IRON_BLOCK = 8;
-    public static final byte TUFF = 9;
+    public static final char AIR = 0;
+    public static final char STONE = 1;
+    public static final char WATER = 2;
+    public static final char LAVA = 3;
+    public static final char COPPER_ORE = 4;
+    public static final char RAW_COPPER_BLOCK = 5;
+    public static final char GRANITE = 6;
+    public static final char DEEPSLATE_IRON_ORE = 7;
+    public static final char RAW_IRON_BLOCK = 8;
+    public static final char TUFF = 9;
 
     private static final int MIN_Y = OverworldNoise.MIN_Y;
     private static final int HEIGHT = OverworldNoise.HEIGHT;
@@ -84,9 +84,9 @@ public final class ChunkFiller {
     }
 
     /**
-     * Fills out (16 * 16 * 384 bytes, index (x * 16 + z) * 384 + (y + 64)) with the block codes of chunk cx, cz.
+     * Fills out (16 * 16 * 384 chars, index (x * 16 + z) * 384 + (y + 64)) with the block codes of chunk cx, cz.
      */
-    public void fill(int cx, int cz, byte[] out) {
+    public void fill(int cx, int cz, char[] out) {
         fill(cx, cz, out, null);
     }
 
@@ -94,7 +94,7 @@ public final class ChunkFiller {
      * fill with structure terrain adaptation: beard (Beardifier.forChunk for this chunk, or null for none) is added
      * to the final density of every block, as vanilla's NoiseChunk adds the beardifier.
      */
-    public void fill(int cx, int cz, byte[] out, Beardifier beard) {
+    public void fill(int cx, int cz, char[] out, Beardifier beard) {
         this.beard = beard;
         baseX = cx << 4;
         baseZ = cz << 4;
@@ -143,7 +143,7 @@ public final class ChunkFiller {
         }
     }
 
-    private void fillCellAt(int xi, int zi, int yi, byte[] out) {
+    private void fillCellAt(int xi, int zi, int yi, char[] out) {
         int[] cc = cellCorner;
         cc[0] = corner(xi, zi, yi);
         cc[1] = corner(xi + 1, zi, yi);
@@ -156,14 +156,14 @@ public final class ChunkFiller {
         fillCell(baseX + xi * 4, MIN_Y + yi * 8, baseZ + zi * 4, xi * 4, zi * 4, out);
     }
 
-    private byte[] columnScratch;
+    private char[] columnScratch;
 
     /**
      * NoiseBasedChunkGenerator.getBaseColumn at block x, z: the column's blocks from the noise fill alone (no
      * structures, surface or carvers), out[y + 64] for y -64..319. Only the noise cell column holding x, z is
      * computed (fill's blocks there are the same cell by cell).
      */
-    public void baseColumn(int x, int z, byte[] out) {
+    public void baseColumn(int x, int z, char[] out) {
         int local = startColumn(x, z);
         for (int yi = CELLS_Y - 1; yi >= 0; yi--) {
             fillCellAt(columnXi, columnZi, yi, columnScratch);
@@ -178,7 +178,7 @@ public final class ChunkFiller {
      */
     public int baseHeight(int x, int z, boolean oceanFloor) {
         int local = startColumn(x, z);
-        byte[] b = columnScratch;
+        char[] b = columnScratch;
         int at = local * HEIGHT;
         for (int yi = CELLS_Y - 1; yi >= 0; yi--) {
             fillCellAt(columnXi, columnZi, yi, b);
@@ -198,7 +198,7 @@ public final class ChunkFiller {
     /** Sets up the cell column holding x, z; returns the column's index in the chunk (local x * 16 + local z). */
     private int startColumn(int x, int z) {
         if (columnScratch == null) {
-            columnScratch = new byte[16 * 16 * HEIGHT];
+            columnScratch = new char[16 * 16 * HEIGHT];
         }
         beard = null;
         int cx = x >> 4;
@@ -328,7 +328,7 @@ public final class ChunkFiller {
             Math.max(Math.max(c[o + 4], c[o + 5]), Math.max(c[o + 6], c[o + 7])));
     }
 
-    private static void fillCellWith(byte[] out, int localX, int localZ, int cellY, byte code) {
+    private static void fillCellWith(char[] out, int localX, int localZ, int cellY, char code) {
         for (int dx = 0; dx < 4; dx++) {
             for (int dz = 0; dz < 4; dz++) {
                 int at = ((localX + dx) * 16 + localZ + dz) * HEIGHT + (cellY - MIN_Y);
@@ -339,7 +339,7 @@ public final class ChunkFiller {
 
     private Beardifier beard;
 
-    private void fillCell(int cellX, int cellY, int cellZ, int localX, int localZ, byte[] out) {
+    private void fillCell(int cellX, int cellY, int cellZ, int localX, int localZ, char[] out) {
         if (beard != null && beard.touches(cellX, cellY, cellZ, cellX + 3, cellY + 7, cellZ + 3)) {
             fillCellBeard(cellX, cellY, cellZ, localX, localZ, out);
             return;
@@ -358,7 +358,7 @@ public final class ChunkFiller {
             // Nothing solid from the terrain: air or fluid, unless a barrier between aquifers fills in.
             int all = aquifer.quickCell(cellX, cellY, cellZ);
             if (all != Aquifer.UNDECIDED) {
-                fillCellWith(out, localX, localZ, cellY, (byte) all);
+                fillCellWith(out, localX, localZ, cellY, (char) all);
                 return;
             }
         }
@@ -392,7 +392,7 @@ public final class ChunkFiller {
                     for (int dz = 0; dz < 4; dz++) {
                         int at = ((localX + dx) * 16 + localZ + dz) * HEIGHT + (cellY - MIN_Y);
                         for (int dy = 0; dy < 8; dy++) {
-                            out[at + dy] = (byte) vein(cellX + dx, cellY + dy, cellZ + dz, (double) dx / 4.0D,
+                            out[at + dy] = (char) vein(cellX + dx, cellY + dy, cellZ + dz, (double) dx / 4.0D,
                                 (double) dy / 8.0D, (double) dz / 4.0D);
                         }
                     }
@@ -455,7 +455,7 @@ public final class ChunkFiller {
                         }
                         code = veins ? vein(x, y, z, tx, ty, tz) : STONE;
                     }
-                    out[((localX + dx) * 16 + localZ + dz) * HEIGHT + (y - MIN_Y)] = (byte) code;
+                    out[((localX + dx) * 16 + localZ + dz) * HEIGHT + (y - MIN_Y)] = (char) code;
                 }
             }
         }
@@ -468,7 +468,7 @@ public final class ChunkFiller {
      * beardifier, as vanilla does it. The functions needed are the same as in fillCell (noodles where their
      * toggle can reach 0, veins where their toggle can reach 0.4); only the whole-cell answers are left out.
      */
-    private void fillCellBeard(int cellX, int cellY, int cellZ, int localX, int localZ, byte[] out) {
+    private void fillCellBeard(int cellX, int cellY, int cellZ, int localX, int localZ, char[] out) {
         double[] c = cell;
         need(DONE_MAIN);
         need(DONE_NOODLE_TOGGLE);
@@ -513,7 +513,7 @@ public final class ChunkFiller {
                     if (code < 0) {
                         code = veins ? vein(x, y, z, tx, ty, tz) : STONE;
                     }
-                    out[((localX + dx) * 16 + localZ + dz) * HEIGHT + (y - MIN_Y)] = (byte) code;
+                    out[((localX + dx) * 16 + localZ + dz) * HEIGHT + (y - MIN_Y)] = (char) code;
                 }
             }
         }

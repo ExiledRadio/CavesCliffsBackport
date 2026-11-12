@@ -77,7 +77,7 @@ public final class Structures {
     private final boolean[] oceanOrRiver = new boolean[256];
     /** Start pools expanded: per pool, per entry, the offset into the run table, or -1 for the empty element. */
     private final int[][] poolEntries;
-    private final byte[] column = new byte[HEIGHT];
+    private final char[] column = new char[HEIGHT];
     private int[] rings;
 
     public Structures(OverworldNoise noise, ColumnCache columns, BiomeSource biomes) {
@@ -461,7 +461,7 @@ public final class Structures {
         return tag[biomes.biome(x0 >> 2, j >> 2, z0 >> 2)];
     }
 
-    private final byte[][] corners = new byte[4][HEIGHT];
+    private final char[][] corners = new char[4][HEIGHT];
 
     /** RuinedPortalFeature.findSuitableY (not IN_NETHER). */
     private int suitableY(LegacyRandom r, int placement, int top, int ySpan, int minX, int maxX, int minZ, int maxZ) {

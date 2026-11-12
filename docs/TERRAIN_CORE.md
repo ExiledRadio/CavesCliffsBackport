@@ -155,12 +155,17 @@ position; the oracle dumps vanilla the same way (it clears `lastResult` before e
 
 ## Block codes
 
-`BlockCodes` (one byte per block, each the block's default state; `VanillaWorld` maps vanilla's states to the same
+`BlockCodes` (one 16-bit char per block, `char[]` chunk arrays, each code one 1.18.2 block state; `VanillaWorld` maps vanilla's states to the same
 numbers): 0 air, 1 stone, 2 water, 3 lava, 4 copper ore, 5 raw copper block, 6 granite, 7 deepslate iron ore,
 8 raw iron block, 9 tuff (the fill); 10 bedrock, 11 deepslate, 12 dirt, 13 grass block, 14 podzol, 15 coarse dirt,
 16 mycelium, 17 calcite, 18 gravel, 19 sand, 20 sandstone, 21 red sand, 22 red sandstone, 23 packed ice,
 24 snow block, 25 powder snow, 26 ice, 27 terracotta, 28 white, 29 orange, 30 yellow, 31 brown, 32 red,
 33 light gray terracotta (surface). Biome ids (`Biomes`) are the index in 1.18.2's `Biomes.java` declaration order.
+
+Codes are 16-bit since the features step (property-rich states such as glow lichen or dripleaves each get a
+code of their own). The switch from byte to char arrays cost nothing measurable on one E-core (Java 8, 12x12
+chunks, fill + surface + carvers): seed 42 2.694 -> 2.684 ms/chunk, 12345 3.052 -> 3.056, 8675309 3.223 -> 3.206,
+same checksums (the dumps stay one byte per block; the checks compare code values).
 
 ## How it is fast
 

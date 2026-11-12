@@ -34,8 +34,8 @@ public final class BeardCheck {
         long beardNanos = 0L;
         long plainNanos = 0L;
         byte[] expected = new byte[16 * 16 * 384];
-        byte[] actual = new byte[16 * 16 * 384];
-        byte[] plain = new byte[16 * 16 * 384];
+        char[] actual = new char[16 * 16 * 384];
+        char[] plain = new char[16 * 16 * 384];
         for (long seed : seeds) {
             OverworldNoise noise = new OverworldNoise(seed);
             ColumnCache columns = new ColumnCache(noise);

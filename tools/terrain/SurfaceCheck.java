@@ -33,7 +33,7 @@ public final class SurfaceCheck {
         long chunksChecked = 0L;
         long[] counts = new long[BlockCodes.COUNT];
         byte[] expected = new byte[16 * 16 * 384];
-        byte[] actual = new byte[16 * 16 * 384];
+        char[] actual = new char[16 * 16 * 384];
         for (long seed : seeds) {
             OverworldNoise noise = new OverworldNoise(seed);
             ColumnCache columns = new ColumnCache(noise);

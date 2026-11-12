@@ -1,7 +1,7 @@
 package com.exiledradio.cavesandcliffsbackport.terrain.core;
 
 /**
- * The block codes of the terrain core's chunk arrays (one byte per block), each a 1.18.2 block's default state.
+ * The block codes of the terrain core's chunk arrays (one char, 16 bits, per block), each a 1.18.2 block's default state.
  * 0-9 come out of ChunkFiller (the noise fill), 10-33 out of SurfaceBuilder. The oracle (VanillaWorld) maps
  * vanilla's states to the same numbers; keep the two lists and docs/TERRAIN_CORE.md in step.
  */
