@@ -52,6 +52,29 @@ For scale, from the earlier pack research: whole-chunk generation in a 1.12.2 se
 vanilla 1.12 terrain and about 15 for the existing 1.18-terrain mods, on this machine. Vanilla 1.18.2's noise
 fill alone caps one core at 28 chunks/s; ours leaves that step at about 400.
 
+### Carvers and the beardifier (2026-11-11)
+
+Carvers (`Carvers`): `NoiseBasedChunkGenerator.applyCarvers` for `GenerationStep.Carving.AIR`, the three overworld
+carvers (`cave`, `cave_extra_underground`, `canyon` with `data/worldgen/Carvers`' configurations) started from
+the 17x17 chunks around, run in place after surface. `CarverBench` against `VanillaCarverBench` (vanilla's
+carvers on its own chunks after fill and surface, carver biomes kept per chunk as `ChunkAccess.carverBiome` does),
+12x12 chunks, median of 5, same checksum on both sides:
+
+| Seed, center chunk | Vanilla carvers (Java 17) | Ours (Java 8 / 17) | Speedup |
+| --- | --- | --- | --- |
+| 42 at 0,0 | 3.02 ms/chunk | 0.275 / 0.310 ms | 11x |
+| 12345 at 500,-300 | 2.39 ms/chunk | 0.245 / 0.234 ms | 10x |
+| 8675309 at -2000,1500 | 2.77 ms/chunk | 0.321 / 0.328 ms | 8.6x |
+
+Biomes + fill + surface + carvers come to about 2.7 to 3.2 ms/chunk (Java 8), about 330 chunks/s on one E-core.
+
+Beardifier (`Beardifier`, `ChunkFiller.fill(cx, cz, out, beard)`): the terrain adaptation around structure pieces,
+as an API taking the pieces (boxes, noise effect, jigsaw ground level delta, projection, junctions) until the
+pieces themselves exist. Cells no piece or junction can reach keep every shortcut (each contribution is exactly
+0.0 outside a box around its piece); a cell one reaches is filled the long way, final density plus the beard per
+block. In `BeardCheck`'s areas (40 pieces each, 836 chunks) the fill costs 3.4 ms/chunk with the beard against
+2.9 without.
+
 ## Verified
 
 `tools/terrain/TerrainCheck` against the oracle's files, seeds 42, 12345, -7346534567, 8675309:
@@ -72,6 +95,18 @@ Surface, `tools/terrain/SurfaceCheck` against `surface_SEED.bin.gz` (`VanillaSur
 through vanilla's fill and `SurfaceSystem`): 688 chunks per seed (12x12 around 0,0, 12x12 far, 200 scattered, and
 up to 4 chunks for every biome found on a scan out to 16,384 blocks), 2,752 chunks and 270 million blocks, every
 surface block below present (badlands bands and pillars, icebergs, powder snow, calcite, ...), identical.
+
+Carvers, `tools/terrain/CarverCheck` against `carved_SEED.bin.gz` (`VanillaCarverDump`: vanilla's own carvers
+on real `ProtoChunk`s after its fill and surface, the same 688 chunks per seed as the surface check): 2,752 chunks,
+270 million blocks, about 2 million of them changed by the carvers, identical. That includes the dirt the carvers
+turn into the surface's top material under a carved grass column (`SurfaceSystem.topMaterial`): 1,959 blocks in
+141 chunks, which differ if that step is left out. McMath's sine table is checked against `Mth.SIN`.
+
+Beardifier, `tools/terrain/BeardCheck` against `beard_SEED.bin.gz` (`VanillaBeardDump`: vanilla's `Beardifier`
+built by its own constructor over a feature manager that hands it made-up pieces near the surface: plain beard
+pieces, buried pieces, rigid and terrain-matching jigsaw pieces with ground level deltas and junctions, one area
+packed so that many terms overlap): 836 chunks, 82 million blocks, 364,365 of them changed by the beard, identical.
+The beard kernel is checked against `BEARD_KERNEL`.
 
 ### Biome ties
 
@@ -119,6 +154,14 @@ y <= 7. The stone-depth-below scan is replaced by asking the block underneath (t
 `ON_CEILING`). The zoom skips the fiddled distances where the 8 candidate quarts hold one biome, which is almost
 everywhere. Stone replaced by a non-air block is a plain write (the heightmap cannot move).
 
+How the carvers are fast (`Carvers`): a carver's whole path (every tunnel, room, radius and branch) depends only
+on its start chunk and the seed; the chunk being carved only cuts tunnels short (`canReach`) and clips ellipsoids
+to itself. So each start chunk's paths are recorded once and replayed by each of the up to 289 chunks that can
+see them, in vanilla's order, testing `canReach` where vanilla tests it. A tunnel whose recorded ellipsoids,
+branches included, all fail `carveEllipsoid`'s bounds test for a chunk is skipped (each of them would return
+without effect). Every overworld biome lists the same three carvers (the oracle prints the lists), so the start
+chunk's carver biome is never looked up.
+
 ## Running the tools
 
 ```
@@ -129,6 +172,10 @@ sh tools/terrain/run.sh BiomeCheck E:/MincraftModding/Workspaces/MC1182Reference
 sh tools/terrain/run.sh SurfaceCheck E:/MincraftModding/Workspaces/MC1182Reference/oracle-out
 sh tools/terrain/run.sh BiomeSelfTest 2000000
 tools\terrain\bench.cmd 8 SurfaceBench 42 12 5
+sh tools/terrain/run.sh CarverCheck E:/MincraftModding/Workspaces/MC1182Reference/oracle-out
+sh tools/terrain/run.sh BeardCheck E:/MincraftModding/Workspaces/MC1182Reference/oracle-out
+tools\terrain\bench.cmd 8 CarverBench 42 12 5
+E:\MincraftModding\Workspaces\MC1182Reference\bench-carvers-vanilla.cmd 42 12 5
 E:\MincraftModding\Workspaces\MC1182Reference\bench-surface-vanilla.cmd 42 12 5    (append 0 0 cold for a cold search)
 ```
 
@@ -136,8 +183,8 @@ The biome and surface oracle classes (`VanillaWorld`, `VanillaBiomeDump`, `Vanil
 `VanillaSurfaceBench`, copies in `tools/terrain/oracle`) are compiled straight into the reference workspace with
 `javac @javac.args -d build/classes/java/main ...` (JDK 17; `javac.args` is `-cp` and vanilla.args' classpath
 line) and run with `java @vanilla.args net.minecraft.world.level.levelgen.<class>`:
-`VanillaBiomeDump oracle-out 24 400 1024` and `VanillaSurfaceDump oracle-out 12 200 4` wrote the gzipped dumps
-(about 0.1 MB and 1.5 MB per seed).
+`VanillaBiomeDump oracle-out 24 400 1024`, `VanillaSurfaceDump oracle-out 12 200 4`,
+`VanillaCarverDump oracle-out 12 200 4` and `VanillaBeardDump oracle-out 10 40` wrote the gzipped dumps.
 
 The oracle is `tools/terrain/oracle/*.java`, copies of the sources that live in the reference workspace
 `Workspaces/MC1182Reference` (ForgeGradle 5, Mojang names, JDK 17): `gradlew oracle`, and `VanillaFillDump` /
@@ -147,10 +194,10 @@ The oracle is `tools/terrain/oracle/*.java`, copies of the sources that live in 
 
 Terrain, in the order to build it, each checked against the oracle the same way:
 
-Done: biomes and surface rules (above).
+Done: biomes and surface rules, carvers, the beardifier (above).
 
-1. Carvers (1.18 caves and canyons), features (ores, trees, geodes, dripstone, lush caves, springs, lakes) and
-   structure placement with 1.18.2's numbers; the beardifier's terrain adaptation.
+1. Structure placement with 1.18.2's numbers, then features (ores, trees, geodes, dripstone, lush caves, springs,
+   lakes).
 2. The chunk generator around it for 1.12.2: worker threads computing chunks ahead in tiles (sharing border
    corners between neighbors saves about a quarter of the corner work), writing sections directly.
 3. The extended-height coremod (`docs/EXTENDED_HEIGHT.md`), without which none of this reaches a world.
