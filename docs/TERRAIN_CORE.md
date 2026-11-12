@@ -172,6 +172,23 @@ about 38 blocks from its chunk (radius 9 plus the wind drift over the column), s
 `DecorationBench`: 1.16 ms/chunk at seed 42 0,0; 1.54 in the dripstone area of seed 8675309 (vanilla's timer
 there, unpinned Java 17: 6.6).
 
+Lush caves and glow lichen (2026-11-11): lush_caves_ceiling_vegetation, cave_vines, lush_caves_clay,
+lush_caves_vegetation, spore_blossom, classic_vines_cave_feature and glow_lichen in `LushCaves`
+(`VegetationPatchFeature` and its waterlogged variant, `BlockColumnFeature`, `SimpleBlockFeature` with the plants'
+canSurvive and `DoublePlantBlock.placeAt`, the random selectors, `VinesFeature`, `GlowLichenFeature` with
+`MultifaceBlock`'s placement and spreading). Three things vanilla does that matter: the vegetation patch keeps its
+ground positions in a `HashSet<BlockPos>` and draws per element as it iterates, so `LushCaves.Pos` hashes as
+`Vec3i` does and a real `java.util.HashSet` gives vanilla's order; `BlockColumnFeature` tests the column from one
+past its origin; and `MultifaceBlock.DIRECTIONS` is a static array that every lichen spread shuffles in place
+(`Collections.shuffle(Arrays.asList(DIRECTIONS), random)`), so a spread starts from the order the previous one left
+for the life of the JVM (vanilla is history dependent there, and racy across threads); `LushCaves.DIRECTIONS` is
+process-global the same way, which the checks match by decorating in the oracle's order in one JVM. Face
+sturdiness is per face (`BlockCodes.faceFull`: azalea's top face is full, carpets' bottom). rooted_azalea_tree
+waits for trees. `FeatureCheck` with all 51 then ported features: identical on the default areas (lush caves at
+0,0 on three seeds, `oracle-out/feat-lush`, 512 chunks) and in seed 8675309's lush caves at 16,-8
+(`oracle-out/feat-lush2`, 64 chunks). `DecorationBench` (with freeze_top_layer): 1.42 ms/chunk at seed 42 0,0,
+1.51 at seed 8675309 16,-8 (vanilla's unpinned timer there: 5.9).
+
 Java 8 and `Math.sin`: `OreFeature` takes `Math.sin`/`Math.cos` of a double, as vanilla does. Over all 2^24 angles
 an ore can draw, Java 17, 21 and 25 give the same bits (vanilla's, on Java 17), but Java 8's `Math` differs from
 them in the last bit at about a million angles (`StrictMath` matches neither). On the checks' 704 chunks Java 8

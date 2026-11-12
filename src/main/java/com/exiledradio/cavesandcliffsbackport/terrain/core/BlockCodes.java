@@ -107,6 +107,12 @@ public final class BlockCodes {
     public static final int F_WATER = 128;
     /** BlockState.isSolidRender: a full cube that occludes (rock-like blocks that are not in NOT_OCCLUDING). */
     public static final int F_SOLID_RENDER = 256;
+    /** Every face full (isFaceSturdy, Block.isFaceFull of the collision shape, canSupportCenter): full collision cubes. */
+    public static final int F_STURDY = 512;
+    /** The UP face full though the block is not (azalea: its canopy box reaches the top). */
+    public static final int F_TOP_FULL = 1024;
+    /** The DOWN face full though the block is not (carpets, dirt path, farmland, end portal frame). */
+    public static final int F_BOTTOM_FULL = 2048;
 
     /** How many codes exist so far. */
     public static int count() {
@@ -170,6 +176,12 @@ public final class BlockCodes {
         "small_amethyst_bud", "pointed_dripstone", "cactus", "bamboo", "dirt_path", "farmland", "lantern",
         "big_dripleaf", "cobweb", "bamboo_sapling", "end_portal_frame", "snow"));
 
+    /** Motion-blocking blocks without a full collision cube. */
+    private static final java.util.Set<String> NOT_STURDY = new java.util.HashSet<>(java.util.Arrays.asList(
+        "pointed_dripstone", "amethyst_cluster", "large_amethyst_bud", "medium_amethyst_bud", "small_amethyst_bud",
+        "chest", "cactus", "bamboo", "dirt_path", "farmland", "lantern", "end_portal_frame", "cobweb", "bamboo_sapling",
+        "bee_nest_none"));
+
     private static final java.util.Set<String> FLUID_BLOCKS = new java.util.HashSet<>(java.util.Arrays.asList(
         "water", "lava", "seagrass", "tall_seagrass", "kelp", "kelp_plant", "bubble_column"));
 
@@ -185,6 +197,12 @@ public final class BlockCodes {
             f |= F_BLOCKS_MOTION | F_SOLID;
             if (!NOT_OCCLUDING.contains(name) && !name.endsWith("_leaves")) {
                 f |= F_SOLID_RENDER;
+            }
+            if (!NOT_STURDY.contains(name)) {
+                f |= F_STURDY;
+            }
+            if (name.equals("dirt_path") || name.equals("farmland") || name.equals("end_portal_frame")) {
+                f |= F_BOTTOM_FULL;
             }
         } else {
             switch (m) {
@@ -214,6 +232,12 @@ public final class BlockCodes {
         if (name.endsWith("_leaves")) {
             f |= F_LEAVES;
         }
+        if (name.equals("azalea") || name.equals("flowering_azalea")) {
+            f |= F_TOP_FULL;
+        }
+        if (name.endsWith("_carpet")) {
+            f |= F_BOTTOM_FULL;
+        }
         return f;
     }
 
@@ -238,6 +262,19 @@ public final class BlockCodes {
         String s = state(code);
         int i = s.indexOf('[');
         return i < 0 ? s : s.substring(0, i);
+    }
+
+    public static boolean sturdy(int code) {
+        return (flags[code] & F_STURDY) != 0;
+    }
+
+    /**
+     * Block.isFaceFull(collision shape, face) / isFaceSturdy(face): face as a Direction ordinal (down, up, north,
+     * south, west, east).
+     */
+    public static boolean faceFull(int code, int face) {
+        int f = flags[code];
+        return (f & F_STURDY) != 0 || face == 1 && (f & F_TOP_FULL) != 0 || face == 0 && (f & F_BOTTOM_FULL) != 0;
     }
 
     public static boolean solidRender(int code) {

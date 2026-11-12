@@ -55,6 +55,12 @@ public final class Decorator {
         for (Placed p : Geodes.placed(noise.seed)) {
             ported.put(p.name, p);
         }
+        for (Placed p : SurfaceFeatures.placed(this)) {
+            ported.put(p.name, p);
+        }
+        for (Placed p : LushCaves.placed()) {
+            ported.put(p.name, p);
+        }
         for (Placed p : Dripstone.placed()) {
             ported.put(p.name, p);
         }
