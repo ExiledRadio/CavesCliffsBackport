@@ -413,8 +413,9 @@ Done: biomes and surface rules, carvers, the beardifier, structure placement (ab
      precipitation from vanilla's registry; `temperature` and `coldEnoughToSnow` match vanilla's at 244,000
      samples (every biome, any height, out to 3 million blocks; `BiomeTemperatureCheck` against
      `VanillaBiomeInfoDump`).
-2. The chunk generator around it for 1.12.2: worker threads computing chunks ahead in tiles (sharing border
-   corners between neighbors saves about a quarter of the corner work), writing sections directly.
+2. Done (stream G, `docs/streams/generator.md`): the 1.12 chunk generator, `Pipeline` here (fill, biomes, surface,
+   carvers on worker threads ahead of need; decoration of the 3x3 around each asked-for chunk on the asking thread)
+   and `terrain.ModernGenerator` writing sections directly. 0.61x vanilla 1.12's time per chunk in a server.
 3. The extended-height coremod (`docs/EXTENDED_HEIGHT.md`), without which none of this reaches a world.
 
 Biome temperature (`Biomes.temperature`) is filled in only for the two frozen oceans, the only biomes 1.18.2's

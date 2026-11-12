@@ -95,10 +95,10 @@ public final class ModernTerrain {
         return Math.max(1, Math.min(6, Runtime.getRuntime().availableProcessors() - 2));
     }
 
-    /** Chunks held ahead at most: about 200 KB each, an eighth of the heap, 512 to 4096. */
+    /** Chunks held ahead at most: about 200 KB each, a sixteenth of the heap, 256 to 2048. */
     static int cap() {
-        long bytes = Runtime.getRuntime().maxMemory() / 8;
-        return (int) Math.max(512, Math.min(4096, bytes / (210L * 1024L)));
+        long bytes = Runtime.getRuntime().maxMemory() / 16;
+        return (int) Math.max(256, Math.min(2048, bytes / (210L * 1024L)));
     }
 
     // ---------------------------------------------------------------------------------------------

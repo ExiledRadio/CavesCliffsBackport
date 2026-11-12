@@ -76,6 +76,9 @@ public final class TerrainSelfTest implements SelfTest {
         Pipeline own = new Pipeline(world.getSeed(), 0, 1024);
         Pipeline.Proto p = own.finish(CX, CZ);
         StateMap map = new StateMap();
+        map.resolveAll();
+        check.ok(map.unresolved.isEmpty(), "every 1.18 state the core makes has a 1.12 block "
+                + (map.unresolved.isEmpty() ? "" : map.unresolved.toString()));
         int wrong = 0;
         int lichen = 0;
         String first = null;

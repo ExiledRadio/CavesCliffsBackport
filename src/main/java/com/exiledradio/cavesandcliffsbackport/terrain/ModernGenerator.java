@@ -13,7 +13,6 @@ import com.exiledradio.cavesandcliffsbackport.terrain.core.OverworldNoise;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.Pipeline;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.Structures;
 import net.minecraft.block.BlockFalling;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.tileentity.TileEntityMobSpawner;
@@ -55,12 +54,13 @@ import java.util.Random;
 public final class ModernGenerator implements IChunkGenerator, TerrainSource {
 
     /** How far around each asked-for chunk the workers fill ahead, in chunks. */
-    static final int PREFETCH = 6;
+    static final int PREFETCH = 4;
 
     private final World world;
     private final ModernTerrain terrain;
     private final Pipeline pipeline;
     private final StateMap states = new StateMap();
+    private final SectionWriter sections = new SectionWriter(this.states);
     private final boolean features;
     private final boolean sky;
     private final Random rand = new Random();
@@ -145,61 +145,49 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource {
     private void write(Chunk chunk, Pipeline.Proto p) {
         ExtendedBlockStorage[] sections = chunk.getBlockStorageArray();
         char[] blocks = p.blocks;
-        StateMap map = this.states;
-        long[] wet = null;
-        int wetCount = 0;
         for (int slot = 0; slot < sections.length; slot++) {
             int base = HeightLayout.slotBase(slot);
             int at = base - Pipeline.MIN_Y;
-            if (at < 0 || at + 16 > Pipeline.HEIGHT) {
+            if (at >= 0 && at + 16 <= Pipeline.HEIGHT) {
+                sections[slot] = this.sections.write(blocks, base, this.sky);
+            }
+        }
+        // Blocks that need more than their state: water kept in them, a chest's loot, a spawner's mob.
+        StateMap map = this.states;
+        long[] wet = null;
+        int wetCount = 0;
+        int last = -1;
+        int lastFlags = 0;
+        for (int i = 0; i < blocks.length; i++) {
+            int code = blocks[i];
+            if (code == BlockCodes.AIR) {
                 continue;
             }
-            ExtendedBlockStorage section = null;
-            int last = -1;
-            IBlockState state = null;
-            for (int x = 0; x < 16; x++) {
-                for (int z = 0; z < 16; z++) {
-                    int col = (x * 16 + z) * Pipeline.HEIGHT + at;
-                    for (int y = 0; y < 16; y++) {
-                        int code = blocks[col + y];
-                        if (code == BlockCodes.AIR) {
-                            continue;
-                        }
-                        if (code != last) {
-                            last = code;
-                            state = map.state(code);
-                        }
-                        if (state.getBlock() == net.minecraft.init.Blocks.AIR) {
-                            continue;
-                        }
-                        if (section == null) {
-                            section = new ExtendedBlockStorage(base, this.sky);
-                            sections[slot] = section;
-                        }
-                        section.set(x, y, z, state);
-                        int f = map.flags(code);
-                        if (f != 0) {
-                            BlockPos pos = new BlockPos((chunk.x << 4) + x, base + y, (chunk.z << 4) + z);
-                            if ((f & StateMap.WATER) != 0) {
-                                if (wet == null) {
-                                    wet = new long[16];
-                                } else if (wetCount == wet.length) {
-                                    wet = java.util.Arrays.copyOf(wet, wetCount * 2);
-                                }
-                                wet[wetCount++] = pos.toLong();
-                            }
-                            if ((f & StateMap.CHEST) != 0) {
-                                TileEntityChest chest = new TileEntityChest();
-                                chest.setLootTable(LootTableList.CHESTS_SIMPLE_DUNGEON, this.rand.nextLong());
-                                chunk.addTileEntity(pos, chest);
-                            } else if ((f & StateMap.SPAWNER) != 0) {
-                                TileEntityMobSpawner spawner = new TileEntityMobSpawner();
-                                spawner.getSpawnerBaseLogic().setEntityId(DungeonHooks.getRandomDungeonMob(this.rand));
-                                chunk.addTileEntity(pos, spawner);
-                            }
-                        }
-                    }
+            if (code != last) {
+                last = code;
+                lastFlags = map.flags(code);
+            }
+            if (lastFlags == 0 || lastFlags == StateMap.TILE) {
+                continue;
+            }
+            int c = i / Pipeline.HEIGHT;
+            BlockPos pos = new BlockPos((chunk.x << 4) + (c >> 4), Pipeline.MIN_Y + i % Pipeline.HEIGHT, (chunk.z << 4) + (c & 15));
+            if ((lastFlags & StateMap.WATER) != 0) {
+                if (wet == null) {
+                    wet = new long[16];
+                } else if (wetCount == wet.length) {
+                    wet = java.util.Arrays.copyOf(wet, wetCount * 2);
                 }
+                wet[wetCount++] = pos.toLong();
+            }
+            if ((lastFlags & StateMap.CHEST) != 0) {
+                TileEntityChest chest = new TileEntityChest();
+                chest.setLootTable(LootTableList.CHESTS_SIMPLE_DUNGEON, this.rand.nextLong());
+                chunk.addTileEntity(pos, chest);
+            } else if ((lastFlags & StateMap.SPAWNER) != 0) {
+                TileEntityMobSpawner spawner = new TileEntityMobSpawner();
+                spawner.getSpawnerBaseLogic().setEntityId(DungeonHooks.getRandomDungeonMob(this.rand));
+                chunk.addTileEntity(pos, spawner);
             }
         }
         if (wet != null) {

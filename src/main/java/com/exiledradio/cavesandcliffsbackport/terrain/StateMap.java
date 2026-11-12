@@ -42,9 +42,15 @@ public final class StateMap {
     public static final int TILE = 8;
 
     private IBlockState[] states = new IBlockState[0];
+    /** The states that resolved to nothing (air or water instead), for the self-test. */
+    public final List<String> unresolved = new ArrayList<>();
     private byte[] flags = new byte[0];
 
     private static final Map<String, String> VANILLA = new HashMap<>();
+    /** Used only when no installed mod has the 1.18 block: the nearest 1.12 one. */
+    private static final Map<String, String> FALLBACK = new HashMap<>();
+    /** 1.18 slabs: the 1.12 single slab and double slab, with the variant. */
+    private static final Map<String, String[]> SLABS = new HashMap<>();
     private static final List<String> LOGGED = new ArrayList<>();
 
     private static void v(String modern, String legacy) {
@@ -133,10 +139,6 @@ public final class StateMap {
         v("acacia_sapling", "minecraft:sapling[type=acacia]");
         v("dark_oak_sapling", "minecraft:sapling[type=dark_oak]");
         v("oak_fence", "minecraft:fence");
-        v("oak_slab", "minecraft:wooden_slab[variant=oak]");
-        v("smooth_stone_slab", "minecraft:stone_slab[variant=stone]");
-        v("cobblestone_slab", "minecraft:stone_slab[variant=cobblestone]");
-        v("sandstone_slab", "minecraft:stone_slab[variant=sand]");
         v("cut_sandstone", "minecraft:sandstone[type=smooth_sandstone]");
         v("chiseled_sandstone", "minecraft:sandstone[type=chiseled_sandstone]");
         v("cut_red_sandstone", "minecraft:red_sandstone[type=smooth_red_sandstone]");
@@ -148,6 +150,18 @@ public final class StateMap {
         v("water", "minecraft:water");
         v("lava", "minecraft:lava");
         v("bubble_column", "minecraft:water");
+        FALLBACK.put("blue_ice", "minecraft:packed_ice");
+        FALLBACK.put("tuff", "minecraft:stone[variant=andesite]");
+        FALLBACK.put("calcite", "minecraft:stone[variant=diorite]");
+        SLABS.put("sandstone_slab", new String[]{"minecraft:stone_slab[variant=sand]", "minecraft:double_stone_slab[variant=sand]"});
+        SLABS.put("cobblestone_slab", new String[]{"minecraft:stone_slab[variant=cobblestone]", "minecraft:double_stone_slab[variant=cobblestone]"});
+        SLABS.put("smooth_stone_slab", new String[]{"minecraft:stone_slab[variant=stone]", "minecraft:double_stone_slab[variant=stone]"});
+        SLABS.put("stone_brick_slab", new String[]{"minecraft:stone_slab[variant=smooth_brick]", "minecraft:double_stone_slab[variant=smooth_brick]"});
+        SLABS.put("brick_slab", new String[]{"minecraft:stone_slab[variant=brick]", "minecraft:double_stone_slab[variant=brick]"});
+        SLABS.put("red_sandstone_slab", new String[]{"minecraft:stone_slab2[variant=red_sandstone]", "minecraft:double_stone_slab2[variant=red_sandstone]"});
+        for (String wood : new String[]{"oak", "spruce", "birch", "jungle", "acacia", "dark_oak"}) {
+            SLABS.put(wood + "_slab", new String[]{"minecraft:wooden_slab[variant=" + wood + "]", "minecraft:double_wooden_slab[variant=" + wood + "]"});
+        }
         String[] colors = {"white", "orange", "magenta", "light_blue", "yellow", "lime", "pink", "gray", "light_gray",
             "cyan", "purple", "blue", "brown", "green", "red", "black"};
         for (String c : colors) {
@@ -214,9 +228,12 @@ public final class StateMap {
             }
             if (state != null) {
                 state = apply(state, props);
+            } else if (FALLBACK.containsKey(name)) {
+                state = parse(FALLBACK.get(name));
             }
         }
         if (state == null) {
+            unresolved.add(full);
             synchronized (LOGGED) {
                 if (!LOGGED.contains(name)) {
                     LOGGED.add(name);
@@ -279,6 +296,17 @@ public final class StateMap {
                         : apply(flowing.getDefaultState(), single("level", String.valueOf(level)));
             }
             default:
+                String[] slab = SLABS.get(name);
+                if (slab != null) {
+                    String type = props.remove("type");
+                    if ("double".equals(type)) {
+                        props.clear();
+                        return parse(slab[1]);
+                    }
+                    IBlockState s = parse(slab[0]);
+                    props.clear();
+                    return s == null ? null : apply(s, single("half", "top".equals(type) ? "top" : "bottom"));
+                }
                 if (name.endsWith("_leaves")) {
                     // 1.18's distance/persistent: generated leaves decay normally in 1.12.
                     props.remove("distance");
@@ -286,6 +314,17 @@ public final class StateMap {
                 }
                 return null;
         }
+    }
+
+    /** A 1.12 state written as "namespace:block[prop=value,...]", or null if the block is not there. */
+    private static IBlockState parse(String legacy) {
+        int lb = legacy.indexOf('[');
+        Block block = block(new ResourceLocation(lb < 0 ? legacy : legacy.substring(0, lb)));
+        if (block == null) {
+            return null;
+        }
+        IBlockState state = block.getDefaultState();
+        return lb < 0 ? state : apply(state, props(legacy.substring(lb + 1, legacy.length() - 1)));
     }
 
     private static Map<String, String> single(String k, String v) {
