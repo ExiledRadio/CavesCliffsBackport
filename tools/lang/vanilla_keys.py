@@ -22,6 +22,8 @@ import assets  # noqa: E402
 M = assets.MODID
 SPECIAL = {
     # vanilla 1.12 keys whose modern name comes from a differently named modern key
+    "death.attack.freeze": "death.attack.freeze",
+    "death.attack.freeze.player": "death.attack.freeze.player",
 }
 
 
@@ -38,8 +40,12 @@ def candidates(key):
     if key.startswith("item.%s." % M) and key.endswith(".name"):
         name = ".".join(parts[2:-1])
         return ["item.minecraft." + name, "block.minecraft." + name]
+    if key.startswith("entity.%s." % M) and key.endswith(".name"):
+        return ["entity.minecraft." + ".".join(parts[2:-1])]
     if key.startswith("subtitles.%s." % M):
         return ["subtitles." + key[len("subtitles.%s." % M):]]
+    if key.startswith("death.attack.%s." % M):
+        return ["death.attack." + key[len("death.attack.%s." % M):]]
     if key.startswith("advancements.%s." % M):
         rest = key[len("advancements.%s." % M):]
         return ["advancements.%s.%s" % (tab, rest) for tab in ("story", "nether", "end", "adventure", "husbandry")]

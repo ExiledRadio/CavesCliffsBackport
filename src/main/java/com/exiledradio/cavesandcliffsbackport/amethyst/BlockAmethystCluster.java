@@ -1,5 +1,6 @@
 package com.exiledradio.cavesandcliffsbackport.amethyst;
 
+import com.exiledradio.backportcore.waterlog.Waterloggable;
 import com.exiledradio.cavesandcliffsbackport.common.BlockBasic;
 
 import net.minecraft.block.Block;
@@ -34,7 +35,7 @@ import java.util.Random;
  * face behind it, giving light 1, 2, 4 and 5. Buds drop nothing (Silk Touch gives them); the cluster drops
  * 4 shards when mined with a pickaxe (Fortune's ore formula) and 2 otherwise. Pistons break them.
  */
-public class BlockAmethystCluster extends Block {
+public class BlockAmethystCluster extends Block implements Waterloggable {
 
     public static final PropertyDirection FACING = BlockDirectional.FACING;
 

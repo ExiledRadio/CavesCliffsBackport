@@ -1,0 +1,104 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "cavesandcliffsbackport:item/light"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "level": 0.0
+      },
+      "model": "cavesandcliffsbackport:item/light_00"
+    },
+    {
+      "predicate": {
+        "level": 0.0625
+      },
+      "model": "cavesandcliffsbackport:item/light_01"
+    },
+    {
+      "predicate": {
+        "level": 0.125
+      },
+      "model": "cavesandcliffsbackport:item/light_02"
+    },
+    {
+      "predicate": {
+        "level": 0.1875
+      },
+      "model": "cavesandcliffsbackport:item/light_03"
+    },
+    {
+      "predicate": {
+        "level": 0.25
+      },
+      "model": "cavesandcliffsbackport:item/light_04"
+    },
+    {
+      "predicate": {
+        "level": 0.3125
+      },
+      "model": "cavesandcliffsbackport:item/light_05"
+    },
+    {
+      "predicate": {
+        "level": 0.375
+      },
+      "model": "cavesandcliffsbackport:item/light_06"
+    },
+    {
+      "predicate": {
+        "level": 0.4375
+      },
+      "model": "cavesandcliffsbackport:item/light_07"
+    },
+    {
+      "predicate": {
+        "level": 0.5
+      },
+      "model": "cavesandcliffsbackport:item/light_08"
+    },
+    {
+      "predicate": {
+        "level": 0.5625
+      },
+      "model": "cavesandcliffsbackport:item/light_09"
+    },
+    {
+      "predicate": {
+        "level": 0.625
+      },
+      "model": "cavesandcliffsbackport:item/light_10"
+    },
+    {
+      "predicate": {
+        "level": 0.6875
+      },
+      "model": "cavesandcliffsbackport:item/light_11"
+    },
+    {
+      "predicate": {
+        "level": 0.75
+      },
+      "model": "cavesandcliffsbackport:item/light_12"
+    },
+    {
+      "predicate": {
+        "level": 0.8125
+      },
+      "model": "cavesandcliffsbackport:item/light_13"
+    },
+    {
+      "predicate": {
+        "level": 0.875
+      },
+      "model": "cavesandcliffsbackport:item/light_14"
+    },
+    {
+      "predicate": {
+        "level": 0.9375
+      },
+      "model": "cavesandcliffsbackport:item/light_15"
+    }
+  ]
+}

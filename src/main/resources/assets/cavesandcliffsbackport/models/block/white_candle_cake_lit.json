@@ -1,0 +1,10 @@
+{
+  "parent": "cavesandcliffsbackport:block/template_cake_with_candle",
+  "textures": {
+    "candle": "cavesandcliffsbackport:block/white_candle_lit",
+    "bottom": "blocks/cake_bottom",
+    "side": "blocks/cake_side",
+    "top": "blocks/cake_top",
+    "particle": "blocks/cake_side"
+  }
+}

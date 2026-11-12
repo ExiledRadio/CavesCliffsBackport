@@ -1,5 +1,7 @@
 package com.exiledradio.cavesandcliffsbackport.common;
 
+import net.minecraft.world.IBlockAccess;
+import com.exiledradio.backportcore.waterlog.Waterloggable;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockSlab;
 import net.minecraft.block.properties.IProperty;
@@ -26,7 +28,7 @@ import java.util.Random;
  *
  * <p>Registry names: {@code <name>_slab} and {@code <name>_double_slab}, as the family's released mods name them.
  */
-public abstract class BlockCCSlab extends BlockSlab {
+public abstract class BlockCCSlab extends BlockSlab implements Waterloggable {
 
     public enum Variant implements IStringSerializable {
         DEFAULT;
@@ -52,6 +54,12 @@ public abstract class BlockCCSlab extends BlockSlab {
             state = state.withProperty(HALF, EnumBlockHalf.BOTTOM);
         }
         setDefaultState(state);
+    }
+
+    /** A half slab holds water; a double slab is a full block and holds none (1.18.2's {@code SlabBlock}). */
+    @Override
+    public boolean canHoldWater(IBlockState state, IBlockAccess world, BlockPos pos) {
+        return !isDouble();
     }
 
     /** The half slab: the one with an item. */

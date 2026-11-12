@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "cavesandcliffsbackport:candle_cake"
+    },
+    "lit=true": {
+      "model": "cavesandcliffsbackport:candle_cake_lit"
+    }
+  }
+}

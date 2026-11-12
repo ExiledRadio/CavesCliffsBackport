@@ -70,8 +70,8 @@ public final class Check {
     }
 
     /**
-     * @return the corner of a new empty 32x32 area at y=100, cleared (with 8 blocks around it) from y=60 to y=160 with a stone floor
-     * at y=99 and its chunks loaded
+     * @return the corner of a new empty 32x32 area at y=100, cleared (with 8 blocks around it, blocks and entities) from y=60
+     * to y=160 with a stone floor at y=99 and its chunks loaded
      */
     public BlockPos area() {
         int x = 20000 + 48 * this.nextArea++;
@@ -88,6 +88,13 @@ public final class Check {
                         this.world.setBlockState(p, want, 2 | 16);
                     }
                 }
+            }
+        }
+        // ... and the animals its chunks generated with: standing on the terrain just cleared, they drop onto the floor.
+        for (net.minecraft.entity.Entity e : this.world.getEntitiesWithinAABB(net.minecraft.entity.Entity.class,
+                new net.minecraft.util.math.AxisAlignedBB(x - 8, 60, z - 8, x + 40, 160, z + 40))) {
+            if (!(e instanceof net.minecraft.entity.player.EntityPlayer)) {
+                this.world.removeEntityDangerously(e);
             }
         }
         return corner;

@@ -1,0 +1,8 @@
+block.cake.add_candle
+block.candle.ambient
+block.candle.break
+block.candle.extinguish
+block.candle.fall
+block.candle.hit
+block.candle.place
+block.candle.step

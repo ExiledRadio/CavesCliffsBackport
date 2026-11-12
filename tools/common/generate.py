@@ -1,4 +1,4 @@
-"""The shared language lines: the creative tab, and every config category and option.
+"""The shared language lines: every config category and option.
 
 Config lines are read from ModConfig.java, so a stream that adds an option only reruns this:
 
@@ -28,6 +28,7 @@ CATEGORY_NAMES = {
     "blocks": "Other Blocks and Items",
     "music": "Music",
     "caves": "Cave Regions",
+    "height": "World Height",
 }
 
 # Option names that words-from-camelCase would get wrong.
@@ -37,6 +38,7 @@ OPTION_NAMES = {
     "maxY": "Highest height",
     "geodeMinY": "Lowest geode height",
     "geodeMaxY": "Highest geode height",
+    "patchMinY": "Lowest patch height",
 }
 
 SRC = os.path.join(assets.ROOT, "src", "main", "java", "com", "exiledradio", assets.MODID, "ModConfig.java")
@@ -58,7 +60,8 @@ def config_lines():
     text = open(SRC, encoding="utf-8").read()
     lines = []
     # Every annotated declaration: a run of annotations, then a field.
-    for block in re.finditer(r"((?:\s*@Config\.\w+(?:\((?:[^()]|\([^()]*\))*\))?)+)\s*public\s+(?:static\s+final\s+)?\w+\s+(\w+)\s*=", text):
+    # (Core's @Setting annotations sit among the @Config ones, and a list option's type is "String[]".)
+    for block in re.finditer(r"((?:\s*@(?:Config|Setting)\.\w+(?:\((?:[^()]|\([^()]*\))*\))?)+)\s*public\s+(?:static\s+final\s+)?\w+(?:\[\])?\s+(\w+)\s*=", text):
         annotations, field = block.group(1), block.group(2)
         key = re.search(r'@Config\.LangKey\("([^"]+)"\)', annotations)
         com = re.search(r"@Config\.Comment\(((?:[^()]|\([^()]*\))*)\)", annotations)
@@ -78,5 +81,5 @@ def config_lines():
     return lines
 
 
-assets.merge_lang("common", ["itemGroup.%s=Caves & Cliffs Backport" % assets.MODID] + config_lines())
+assets.merge_lang("common", config_lines())
 print("common: %d config lines" % (len(config_lines())))

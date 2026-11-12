@@ -324,15 +324,20 @@ public final class CopperSelfTest implements SelfTest {
         com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.LOGGER.info("SELFTEST vein size: ours {} vanilla {} per vein", ours / 60.0, theirs / 60.0);
         c.ok(Math.abs(ours - theirs) < theirs * 0.3, "our veins are vanilla-sized: " + ours / 60.0 + " vs " + theirs / 60.0);
         // Real chunks: count copper ore in a fresh area.
-        int base = 9000 + (int) (System.currentTimeMillis() / 1000 % 5000) * 8;
-        for (int x = 0; x <= 4; x++) {
-            for (int z = 0; z <= 4; z++) {
+        // A fixed place, so a run repeats; 25 chunks, so the count is not at the mercy of one cave system.
+        int base = 9000;
+        // Without the dripstone caves' extra copper, which a third of all places would otherwise add to the count.
+        int extra = com.exiledradio.cavesandcliffsbackport.ModConfig.dripstone.extraCopperVeins;
+        com.exiledradio.cavesandcliffsbackport.ModConfig.dripstone.extraCopperVeins = 0;
+        for (int x = 0; x <= 6; x++) {
+            for (int z = 0; z <= 6; z++) {
                 c.world.getChunkProvider().provideChunk(base + x, base + z);
             }
         }
+        com.exiledradio.cavesandcliffsbackport.ModConfig.dripstone.extraCopperVeins = extra;
         int ore = 0, deepOre = 0;
-        for (int x = 1; x <= 3; x++) {
-            for (int z = 1; z <= 3; z++) {
+        for (int x = 1; x <= 5; x++) {
+            for (int z = 1; z <= 5; z++) {
                 net.minecraft.world.chunk.Chunk ch = c.world.getChunk(base + x, base + z);
                 for (int bx = 0; bx < 16; bx++) {
                     for (int bz = 0; bz < 16; bz++) {
@@ -348,9 +353,9 @@ public final class CopperSelfTest implements SelfTest {
                 }
             }
         }
-        com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.LOGGER.info("SELFTEST copper generation: {} copper ore, {} deepslate copper ore in 9 chunks", ore, deepOre);
+        com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.LOGGER.info("SELFTEST copper generation: {} copper ore, {} deepslate copper ore in 25 chunks", ore, deepOre);
         // 6 veins of about 7 blocks, between y 1 and 96; those above the ground or in caves place nothing.
-        c.ok(ore + deepOre > 9 * 15 && ore + deepOre < 9 * 60, "about 6 veins per chunk: " + (ore + deepOre));
+        c.ok(ore + deepOre > 25 * 15 && ore + deepOre < 25 * 60, "about 6 veins per chunk: " + (ore + deepOre));
         c.ok(deepOre > 0, "some veins in the deepslate layer became deepslate copper ore: " + deepOre);
         c.ok(CopperStage.values().length == 4, "four stages");
     }

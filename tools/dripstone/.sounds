@@ -1,0 +1,15 @@
+block.dripstone_block.break
+block.dripstone_block.fall
+block.dripstone_block.hit
+block.dripstone_block.place
+block.dripstone_block.step
+block.pointed_dripstone.break
+block.pointed_dripstone.drip_lava
+block.pointed_dripstone.drip_lava_into_cauldron
+block.pointed_dripstone.drip_water
+block.pointed_dripstone.drip_water_into_cauldron
+block.pointed_dripstone.fall
+block.pointed_dripstone.hit
+block.pointed_dripstone.land
+block.pointed_dripstone.place
+block.pointed_dripstone.step

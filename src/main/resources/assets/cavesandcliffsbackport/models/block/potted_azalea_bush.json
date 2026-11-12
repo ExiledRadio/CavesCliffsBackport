@@ -1,0 +1,7 @@
+{
+  "parent": "cavesandcliffsbackport:block/template_potted_azalea_bush",
+  "textures": {
+    "top": "cavesandcliffsbackport:block/potted_azalea_bush_top",
+    "side": "cavesandcliffsbackport:block/potted_azalea_bush_side"
+  }
+}

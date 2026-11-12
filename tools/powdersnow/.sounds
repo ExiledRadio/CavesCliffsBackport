@@ -1,0 +1,9 @@
+block.powder_snow.break
+block.powder_snow.fall
+block.powder_snow.hit
+block.powder_snow.place
+block.powder_snow.step
+entity.player.hurt_freeze
+entity.skeleton.converted_to_stray
+item.bucket.empty_powder_snow
+item.bucket.fill_powder_snow

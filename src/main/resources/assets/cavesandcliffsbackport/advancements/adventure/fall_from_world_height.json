@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:water_bucket"
+    },
+    "title": {
+      "translate": "advancements.cavesandcliffsbackport.fall_from_world_height.title"
+    },
+    "description": {
+      "translate": "advancements.cavesandcliffsbackport.fall_from_world_height.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "minecraft:adventure/root",
+  "criteria": {
+    "code": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "conditions": [
+    {
+      "type": "minecraft:item_exists",
+      "item": "cavesandcliffsbackport:light"
+    }
+  ]
+}
