@@ -147,6 +147,18 @@ vanilla answers block light 0 and sky light 15 (no data layers) with sky darkeni
 chunk's sections can get data layers early when a chunk two away is lit, which depends on the server's generation
 order; the center chunk never does.) No measurable cost: `DecorationBench` 1.05 ms/chunk (Java 8).
 
+Cave features, first part (2026-11-11): lava lakes (lake_lava_underground with `EnvironmentScanPlacement` down to
+non-air, lake_lava_surface on WORLD_SURFACE_WG; `LakeFeature`, cave air in the top half, stone barrier),
+monster rooms (monster_room, monster_room_deep; `MonsterRoomFeature`, the chest turned by
+`StructurePiece.reorient` and its loot seed drawn, the spawner's mob drawn last) in `Caves`, and the amethyst geode
+in `Geodes` (`GeodeFeature`; its legacy NormalNoise on the world seed is made once per Decorator instead of per
+placement, and positions whose inverse-root sum cannot reach the outer layer even with the largest noise skip the
+noise, which draws nothing). `Region` gained the WORLD_SURFACE_WG snapshot (`Region.worldgenHeights` fills both
+worldgen heightmaps), `Decorator` the `HEIGHTMAP` op over any heightmap and `CUSTOM` modifiers, `BlockCodes` the
+Material flags features test (solid, liquid, replaceable, solid render, water). `FeatureCheck` with all 41 ported
+features (`oracle-out/feat-caves2`, 512 chunks, 14 spawners, chests in all four facings, every geode layer and bud):
+identical. `DecorationBench` 1.17 ms/chunk (Java 8) at seed 42 and at seed 12345 (500,-300).
+
 Java 8 and `Math.sin`: `OreFeature` takes `Math.sin`/`Math.cos` of a double, as vanilla does. Over all 2^24 angles
 an ore can draw, Java 17, 21 and 25 give the same bits (vanilla's, on Java 17), but Java 8's `Math` differs from
 them in the last bit at about a million angles (`StrictMath` matches neither). On the checks' 704 chunks Java 8

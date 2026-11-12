@@ -33,7 +33,7 @@ import java.util.zip.GZIPInputStream;
 public final class FeatureCheck {
     static final class Chunk {
         final char[] blocks = new char[16 * 16 * 384];
-        final int[] oceanFloor = new int[256];
+        final int[] oceanFloor = new int[512];
         final int[] heights = new int[Region.HEIGHTMAPS * 256];
     }
 
@@ -96,7 +96,7 @@ public final class FeatureCheck {
                             filler.fill(p[0] + dx, p[1] + dz, c.blocks);
                             surface.build(p[0] + dx, p[1] + dz, c.blocks);
                             carvers.carve(p[0] + dx, p[1] + dz, c.blocks);
-                            Region.oceanFloorHeights(c.blocks, c.oceanFloor);
+                            Region.worldgenHeights(c.blocks, c.oceanFloor);
                             Region.primeHeightmaps(c.blocks, c.heights);
                             chunks.put(key, c);
                         }

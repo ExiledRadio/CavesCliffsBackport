@@ -52,6 +52,12 @@ public final class Decorator {
         for (Placed p : Ores.placed()) {
             ported.put(p.name, p);
         }
+        for (Placed p : Geodes.placed(noise.seed)) {
+            ported.put(p.name, p);
+        }
+        for (Placed p : Caves.placed()) {
+            ported.put(p.name, p);
+        }
         for (Placed p : Misc.placed()) {
             ported.put(p.name, p);
         }
@@ -90,6 +96,19 @@ public final class Decorator {
                 biomeSteps[b][k] = Arrays.copyOf(idx, m);
             }
         }
+    }
+
+    /** The ported placed features' names, in step and index order (for the oracle's -Dfeatures). */
+    public java.util.List<String> ported() {
+        java.util.List<String> names = new java.util.ArrayList<>();
+        for (Placed[] step : features) {
+            for (Placed p : step) {
+                if (p != null) {
+                    names.add(p.name);
+                }
+            }
+        }
+        return names;
     }
 
     /** Runs only the named placed features (null: every ported one), as VanillaFeatureDump's -Dfeatures does. */
@@ -174,18 +193,48 @@ public final class Decorator {
     static final int HEIGHTMAP_OCEAN_FLOOR = 7;
     static final int SURFACE_THRESHOLD_OCEAN_FLOOR = 8;
     static final int HEIGHT_VERY_BIASED = 9;
+    /** HeightmapPlacement, argument: Region's heightmap type, or WG_OCEAN_FLOOR / WG_WORLD_SURFACE. */
+    static final int HEIGHTMAP = 10;
+    /** A Modifier from Placed.mods, argument: its index. */
+    static final int CUSTOM = 11;
+
+    static final int WG_OCEAN_FLOOR = 4;
+    static final int WG_WORLD_SURFACE = 5;
 
     /** A placed feature: its placement modifiers as ops (opcode, then its arguments) and its feature. */
     static final class Placed {
         final String name;
         final int[] ops;
         final Feature feature;
+        Modifier[] mods = new Modifier[0];
         int id;
 
         Placed(String name, Feature feature, int... ops) {
             this.name = name;
             this.feature = feature;
             this.ops = ops;
+        }
+
+        /** The modifiers CUSTOM ops refer to, by index. */
+        Placed mods(Modifier... mods) {
+            this.mods = mods;
+            return this;
+        }
+    }
+
+    /** A placement modifier that is not an op: it calls next.at(x, y, z) for each position it gives. */
+    interface Modifier {
+        void apply(Region region, XoroRandom random, Next next, int x, int y, int z);
+    }
+
+    /** The rest of a placed feature's modifiers after a Modifier. */
+    static final class Next {
+        Decorator decorator;
+        Placed placed;
+        int at;
+
+        void at(int x, int y, int z) {
+            decorator.run(placed, at, x, y, z);
         }
     }
 
@@ -262,6 +311,23 @@ public final class Decorator {
             case HEIGHT_VERY_BIASED:
                 run(p, at + 4, x, veryBiasedHeight(ops[at + 1], ops[at + 2], ops[at + 3]), z);
                 return;
+            case HEIGHTMAP: {
+                int t = ops[at + 1];
+                int k = t == WG_OCEAN_FLOOR ? region.oceanFloor(x, z) : t == WG_WORLD_SURFACE ? region.worldSurfaceWg(x, z)
+                    : region.height(t, x, z);
+                if (k > MIN_Y) {
+                    run(p, at + 2, x, k, z);
+                }
+                return;
+            }
+            case CUSTOM: {
+                Next n = new Next();
+                n.decorator = this;
+                n.placed = p;
+                n.at = at + 2;
+                p.mods[ops[at + 1]].apply(region, random, n, x, y, z);
+                return;
+            }
             default:
                 throw new IllegalStateException("op " + ops[at]);
         }

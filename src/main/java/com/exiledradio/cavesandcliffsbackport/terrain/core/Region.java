@@ -3,7 +3,7 @@ package com.exiledradio.cavesandcliffsbackport.terrain.core;
 /**
  * The 3x3 chunks a chunk's decoration reads and writes (WorldGenRegion at FEATURES: writes reach one chunk out;
  * the features ported so far read no further either). Holds each chunk's blocks (ChunkFiller's layout) and its
- * OCEAN_FLOOR_WG heightmap as it stood after carving: from LIQUID_CARVERS on, setBlockState updates only the
+ * OCEAN_FLOOR_WG and WORLD_SURFACE_WG heightmaps as they stood after carving: from LIQUID_CARVERS on, setBlockState updates only the
  * POST_FEATURES heightmaps, so the worldgen ones stay at that snapshot through decoration.
  *
  * <p>It also keeps each chunk's POST_FEATURES heightmaps (WORLD_SURFACE, OCEAN_FLOOR, MOTION_BLOCKING,
@@ -41,7 +41,7 @@ public final class Region {
 
     /**
      * Center chunk cx, cz; for the 9 chunks (index (dx + 1) * 3 + dz + 1) the blocks, the OCEAN_FLOOR_WG snapshot
-     * (oceanFloorHeights' output) and the live heightmaps (primeHeightmaps' output, HEIGHTMAPS * 256 ints), all
+     * (worldgenHeights' output) and the live heightmaps (primeHeightmaps' output, HEIGHTMAPS * 256 ints), all
      * kept by the caller from one decoration to the next.
      */
     public void set(int cx, int cz, char[][] blocks9, int[][] oceanFloor9, int[][] heights9) {
@@ -56,8 +56,12 @@ public final class Region {
         }
     }
 
-    /** OCEAN_FLOOR_WG of a chunk's blocks: per column (x * 16 + z), one above the highest block that blocks motion, or -64. */
-    public static void oceanFloorHeights(char[] blocks, int[] out) {
+    /**
+     * The worldgen heightmaps of a chunk's blocks as they stand after carving, 512 ints: per column (x * 16 + z)
+     * OCEAN_FLOOR_WG (one above the highest block that blocks motion, or -64), then from 256 on WORLD_SURFACE_WG
+     * (one above the highest non-air block).
+     */
+    public static void worldgenHeights(char[] blocks, int[] out) {
         for (int c = 0; c < 256; c++) {
             int at = c * HEIGHT;
             int h = MIN_Y;
@@ -68,6 +72,14 @@ public final class Region {
                 }
             }
             out[c] = h;
+            h = MIN_Y;
+            for (int i = HEIGHT - 1; i >= 0; i--) {
+                if (!BlockCodes.isAir(blocks[at + i])) {
+                    h = MIN_Y + i + 1;
+                    break;
+                }
+            }
+            out[256 + c] = h;
         }
     }
 
@@ -170,6 +182,11 @@ public final class Region {
     /** WorldGenRegion.getHeight(OCEAN_FLOOR_WG, x, z). */
     public int oceanFloor(int x, int z) {
         return oceanFloor[chunk(x, z)][(x & 15) * 16 + (z & 15)];
+    }
+
+    /** WorldGenRegion.getHeight(WORLD_SURFACE_WG, x, z). */
+    public int worldSurfaceWg(int x, int z) {
+        return oceanFloor[chunk(x, z)][256 + (x & 15) * 16 + (z & 15)];
     }
 
     /** WorldGenRegion.getHeight(type, x, z) for WORLD_SURFACE, OCEAN_FLOOR, MOTION_BLOCKING(_NO_LEAVES). */

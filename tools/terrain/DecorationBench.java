@@ -40,11 +40,11 @@ public final class DecorationBench {
         int[][] pristineHeights = new int[n * n][];
         for (int i = 0; i < n * n; i++) {
             pristine[i] = new char[16 * 16 * 384];
-            floors[i] = new int[256];
+            floors[i] = new int[512];
             filler.fill(x0 + i / n, z0 + i % n, pristine[i]);
             surface.build(x0 + i / n, z0 + i % n, pristine[i]);
             carvers.carve(x0 + i / n, z0 + i % n, pristine[i]);
-            Region.oceanFloorHeights(pristine[i], floors[i]);
+            Region.worldgenHeights(pristine[i], floors[i]);
             pristineHeights[i] = new int[Region.HEIGHTMAPS * 256];
             Region.primeHeightmaps(pristine[i], pristineHeights[i]);
         }

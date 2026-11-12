@@ -87,8 +87,8 @@ public final class BlockCodes {
     private static final Map<String, Integer> BY_STATE = new HashMap<>();
     private static String[] states = new String[256];
     private static int count;
-    /** Per code: NOT_AIR, BLOCKS_MOTION, FLUID, LEAVES bits (the heightmap predicates' inputs). */
-    private static byte[] flags = new byte[256];
+    /** Per code: the F_* bits (Material properties, fluid, leaves). */
+    private static short[] flags = new short[256];
 
     public static final int F_NOT_AIR = 1;
     /** Material.blocksMotion. */
@@ -97,6 +97,16 @@ public final class BlockCodes {
     public static final int F_FLUID = 4;
     /** LeavesBlock. */
     public static final int F_LEAVES = 8;
+    /** Material.isSolid. */
+    public static final int F_SOLID = 16;
+    /** Material.isLiquid. */
+    public static final int F_LIQUID = 32;
+    /** Material.isReplaceable. */
+    public static final int F_REPLACEABLE = 64;
+    /** A water fluid state (FluidTags.WATER): water, waterlogged, water plants. */
+    public static final int F_WATER = 128;
+    /** BlockState.isSolidRender: a full cube that occludes (rock-like blocks that are not in NOT_OCCLUDING). */
+    public static final int F_SOLID_RENDER = 256;
 
     /** How many codes exist so far. */
     public static int count() {
@@ -117,25 +127,49 @@ public final class BlockCodes {
             flags = java.util.Arrays.copyOf(flags, count * 2);
         }
         states[count] = state;
-        flags[count] = (byte) materialFlags(state);
+        flags[count] = (short) materialFlags(state);
         BY_STATE.put(state, count);
         return count++;
     }
 
-    /** Blocks whose Material does not block motion (besides air and fluids): plants, snow layers, decorations. */
-    private static final java.util.Set<String> NO_MOTION = new java.util.HashSet<>(java.util.Arrays.asList(
-        "powder_snow", "snow", "grass", "fern", "tall_grass", "large_fern", "dead_bush", "seagrass", "tall_seagrass",
-        "kelp", "kelp_plant", "sea_pickle", "lily_pad", "vine", "glow_lichen", "cave_vines", "cave_vines_plant",
-        "spore_blossom", "big_dripleaf", "big_dripleaf_stem", "small_dripleaf", "hanging_roots", "moss_carpet",
-        "azalea", "flowering_azalea", "dandelion", "poppy", "blue_orchid", "allium", "azure_bluet", "red_tulip",
-        "orange_tulip", "white_tulip", "pink_tulip", "oxeye_daisy", "cornflower", "lily_of_the_valley",
-        "wither_rose", "sunflower", "lilac", "rose_bush", "peony", "brown_mushroom", "red_mushroom", "sugar_cane",
-        "sweet_berry_bush", "oak_sapling", "spruce_sapling", "birch_sapling", "jungle_sapling", "acacia_sapling",
-        "dark_oak_sapling", "bamboo_sapling", "torch", "wall_torch", "cobweb", "fire", "bubble_column",
-        "tube_coral", "brain_coral", "bubble_coral", "fire_coral", "horn_coral", "tube_coral_fan",
-        "brain_coral_fan", "bubble_coral_fan", "fire_coral_fan", "horn_coral_fan", "tube_coral_wall_fan",
-        "brain_coral_wall_fan", "bubble_coral_wall_fan", "fire_coral_wall_fan", "horn_coral_wall_fan",
-        "structure_void", "light"));
+    // Material of the blocks that are not like stone (solid, blocks motion, not replaceable, not liquid).
+    private static final java.util.Map<String, String> MATERIAL = new java.util.HashMap<>();
+
+    private static void material(String material, String... blocks) {
+        for (String b : blocks) {
+            MATERIAL.put(b, material);
+        }
+    }
+
+    static {
+        material("plant", "dandelion", "poppy", "blue_orchid", "allium", "azure_bluet", "red_tulip", "orange_tulip",
+            "white_tulip", "pink_tulip", "oxeye_daisy", "cornflower", "lily_of_the_valley", "wither_rose",
+            "brown_mushroom", "red_mushroom", "sugar_cane", "sweet_berry_bush", "oak_sapling", "spruce_sapling",
+            "birch_sapling", "jungle_sapling", "acacia_sapling", "dark_oak_sapling", "cave_vines", "cave_vines_plant",
+            "spore_blossom", "big_dripleaf", "big_dripleaf_stem", "small_dripleaf", "moss_carpet", "azalea",
+            "flowering_azalea", "lily_pad", "cocoa");
+        material("replaceable_plant", "grass", "fern", "dead_bush", "tall_grass", "large_fern", "vine",
+            "glow_lichen", "hanging_roots", "sunflower", "lilac", "rose_bush", "peony");
+        material("replaceable_water_plant", "seagrass", "tall_seagrass");
+        material("water_plant", "kelp", "kelp_plant", "sea_pickle", "tube_coral", "brain_coral", "bubble_coral",
+            "fire_coral", "horn_coral", "tube_coral_fan", "brain_coral_fan", "bubble_coral_fan", "fire_coral_fan",
+            "horn_coral_fan", "tube_coral_wall_fan", "brain_coral_wall_fan", "bubble_coral_wall_fan",
+            "fire_coral_wall_fan", "horn_coral_wall_fan");
+        material("liquid", "water", "lava", "bubble_column");
+        material("top_snow", "snow");
+        material("powder_snow", "powder_snow");
+        material("decoration", "torch", "wall_torch");
+        material("web", "cobweb");
+        material("bamboo_sapling", "bamboo_sapling");
+        material("fire", "fire");
+    }
+
+    /** Solid, motion-blocking blocks that are no full occluding cube. */
+    private static final java.util.Set<String> NOT_OCCLUDING = new java.util.HashSet<>(java.util.Arrays.asList(
+        "ice", "spawner", "chest", "glass", "amethyst_cluster", "large_amethyst_bud", "medium_amethyst_bud",
+        "small_amethyst_bud", "pointed_dripstone", "cactus", "bamboo", "dirt_path", "farmland", "lantern",
+        "big_dripleaf", "cobweb", "bamboo_sapling", "end_portal_frame", "snow"));
+
     private static final java.util.Set<String> FLUID_BLOCKS = new java.util.HashSet<>(java.util.Arrays.asList(
         "water", "lava", "seagrass", "tall_seagrass", "kelp", "kelp_plant", "bubble_column"));
 
@@ -143,14 +177,39 @@ public final class BlockCodes {
         int i = state.indexOf('[');
         String name = i < 0 ? state : state.substring(0, i);
         if (name.equals("air") || name.equals("cave_air") || name.equals("void_air")) {
-            return 0;
+            return F_REPLACEABLE;
         }
         int f = F_NOT_AIR;
-        if (!NO_MOTION.contains(name) && !FLUID_BLOCKS.contains(name)) {
-            f |= F_BLOCKS_MOTION;
+        String m = MATERIAL.get(name);
+        if (m == null) {
+            f |= F_BLOCKS_MOTION | F_SOLID;
+            if (!NOT_OCCLUDING.contains(name) && !name.endsWith("_leaves")) {
+                f |= F_SOLID_RENDER;
+            }
+        } else {
+            switch (m) {
+                case "web":
+                case "bamboo_sapling":
+                    f |= F_SOLID;
+                    break;
+                case "liquid":
+                    f |= F_LIQUID | F_REPLACEABLE;
+                    break;
+                case "replaceable_plant":
+                case "replaceable_water_plant":
+                case "top_snow":
+                case "fire":
+                    f |= F_REPLACEABLE;
+                    break;
+                default:
+                    break;
+            }
         }
         if (FLUID_BLOCKS.contains(name) || state.contains("waterlogged=true")) {
             f |= F_FLUID;
+            if (!name.equals("lava")) {
+                f |= F_WATER;
+            }
         }
         if (name.endsWith("_leaves")) {
             f |= F_LEAVES;
@@ -179,6 +238,22 @@ public final class BlockCodes {
         String s = state(code);
         int i = s.indexOf('[');
         return i < 0 ? s : s.substring(0, i);
+    }
+
+    public static boolean solidRender(int code) {
+        return (flags[code] & F_SOLID_RENDER) != 0;
+    }
+
+    public static boolean solid(int code) {
+        return (flags[code] & F_SOLID) != 0;
+    }
+
+    public static boolean liquid(int code) {
+        return (flags[code] & F_LIQUID) != 0;
+    }
+
+    public static boolean replaceable(int code) {
+        return (flags[code] & F_REPLACEABLE) != 0;
     }
 
     /** Material.isAir. */
