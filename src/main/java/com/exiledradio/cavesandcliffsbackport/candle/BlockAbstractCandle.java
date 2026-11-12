@@ -1,5 +1,7 @@
 package com.exiledradio.cavesandcliffsbackport.candle;
 
+import com.exiledradio.backportcore.waterlog.Waterlogging;
+
 import net.minecraft.block.Block;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
@@ -37,6 +39,11 @@ public abstract class BlockAbstractCandle extends Block {
     /** @return whether this is an unlit candle or candle cake */
     public static boolean canLight(IBlockState state) {
         return state.getBlock() instanceof BlockAbstractCandle && !state.getValue(LIT);
+    }
+
+    /** 1.18.2's {@code canLight}: an unlit candle or candle cake, and never a waterlogged candle. */
+    public static boolean canLight(IBlockAccess world, BlockPos pos, IBlockState state) {
+        return canLight(state) && !Waterlogging.hasWater(world, pos);
     }
 
     public static boolean isLit(IBlockState state) {

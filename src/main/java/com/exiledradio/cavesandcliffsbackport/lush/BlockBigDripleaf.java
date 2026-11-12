@@ -1,5 +1,7 @@
 package com.exiledradio.cavesandcliffsbackport.lush;
 
+import com.exiledradio.backportcore.waterlog.Waterlogging;
+import com.exiledradio.backportcore.waterlog.Waterloggable;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockHorizontal;
 import net.minecraft.block.IGrowable;
@@ -43,7 +45,7 @@ import java.util.Random;
  * box. So the leaf asks for a tick whenever an entity's collision search touches it, and that tick looks for
  * someone standing on it. That covers everything that moves, items included.
  */
-public class BlockBigDripleaf extends BlockLushPlant implements IGrowable {
+public class BlockBigDripleaf extends BlockLushPlant implements IGrowable, Waterloggable {
 
     public enum Tilt implements IStringSerializable {
         NONE, UNSTABLE, PARTIAL, FULL;
@@ -221,7 +223,7 @@ public class BlockBigDripleaf extends BlockLushPlant implements IGrowable {
 
     @Override
     public boolean canGrow(World world, BlockPos pos, IBlockState state, boolean isClient) {
-        return pos.getY() < 254 && world.isAirBlock(pos.up());
+        return pos.getY() < 254 && canReplace(world, pos.up());
     }
 
     @Override
@@ -232,8 +234,8 @@ public class BlockBigDripleaf extends BlockLushPlant implements IGrowable {
     @Override
     public void grow(World world, Random rand, BlockPos pos, IBlockState state) {
         EnumFacing f = state.getValue(FACING);
-        world.setBlockState(pos, LushContent.bigDripleafStem.getDefaultState().withProperty(FACING, f), 2);
-        world.setBlockState(pos.up(), getDefaultState().withProperty(FACING, f), 3);
+        Waterlogging.placeKeepingWater(world, pos, LushContent.bigDripleafStem.getDefaultState().withProperty(FACING, f), 2);
+        Waterlogging.placeKeepingWater(world, pos.up(), getDefaultState().withProperty(FACING, f), 3);
     }
 
     /**
@@ -243,20 +245,27 @@ public class BlockBigDripleaf extends BlockLushPlant implements IGrowable {
      */
     public static int placeTall(World world, Random rand, BlockPos pos, EnumFacing facing, int flags) {
         int want = 2 + rand.nextInt(4), n = 0;
-        while (n < want && pos.getY() + n < 255 && world.isAirBlock(pos.up(n))) {
+        while (n < want && pos.getY() + n < 255 && canReplace(world, pos.up(n))) {
             n++;
         }
         for (int i = 0; i < n - 1; i++) {
-            world.setBlockState(pos.up(i), LushContent.bigDripleafStem.getDefaultState().withProperty(FACING, facing), 2);
+            Waterlogging.placeKeepingWater(world, pos.up(i), LushContent.bigDripleafStem.getDefaultState().withProperty(FACING, facing), 2);
         }
         if (n > 0) {
-            world.setBlockState(pos.up(n - 1), LushContent.bigDripleaf.getDefaultState().withProperty(FACING, facing), flags);
+            Waterlogging.placeKeepingWater(world, pos.up(n - 1), LushContent.bigDripleaf.getDefaultState().withProperty(FACING, facing), flags);
         }
         return n;
     }
 
+    /** 1.18.2's {@code canReplace}: air, water, or small dripleaf (which a big one grows over). */
+    static boolean canReplace(World world, BlockPos pos) {
+        IBlockState s = world.getBlockState(pos);
+        Block b = s.getBlock();
+        return b.isAir(s, world, pos) || b == Blocks.WATER || b == Blocks.FLOWING_WATER || b == LushContent.smallDripleaf;
+    }
+
     /** The stem under a leaf. Breaks when what is under or over it goes; drops a big dripleaf. */
-    public static class Stem extends BlockLushPlant implements IGrowable {
+    public static class Stem extends BlockLushPlant implements IGrowable, Waterloggable {
 
         private static final AxisAlignedBB[] BOXES = new AxisAlignedBB[4];
 
@@ -350,7 +359,7 @@ public class BlockBigDripleaf extends BlockLushPlant implements IGrowable {
     /** For the item: a big dripleaf may also go on top of another one. */
     @Override
     public boolean canPlaceBlockAt(World world, BlockPos pos) {
-        return world.getBlockState(pos).getBlock().isReplaceable(world, pos) && world.getBlockState(pos).getBlock() != Blocks.WATER
+        return world.getBlockState(pos).getBlock().isReplaceable(world, pos) && world.getBlockState(pos).getMaterial() != Material.LAVA
                 && canStay(world, pos, getDefaultState());
     }
 }

@@ -1,5 +1,6 @@
 package com.exiledradio.cavesandcliffsbackport.blocks;
 
+import com.exiledradio.backportcore.waterlog.Waterlogging;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
@@ -96,7 +97,12 @@ public final class ItemLight extends ItemBlock {
     @Override
     public boolean placeBlockAt(ItemStack stack, EntityPlayer player, World world, BlockPos pos, EnumFacing side,
                                 float hitX, float hitY, float hitZ, IBlockState newState) {
-        return super.placeBlockAt(stack, player, world, pos, side, hitX, hitY, hitZ,
+        boolean placed = super.placeBlockAt(stack, player, world, pos, side, hitX, hitY, hitZ,
                 this.block.getDefaultState().withProperty(BlockLight.LEVEL, level(stack)));
+        // 1.18.2's light has no placement state: placed into water it takes the water's place (only a bucket waterlogs it).
+        if (placed && !world.isRemote && Waterlogging.hasWater(world, pos)) {
+            Waterlogging.setWater(world, pos, false, 3);
+        }
+        return placed;
     }
 }

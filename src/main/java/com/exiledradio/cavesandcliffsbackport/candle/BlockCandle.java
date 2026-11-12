@@ -1,5 +1,6 @@
 package com.exiledradio.cavesandcliffsbackport.candle;
 
+import com.exiledradio.backportcore.waterlog.Waterloggable;
 import com.exiledradio.cavesandcliffsbackport.common.BlockBasic;
 
 import net.minecraft.block.Block;
@@ -27,8 +28,12 @@ import java.util.Random;
  * A candle, plain or dyed: one to four in a block, each lit one giving light 3. Lit with flint and steel, a
  * fire charge or a burning arrow ({@link CandleEvents}), put out with an empty hand. Needs something under
  * it that holds up its middle; drops as many candles as it holds; pistons break it.
+ *
+ * <p>Waterloggable (1.18.2), through Backport Core's {@link Waterloggable}: placed into a water source it keeps
+ * the water and is unlit (candles are always placed unlit); water coming in puts a lit one out; a waterlogged one
+ * cannot be lit ({@link BlockAbstractCandle#canLight(IBlockAccess, BlockPos, IBlockState)}). Candle cakes hold none.
  */
-public class BlockCandle extends BlockAbstractCandle {
+public class BlockCandle extends BlockAbstractCandle implements Waterloggable {
 
     public static final PropertyInteger CANDLES = PropertyInteger.create("candles", 1, 4);
 
@@ -155,5 +160,13 @@ public class BlockCandle extends BlockAbstractCandle {
     @Override
     public int damageDropped(IBlockState state) {
         return 0;
+    }
+
+    /** 1.18.2's {@code placeLiquid}: water coming into a lit candle puts it out. */
+    @Override
+    public void onWaterChanged(World world, BlockPos pos, IBlockState state, boolean hasWater) {
+        if (hasWater && !world.isRemote && state.getValue(LIT)) {
+            extinguish(world, pos, state);
+        }
     }
 }

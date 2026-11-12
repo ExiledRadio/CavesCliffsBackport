@@ -54,7 +54,7 @@ public final class CandleEvents {
         ItemStack held = event.getItemStack();
         EntityPlayer player = event.getEntityPlayer();
 
-        if (BlockAbstractCandle.canLight(state)) {
+        if (BlockAbstractCandle.canLight(world, pos, state)) {
             boolean flint = held.getItem() == Items.FLINT_AND_STEEL;
             if (!flint && held.getItem() != Items.FIRE_CHARGE) {
                 return;
@@ -112,7 +112,7 @@ public final class CandleEvents {
         BlockPos pos = hit.getBlockPos();
         if (entity.isBurning()) {
             IBlockState state = world.getBlockState(pos);
-            if (BlockAbstractCandle.canLight(state)) {
+            if (BlockAbstractCandle.canLight(world, pos, state)) {
                 BlockAbstractCandle.light(world, pos, state);
             }
         }

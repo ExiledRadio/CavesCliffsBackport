@@ -121,15 +121,13 @@ public final class LushCaveGenerator implements IWorldGenerator {
             }
             if (clay > 0.68 && holdsWater(world, ground)) {
                 world.setBlockState(ground, Blocks.WATER.getDefaultState(), 2);
-            } else if (random.nextFloat() < 0.1F) {
-                EnumFacing facing = EnumFacing.Plane.HORIZONTAL.random(random);
-                if (random.nextInt(5) == 0) {
-                    if (world.isAirBlock(air.up())) {
-                        LushContent.smallDripleaf.place(world, air, facing, 2);
-                    }
-                } else {
-                    BlockBigDripleaf.placeTall(world, random, air, facing, 2);
+                // 1.18's clay pool with dripleaves: the dripleaf stands in the pool's water, which it keeps. Without
+                // Fluidlogged API it could not keep it, and the pool would drain through it: no dripleaf then.
+                if (random.nextFloat() < 0.1F && com.exiledradio.backportcore.waterlog.Waterlogging.isAvailable()) {
+                    dripleaf(world, random, ground);
                 }
+            } else if (random.nextFloat() < 0.1F) {
+                dripleaf(world, random, air);
             }
         } else if (LushRegions.patch(seed, 2, x, z, 6.0) > 0.22) {
             world.setBlockState(ground, LushContent.moss.getDefaultState(), 2);
@@ -137,6 +135,25 @@ public final class LushCaveGenerator implements IWorldGenerator {
                 BlockMoss.vegetation(world, random, air);
             }
         }
+    }
+
+    /** One small (1 in 5) or big dripleaf standing at {@code at}, in air or in the water there. */
+    private static void dripleaf(World world, Random random, BlockPos at) {
+        EnumFacing facing = EnumFacing.Plane.HORIZONTAL.random(random);
+        if (random.nextInt(5) == 0) {
+            if (BlockBigDripleaf.canReplace(world, at.up())) {
+                LushContent.smallDripleaf.place(world, at, facing, 2);
+            }
+        } else {
+            BlockBigDripleaf.placeTall(world, random, at, facing, 2);
+        }
+    }
+
+    /** Air or a water source: where 1.18 places glow lichen and hanging roots (waterlogged in the water). */
+    private static boolean airOrWater(World world, BlockPos pos) {
+        IBlockState s = world.getBlockState(pos);
+        return s.getBlock().isAir(s, world, pos)
+                || (s.getBlock() == Blocks.WATER || s.getBlock() == Blocks.FLOWING_WATER) && s.getValue(net.minecraft.block.BlockLiquid.LEVEL) == 0;
     }
 
     /** @return true if water put in place of this floor block would stay: solid under it and on all four sides */
@@ -228,7 +245,7 @@ public final class LushCaveGenerator implements IWorldGenerator {
                 m.setPos(x + random.nextInt(3) - random.nextInt(3), origin.getY() + random.nextInt(2) - random.nextInt(2),
                         z + random.nextInt(3) - random.nextInt(3));
                 BlockPos up = m.up();
-                if (inside(m, minX, minZ) && world.isAirBlock(m)
+                if (inside(m, minX, minZ) && airOrWater(world, m)
                         && world.getBlockState(up).getBlockFaceShape(world, up, EnumFacing.DOWN) == BlockFaceShape.SOLID) {
                     world.setBlockState(m, LushContent.hangingRoots.getDefaultState(), 2);
                 }
@@ -264,10 +281,10 @@ public final class LushCaveGenerator implements IWorldGenerator {
             }
             int y = 5 + random.nextInt(top - 5);
             // A random block is usually stone: look a few blocks down for the cave it may be the roof of.
-            for (int i = 0; i < 8 && y > 4 && !world.isAirBlock(m.setPos(x, y, z)); i++) {
+            for (int i = 0; i < 8 && y > 4 && !airOrWater(world, m.setPos(x, y, z)); i++) {
                 y--;
             }
-            if (!world.isAirBlock(m.setPos(x, y, z))) {
+            if (!airOrWater(world, m.setPos(x, y, z))) {
                 continue;
             }
             faces.clear();
