@@ -67,6 +67,9 @@ public final class Decorator {
         for (Placed p : Caves.placed()) {
             ported.put(p.name, p);
         }
+        for (Placed p : Fossils.placed()) {
+            ported.put(p.name, p);
+        }
         for (Placed p : Misc.placed()) {
             ported.put(p.name, p);
         }

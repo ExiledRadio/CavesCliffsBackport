@@ -136,6 +136,11 @@ final class Misc {
             if ((flags(level.get(x, y, z)) & F_WATER) == 0) {
                 return false;
             }
+            return columns(level, random, x, y, z);
+        }
+
+        /** BaseDiskFeature.place. */
+        boolean columns(Region level, XoroRandom random, int x, int y, int z) {
             boolean flag = false;
             int j = y + halfHeight;
             int k = y - halfHeight - 1;

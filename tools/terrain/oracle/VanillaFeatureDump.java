@@ -67,6 +67,12 @@ public final class VanillaFeatureDump {
             super(null, null, null, 0);
         }
 
+        /** Only FossilFeature asks: getLevel().getServer().getStructureManager(), templates from the jar. */
+        @Override
+        public net.minecraft.server.level.ServerLevel getLevel() {
+            return templateLevel();
+        }
+
         @Override
         public ChunkAccess getChunk(int x, int z, ChunkStatus status, boolean load) {
             if (Math.abs(x - centerPos.x) > 8 || Math.abs(z - centerPos.z) > 8) {
@@ -164,6 +170,58 @@ public final class VanillaFeatureDump {
         return (sun.misc.Unsafe) f.get(null);
     }
 
+    private static net.minecraft.server.level.ServerLevel templateLevel;
+
+    /**
+     * A ServerLevel whose server holds a StructureManager reading structures/*.nbt from the classpath (the jar's
+     * data), everything else unset: FossilFeature's only way to its templates.
+     */
+    static synchronized net.minecraft.server.level.ServerLevel templateLevel() {
+        if (templateLevel == null) {
+            try {
+                net.minecraft.server.packs.resources.ResourceManager resources = (net.minecraft.server.packs.resources.ResourceManager)
+                    java.lang.reflect.Proxy.newProxyInstance(VanillaFeatureDump.class.getClassLoader(),
+                        new Class<?>[]{net.minecraft.server.packs.resources.ResourceManager.class}, (proxy, method, a) -> {
+                            if (method.getName().equals("getResource")) {
+                                net.minecraft.resources.ResourceLocation rl = (net.minecraft.resources.ResourceLocation) a[0];
+                                java.io.InputStream in = VanillaFeatureDump.class.getResourceAsStream("/data/" + rl.getNamespace() + "/" + rl.getPath());
+                                if (in == null) {
+                                    throw new java.io.FileNotFoundException(rl.toString());
+                                }
+                                return new net.minecraft.server.packs.resources.SimpleResource("jar", rl, in, null);
+                            }
+                            throw new UnsupportedOperationException(method.getName());
+                        });
+                net.minecraft.world.level.levelgen.structure.templatesystem.StructureManager manager =
+                    (net.minecraft.world.level.levelgen.structure.templatesystem.StructureManager) unsafe().allocateInstance(
+                        net.minecraft.world.level.levelgen.structure.templatesystem.StructureManager.class);
+                setOn(net.minecraft.world.level.levelgen.structure.templatesystem.StructureManager.class, manager, "structureRepository",
+                    new java.util.concurrent.ConcurrentHashMap<>());
+                setOn(net.minecraft.world.level.levelgen.structure.templatesystem.StructureManager.class, manager, "fixerUpper",
+                    net.minecraft.util.datafix.DataFixers.getDataFixer());
+                setOn(net.minecraft.world.level.levelgen.structure.templatesystem.StructureManager.class, manager, "resourceManager", resources);
+                setOn(net.minecraft.world.level.levelgen.structure.templatesystem.StructureManager.class, manager, "generatedDir",
+                    java.nio.file.Paths.get("oracle-no-generated-structures"));
+                net.minecraft.server.MinecraftServer server = (net.minecraft.server.MinecraftServer) unsafe().allocateInstance(
+                    net.minecraft.server.dedicated.DedicatedServer.class);
+                setOn(net.minecraft.server.MinecraftServer.class, server, "structureManager", manager);
+                net.minecraft.server.level.ServerLevel level = (net.minecraft.server.level.ServerLevel) unsafe().allocateInstance(
+                    net.minecraft.server.level.ServerLevel.class);
+                setOn(net.minecraft.server.level.ServerLevel.class, level, "server", server);
+                templateLevel = level;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return templateLevel;
+    }
+
+    static void setOn(Class<?> owner, Object o, String name, Object value) throws Exception {
+        Field f = owner.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(o, value);
+    }
+
     static void set(Object o, String name, Object value) throws Exception {
         Field f = WorldGenRegion.class.getDeclaredField(name);
         f.setAccessible(true);
@@ -232,6 +290,17 @@ public final class VanillaFeatureDump {
         net.minecraft.world.level.levelgen.Heightmap.primeHeightmaps(chunk, java.util.EnumSet.of(
             Heightmap.Types.MOTION_BLOCKING, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Heightmap.Types.OCEAN_FLOOR,
             Heightmap.Types.WORLD_SURFACE));
+        String probe = System.getProperty("probe");
+        if (probe != null) {
+            for (String one : probe.split("/")) {
+                String[] q = one.split(",");
+                BlockPos pp = new BlockPos(Integer.parseInt(q[0]), Integer.parseInt(q[1]), Integer.parseInt(q[2]));
+                if ((pp.getX() >> 4) == chunkpos.x && (pp.getZ() >> 4) == chunkpos.z) {
+                    System.out.println("PROBE " + pp + " biome " + region.getBiome(pp).unwrapKey() + " mb "
+                        + region.getHeight(Heightmap.Types.MOTION_BLOCKING, pp.getX(), pp.getZ()) + " below " + stateName(region.getBlockState(pp.below())));
+                }
+            }
+        }
         List<BiomeSource.StepFeatureData> list = world.biomeSource.featuresPerStep();
         WorldgenRandom worldgenrandom = new WorldgenRandom(new XoroshiroRandomSource(RandomSupport.seedUniquifier()));
         long i = worldgenrandom.setDecorationSeed(region.getSeed(), blockpos.getX(), blockpos.getZ());

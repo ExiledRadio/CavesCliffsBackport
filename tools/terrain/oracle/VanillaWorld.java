@@ -289,6 +289,13 @@ final class VanillaWorld {
             bound.put(net.minecraft.tags.TagKey.create(registry.key(), new net.minecraft.resources.ResourceLocation(name)),
                 new ArrayList<>(out));
         }
+        if (dir.equals("blocks")) {
+            // Forge patches Feature.isStone (forest rock's BlockBlobFeature) from vanilla's base_stone_overworld to
+            // forge:stone, which this binding (minecraft namespace only) would leave empty. Bind it to vanilla's tag so
+            // the oracle places forest rocks as vanilla does.
+            bound.put(net.minecraft.tags.TagKey.create(registry.key(), new net.minecraft.resources.ResourceLocation("forge", "stone")),
+                bound.get(net.minecraft.tags.TagKey.create(registry.key(), new net.minecraft.resources.ResourceLocation("base_stone_overworld"))));
+        }
         ((net.minecraft.core.MappedRegistry<T>) registry).bindTags(bound);
     }
 

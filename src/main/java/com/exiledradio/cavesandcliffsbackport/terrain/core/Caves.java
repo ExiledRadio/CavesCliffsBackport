@@ -190,7 +190,7 @@ final class Caves {
         }
     }
 
-    /** MonsterRoomFeature (the spawner's mob drawn last, as Forge's DungeonHooks does; no block depends on it). */
+    /** MonsterRoomFeature (the spawner's mob drawn last: no block depends on it, the later attempts' positions do). */
     static final class MonsterRoom implements Feature {
         @Override
         public boolean place(Region level, XoroRandom random, int x, int y, int z) {
@@ -267,6 +267,12 @@ final class Caves {
                 }
             }
             safeSet(level, x, y, z, SPAWNER);
+            // The spawner's mob: vanilla's Util.getRandom(MOBS, random), one nextInt(4) (Forge's DungeonHooks draws
+            // nextInt(400) from the same random instead: the same one draw). No block depends on it, but it moves
+            // every later attempt of this placed feature in the chunk.
+            if (level.get(x, y, z) == SPAWNER) {
+                random.nextInt(4);
+            }
             return true;
         }
 
