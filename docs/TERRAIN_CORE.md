@@ -220,6 +220,27 @@ chunks) and on a desert and a swamp per seed for fossils (`oracle-out/feat-fossi
 blocks). Fossils only generate in deserts and swamps. `DecorationBench` (Java 8, one E-core): 1.41 ms/chunk at seed
 42 0,0; 1.38 at 360,64 (frozen ocean, icebergs); 1.19 at -104,-104 (desert).
 
+Trees, first part (2026-11-12), in `Trees`: `TreeFeature` with straight trunks, blob, spruce and pine foliage,
+two-layer feature sizes and the beehive decorator, the `*_checked` sapling filter, `RANDOM_SELECTOR` and the grove's
+snow scan: trees_snowy, trees_badlands, trees_birch, trees_taiga, trees_grove, birch_tall. `Decorator` gained
+`COUNT_EXTRA` (countExtra's weighted list: `nextInt(1 / chance)`) and `WATER_DEPTH` (`SurfaceWaterDepthFilter` on the
+live WORLD_SURFACE and OCEAN_FLOOR maps); `BlockCodes` the `REPLACEABLE_PLANT` flag (`validTreePos`). What matters
+for exactness: the trunk, foliage and decoration sets are `HashSet<BlockPos>`s (`LushCaves.Pos`), the dirt under the
+trunk goes into the trunk set, the decorators see the sets sorted by y with ties in hash order, `updateLeaves` sets
+leaf distances by BFS from the trunk set (other trees' leaves too; the rest stay 7) and
+`StructureTemplate.updateShapeAtEdge` runs over the changed shape in `DiscreteVoxelShape.forAllFaces`' order (z, then
+y, then x faces), which takes the snow off snowy grass under new leaves (a neighbor's freeze_top_layer runs before).
+`BeehiveDecorator` shuffles its candidates with `Collections.shuffle(list)`, the JVM's shared random, so vanilla's
+hive position cannot be reproduced; ours shuffles with a position-seeded random, and every draw from the feature's
+random (the chance, the bees) is vanilla's. `FeatureCheck -DlooseBees` compares a bee nest and air as equal.
+Also: `ProtoChunk.getBlockState` answers air for every section that holds only air-like blocks, so a surface lake's
+cave air above the ground reads (and dumps) as air; `Region.get` does the same and FeatureCheck compares through
+`Region.readAsVanilla` (found as 73 blocks at y 64 in a wooded badlands lake). `FeatureCheck` with all 67 ported
+features: identical on six areas per seed (`oracle-out/feat-trees/<seed>`, side 8, 1,536 chunks: snowy plains,
+wooded badlands, birch forest, old growth birch forest, taiga, grove; centers in the hand-over note and below) and
+still on every earlier check. `DecorationBench` (Java 8, one E-core): 1.37 ms/chunk at seed 42 0,0; 1.43 at -16,0
+(birch forest); 1.38 at 48,-56 (taiga). Vanilla's timer over the same features there (unpinned Java 17): 3.4-4.2.
+
 Java 8 and `Math.sin`: `OreFeature` takes `Math.sin`/`Math.cos` of a double, as vanilla does. Over all 2^24 angles
 an ore can draw, Java 17, 21 and 25 give the same bits (vanilla's, on Java 17), but Java 8's `Math` differs from
 them in the last bit at about a million angles (`StrictMath` matches neither). On the checks' 704 chunks Java 8
@@ -381,7 +402,8 @@ Done: biomes and surface rules, carvers, the beardifier, structure placement (ab
 1. Features (placed features, GenerationStep.Decoration). Done: the decoration loop, its oracle, every ore,
    springs, disks, underwater magma, lava lakes, monster rooms, the geode, dripstone, lush caves but
    rooted_azalea_tree, glow lichen, freeze_top_layer, icebergs, forest rock, fossils, ice spike / patch, desert
-   well and blue ice (above): every step but VEGETAL. Left: rooted_azalea_tree, trees and the rest of VEGETAL. Left, as streams on the same framework, each checked with `-Dfeatures` and `FeatureCheck`: cave
+   well and blue ice, and the first trees (above): every step but VEGETAL. Left: the other trees (fancy oak,
+   acacia, dark oak, jungle, mega spruce and pine, swamp oak, azalea and rooted_azalea_tree) and the rest of VEGETAL. Left, as streams on the same framework, each checked with `-Dfeatures` and `FeatureCheck`: cave
    features (geodes, dripstone clusters / large / pointed, lush caves, monster rooms, fossils (templates), springs,
    lava lakes, underwater magma); surface (disks, icebergs, ice spikes and patches, blue ice, desert wells, forest
    rocks, freeze top layer, which reads block light: the oracle region has no light engine yet, see below); trees

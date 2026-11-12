@@ -130,12 +130,49 @@ public final class Region {
         return dx * SIDE + dz;
     }
 
-    /** The block at x, y, z; air outside the world's height (vanilla: void air, which is air too). */
+    /**
+     * The block at x, y, z; air outside the world's height (vanilla: void air, which is air too). Cave air in a
+     * section holding only air-like blocks reads as air: ProtoChunk.getBlockState answers AIR for any section whose
+     * hasOnlyAir() (no block that is not air), so a lake's cave air above the ground there is plain air to features.
+     */
     public int get(int x, int y, int z) {
         if (y < MIN_Y || y >= MIN_Y + HEIGHT) {
             return BlockCodes.AIR;
         }
-        return blocks[chunk(x, z)][((x & 15) * 16 + (z & 15)) * HEIGHT + y - MIN_Y];
+        char[] b = blocks[chunk(x, z)];
+        int c = b[((x & 15) * 16 + (z & 15)) * HEIGHT + y - MIN_Y];
+        if (c == BlockCodes.CAVE_AIR && sectionOnlyAir(b, (y - MIN_Y) >> 4)) {
+            return BlockCodes.AIR;
+        }
+        return c;
+    }
+
+    /** LevelChunkSection.hasOnlyAir: no block of the 16-high section is anything but air, cave air or void air. */
+    public static boolean sectionOnlyAir(char[] blocks, int section) {
+        int y0 = section << 4;
+        for (int col = 0; col < 256; col++) {
+            int at = col * HEIGHT + y0;
+            for (int i = 0; i < 16; i++) {
+                if (!BlockCodes.isAir(blocks[at + i])) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /** What ProtoChunk.getBlockState shows of a chunk: cave air in sections holding only air-like blocks as air. */
+    public static void readAsVanilla(char[] blocks) {
+        for (int s = 0; s < HEIGHT >> 4; s++) {
+            if (sectionOnlyAir(blocks, s)) {
+                for (int col = 0; col < 256; col++) {
+                    int at = col * HEIGHT + (s << 4);
+                    for (int i = 0; i < 16; i++) {
+                        blocks[at + i] = (char) BlockCodes.AIR;
+                    }
+                }
+            }
+        }
     }
 
     /** A section write (BulkSectionAccess / LevelChunkSection.setBlockState): no heightmap moves. */

@@ -37,6 +37,16 @@ public final class FeatureCheck {
         final int[] heights = new int[Region.HEIGHTMAPS * 256];
     }
 
+    /**
+     * -DlooseBees: a bee nest and air compare equal. BeehiveDecorator shuffles with the JVM's shared random, so
+     * vanilla's hive position is not reproducible (every draw from the feature random still is).
+     */
+    static final boolean looseBees = System.getProperty("looseBees") != null;
+
+    static boolean beeOrAir(int code) {
+        return code == BlockCodes.AIR || BlockCodes.name(code).equals("bee_nest");
+    }
+
     public static void main(String[] args) throws Exception {
         File dir = new File(args[0]);
         int side = Integer.parseInt(args[1]);
@@ -140,11 +150,13 @@ public final class FeatureCheck {
                     int cx = in.readInt();
                     int cz = in.readInt();
                     Chunk ours = chunks.get((long) cx << 32 | (cz & 0xFFFFFFFFL));
+                    // The dump reads through ProtoChunk.getBlockState: cave air in all-air sections shows as air.
+                    Region.readAsVanilla(ours.blocks);
                     for (int i = 0; i < 16 * 16 * 384; i++) {
                         int v = in.readChar();
                         checked++;
                         seen.merge(names[v], 1L, Long::sum);
-                        if (codes[v] != ours.blocks[i]) {
+                        if (codes[v] != ours.blocks[i] && !(looseBees && beeOrAir(codes[v]) && beeOrAir(ours.blocks[i]))) {
                             if (seedDifferences++ < Integer.getInteger("shown", 12)) {
                                 System.out.println("seed " + seed + " chunk " + cx + "," + cz + " block " + ((cx << 4) + i / 384 / 16)
                                     + "," + (i % 384 - 64) + "," + ((cz << 4) + i / 384 % 16) + ": vanilla " + names[v]

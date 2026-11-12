@@ -117,6 +117,9 @@ public final class BlockCodes {
     /** The DOWN face full though the block is not (carpets, dirt path, farmland, end portal frame). */
     public static final int F_BOTTOM_FULL = 2048;
 
+    /** Material.REPLACEABLE_PLANT (grass, ferns, dead bush, vines, glow lichen, hanging roots, the tall plants). */
+    public static final int F_REPLACEABLE_PLANT = 4096;
+
     /** How many codes exist so far. */
     public static int count() {
         return count;
@@ -226,6 +229,8 @@ public final class BlockCodes {
                     f |= F_LIQUID | F_REPLACEABLE;
                     break;
                 case "replaceable_plant":
+                    f |= F_REPLACEABLE | F_REPLACEABLE_PLANT;
+                    break;
                 case "replaceable_water_plant":
                 case "top_snow":
                 case "fire":
@@ -329,4 +334,7 @@ public final class BlockCodes {
             throw new IllegalStateException("BlockCodes: " + count + " states for " + FIXED + " codes");
         }
     }
+
+    /** Registered after the fixed codes (the class initializer above must run first). */
+    public static final int CAVE_AIR = register("cave_air");
 }
