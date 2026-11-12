@@ -1,8 +1,9 @@
 package com.exiledradio.cavesandcliffsbackport.terrain.core;
 
 /**
- * The 3x3 chunks a chunk's decoration reads and writes (WorldGenRegion at FEATURES: writes reach one chunk out;
- * the features ported so far read no further either). Holds each chunk's blocks (ChunkFiller's layout) and its
+ * The chunks a chunk's decoration reads and writes: WorldGenRegion at FEATURES writes one chunk out (the 3x3) and
+ * reads further; the features ported read at most two out (large dripstone: radius 9 plus its wind drift), so this
+ * holds the 5x5. Holds each chunk's blocks (ChunkFiller's layout) and its
  * OCEAN_FLOOR_WG and WORLD_SURFACE_WG heightmaps as they stood after carving: from LIQUID_CARVERS on, setBlockState updates only the
  * POST_FEATURES heightmaps, so the worldgen ones stay at that snapshot through decoration.
  *
@@ -31,25 +32,30 @@ public final class Region {
     public static final int MOTION_BLOCKING_NO_LEAVES = 3;
     public static final int HEIGHTMAPS = 4;
 
-    private final char[][] blocks = new char[9][];
-    private final int[][] oceanFloor = new int[9][];
-    private final int[][] heights = new int[9][];
+    /** Chunks held: (2 * READ + 1) squared, index (dx + READ) * SIDE + dz + READ. */
+    public static final int READ = 2;
+    public static final int SIDE = 2 * READ + 1;
+    public static final int CHUNKS = SIDE * SIDE;
+
+    private final char[][] blocks = new char[CHUNKS][];
+    private final int[][] oceanFloor = new int[CHUNKS][];
+    private final int[][] heights = new int[CHUNKS][];
     int centerX;
     int centerZ;
     private int minX;
     private int minZ;
 
     /**
-     * Center chunk cx, cz; for the 9 chunks (index (dx + 1) * 3 + dz + 1) the blocks, the OCEAN_FLOOR_WG snapshot
+     * Center chunk cx, cz; for the CHUNKS chunks (index (dx + READ) * SIDE + dz + READ) the blocks, the OCEAN_FLOOR_WG snapshot
      * (worldgenHeights' output) and the live heightmaps (primeHeightmaps' output, HEIGHTMAPS * 256 ints), all
      * kept by the caller from one decoration to the next.
      */
     public void set(int cx, int cz, char[][] blocks9, int[][] oceanFloor9, int[][] heights9) {
         centerX = cx;
         centerZ = cz;
-        minX = (cx - 1) << 4;
-        minZ = (cz - 1) << 4;
-        for (int i = 0; i < 9; i++) {
+        minX = (cx - READ) << 4;
+        minZ = (cz - READ) << 4;
+        for (int i = 0; i < CHUNKS; i++) {
             blocks[i] = blocks9[i];
             oceanFloor[i] = oceanFloor9[i];
             heights[i] = heights9[i];
@@ -118,10 +124,10 @@ public final class Region {
     private int chunk(int x, int z) {
         int dx = (x - minX) >> 4;
         int dz = (z - minZ) >> 4;
-        if (dx < 0 || dx > 2 || dz < 0 || dz > 2) {
-            throw new IllegalStateException("outside the 3x3 region around " + centerX + "," + centerZ + ": " + x + "," + z);
+        if (dx < 0 || dx >= SIDE || dz < 0 || dz >= SIDE) {
+            throw new IllegalStateException("outside the region around " + centerX + "," + centerZ + ": " + x + "," + z);
         }
-        return dx * 3 + dz;
+        return dx * SIDE + dz;
     }
 
     /** The block at x, y, z; air outside the world's height (vanilla: void air, which is air too). */

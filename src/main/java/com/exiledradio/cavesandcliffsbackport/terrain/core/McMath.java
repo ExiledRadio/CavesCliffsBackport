@@ -75,4 +75,30 @@ public final class McMath {
     public static double clampedMap(double v, double fromA, double fromB, double toA, double toB) {
         return clampedLerp(toA, toB, (v - fromA) / (fromB - fromA));
     }
+
+    /** Mth.clamp(float). */
+    public static float clamp(float v, float min, float max) {
+        if (v < min) {
+            return min;
+        }
+        return v > max ? max : v;
+    }
+
+    /** Mth.clampedLerp(float). */
+    public static float clampedLerp(float a, float b, float t) {
+        if (t < 0.0F) {
+            return a;
+        }
+        return t > 1.0F ? b : lerp(t, a, b);
+    }
+
+    /** Mth.clampedMap(float). */
+    public static float clampedMap(float v, float fromA, float fromB, float toA, float toB) {
+        return clampedLerp(toA, toB, (v - fromA) / (fromB - fromA));
+    }
+
+    /** Mth.sqrt(float). */
+    public static float sqrt(float v) {
+        return (float) Math.sqrt((double) v);
+    }
 }

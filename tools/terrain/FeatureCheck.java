@@ -83,12 +83,13 @@ public final class FeatureCheck {
                 }
             }
             Region region = new Region();
-            char[][] b9 = new char[9][];
-            int[][] h9 = new int[9][];
-            int[][] m9 = new int[9][];
+            char[][] b9 = new char[Region.CHUNKS][];
+            int[][] h9 = new int[Region.CHUNKS][];
+            int[][] m9 = new int[Region.CHUNKS][];
+            int r = Region.READ;
             for (int[] p : order) {
-                for (int dx = -1; dx <= 1; dx++) {
-                    for (int dz = -1; dz <= 1; dz++) {
+                for (int dx = -r; dx <= r; dx++) {
+                    for (int dz = -r; dz <= r; dz++) {
                         long key = (long) (p[0] + dx) << 32 | ((p[1] + dz) & 0xFFFFFFFFL);
                         Chunk c = chunks.get(key);
                         if (c == null) {
@@ -100,9 +101,9 @@ public final class FeatureCheck {
                             Region.primeHeightmaps(c.blocks, c.heights);
                             chunks.put(key, c);
                         }
-                        b9[(dx + 1) * 3 + dz + 1] = c.blocks;
-                        h9[(dx + 1) * 3 + dz + 1] = c.oceanFloor;
-                        m9[(dx + 1) * 3 + dz + 1] = c.heights;
+                        b9[(dx + r) * Region.SIDE + dz + r] = c.blocks;
+                        h9[(dx + r) * Region.SIDE + dz + r] = c.oceanFloor;
+                        m9[(dx + r) * Region.SIDE + dz + r] = c.heights;
                     }
                 }
                 region.set(p[0], p[1], b9, h9, m9);

@@ -159,6 +159,19 @@ Material flags features test (solid, liquid, replaceable, solid render, water). 
 features (`oracle-out/feat-caves2`, 512 chunks, 14 spawners, chests in all four facings, every geode layer and bud):
 identical. `DecorationBench` 1.17 ms/chunk (Java 8) at seed 42 and at seed 12345 (500,-300).
 
+Dripstone (2026-11-11): large_dripstone (`LargeDripstoneFeature`: `Column.scan`, the wind offsetter, the stone
+moving back into rock and halving its radius), dripstone_cluster (`DripstoneClusterFeature`, pools, layers, merged
+tips) and pointed_dripstone (the SimpleRandomSelector over the two inline placed `PointedDripstoneFeature`s with
+their environment scans, after `RandomOffsetPlacement` of clamped normals) in `Dripstone`. Gaussians:
+`XoroRandom.nextGaussian` is `java.util.Random`'s (StrictMath), and like WorldgenRandom it keeps its second value
+across setFeatureSeed (WorldgenRandom.setSeed does not reset it); a new one per chunk. Large dripstone reads up to
+about 38 blocks from its chunk (radius 9 plus the wind drift over the column), so `Region` now holds the 5x5 chunks
+(`Region.READ`), writes still the 3x3. `FeatureCheck` with all 44 ported features: identical on the default areas
+(`oracle-out/feat-caves3`, 512 chunks) and on a dripstone caves area per seed (`oracle-out/feat-drip`, 64 chunks each,
+`-Dcenters` 42: -24,-32; 12345: 32,-40; -7346534567: -64,0; 8675309: -8,-8; every pointed dripstone state appears).
+`DecorationBench`: 1.16 ms/chunk at seed 42 0,0; 1.54 in the dripstone area of seed 8675309 (vanilla's timer
+there, unpinned Java 17: 6.6).
+
 Java 8 and `Math.sin`: `OreFeature` takes `Math.sin`/`Math.cos` of a double, as vanilla does. Over all 2^24 angles
 an ore can draw, Java 17, 21 and 25 give the same bits (vanilla's, on Java 17), but Java 8's `Math` differs from
 them in the last bit at about a million angles (`StrictMath` matches neither). On the checks' 704 chunks Java 8

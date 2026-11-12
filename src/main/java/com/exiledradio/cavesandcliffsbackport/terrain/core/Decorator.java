@@ -55,6 +55,9 @@ public final class Decorator {
         for (Placed p : Geodes.placed(noise.seed)) {
             ported.put(p.name, p);
         }
+        for (Placed p : Dripstone.placed()) {
+            ported.put(p.name, p);
+        }
         for (Placed p : Caves.placed()) {
             ported.put(p.name, p);
         }
@@ -127,6 +130,7 @@ public final class Decorator {
         int cz = region.centerZ;
         int ox = cx << 4;
         int oz = cz << 4;
+        random.newRandom();
         long decorationSeed = random.setDecorationSeed(seed, ox, oz);
         long mask = 0L;
         for (int dx = -1; dx <= 1; dx++) {

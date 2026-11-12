@@ -32,9 +32,10 @@ public final class DecorationBench {
         ChunkFiller filler = new ChunkFiller(noise, columns);
         SurfaceBuilder surface = new SurfaceBuilder(noise, columns, biomes);
         Carvers carvers = new Carvers(noise, columns, surface);
-        int n = side + 2;
-        int x0 = centerX - side / 2 - 1;
-        int z0 = centerZ - side / 2 - 1;
+        int r = Region.READ;
+        int n = side + 2 * r;
+        int x0 = centerX - side / 2 - r;
+        int z0 = centerZ - side / 2 - r;
         char[][] pristine = new char[n * n][];
         int[][] floors = new int[n * n][];
         int[][] pristineHeights = new int[n * n][];
@@ -53,9 +54,9 @@ public final class DecorationBench {
         char[][] work = new char[n * n][];
         int[][] workHeights = new int[n * n][];
         Region region = new Region();
-        char[][] b9 = new char[9][];
-        int[][] h9 = new int[9][];
-        int[][] m9 = new int[9][];
+        char[][] b9 = new char[Region.CHUNKS][];
+        int[][] h9 = new int[Region.CHUNKS][];
+        int[][] m9 = new int[Region.CHUNKS][];
         for (int round = 0; round <= rounds; round++) {
             for (int i = 0; i < n * n; i++) {
                 work[i] = pristine[i].clone();
@@ -64,13 +65,13 @@ public final class DecorationBench {
             Decorator decorator = new Decorator(noise, new BiomeSource(noise, columns, climate));
             decorator.only(only.equals("all") ? null : new HashSet<>(Arrays.asList(only.split(","))));
             long t = System.nanoTime();
-            for (int a = 1; a <= side; a++) {
-                for (int b = 1; b <= side; b++) {
-                    for (int dx = -1; dx <= 1; dx++) {
-                        for (int dz = -1; dz <= 1; dz++) {
-                            b9[(dx + 1) * 3 + dz + 1] = work[(a + dx) * n + b + dz];
-                            h9[(dx + 1) * 3 + dz + 1] = floors[(a + dx) * n + b + dz];
-                            m9[(dx + 1) * 3 + dz + 1] = workHeights[(a + dx) * n + b + dz];
+            for (int a = r; a < r + side; a++) {
+                for (int b = r; b < r + side; b++) {
+                    for (int dx = -r; dx <= r; dx++) {
+                        for (int dz = -r; dz <= r; dz++) {
+                            b9[(dx + r) * Region.SIDE + dz + r] = work[(a + dx) * n + b + dz];
+                            h9[(dx + r) * Region.SIDE + dz + r] = floors[(a + dx) * n + b + dz];
+                            m9[(dx + r) * Region.SIDE + dz + r] = workHeights[(a + dx) * n + b + dz];
                         }
                     }
                     region.set(x0 + a, z0 + b, b9, h9, m9);

@@ -81,6 +81,44 @@ public final class XoroRandom {
         return (double) (((long) next(26) << 27) + (long) next(27)) * 0x1.0p-53;
     }
 
+    private double nextNextGaussian;
+    private boolean haveNextNextGaussian;
+
+    /**
+     * java.util.Random.nextGaussian (WorldgenRandom does not override it): the polar method with StrictMath, its
+     * second value kept for the next call. WorldgenRandom.setSeed does not call Random.setSeed, so the kept value
+     * survives setFeatureSeed and setDecorationSeed; only a new WorldgenRandom (one per chunk's decoration) starts
+     * without one: {@link #newRandom}.
+     */
+    public double nextGaussian() {
+        if (haveNextNextGaussian) {
+            haveNextNextGaussian = false;
+            return nextNextGaussian;
+        }
+        double v1;
+        double v2;
+        double s;
+        do {
+            v1 = 2 * nextDouble() - 1;
+            v2 = 2 * nextDouble() - 1;
+            s = v1 * v1 + v2 * v2;
+        } while (s >= 1 || s == 0);
+        double multiplier = StrictMath.sqrt(-2 * StrictMath.log(s) / s);
+        nextNextGaussian = v2 * multiplier;
+        haveNextNextGaussian = true;
+        return v1 * multiplier;
+    }
+
+    /** As a freshly constructed WorldgenRandom: no kept Gaussian. */
+    public void newRandom() {
+        haveNextNextGaussian = false;
+    }
+
+    /** Mth.normal. */
+    public float normal(float mean, float deviation) {
+        return mean + (float) nextGaussian() * deviation;
+    }
+
     /** Mth.randomBetweenInclusive. */
     public int between(int min, int max) {
         return nextInt(max - min + 1) + min;
