@@ -244,20 +244,29 @@ final class VanillaWorld {
     private static boolean tagsBound;
 
     /**
-     * Binds the biome tags of the jar's data pack (data/minecraft/tags/worldgen/biome, has_structure/* and is_*),
-     * which a server loads at start and RegistryAccess.builtinCopy() leaves empty. Structures and features test them.
+     * Binds the tags of the jar's data pack (data/minecraft/tags: worldgen/biome, blocks, fluids), which a server
+     * loads at start and RegistryAccess.builtinCopy() and the static registries leave empty. Structures and
+     * features test them (biome tags; ore targets and other rule tests on block tags).
      */
     static synchronized void bindBiomeTags() throws Exception {
         if (tagsBound) {
             return;
         }
-        Registry<Biome> registry = access.registryOrThrow(Registry.BIOME_REGISTRY);
+        bindTags(access.registryOrThrow(Registry.BIOME_REGISTRY), "worldgen/biome");
+        bindTags(Registry.BLOCK, "blocks");
+        bindTags(Registry.FLUID, "fluids");
+        tagsBound = true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> void bindTags(Registry<T> registry, String dir) throws Exception {
         java.util.Map<String, java.util.List<String>> raw = new java.util.TreeMap<>();
         java.net.URL root = VanillaWorld.class.getResource("/data/minecraft/tags/worldgen/biome/is_ocean.json");
         java.net.JarURLConnection connection = (java.net.JarURLConnection) root.openConnection();
+        connection.setUseCaches(false);
         try (java.util.jar.JarFile jar = connection.getJarFile()) {
             java.util.Enumeration<java.util.jar.JarEntry> entries = jar.entries();
-            String prefix = "data/minecraft/tags/worldgen/biome/";
+            String prefix = "data/minecraft/tags/" + dir + "/";
             while (entries.hasMoreElements()) {
                 java.util.jar.JarEntry e = entries.nextElement();
                 if (e.getName().startsWith(prefix) && e.getName().endsWith(".json")) {
@@ -266,31 +275,31 @@ final class VanillaWorld {
                         com.google.gson.JsonObject o = com.google.gson.JsonParser.parseReader(r).getAsJsonObject();
                         java.util.List<String> values = new ArrayList<>();
                         for (com.google.gson.JsonElement v : o.getAsJsonArray("values")) {
-                            values.add(v.getAsString());
+                            values.add(v.isJsonObject() ? v.getAsJsonObject().get("id").getAsString() : v.getAsString());
                         }
                         raw.put(name, values);
                     }
                 }
             }
         }
-        java.util.Map<net.minecraft.tags.TagKey<Biome>, List<Holder<Biome>>> bound = new java.util.HashMap<>();
+        java.util.Map<net.minecraft.tags.TagKey<T>, List<Holder<T>>> bound = new java.util.HashMap<>();
         for (String name : raw.keySet()) {
-            java.util.LinkedHashSet<Holder<Biome>> out = new java.util.LinkedHashSet<>();
+            java.util.LinkedHashSet<Holder<T>> out = new java.util.LinkedHashSet<>();
             resolveTag(name, raw, registry, out);
-            bound.put(net.minecraft.tags.TagKey.create(Registry.BIOME_REGISTRY, new net.minecraft.resources.ResourceLocation(name)),
+            bound.put(net.minecraft.tags.TagKey.create(registry.key(), new net.minecraft.resources.ResourceLocation(name)),
                 new ArrayList<>(out));
         }
-        ((net.minecraft.core.MappedRegistry<Biome>) registry).bindTags(bound);
-        tagsBound = true;
+        ((net.minecraft.core.MappedRegistry<T>) registry).bindTags(bound);
     }
 
-    private static void resolveTag(String name, java.util.Map<String, java.util.List<String>> raw, Registry<Biome> registry,
-                                   java.util.Set<Holder<Biome>> out) {
+    private static <T> void resolveTag(String name, java.util.Map<String, java.util.List<String>> raw, Registry<T> registry,
+                                       java.util.Set<Holder<T>> out) {
         for (String v : raw.get(name)) {
             if (v.startsWith("#")) {
                 resolveTag(new net.minecraft.resources.ResourceLocation(v.substring(1)).getPath(), raw, registry, out);
             } else {
-                out.add(registry.getHolderOrThrow(ResourceKey.create(Registry.BIOME_REGISTRY, new net.minecraft.resources.ResourceLocation(v))));
+                registry.getHolder(ResourceKey.create(registry.key(), new net.minecraft.resources.ResourceLocation(v)))
+                    .ifPresent(out::add);
             }
         }
     }

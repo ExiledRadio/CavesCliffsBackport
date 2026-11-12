@@ -1012,7 +1012,7 @@ public final class SurfaceBuilder {
         return a + b;
     }
 
-    private static double fiddledDistance(long seed, int x, int y, int z, double dx, double dy, double dz) {
+    static double fiddledDistance(long seed, int x, int y, int z, double dx, double dy, double dz) {
         long v = lcg(seed, (long) x);
         v = lcg(v, (long) y);
         v = lcg(v, (long) z);
