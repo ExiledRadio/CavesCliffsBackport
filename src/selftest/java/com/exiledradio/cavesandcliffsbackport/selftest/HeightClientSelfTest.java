@@ -34,7 +34,8 @@ import java.util.List;
  * compile (the camera in a pocket at y -60, then above the world). Logged, not looked at; the game then quits.
  *
  * <pre>    ./gradlew runClient -Pselftest=heightclient</pre>
- * Started by name from {@code HeightContent} when {@code cavesandcliffsbackport.selftest} names {@code heightclient}.
+ * Started by name from {@code HeightContent} when the system property {@code cavesandcliffsbackport.clienttest} is
+ * {@code height} (or {@code startup}: main menu only, for a modpack instance).
  */
 public final class HeightClientSelfTest {
 
@@ -47,9 +48,16 @@ public final class HeightClientSelfTest {
     private int px;
     private int pz;
 
-    public static void start() {
-        MinecraftForge.EVENT_BUS.register(new HeightClientSelfTest());
-        CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST heightclient requested");
+    /** {@code height}: the whole test; {@code startup}: reach the main menu, log whether extended height is on, quit. */
+    private final boolean startupOnly;
+
+    private HeightClientSelfTest(boolean startupOnly) {
+        this.startupOnly = startupOnly;
+    }
+
+    public static void start(String mode) {
+        MinecraftForge.EVENT_BUS.register(new HeightClientSelfTest("startup".equals(mode)));
+        CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST {} requested", mode);
     }
 
     @SubscribeEvent
@@ -78,6 +86,13 @@ public final class HeightClientSelfTest {
                     return;
                 }
                 mc.gameSettings.pauseOnLostFocus = false;
+                if (this.startupOnly) {
+                    CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST startup: main menu reached; extended height {} ({} sites, refusal: {})",
+                            HeightContent.allowed() ? "on" : "off", PatchReport.size(), HeightContent.refusal());
+                    ok(true, "main menu reached");
+                    finish(mc);
+                    return;
+                }
                 ok(HeightContent.allowed(), "extended height is on (refusal: " + HeightContent.refusal() + ")");
                 eq(new ArrayList<String>(), PatchReport.missed(), "client patch sites not found");
                 mc.getSaveLoader().deleteWorldDirectory(WORLD);

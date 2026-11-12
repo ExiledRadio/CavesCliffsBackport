@@ -59,10 +59,12 @@ public final class HeightContent {
     }
 
     public static void preInit(boolean client) {
-        if (client && "height".equals(System.getProperty(CavesAndCliffsBackport.MOD_ID + ".clienttest"))) {
+        String clientTest = System.getProperty(CavesAndCliffsBackport.MOD_ID + ".clienttest");
+        if (client && clientTest != null) {
             // A test build's client test (runClient -Pclienttest=height), reached by name: a release has no test classes.
             try {
-                Class.forName("com.exiledradio.cavesandcliffsbackport.selftest.HeightClientSelfTest").getMethod("start").invoke(null);
+                Class.forName("com.exiledradio.cavesandcliffsbackport.selftest.HeightClientSelfTest")
+                        .getMethod("start", String.class).invoke(null, clientTest);
             } catch (ReflectiveOperationException e) {
                 CavesAndCliffsBackport.LOGGER.error("CLIENT SELFTEST DONE pass=0 fail=1: the test classes are not in this build.", e);
             }

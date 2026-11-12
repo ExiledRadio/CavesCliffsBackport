@@ -38,8 +38,10 @@ def run(mode):
     set_level_type("cavesandcliffs" if mode == "extended" else "DEFAULT")
     shutil.rmtree(os.path.join(ECL, "world"), ignore_errors=True)
     log = os.path.join(ROOT, "build", "bench-%s.log" % mode)
-    cmd = 'start "" /b /wait /affinity FFFF0000 cmd /c "gradlew.bat runServer -Pselftest=heightbench > "%s" 2>&1"' % log
-    subprocess.run(cmd, shell=True, cwd=ROOT)
+    # Pinned to the E-cores: the forked server JVM inherits Gradle's affinity.
+    cmd = 'start "" /D "%s" /b /wait /affinity FFFF0000 "%s" runServer -Pselftest=heightbench' % (ROOT, os.path.join(ROOT, "gradlew.bat"))
+    with open(log, "w") as out:
+        subprocess.run(cmd, shell=True, cwd=ROOT, stdout=out, stderr=subprocess.STDOUT)
     for line in open(os.path.join(ECL, "logs", "latest.log"), encoding="utf-8", errors="replace"):
         if "HEIGHTBENCH" in line:
             return line.split("HEIGHTBENCH", 1)[1].strip()

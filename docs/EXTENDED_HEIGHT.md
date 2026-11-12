@@ -1,7 +1,14 @@
 # Extended height (y -64 to 319): design
 
 Decision (the user, relayed 2026-11-07): stream T is option A, full 1.18 world height. Bytecode patching is
-approved **for this part only**. This document comes before any of its code. Nothing here is built yet.
+approved **for this part only**. This document came before any of its code.
+
+**Status (2026-11-11):** the height coremod (part 1) is built on branch `cc-height`, as designed here, with what
+building it added: per-section entity lists (so mobs below 0 render and area queries find them), the falling-block
+limits, the build limit, spawn heights from the bottom, the fog near the bottom, chunk receive/unload re-render
+ranges and the entity lists `RenderGlobal` reads. How it works, every site and what was tested:
+`docs/streams/height.md`. The speed numbers are in section 4. Alfheim was settled by the user (2026-11-11): it packs y
+in 8 bits in its `LightingEngine` and replaces `Chunk.relightBlock`, so extended height refuses to run with it.
 
 The work splits in two:
 
@@ -147,6 +154,19 @@ extended-height terrain mods about 15 (4.5x slower), on the 14900K, same seed.
 * **Height alone** (vanilla terrain in an extended world, the patches active): **at most 1.2x vanilla's time
   per chunk.** The extra 128 blocks of height are mostly empty sections above (never allocated) and solid
   stone below, which our generator writes section by section.
+  **Measured 2026-11-11** (`python tools/height/bench.py 2`: the `heightbench` self-test on a dev server pinned to
+  the E-cores, logical processors 16-31; seed 1718; a 24x24 square of chunks at chunk (1000, 1000), generated and
+  populated, after an 8x8 warm-up; then each chunk written to NBT as a save does, four times; a fresh world per run;
+  best of two rounds; every other stream's world generators on in all three modes):
+
+  | Mode | Generate + populate | Write to NBT | Chunks/s | vs vanilla |
+  | --- | --- | --- | --- | --- |
+  | vanilla (`height.enabled=false`: nothing patched) | 11.96 ms/chunk | 3.14 ms | 83.6 | 1 |
+  | coremod on, Default world | 12.47 ms | 3.48 ms | 80.2 | gen x1.04, gen+save x1.06 |
+  | coremod on, Caves & Cliffs world (y -64..319) | 13.30 ms | 4.10 ms | 75.2 | **gen x1.11, gen+save x1.15** |
+
+  Within the 1.2x target. The extended world's extra cost is the four deep sections each chunk now has (filling
+  them, and writing them to the save); the run-to-run spread of vanilla itself was about 7%.
 * **1.18 terrain**: **at most 2x vanilla's time per chunk, aim 1.5x**, and at least 34 chunks/s on the same
   machine and seed. How: 1.18's own cell interpolation (density sampled at 4x8x4 cell corners only), column
   noise cached per chunk column, and noise for chunks around the one being generated computed ahead on a
