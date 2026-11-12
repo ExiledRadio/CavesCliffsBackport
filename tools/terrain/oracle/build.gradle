@@ -1,0 +1,53 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net/' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+    }
+}
+apply plugin: 'net.minecraftforge.gradle'
+
+// Reference workspace: `gradlew fetchMcSources` puts the decompiled 1.18.2 sources jar in build/mcsources.
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '17'
+
+minecraft {
+    mappings channel: 'official', version: '1.18.2'
+}
+
+configurations {
+    mcSources
+}
+
+task fetchMcSources(type: Copy) {
+    from configurations.mcSources
+    into file("$buildDir/mcsources")
+    include '*sources*'
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.18.2-40.2.21'
+    mcSources 'net.minecraftforge:forge:1.18.2-40.2.21_mapped_official_1.18.2:sources'
+}
+
+// Vanilla oracle for the Caves and Cliffs Backport's terrain: gradlew oracle -Pout=<dir> [-Pargs="points radius scattered seeds..."]
+task oracle(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'oracle.Oracle1182Terrain'
+    workingDir = file("$buildDir/oracle-run")
+    doFirst { workingDir.mkdirs() }
+    jvmArgs '-Xmx3G'
+    args((project.findProperty('out') ?: "$buildDir/oracle-out").toString())
+    args((project.findProperty('oargs') ?: '4000 3 28').toString().split(' '))
+}
+
+task vanillaBench(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'net.minecraft.world.level.levelgen.VanillaFillBench'
+    workingDir = file("$buildDir/oracle-run")
+    doFirst { workingDir.mkdirs() }
+    jvmArgs '-Xmx3G'
+    args((project.findProperty('oargs') ?: '42 16 6').toString().split(' '))
+}
+task printOracleClasspath { doLast { println 'CP=' + sourceSets.main.runtimeClasspath.asPath } }

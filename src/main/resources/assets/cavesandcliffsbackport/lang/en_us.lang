@@ -261,6 +261,9 @@ advancements.cavesandcliffsbackport.fall_from_world_height.description=Free fall
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Caves & Cliffs
 tile.cavesandcliffsbackport.light.name=Light
 
+# --- height ---
+generator.cavesandcliffs=Caves & Cliffs
+
 # --- common ---
 config.cavesandcliffsbackport.deepslate=Deepslate and Stone
 config.cavesandcliffsbackport.deepslate.tooltip=Deepslate and its sets, calcite, tuff, smooth basalt, deepslate ores and raw ores.
@@ -288,6 +291,8 @@ config.cavesandcliffsbackport.music=Music
 config.cavesandcliffsbackport.music.tooltip=1.18's music and the Otherside music disc.
 config.cavesandcliffsbackport.caves=Cave Regions
 config.cavesandcliffsbackport.caves.tooltip=Where lush and dripstone caves are: the regions the cave streams decorate.
+config.cavesandcliffsbackport.height=World Height
+config.cavesandcliffsbackport.height.tooltip=1.18's world height, y -64 to 319, for new worlds of the Caves & Cliffs world type.
 config.cavesandcliffsbackport.deepslate.enabled=Enabled
 config.cavesandcliffsbackport.deepslate.enabled.tooltip=Deepslate, its stairs, slabs and walls, calcite, tuff, smooth basalt, the deepslate ores and raw iron and gold. Off, nothing is registered.
 config.cavesandcliffsbackport.deepslate.rawOreDrops=Raw ore drops
@@ -424,3 +429,7 @@ config.cavesandcliffsbackport.caves.lushRegions=Lush regions
 config.cavesandcliffsbackport.caves.lushRegions.tooltip=Lush caves: moss, azaleas, cave vines, clay pools and dripleaf in some cave regions of newly generated chunks.
 config.cavesandcliffsbackport.caves.dripstoneRegions=Dripstone regions
 config.cavesandcliffsbackport.caves.dripstoneRegions.tooltip=Dripstone caves: dripstone and pointed dripstone in some cave regions of newly generated chunks.
+config.cavesandcliffsbackport.height.enabled=Enabled
+config.cavesandcliffsbackport.height.enabled.tooltip=The Caves & Cliffs world type: an overworld from y -64 to 319, as in 1.18. The Nether and the End, and every world created before, keep y 0 to 255 for good. Removing this mod from such a world keeps everything from y 0 to 255 and loses everything below and above: the bedrock is at y -64, so the bottom of the world is then open at y 0. Refuses to turn on, and says so in the log, when Alfheim, Phosphor, Cubic Chunks, Caves Not Cliffs or Farmer's Future Delight is installed: they change the same parts of the game.
+config.cavesandcliffsbackport.height.defaultForNewWorlds=Default for new worlds
+config.cavesandcliffsbackport.height.defaultForNewWorlds.tooltip=New worlds that would get the Default world type get the Caves & Cliffs type instead: in single player and on a server whose level-type is DEFAULT. Takes effect for worlds created afterwards.

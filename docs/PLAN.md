@@ -74,7 +74,9 @@ D comes first because copper ore, geodes and dripstone caves sit in its deepslat
 
 **Status (2026-11-11):** every 1.17 stream and Mu built, tested and merged (`docs/streams/*.md`). Double slabs
 are `<name>_double_slab`, as Village & Pillage's released ones. `common/CaveRegions` is in and wired (below).
-Left: T (terrain core on branch `cc-terrain`, `docs/TERRAIN_CORE.md`) and the waterlogging pass.
+Left: T and the waterlogging pass. T started on branch `cc-terrain`: the terrain core (1.18.2's noise fill, exact,
+about 15x vanilla's speed on one core) is in `terrain/core`, see `docs/TERRAIN_CORE.md`. Biomes, surface rules,
+carvers, features and the chunk generator are not built; the height coremod is stream H (branch `cc-height`).
 
 ### Shared by the cave streams: `common/CaveRegions`
 

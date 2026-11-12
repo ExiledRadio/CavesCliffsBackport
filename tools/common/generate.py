@@ -28,6 +28,7 @@ CATEGORY_NAMES = {
     "blocks": "Other Blocks and Items",
     "music": "Music",
     "caves": "Cave Regions",
+    "height": "World Height",
 }
 
 # Option names that words-from-camelCase would get wrong.
