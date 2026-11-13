@@ -234,8 +234,14 @@ map's over identity hashes, not reproducible; one start almost always reaches a 
   its ground at that level, as 1.18's houses are. Roads follow the ground block by block (1.18's terrain-matching
   pieces have no beard). Other mods' village pieces keep measuring as they build and get no beard.
 - Stronghold pieces are buried (1.18's `StrongholdPiece` noise effect).
-- 1.19's `beard_box` and `encapsulate` (ancient cities, trial chambers) have no 1.18.2 formula; a kind registered with
-  them gets none (logged once). There are no ancient cities in 1.18.2.
+- 1.19's `beard_box` (ancient cities, registered by a backport with `TerrainAdaptation.Kind.BEARD_BOX`) is 1.19.2's
+  own, in `Beardifier.BEARD_BOX`. It cuts air through each rigid piece's box above its ground and puts ground under
+  it. The kernel's vertical distance is measured to the box (`max(0, max(ground - y, y - maxY))`), its slope from the
+  ground, and it uses 1.19.2's kernel (the gaussian as a float, times the slope in double). The junctions of such a
+  piece use 1.19.2's formula too. `tools/terrain/beardbox119.sh` runs vanilla 1.19.2's Beardifier (Mojang-named
+  client jar, JDK 17) against ours over made-up `beard_box` pieces and junctions: the kernels are equal, and 3,276,800
+  blocks give 0 differences. The other kinds keep 1.18.2's kernel. 1.21's `encapsulate` has no formula here; a kind
+  registered with it gets none (logged once).
 
 **Mob spawning** (`ChunkBiomes`). `getPossibleCreatures` reads 1.18's biome at the spawn position in three dimensions
 (the zoom over the chunk's stored quarts, as 1.18's spawner reads `getBiome`): under a desert, a lush cave spawns

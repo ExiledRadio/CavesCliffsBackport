@@ -28,7 +28,7 @@ import java.util.Set;
  *       no beard of their own).</li>
  *   <li>Strongholds: every piece buried (1.18's StrongholdPiece noise effect).</li>
  *   <li>Other mods' structures registered with Backport Core's {@link TerrainAdaptation} (Village &amp; Pillage's
- *       outposts), after these.</li>
+ *       outposts; 1.19's ancient cities, beard_box), after these.</li>
  * </ul>
  *
  * <p>Where a backport builds the villages instead (Village &amp; Pillage's 1.14 villages, through Backport Core's
@@ -108,13 +108,16 @@ final class StructureBeards implements Pipeline.BeardSource {
         }
     }
 
-    /** 1.18.2's noise effects: beard_thin is its BEARD, bury its BURY; 1.19's beard_box and encapsulate it has not. */
+    /** 1.18.2's noise effects: beard_thin is its BEARD, bury its BURY; 1.19's beard_box (ancient cities) is added; 1.21's
+     * encapsulate it has not. */
     private int effect(TerrainAdaptation.Entry e) {
         switch (e.adaptation) {
             case BEARD_THIN:
                 return Beardifier.BEARD;
             case BURY:
                 return Beardifier.BURY;
+            case BEARD_BOX:
+                return Beardifier.BEARD_BOX;
             case NONE:
                 return Beardifier.NONE;
             default:
