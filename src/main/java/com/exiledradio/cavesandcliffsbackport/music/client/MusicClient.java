@@ -69,7 +69,8 @@ public final class MusicClient {
             }
             Minecraft mc = Minecraft.getMinecraft();
             // Kept for every later reload (F3+T, a resource pack change), which rebuilds from this list...
-            List<IResourcePack> defaults = ReflectionHelper.getPrivateValue(Minecraft.class, mc, "field_110449_ao", "defaultResourcePacks");
+            // The two-name overload is (MCP name, SRG name) and uses one by environment: SRG first failed in every game.
+            List<IResourcePack> defaults = ReflectionHelper.getPrivateValue(Minecraft.class, mc, "defaultResourcePacks", "field_110449_ao");
             defaults.add(pack);
             // ...and added to the live manager now: the startup reload has happened, the sound handler's has not.
             IReloadableResourceManager manager = (IReloadableResourceManager) mc.getResourceManager();
