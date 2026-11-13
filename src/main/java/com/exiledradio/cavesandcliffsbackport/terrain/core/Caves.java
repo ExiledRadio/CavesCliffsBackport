@@ -157,9 +157,12 @@ final class Caves {
                     for (int i3 = 0; i3 < 8; ++i3) {
                         if (aboolean[(l1 * 16 + i2) * 8 + i3]) {
                             if (!featuresCannotReplace(level.get(x + l1, y + i3, z + i2))) {
-                                // flag1: the top half is cave air (then a scheduled tick and post-processing marks,
-                                // neither a block change).
+                                // flag1: the top half is cave air, then a scheduled tick of the air block (which
+                                // does nothing) and post-processing marks above it.
                                 level.set(x + l1, y + i3, z + i2, i3 >= 4 ? CAVE_AIR : fluid);
+                                if (i3 >= 4) {
+                                    level.markAbove(x + l1, y + i3, z + i2);
+                                }
                             }
                         }
                     }
@@ -173,6 +176,7 @@ final class Caves {
                                 int state = level.get(x + j2, y + l3, z + j3);
                                 if (solid(state) && !lavaPoolStoneCannotReplace(state)) {
                                     level.set(x + j2, y + l3, z + j3, barrier);
+                                    level.markAbove(x + j2, y + l3, z + j3);
                                 }
                             }
                         }

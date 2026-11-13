@@ -155,7 +155,12 @@ final class Geodes {
                         if (!(d6 < d4)) {
                             if (flag && d7 >= d5 && d6 < d1) {
                                 safeSet(level, bx, by, bz, AIR);
-                                // Scheduled fluid ticks around it: no block change.
+                                // A fluid tick (delay 0) at every fluid next to the crack.
+                                for (int d = 0; d < 6; d++) {
+                                    if ((flags(level.get(bx + DX[d], by + DY[d], bz + DZ[d])) & F_FLUID) != 0) {
+                                        level.mark(bx + DX[d], by + DY[d], bz + DZ[d], Marks.TICK);
+                                    }
+                                }
                             } else if (d6 >= d1) {
                                 safeSet(level, bx, by, bz, AIR);
                             } else if (d6 >= d2) {

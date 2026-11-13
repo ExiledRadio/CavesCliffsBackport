@@ -179,6 +179,8 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         Chunk chunk = new Chunk(this.world, x, z);
         this.rand.setSeed((long) x * 341873128712L + (long) z * 132897987541L);
         write(chunk, p);
+        // 1.18's fluid ticks and post-processing, run once the chunk's neighbors are in the world.
+        FluidUpdates.put(chunk, p.updates);
         byte[] biomes = chunk.getBiomeArray();
         BiomeMap map = terrain.map;
         for (int c = 0; c < 256; c++) {

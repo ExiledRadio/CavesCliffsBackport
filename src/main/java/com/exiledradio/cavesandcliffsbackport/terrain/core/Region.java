@@ -40,6 +40,8 @@ public final class Region {
     private final char[][] blocks = new char[CHUNKS][];
     private final int[][] oceanFloor = new int[CHUNKS][];
     private final int[][] heights = new int[CHUNKS][];
+    /** Each chunk's tick and post-processing marks ({@link Marks}); null entries drop them. */
+    private final Marks[] marks = new Marks[CHUNKS];
     int centerX;
     int centerZ;
     private int minX;
@@ -51,6 +53,11 @@ public final class Region {
      * kept by the caller from one decoration to the next.
      */
     public void set(int cx, int cz, char[][] blocks9, int[][] oceanFloor9, int[][] heights9) {
+        set(cx, cz, blocks9, oceanFloor9, heights9, null);
+    }
+
+    /** As {@link #set(int, int, char[][], int[][], int[][])}, with each chunk's marks (null: none kept). */
+    public void set(int cx, int cz, char[][] blocks9, int[][] oceanFloor9, int[][] heights9, Marks[] marks9) {
         centerX = cx;
         centerZ = cz;
         minX = (cx - READ) << 4;
@@ -59,6 +66,7 @@ public final class Region {
             blocks[i] = blocks9[i];
             oceanFloor[i] = oceanFloor9[i];
             heights[i] = heights9[i];
+            marks[i] = marks9 == null ? null : marks9[i];
         }
     }
 
@@ -193,6 +201,10 @@ public final class Region {
         int col = (x & 15) * 16 + (z & 15);
         int at = col * HEIGHT - MIN_Y;
         b[at + y] = (char) code;
+        if ((BlockCodes.flags(code) & BlockCodes.F_POST) != 0 && marks[k] != null) {
+            // WorldGenRegion.setBlock: a block with hasPostProcess marks its position.
+            marks[k].add(Marks.pack(x, y, z, Marks.POST));
+        }
         int[] h = heights[k];
         for (int t = 0; t < HEIGHTMAPS; t++) {
             int i = h[t * 256 + col];
@@ -215,6 +227,31 @@ public final class Region {
             }
         }
         return true;
+    }
+
+    /**
+     * ChunkAccess.markPosForPostprocessing ({@link Marks#POST}) or WorldGenLevel.scheduleTick(pos, fluid, 0)
+     * ({@link Marks#TICK}) on the chunk holding the position. Kept for the writable 3x3 (every mark 1.18.2's
+     * overworld features make is at or next to a block they write; one that lands a chunk further out is dropped).
+     */
+    public void mark(int x, int y, int z, int kind) {
+        if (!canWrite(x, z) || outsideBuildHeight(y)) {
+            return;
+        }
+        Marks m = marks[chunk(x, z)];
+        if (m != null) {
+            m.add(Marks.pack(x, y, z, kind));
+        }
+    }
+
+    /** Feature.markAboveForPostProcessing: up to two blocks above, stopping at the first air. */
+    public void markAbove(int x, int y, int z) {
+        for (int i = 1; i <= 2; i++) {
+            if (BlockCodes.isAir(get(x, y + i, z))) {
+                return;
+            }
+            mark(x, y + i, z, Marks.POST);
+        }
     }
 
     /** WorldGenRegion.ensureCanWrite: within one chunk of the center. */

@@ -438,6 +438,7 @@ public final class Carvers {
             int top = surface.topMaterial(cx, cz, b, x, y - 1, z, carved != AIR);
             if (top >= 0) {
                 b[at - 1] = (char) top;
+                surface.markFluid(x & 15, y - 1, z & 15, top);
             }
         }
         return grass;

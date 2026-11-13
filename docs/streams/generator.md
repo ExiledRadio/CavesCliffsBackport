@@ -23,6 +23,8 @@ feature the core has ported, block for block what the core computes, which is va
     the world, so features crossing its edge are not cut after a restart.
 *   Generation is fast: the terrain is built on worker threads ahead of need (`height.terrainThreads`, 0 picks a
     number from the computer's cores).
+*   **Springs, waterfalls and lava falls flow.** Water and lava springs in cave walls and the edges of underground
+    lakes and lava pools start flowing when you come near, as in 1.18, instead of staying still.
 *   Caves & Cliffs worlds created before this version keep the terrain they were made with (1.12's, with stone below
     y 0), so no seam runs through them.
 
@@ -63,6 +65,41 @@ again). The one piece of decoration state that is not a chunk's, the order glow 
 (vanilla's `MultifaceBlock.DIRECTIONS`, shuffled by every spread in the JVM), is saved beside them (`state.dat`).
 So a world stopped and started again decorates the chunks beyond its explored area exactly as one that never
 stopped (`RestartSelfTest`), and the cap no longer cuts features.
+
+**Fluid ticks and post-processing** (`core/Marks`, `core/FluidMarks`, `FluidUpdates`). What vanilla 1.18.2 does to a
+generated chunk after its blocks are placed, none of it a block change during generation:
+- *Scheduled fluid ticks, delay 0* (`WorldGenLevel.scheduleTick(pos, fluid, 0)`): `SpringFeature` after placing its
+  fluid; `GeodeFeature` at every fluid next to a crack it opens. (`LakeFeature` also schedules a tick of the air block
+  in a lake's top half, which does nothing; `StructurePiece` and the Nether bridge schedule their placed fluids: 1.12's
+  structures place their own.)
+- *Post-processing marks* (`ChunkAccess.markPosForPostprocessing`), answered by `LevelChunk.postProcessGeneration` when
+  the chunk starts ticking: the fluid there ticks (`FluidState.tick`), any other block gets
+  `Block.updateFromNeighbourShapes`. Marked by `NoiseBasedChunkGenerator.doFill` and `WorldCarver.carveBlock` (a fluid
+  the aquifer answered with `shouldScheduleFluidUpdate`), `SurfaceSystem`'s block column (every fluid the surface rules
+  set: the swamps' water, water over holes in oceans), `WorldGenRegion.setBlock` of a block with `hasPostProcess`
+  (brown and red mushrooms, magma: `BlockCodes.F_POST`), `Feature.markAboveForPostProcessing` (the two blocks over a
+  lake's air and barrier and over a disk), glow lichen (`GlowLichenFeature` and its spread). `Blender`'s marks are for
+  chunks from older versions; there are none.
+The decoration's marks are recorded by `Region.mark` / `markAbove` into each chunk's `Marks` (kept in the held-chunk
+store, format 2), the surface's on the worker. The aquifer's are found after the fact: for every fluid the aquifer
+answers, the flag is the same function of the position (the two nearest aquifer centers' squared distances differ by
+at most 44, i.e. similarity at least FLOWING_UPDATE_SIMULARITY; false below y -54, where the global lava answers first),
+so `FluidMarks.scan` computes it only for the water and lava sources of the finished chunk that have a neighbor below
+or beside they can flow into (anything not their own fluid that does not block motion; for lava, water only below).
+Marks that cannot change anything are left out the same way (an enclosed fluid's tick does nothing; rock, ore and dirt
+keep their shape): what is kept is a fluid that can flow, sand or gravel over air or fluid, blocks that are not full
+obstacles (plants, glow lichen) and the `hasPostProcess` blocks. In seed 42's 12x12 at 0, 0 that is 497 positions, 3.5
+per chunk (17 lava and 7 water springs, 58 exposed aquifer and surface fluids, 243 glow lichen, 169 magma); 30 or
+fewer in any chunk of four test areas.
+
+1.18 runs both once the 3x3 chunks around are complete (`ChunkMap.prepareTickingChunk`). Here the generator hands the
+chunk's list to `FluidUpdates`, which runs it at the end of the world tick after the chunk and its eight neighbors are
+loaded and the four populations that write into it are done; until then the list waits with the chunk (in its NBT,
+`cavesandcliffsbackport.PendingUpdates`, if it is saved first). Per position: a still or flowing liquid gets
+`BlockDynamicLiquid.updateTick` at once, on the still state (it spreads the source down and to the sides as
+`FlowingFluid.tick` does and leaves the source still and unmixed, as 1.18's tick does); a plant that cannot stay is
+removed without a drop (1.18's `updateShape` gives air); anything else gets a neighbor update (sand and gravel over a
+lake fall after 2 ticks, as `FallingBlock.updateShape` schedules them; glow lichen drops faces without support).
 
 **Biomes for 1.12** (`BiomeMap`). A biome some installed mod registers under the 1.18 name (any namespace but
 `minecraft`) is used first; otherwise the nearest 1.12 biome: the peaks and slopes are 1.12's ice mountains (goats spawn
