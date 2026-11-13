@@ -1,5 +1,6 @@
 package com.exiledradio.cavesandcliffsbackport.candle;
 
+import com.exiledradio.backportcore.compat.QuarkCandles;
 import com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport;
 import com.exiledradio.cavesandcliffsbackport.ModConfig;
 import com.exiledradio.cavesandcliffsbackport.common.Content;
@@ -136,6 +137,20 @@ public final class CandleContent {
                 new ItemStack(candles[0]), "S", "H", 'S', new ItemStack(Items.STRING), 'H', "honeycomb");
         candle.setRegistryName(Content.id("candle"));
         r.register(candle);
+        // With Quark, whose candles ours stand in for: its tallow recipe (string over two tallow) makes ours,
+        // as many as its config says, and ours carry its ore name.
+        int tallow = QuarkCandles.tallowCandles();
+        if (tallow > 0) {
+            ShapedOreRecipe fromTallow = new ShapedOreRecipe(new ResourceLocation(CavesAndCliffsBackport.MOD_ID, "candle"),
+                    new ItemStack(candles[0], tallow), "S", "T", "T", 'S', new ItemStack(Items.STRING), 'T', "tallow");
+            fromTallow.setRegistryName(Content.id("candle_from_tallow"));
+            r.register(fromTallow);
+        }
+        if (net.minecraftforge.fml.common.Loader.isModLoaded("quark")) {
+            for (BlockCandle c : candles) {
+                OreDictionary.registerOre("blockCandle", new ItemStack(c));
+            }
+        }
         for (int i = 1; i < 17; i++) {
             ShapelessOreRecipe dyed = new ShapelessOreRecipe(new ResourceLocation(CavesAndCliffsBackport.MOD_ID, "dyed_candle"),
                     new ItemStack(candles[i]), new ItemStack(candles[0]), DYES[i - 1]);

@@ -265,10 +265,10 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         if (wet == null || !Waterlogging.isAvailable()) {
             return;
         }
+        // 2 | 16: no neighbor or observer updates. An observer update reads the six neighbors, and one on the chunk's
+        // edge loads (and so generates) the next chunk, whose load lands back here: with Fluidlogged API installed
+        // that chain ran until the stack overflowed while the spawn area was generated.
         for (long l : wet) {
-            // 2 | 16: no observer updates. They read the neighbors, and a neighbor in a chunk not generated yet
-            // would be generated from here, whose water would generate the next (a stack overflow with Update
-            // Aquatic's kelp and seagrass, which hold water where the stand-ins were water themselves).
             Waterlogging.setWater(this.world, BlockPos.fromLong(l), true, 2 | 16);
         }
     }

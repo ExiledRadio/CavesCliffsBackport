@@ -1,5 +1,6 @@
 package com.exiledradio.cavesandcliffsbackport.candle;
 
+import com.exiledradio.backportcore.compat.QuarkCandles;
 import com.exiledradio.backportcore.waterlog.Waterloggable;
 import com.exiledradio.cavesandcliffsbackport.common.BlockBasic;
 
@@ -54,6 +55,12 @@ public class BlockCandle extends BlockAbstractCandle implements Waterloggable {
         setHardness(0.1F);
         BlockBasic.resistance(this, 0.1F);
         setDefaultState(this.blockState.getBaseState().withProperty(CANDLES, 1).withProperty(LIT, false));
+    }
+
+    /** 1.18 candles give no enchanting power; with Quark, ours stand in for its candles and give what its do. */
+    @Override
+    public float getEnchantPowerBonus(World world, BlockPos pos) {
+        return QuarkCandles.enchantPower();
     }
 
     private static AxisAlignedBB box(int x1, int y1, int z1, int x2, int y2, int z2) {
