@@ -92,7 +92,8 @@ same noise (the seed reaches the client in our login packet, id 0).
 **As built:** one value noise, dripstone above +0.40 and lush below -0.40 (9% of the underground each, never
 touching), from stream Dr. It is keyed by a SHA-256 of the seed, and packet 0 (`PacketCaveRegions`) sends
 clients that key and the two switches, never the seed. "Underground" is 4 blocks under the height map. Not
-built: config for region frequency and size.
+built: config for region frequency and size. 2026-11-13 (`cc-gen-parity`): the lattice is twice as wide (256 and
+96 across, 48 and 24 tall), because lush areas measured about 2.3 times narrower than 1.18.2's lush caves biome.
 
 ### D. Deepslate, stone and ores
 
