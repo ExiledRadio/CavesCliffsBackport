@@ -26,11 +26,16 @@ Package `amethyst` (client part in `amethyst.client`). Config `amethyst`: `enabl
 *   **Drops**: 1.12 does not tell a block's drops which tool broke it, so the cluster records the tool during
     `harvestBlock` (its own call) and drops 4 shards for a pickaxe (Fortune's ore formula), 2 otherwise.
 *   **Light and shapes** as 1.18: light 1, 2, 4, 5; shapes from 1.18's heights and insets (3/4, 4/3, 5/3, 7/3).
-*   **Geodes** are our own implementation of 1.17's layered geode: 3-4 points scattered 4-6 blocks from a
-    corner, a sum of inverse distances with a little noise, and 1.17's layer sizes (filling 1.7, inner 2.2,
-    middle 3.2, outer 4.2) and chances (budding 8.3%, crack 95%, buds on 35% of budding blocks). They abort
-    when more than one point is in bedrock, water, lava or ice, never replace tile entities or bedrock, and
-    stay inside the population window. Calcite and smooth basalt are stream D's, by name.
+*   **Geodes** in 1.12 worlds are 1.18.2's `GeodeFeature` with AMETHYST_GEODE's configuration, the code of the
+    1.18 terrain's `terrain/core/Geodes` on java.util.Random (since 2026-11-13; before, an approximation with
+    white noise and two crack positions of its own made geodes 40% smaller in the median). 3-4 points 4-6
+    blocks from a corner, `fastInvSqrt` sums plus the seed's geode NormalNoise times 0.05 per point, the layer
+    sizes (filling 1.7, inner 2.2, middle 3.2, outer 4.2) and chances (budding 8.3%, crack 95%, a bud or
+    cluster on the first open face of 35% of budding blocks). They abort when more than one point is in air,
+    bedrock, water, lava or ice, never replace tile entities or bedrock, and stay inside the population window.
+    Calcite and smooth basalt are stream D's, by name. **Buds as generated are vanilla's:** a median of 6 per
+    geode (10th-90th percentile 2-11) in a 1.18 world of this mod (exact) and in 1.12 worlds alike; budding
+    amethyst grows the rest over time, as in vanilla.
 *   **Spyglass**: the zoom (field of view x0.1), hidden hand, hidden crosshair and scope overlay are client
     events in `SpyglassClient`, registered from `ClientSetup` only when the stream is on. The server finds
     what the player looks at every 5 ticks with its own ray (1.12's entity ray trace is client-only), up to
