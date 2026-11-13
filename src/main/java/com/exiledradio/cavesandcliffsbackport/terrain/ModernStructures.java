@@ -2,6 +2,9 @@ package com.exiledradio.cavesandcliffsbackport.terrain;
 
 import com.exiledradio.cavesandcliffsbackport.terrain.core.Structures;
 import net.minecraft.init.Biomes;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.Rotation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
@@ -17,6 +20,7 @@ import net.minecraft.world.gen.structure.StructureBoundingBox;
 import net.minecraft.world.gen.structure.StructureComponent;
 import net.minecraft.world.gen.structure.StructureMineshaftStart;
 import net.minecraft.world.gen.structure.StructureOceanMonument;
+import net.minecraft.world.gen.structure.StructureOceanMonumentPieces;
 import net.minecraft.world.gen.structure.StructureStart;
 import net.minecraft.world.gen.structure.StructureVillagePieces;
 import net.minecraft.world.gen.structure.WoodlandMansionPieces;
@@ -264,6 +268,11 @@ public final class ModernStructures {
         }
 
         @Override
+        protected StructureStart getStructureStart(int chunkX, int chunkZ) {
+            return new MonumentStart(this.world, this.rand, chunkX, chunkZ);
+        }
+
+        @Override
         public BlockPos getNearestStructurePos(World worldIn, BlockPos pos, boolean findUnexplored) {
             this.world = worldIn;
             return nearest(worldIn, pos, findUnexplored, 1024, Structures.OCEAN_MONUMENTS);
@@ -370,6 +379,81 @@ public final class ModernStructures {
         public BlockPos getNearestStructurePos(World worldIn, BlockPos pos, boolean findUnexplored) {
             this.world = worldIn;
             return nearest(worldIn, pos, findUnexplored, 1024, Structures.WOODLAND_MANSIONS);
+        }
+    }
+
+    /**
+     * StructureOceanMonument.StartMonument at 1.18.2's corner: OceanMonumentFeature.createTopPiece puts the building's
+     * corner 29 blocks west and north of the start chunk's corner, 1.12's 8 blocks further east and south (its
+     * population offset). The seed, the facing and the rooms are 1.12's and 1.18's alike. Saved under its own name:
+     * 1.12's start lays its rooms out again after every load at its own corner (its building saves no rooms), so a
+     * monument saved before this keeps that start and its place. After loading, the rooms are laid out again here
+     * from the same seed, as 1.12's and 1.18's starts do (OceanMonumentFeature.regeneratePiecesAfterLoad).
+     */
+    public static final class MonumentStart extends StructureStart {
+        private final java.util.Set<ChunkPos> processed = new java.util.HashSet<>();
+        private boolean created;
+
+        public MonumentStart() {
+        }
+
+        public MonumentStart(World world, Random random, int chunkX, int chunkZ) {
+            super(chunkX, chunkZ);
+            create(world, random, chunkX, chunkZ);
+        }
+
+        private void create(World world, Random random, int chunkX, int chunkZ) {
+            random.setSeed(world.getSeed());
+            long i = random.nextLong();
+            long j = random.nextLong();
+            random.setSeed((long) chunkX * i ^ (long) chunkZ * j ^ world.getSeed());
+            EnumFacing facing = EnumFacing.Plane.HORIZONTAL.random(random);
+            this.components.add(new StructureOceanMonumentPieces.MonumentBuilding(random, chunkX * 16 - 29, chunkZ * 16 - 29, facing));
+            this.updateBoundingBox();
+            this.created = true;
+        }
+
+        @Override
+        public void generateStructure(World worldIn, Random rand, StructureBoundingBox structurebb) {
+            if (!this.created) {
+                this.components.clear();
+                create(worldIn, rand, this.getChunkPosX(), this.getChunkPosZ());
+            }
+            super.generateStructure(worldIn, rand, structurebb);
+        }
+
+        @Override
+        public boolean isValidForPostProcess(ChunkPos pair) {
+            return !this.processed.contains(pair) && super.isValidForPostProcess(pair);
+        }
+
+        @Override
+        public void notifyPostProcessAt(ChunkPos pair) {
+            super.notifyPostProcessAt(pair);
+            this.processed.add(pair);
+        }
+
+        @Override
+        public void writeToNBT(NBTTagCompound tag) {
+            super.writeToNBT(tag);
+            NBTTagList list = new NBTTagList();
+            for (ChunkPos p : this.processed) {
+                NBTTagCompound c = new NBTTagCompound();
+                c.setInteger("X", p.x);
+                c.setInteger("Z", p.z);
+                list.appendTag(c);
+            }
+            tag.setTag("Processed", list);
+        }
+
+        @Override
+        public void readFromNBT(NBTTagCompound tag) {
+            super.readFromNBT(tag);
+            NBTTagList list = tag.getTagList("Processed", 10);
+            for (int i = 0; i < list.tagCount(); i++) {
+                NBTTagCompound c = list.getCompoundTagAt(i);
+                this.processed.add(new ChunkPos(c.getInteger("X"), c.getInteger("Z")));
+            }
         }
     }
 
@@ -583,6 +667,7 @@ public final class ModernStructures {
     /** Registers the starts this class saves under its own names. Once, in init. */
     public static void register() {
         MapGenStructureIO.registerStructure(MansionStart.class, "CavesAndCliffsMansion");
+        MapGenStructureIO.registerStructure(MonumentStart.class, "CavesAndCliffsMonument");
     }
 
     private static void shift(StructureStart start, int dy) {
