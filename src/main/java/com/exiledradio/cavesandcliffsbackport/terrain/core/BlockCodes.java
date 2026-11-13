@@ -164,7 +164,8 @@ public final class BlockCodes {
 
     static {
         material("plant", "dandelion", "poppy", "blue_orchid", "allium", "azure_bluet", "red_tulip", "orange_tulip",
-            "white_tulip", "pink_tulip", "oxeye_daisy", "cornflower", "lily_of_the_valley", "wither_rose",
+            "white_tulip", "pink_tulip", "oxeye_daisy", "cornflower", "lily_of_the_valley", "wither_rose", "mangrove_propagule",
+            "pink_petals", "cherry_sapling",
             "brown_mushroom", "red_mushroom", "sugar_cane", "sweet_berry_bush", "oak_sapling", "spruce_sapling",
             "birch_sapling", "jungle_sapling", "acacia_sapling", "dark_oak_sapling", "cave_vines", "cave_vines_plant",
             "spore_blossom", "big_dripleaf", "big_dripleaf_stem", "small_dripleaf", "moss_carpet", "azalea",
@@ -189,7 +190,7 @@ public final class BlockCodes {
     private static final java.util.Set<String> NOT_OCCLUDING = new java.util.HashSet<>(java.util.Arrays.asList(
         "ice", "spawner", "chest", "glass", "amethyst_cluster", "large_amethyst_bud", "medium_amethyst_bud",
         "small_amethyst_bud", "pointed_dripstone", "cactus", "bamboo", "dirt_path", "farmland", "lantern",
-        "big_dripleaf", "cobweb", "bamboo_sapling", "end_portal_frame", "snow"));
+        "big_dripleaf", "cobweb", "bamboo_sapling", "end_portal_frame", "snow", "mangrove_roots"));
 
     /** Motion-blocking blocks without a full collision cube. */
     private static final java.util.Set<String> NOT_STURDY = new java.util.HashSet<>(java.util.Arrays.asList(

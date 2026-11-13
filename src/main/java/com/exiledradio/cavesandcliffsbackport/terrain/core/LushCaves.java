@@ -157,8 +157,13 @@ final class LushCaves {
 
     static boolean dirt(int code) {
         // BlockTags.DIRT matches blocks: snowy grass, podzol and mycelium too.
-        return code == DIRT || sameBlock(code, GRASS_BLOCK) || sameBlock(code, PODZOL) || code == COARSE_DIRT
-            || sameBlock(code, MYCELIUM) || code == MOSS_BLOCK || name(code).equals("rooted_dirt");
+        // 1.19 adds mud and muddy mangrove roots (only the mangrove swamp has them).
+        if (code == DIRT || sameBlock(code, GRASS_BLOCK) || sameBlock(code, PODZOL) || code == COARSE_DIRT
+            || sameBlock(code, MYCELIUM) || code == MOSS_BLOCK) {
+            return true;
+        }
+        String n = name(code);
+        return n.equals("rooted_dirt") || n.equals("mud") || n.equals("muddy_mangrove_roots");
     }
 
     static boolean caveVines(int code) {

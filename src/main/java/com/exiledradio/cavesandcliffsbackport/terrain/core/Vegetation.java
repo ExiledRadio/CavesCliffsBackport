@@ -136,7 +136,7 @@ final class Vegetation {
                 case "orange_tulip": case "white_tulip": case "pink_tulip": case "oxeye_daisy": case "cornflower":
                 case "lily_of_the_valley": case "grass": case "fern": case "sweet_berry_bush": case "oak_sapling":
                 case "spruce_sapling": case "birch_sapling": case "jungle_sapling": case "acacia_sapling":
-                case "dark_oak_sapling":
+                case "dark_oak_sapling": case "cherry_sapling": case "pink_petals":
                     k[c] = K_BUSH;
                     break;
                 case "dead_bush":
@@ -443,6 +443,19 @@ final class Vegetation {
         l.add(new Placed("flower_swamp", patch(64, 6, 2, onlyInAir(simple(BLUE_ORCHID))), RARITY, 32, IN_SQUARE, HEIGHTMAP, mb, BIOME));
         l.add(new Placed("flower_plains", patch(64, 6, 2, onlyInAir(new SimpleBlock(new PlainFlowers()))),
             CUSTOM, 0, RARITY, 32, IN_SQUARE, HEIGHTMAP, mb, BIOME).mods(noiseThreshold(-0.8D, 15, 4)));
+        // 1.20.1: Feature.FLOWER, RandomPatchConfiguration(96, 6, 2, onlyWhenEmpty(simple block of a
+        // WeightedStateProvider: pink petals of each flower amount 1-4 and each horizontal facing, weight 1)),
+        // NoiseThresholdCountPlacement(-0.8, 5, 10), in square, heightmap, biome.
+        int[] petals = new int[32];
+        String[] facings = {"north", "east", "south", "west"};
+        for (int a = 1; a <= 4; a++) {
+            for (int f = 0; f < 4; f++) {
+                petals[((a - 1) * 4 + f) * 2] = register("pink_petals[facing=" + facings[f] + ",flower_amount=" + a + "]");
+                petals[((a - 1) * 4 + f) * 2 + 1] = 1;
+            }
+        }
+        l.add(new Placed("flower_cherry", patch(96, 6, 2, onlyInAir(weighted(petals))), CUSTOM, 0, IN_SQUARE, HEIGHTMAP, mb,
+            BIOME).mods(noiseThreshold(-0.8D, 5, 10)));
         l.add(new Placed("flower_meadow", patch(96, 6, 2, onlyInAir(new SimpleBlock(new MeadowFlowers()))), IN_SQUARE, HEIGHTMAP, mb, BIOME));
         Feature forestFlowers = new SimpleRandom(
             patch(96, 7, 3, onlyInAir(simple(LILAC[0]))),

@@ -79,7 +79,7 @@ public final class Decorator {
             case Biomes.CHERRY_GROVE:
                 return NewerFeatureTables.CHERRY_GROVE;
             default:
-                return FeatureTables.BIOMES[biome];
+                return biome < FeatureTables.BIOMES.length ? FeatureTables.BIOMES[biome] : new String[0][];
         }
     }
 
