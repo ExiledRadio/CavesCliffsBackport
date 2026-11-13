@@ -40,30 +40,25 @@ public final class Owners {
     }
 
     /**
-     * The owner recorded in Core's table for the blocks of a stream that is switched off. It is never a loaded
-     * mod, so Core answers "nobody provides it" and later updates register their own copies.
-     */
-    public static final String SWITCHED_OFF = com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.MOD_ID + ":switched_off";
-
-    /**
-     * Tells Core's ownership table about one stream's blocks, from pre-init.
+     * Tells Core's ownership table about one stream's blocks, from pre-init: they are ours, and we register them
+     * exactly while the stream is on (Core 1.2.0's per-name {@code provides}). With the stream off, Core answers
+     * "nobody provides them" and later updates register their own copies; turned on again in a world that has
+     * those copies, Core renames them to ours ({@code ownership.CopyRemapping}).
      *
-     * <h2>Why like this</h2>
-     * Core's table is first-declared-wins, later updates declare our names on our behalf (Rule 1 shims), and
-     * its {@code provides} switch is one per mod, while ours is one per stream. So each stream claims its names
-     * itself, before any later update does (this mod loads {@code before:} them), and a switched-off stream
-     * claims them for {@link #SWITCHED_OFF}. Core's per-name switch is requested in CORE_REQUESTS 10.
+     * <p>Core's table lists tuff and the copper set for us already; a later update's claim never takes our names,
+     * whatever the load order.
      */
     public static void declare(boolean enabled, String... names) {
-        String owner = enabled ? com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.MOD_ID : SWITCHED_OFF;
+        String us = com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.MOD_ID;
         for (String n : names) {
             String had = com.exiledradio.backportcore.ownership.BlockOwnership.owner(n);
-            if (had != null && !had.equals(owner)) {
+            if (had != null && !had.equals(us)) {
                 com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.LOGGER.warn(
                         "Block {} was declared for {} before this mod's pre-init; Core keeps that.", n, had);
             }
         }
-        com.exiledradio.backportcore.ownership.BlockOwnership.declare(owner, names);
+        com.exiledradio.backportcore.ownership.BlockOwnership.declare(us, names);
+        com.exiledradio.backportcore.ownership.BlockOwnership.provides(us, () -> enabled, names);
     }
 
     /** @return true if the owning mod is installed, so its block is used and ours is never registered */

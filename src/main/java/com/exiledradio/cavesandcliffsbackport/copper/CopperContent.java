@@ -149,6 +149,9 @@ public final class CopperContent {
     /** From the mod's pre-init: tells Core which blocks are ours (or, switched off, that nobody provides them). */
     public static void preInit() {
         Owners.declare(enabled(), blockNames());
+        // Core's item table lists copper's items as ours; they exist exactly while this stream is on.
+        final boolean on = enabled();
+        com.exiledradio.backportcore.ownership.ItemOwnership.provides(() -> on, "copper_ingot", "raw_copper");
     }
 
     private static <B extends Block> B add(IForgeRegistry<Block> r, String name, B block, int level) {

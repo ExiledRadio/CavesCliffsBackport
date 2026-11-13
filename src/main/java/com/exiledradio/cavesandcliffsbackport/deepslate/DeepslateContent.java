@@ -6,7 +6,7 @@ import com.exiledradio.cavesandcliffsbackport.common.BlockBasic;
 import com.exiledradio.cavesandcliffsbackport.common.BlockCCOre;
 import com.exiledradio.cavesandcliffsbackport.common.BlockCCSlab;
 import com.exiledradio.cavesandcliffsbackport.common.BlockCCStairs;
-import com.exiledradio.cavesandcliffsbackport.common.BlockCCWall;
+import com.exiledradio.backportcore.block.ModernWall;
 import com.exiledradio.cavesandcliffsbackport.common.Content;
 import com.exiledradio.cavesandcliffsbackport.common.ModSounds;
 import com.exiledradio.cavesandcliffsbackport.common.Owners;
@@ -105,7 +105,7 @@ public final class DeepslateContent {
             SLABS.put(set, half);
             DOUBLE_SLABS.put(set, dbl);
             // 162 actual states drawn from one multipart file: one model name for all of them.
-            Content.multipart(add(r, set + "_wall", new BlockCCWall(model), "pickaxe"));
+            Content.multipart(add(r, set + "_wall", new ModernWall(model), "pickaxe"));
         }
         deepslate.dropsWithoutSilkTouch(BLOCKS.get("cobbled_deepslate").getDefaultState());
         add(r, "chiseled_deepslate", new BlockBasic(Material.ROCK, dark, deepslateSound, 3.5F, 6.0F), "pickaxe");

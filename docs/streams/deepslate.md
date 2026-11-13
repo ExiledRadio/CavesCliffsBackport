@@ -1,7 +1,7 @@
 # Stream D: deepslate, stone and ores
 
 Package `deepslate`, shared building blocks in `common` (`BlockBasic`, `BlockCCStairs`, `BlockCCSlab`,
-`BlockCCWall`, `ModSounds`). Config `deepslate`: `enabled`, `rawOreDrops`, `generate`, `layerTop` (16),
+`ModSounds`; walls are Backport Core's `block.ModernWall`). Config `deepslate`: `enabled`, `rawOreDrops`, `generate`, `layerTop` (16),
 `layerFull` (8), `tuff`, `dimensions` ({0}), `skipWorldTypes` (flat, debug).
 
 ## Changelog section
@@ -42,7 +42,7 @@ Package `deepslate`, shared building blocks in `common` (`BlockBasic`, `BlockCCS
 *   **Deepslate redstone ore** is one block with a `lit` property (light 9), as current Java has it.
 *   **Slabs** are 1.12's two blocks: `<name>_slab` (half, `half=bottom|top`) and `<name>_double_slab`, the
     family's released naming. A one-value `variant=default` property satisfies 1.12's slab code.
-*   **Walls** (`common/BlockCCWall`) are their own block: each side none, low or tall, a post unless the wall
+*   **Walls** (Backport Core's `block.ModernWall`, moved there from this mod's `BlockCCWall` in Core 1.2.0) are their own block: each side none, low or tall, a post unless the wall
     runs straight; tall sides under a solid block or another wall; all of it actual state (meta 0); 1.5-high
     collision; one model name for all 162 states (VintageFix-safe).
 *   **Raw ore drops** replace the ore item in `HarvestDropsEvent` at high priority, so auto-smelting and
