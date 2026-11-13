@@ -57,6 +57,13 @@ public final class Pipeline {
         public final byte[] surfaceBiomes;
         /** The chunk's stored (3D, quart) biomes, BiomeSource.fillChunk's layout. */
         public final byte[] quarts;
+        /** Ticks and post-processing marks decoration left in this chunk ({@link Marks}). */
+        final Marks marks = new Marks();
+        /**
+         * Once finished: every position 1.18.2 updates when the chunk starts ticking ({@link Marks} entries), the
+         * decoration's marks and the aquifer fluids' ({@link FluidMarks}).
+         */
+        public int[] updates = new int[0];
         boolean decorated;
         boolean finished;
         /** Bumped by every decoration that writes into this chunk; {@code saved} is its value at the last store write. */
@@ -165,8 +172,14 @@ public final class Pipeline {
             long t = System.nanoTime();
             filler.fill(p.cx, p.cz, p.blocks, p.beard);
             p.beard = null;
-            surface.build(p.cx, p.cz, p.blocks);
-            carvers.carve(p.cx, p.cz, p.blocks);
+            // The surface's fluids are marked here; the noise's and carvers' aquifer fluids when the chunk is finished.
+            surface.marks = p.marks;
+            try {
+                surface.build(p.cx, p.cz, p.blocks);
+                carvers.carve(p.cx, p.cz, p.blocks);
+            } finally {
+                surface.marks = null;
+            }
             Region.worldgenHeights(p.blocks, p.worldgen);
             Region.primeHeightmaps(p.blocks, p.heights);
             int bx = p.cx << 4;
@@ -191,6 +204,8 @@ public final class Pipeline {
     private final char[][] b25 = new char[Region.CHUNKS][];
     private final int[][] w25 = new int[Region.CHUNKS][];
     private final int[][] h25 = new int[Region.CHUNKS][];
+    private final Marks[] m25 = new Marks[Region.CHUNKS];
+    private final FluidMarks fluidMarks;
     /** Held chunks, least recently used first. */
     private final LinkedHashMap<Long, Proto> held = new LinkedHashMap<>(1024, 0.75F, true);
     private final int cap;
@@ -237,6 +252,7 @@ public final class Pipeline {
         };
         this.own = new Kit();
         this.decorator = new Decorator(noise, new BiomeSource(noise, new ColumnCache(noise), climate));
+        this.fluidMarks = new FluidMarks(noise);
         this.cap = Math.max(cap, 7 * 7 + 64);
         if (threads > 0) {
             final AtomicInteger n = new AtomicInteger();
@@ -410,9 +426,21 @@ public final class Pipeline {
             c.finished = true;
             c.changes++;
         }
+        c.updates = updates(c);
         release(cx, cz);
         trim();
         return c;
+    }
+
+    /** The finished chunk's updates: decoration's marks, then the aquifer fluids' that can move. */
+    private int[] updates(Proto c) {
+        return fluidMarks.finish(c.blocks, blocksOf(c.cx, c.cz - 1), blocksOf(c.cx, c.cz + 1), blocksOf(c.cx - 1, c.cz),
+                blocksOf(c.cx + 1, c.cz), c.cx, c.cz, c.marks);
+    }
+
+    private char[] blocksOf(int cx, int cz) {
+        Proto p = held.get(key(cx, cz));
+        return p != null && p.task.state.get() == Task.DONE && p.task.failure == null ? p.blocks : null;
     }
 
     /**
@@ -450,13 +478,14 @@ public final class Pipeline {
                 b25[i] = p.blocks;
                 w25[i] = p.worldgen;
                 h25[i] = p.heights;
+                m25[i] = p.marks;
                 if (dx >= -1 && dx <= 1 && dz >= -1 && dz <= 1) {
                     p.changes++;
                 }
             }
         }
         long t = System.nanoTime();
-        region.set(cx, cz, b25, w25, h25);
+        region.set(cx, cz, b25, w25, h25, m25);
         decorator.decorate(region);
         decorateNanos += System.nanoTime() - t;
         decorated++;
@@ -552,11 +581,13 @@ public final class Pipeline {
     // ---------------------------------------------------------------------------------------------
     // Saved chunks
 
-    private static final int FORMAT = 1;
+    /** 2: the decoration marks follow (a count, then the entries); 1 (without them) is still read. */
+    private static final int FORMAT = 2;
+    private static final int FIXED = 4 * 4 + 1 + VOLUME * 2 + (512 + Region.HEIGHTMAPS * 256) * 4 + 256 + QUARTS;
 
     /** A held chunk as bytes, for a {@link Store}. */
     public static byte[] encode(Proto p) {
-        ByteBuffer b = ByteBuffer.allocate(4 * 4 + 1 + VOLUME * 2 + (512 + Region.HEIGHTMAPS * 256) * 4 + 256 + QUARTS);
+        ByteBuffer b = ByteBuffer.allocate(FIXED + 4 + p.marks.size() * 4);
         b.putInt(FORMAT).putInt(p.cx).putInt(p.cz).putInt(Math.max(1, p.changes));
         b.put((byte) ((p.decorated ? 1 : 0) | (p.finished ? 2 : 0)));
         b.asCharBuffer().put(p.blocks);
@@ -564,13 +595,21 @@ public final class Pipeline {
         b.asIntBuffer().put(p.worldgen).put(p.heights);
         b.position(b.position() + (512 + Region.HEIGHTMAPS * 256) * 4);
         b.put(p.surfaceBiomes).put(p.quarts);
+        b.putInt(p.marks.size());
+        for (int i = 0; i < p.marks.size(); i++) {
+            b.putInt(p.marks.get(i));
+        }
         return b.array();
     }
 
     /** A chunk {@link #encode} wrote, filled and ready (null for bytes of another format). */
     public Proto decode(byte[] data) {
         ByteBuffer b = ByteBuffer.wrap(data);
-        if (data.length != 4 * 4 + 1 + VOLUME * 2 + (512 + Region.HEIGHTMAPS * 256) * 4 + 256 + QUARTS || b.getInt() != FORMAT) {
+        if (data.length < FIXED) {
+            return null;
+        }
+        int format = b.getInt();
+        if (!(format == 1 && data.length == FIXED || format == FORMAT && data.length >= FIXED + 4)) {
             return null;
         }
         Proto p = new Proto(b.getInt(), b.getInt(), this);
@@ -584,6 +623,15 @@ public final class Pipeline {
         b.asIntBuffer().get(p.worldgen).get(p.heights);
         b.position(b.position() + (512 + Region.HEIGHTMAPS * 256) * 4);
         b.get(p.surfaceBiomes).get(p.quarts);
+        if (format == FORMAT) {
+            int n = b.getInt();
+            if (n < 0 || data.length != FIXED + 4 + n * 4) {
+                return null;
+            }
+            for (int i = 0; i < n; i++) {
+                p.marks.add(b.getInt());
+            }
+        }
         p.task.state.set(Task.DONE);
         return p;
     }

@@ -78,6 +78,30 @@ mod (Dregora without it still has Core, which V&P needs).
 5.  The client test waited forever under Custom Main Menu (RLCraft) and threw when extended height was refused; the
     height coremod can dump the classes it patches (`-Dcavesandcliffsbackport.height.dump=<dir>`).
 
+6.  **Quark's stone revamp (marble, limestone, jasper, slate and its granite, diorite and andesite clusters),
+    underground biomes and varied dungeons did not generate in `cavesandcliffs` worlds** (branch `cc118-fluids-quark`):
+    Quark runs them in the DIRT ore event of 1.12's biome decorator and the DUNGEON population event, which the 1.18
+    terrain never fired. The generator's populate now fires DUNGEON, `DecorateBiomeEvent.Pre`/`Post`,
+    `OreGenEvent.Pre`/`Post` and the DIRT `GenerateMinable` once per chunk (`terrain/ModDecoration`,
+    `docs/streams/generator.md`), and the 1.18 granite, diorite and andesite blobs step aside where Quark places its own
+    (Quark denies 1.12's there too). Family rig (`G:\VBPTest\cc118fq-rig`, a copy of `family-all`: the family's
+    release jars, `FamilyProbe` census of 41x41 chunks at spawn, seed 171, plus a region scan by stone variant), per
+    chunk, Quark r1.6-179 and QuarkRotN r1.6-192 giving the same:
+
+    | Per chunk | C&C world, before | C&C world, now | Default world |
+    | --- | --- | --- | --- |
+    | marble / limestone / slate | 0 / 0 / 0 | 303.6 / 60.8 / 0 | 79.5 / 90.7 / 179.1 |
+    | granite / diorite / andesite (stone variants) | 969 / 1023 / 1060 (1.18's) | 33.7 / 5.9 / 348.8 | 238.8 / 0 / 476.0 |
+    | underground biomes: elder prismarine / biome cobblestone / glowcelium | 0 / 0 / 0 | 4.15 / 3.05 / 0 | 3.05 / 273.5 / 1.88 |
+    | cobwebs / mossy cobblestone (spider, overgrown biomes) | 0.84 / 1.15 | 2.13 / 5.39 | 0.43 / 4.25 |
+    | spawners (varied dungeons) | 0.03 | 0.05 | 0.01 |
+
+    The C&C area is plains and forest (73%), the Default one taiga, extreme hills and swamp: Quark's stones and
+    underground biomes follow their biome types (marble plains, slate cold, the icy and lava biomes' cobblestone cold
+    and mesa), so the mix differs and the totals are of one order. Speleothems, crystals and roots as before. Default
+    worlds: the 21x21-chunk census before and after this change is identical but for 1-9 blocks of dirt, leaves and logs (run to
+    run noise), Quark's blocks exactly. No exception in any log.
+
 ## Not fixed (findings)
 
 *   **OptiFine (Dregora Shaders): extended height refuses**, safely (no crash): OptiFine G5 rewrites
@@ -85,11 +109,7 @@ mod (Dregora without it still has Core, which V&P needs).
     client sites not found. Its classes as our transformer sees them are dumped in
     `G:\VBPTest\cc-packs\study\optifine\dump`. Supporting it means alternate patterns for those methods plus OptiFine's
     own chunk cache and shadow pass; a stream of its own. The 1.17 content works with OptiFine in Default worlds.
-*   **Quark's stone revamp (marble, limestone, jasper, slate) and underground biomes do not generate in
-    `cavesandcliffs` worlds**: Quark runs them inside the ore event of 1.12's biome decorator, which the 1.18 terrain
-    does not use (1.18's own granite, diorite, andesite, tuff and cave biomes are there instead). Its speleothems,
-    crystals and cave roots (world generators) do generate. In Default worlds everything of Quark's generates beside
-    ours. Overlaps, not clashes: Quark's candles and ours, crystal caves and geodes, speleothems and dripstone,
+*   Overlaps, not clashes: Quark's candles and ours, crystal caves and geodes, speleothems and dripstone,
     underground biomes and lush caves.
 *   **Biomes O' Plenty's decoration** (trees and plants in its biomes) does not run in `cavesandcliffs` worlds for the
     same reason; its biomes appear only where the 1.18 map names one (meadow).

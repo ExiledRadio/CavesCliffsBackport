@@ -23,6 +23,12 @@ feature the core has ported, block for block what the core computes, which is va
     the world, so features crossing its edge are not cut after a restart.
 *   Generation is fast: the terrain is built on worker threads ahead of need (`height.terrainThreads`, 0 picks a
     number from the computer's cores).
+*   **Quark's world generation works in Caves & Cliffs worlds**: marble, limestone, jasper, slate and its granite,
+    diorite and andesite clusters, underground biomes and varied dungeons (they hang on 1.12's ore and dungeon
+    events, which now fire there). Where Quark places its own granite, diorite and andesite, the 1.18 blobs of them step
+    aside, as 1.12's do in a Default world.
+*   **Springs, waterfalls and lava falls flow.** Water and lava springs in cave walls and the edges of underground
+    lakes and lava pools start flowing when you come near, as in 1.18, instead of staying still.
 *   Caves & Cliffs worlds created before this version keep the terrain they were made with (1.12's, with stone below
     y 0), so no seam runs through them.
 
@@ -63,6 +69,67 @@ again). The one piece of decoration state that is not a chunk's, the order glow 
 (vanilla's `MultifaceBlock.DIRECTIONS`, shuffled by every spread in the JVM), is saved beside them (`state.dat`).
 So a world stopped and started again decorates the chunks beyond its explored area exactly as one that never
 stopped (`RestartSelfTest`), and the cap no longer cuts features.
+
+**Fluid ticks and post-processing** (`core/Marks`, `core/FluidMarks`, `FluidUpdates`). What vanilla 1.18.2 does to a
+generated chunk after its blocks are placed, none of it a block change during generation:
+- *Scheduled fluid ticks, delay 0* (`WorldGenLevel.scheduleTick(pos, fluid, 0)`): `SpringFeature` after placing its
+  fluid; `GeodeFeature` at every fluid next to a crack it opens. (`LakeFeature` also schedules a tick of the air block
+  in a lake's top half, which does nothing; `StructurePiece` and the Nether bridge schedule their placed fluids: 1.12's
+  structures place their own.)
+- *Post-processing marks* (`ChunkAccess.markPosForPostprocessing`), answered by `LevelChunk.postProcessGeneration` when
+  the chunk starts ticking: the fluid there ticks (`FluidState.tick`), any other block gets
+  `Block.updateFromNeighbourShapes`. Marked by `NoiseBasedChunkGenerator.doFill` and `WorldCarver.carveBlock` (a fluid
+  the aquifer answered with `shouldScheduleFluidUpdate`), `SurfaceSystem`'s block column (every fluid the surface rules
+  set: the swamps' water, water over holes in oceans), `WorldGenRegion.setBlock` of a block with `hasPostProcess`
+  (brown and red mushrooms, magma: `BlockCodes.F_POST`), `Feature.markAboveForPostProcessing` (the two blocks over a
+  lake's air and barrier and over a disk), glow lichen (`GlowLichenFeature` and its spread). `Blender`'s marks are for
+  chunks from older versions; there are none.
+The decoration's marks are recorded by `Region.mark` / `markAbove` into each chunk's `Marks` (kept in the held-chunk
+store, format 2), the surface's on the worker. The aquifer's are found after the fact: for every fluid the aquifer
+answers, the flag is the same function of the position (the two nearest aquifer centers' squared distances differ by
+at most 44, i.e. similarity at least FLOWING_UPDATE_SIMULARITY; false below y -54, where the global lava answers first),
+so `FluidMarks.scan` computes it only for the water and lava sources of the finished chunk that have a neighbor below
+or beside they can flow into (anything not their own fluid that does not block motion; for lava, water only below).
+Marks that cannot change anything are left out the same way (an enclosed fluid's tick does nothing; rock, ore and dirt
+keep their shape): what is kept is a fluid that can flow, sand or gravel over air or fluid, blocks that are not full
+obstacles (plants, glow lichen) and the `hasPostProcess` blocks. In seed 42's 12x12 at 0, 0 that is 497 positions, 3.5
+per chunk (17 lava and 7 water springs, 58 exposed aquifer and surface fluids, 243 glow lichen, 169 magma); 30 or
+fewer in any chunk of four test areas.
+
+1.18 runs both once the 3x3 chunks around are complete (`ChunkMap.prepareTickingChunk`). Here the generator hands the
+chunk's list to `FluidUpdates`, which runs it at the end of the world tick after the chunk and its eight neighbors are
+loaded and the four populations that write into it are done; until then the list waits with the chunk (in its NBT,
+`cavesandcliffsbackport.PendingUpdates`, if it is saved first). Per position: a still or flowing liquid gets
+`BlockDynamicLiquid.updateTick` at once, on the still state (it spreads the source down and to the sides as
+`FlowingFluid.tick` does and leaves the source still and unmixed, as 1.18's tick does); a plant that cannot stay is
+removed without a drop (1.18's `updateShape` gives air); anything else gets a neighbor update (sand and gravel over a
+lake fall after 2 ticks, as `FallingBlock.updateShape` schedules them; glow lichen drops faces without support).
+
+**Other mods' decoration events** (`ModDecoration`). 1.12's population and biome decorator fire Forge events that
+other mods generate in; the 1.18 features replace both, so none fired. `populate` now fires, once per chunk after the
+structures and before the animals, the ones the 1.18 terrain has a counterpart for, in 1.12's order and at 1.12's
+positions (the chunk corner; the biome's decorator holds that `chunkPos` meanwhile): `PopulateChunkEvent.Populate`
+DUNGEON, `DecorateBiomeEvent.Pre`, `OreGenEvent.Pre`, `OreGenEvent.GenerateMinable` DIRT, `OreGenEvent.Post`,
+`DecorateBiomeEvent.Post`. The answers are not used (1.18 placed its own monster rooms and dirt). They get a random of
+their own, seeded from the chunk, so the animals after them are the same whatever draws from it. Not fired: the other
+ore types (a mod that denies one to place its own would place it beside 1.18's ores) and `DecorateBiomeEvent.Decorate`
+(Biomes O' Plenty grows its trees in TREE; see Dynamic Trees under pack compatibility). Each Quark world feature, in
+r1.6-179 and QuarkRotN r1.6-192 alike:
+- the stone revamp (`RevampStoneGen`: marble, limestone, jasper, slate, and granite, diorite and andesite clusters) and
+  the underground biomes (`UndergroundBiomes`) run in the DIRT `GenerateMinable` on the ore bus, with the event's world
+  and chunk; they write the 1.12 decoration window (+8) and keep their configured y ranges (stones 20-80, or to 128 for
+  granite, diorite and andesite in the packs; underground biomes 10-40; nothing below 0). The stones replace only stone,
+  so they sit in the stone above y 0 and never in deepslate. The underground biomes decorate with `world.rand`, so a
+  second DIRT event for a chunk would decorate it twice: it fires once;
+- varied dungeons (`VariedDungeons`) run in DUNGEON with the event's random;
+- speleothems, crystal caves, cave roots, monster boxes, the archaeologist, fairy rings, pirate ships and clay are
+  `IWorldGenerator`s and already ran; big swamp mushrooms (`DECORATE` BIG_SHROOM, which current Forge fires without a
+  position) and bigger caves (experimental, off) are not used.
+`RevampStoneGen` denies 1.12's GRANITE, DIORITE and ANDESITE ore events for each of those stones it generates itself;
+`ModDecoration.quarkStones` asks it the same (`ModuleLoader.isFeatureEnabled`, `StoneInfo.enabled`) and the decoration
+gate (`Decorator.TreeGate` kinds GRANITE, DIORITE, ANDESITE) leaves out 1.18's `ore_granite_*`, `ore_diorite_*` and
+`ore_andesite_*` in those worlds, every other feature keeping its own seed. Backport Core's duplicate rules (Quark's
+basalt off beside the Nether backport's) are untouched: they are Core's.
 
 **Biomes for 1.12** (`BiomeMap`). A biome some installed mod registers under the 1.18 name (any namespace but
 `minecraft`) is used first; otherwise the nearest 1.12 biome: the peaks and slopes are 1.12's ice mountains (goats spawn
@@ -194,6 +261,16 @@ had chunks when this generator first saw it).
     plain ocean's chunk, 2447 far from any warm ocean, `OceanKind` wrong at 292 samples). With Update Aquatic
     `cc118-terrain`: 20 pass, 0 fail (coral 3415, kelp 5315, seagrass 5705, exactly 1.18's; 415 bubble columns, all
     on magma).
+*   Fluid ticks and post-processing (`TerrainFluidSelfTest`, in `height,terrain`): 9x9 chunks generated at chunk
+    -250, 260; 39 of the inner 49 wait with updates until their neighbors load, and a ring chunk's list is written into
+    its chunk NBT; after the world tick's run every inner chunk's list is gone, 8 of 8 lava and water springs flowed
+    into their hole and 8 of 8 aquifer edges (marks without a spring) flowed. `MarkStats <seed> <cx> <cz> 12` over four 12x12
+    areas (seeds 42 twice, 12345, 8675309): 3.5 to 7.1 positions per chunk, at most 34 in one chunk. TerrainCheck: ALL
+    IDENTICAL; `PipelineBench 42 16 0`: checksum d70ea2ca54f75550, unchanged.
+*   Other mods' decoration events: the family rig (`docs/streams/packcompat.md`, fixed item 6), Quark r1.6-179 and
+    QuarkRotN r1.6-192 in Caves & Cliffs and Default worlds. `TreeGateCheck 42 8`: with the stone kinds denied no
+    diorite or andesite is left (114,434 without) and the trees are unchanged. (Its tree check fails at seed 42, side 8
+    on `main` as well: 226 leaves above y 40 with every tree denied.)
 *   `sh tools/terrain/restart.sh` (`RestartSelfTest`, three servers in a Caves & Cliffs world): 12x12 chunks at
     2000, 2000 and then the 12x12 east of them in one run, against the first area, a stop, and the second area after
     the restart: every finished chunk (305, with the few populating generates) identical. Without the store (the
@@ -219,6 +296,7 @@ a 24x24 square of chunks at chunk 1000, 1000 generated and populated after an 8x
 
 | Cores | Vanilla 1.12 (coremod off) | 1.18 terrain | vs vanilla's time per chunk |
 | --- | --- | --- | --- |
+| 16 E-cores, with fluid updates and the decoration events (2026-11-12, cc118-fluids-quark) | 11.94 ms/chunk, 84 chunks/s | **5.38 ms/chunk, 186 chunks/s** | **x0.45** |
 | 16 E-cores, with the structure beard, held-chunk store and 3D biomes (2026-11-12, cc-gaps) | 11.95 ms/chunk, 84 chunks/s | **5.24 ms/chunk, 191 chunks/s** | **x0.44** |
 | 16 E-cores (FFFF0000; 6 workers), with trees and vegetation | 11.63 ms/chunk, 86 chunks/s | **5.13 ms/chunk, 195 chunks/s** | **x0.44** |
 | 16 E-cores, before trees and vegetation | 9.76 ms/chunk, 102 chunks/s | 5.99 ms/chunk, 167 chunks/s | x0.61 |
@@ -230,6 +308,12 @@ is the same for it); ours too varies by about 10% between sessions. Where the se
 decorations per generated chunk in a square), waiting for workers 0.5 ms, writing the 1.12 chunk (sections, structure
 starts, sky light) 2.3 ms; the workers' fill + surface + carvers 5.2 ms per chunk on a busy E-core. Saving: 0.5 ms/chunk
 against vanilla's 1.1 (vanilla's population leaves scheduled block ticks to write; ours none).
+
+With fluid updates and the decoration events (cc118-fluids-quark): the same within the sessions' spread (5.35-5.52
+ms/chunk; decoration 1.40-1.59, write 1.08-1.22; saving 0.47 ms/chunk with the waiting lists in the chunks' NBT). The
+marks cost nothing measurable in the pipeline (`PipelineBench 42 16 0` 7.0 ms/chunk on a busy machine, same checksum).
+Running the updates happens on world ticks, not in the bench: in the fluid self-test 265 chunks' updates (198 fluid
+ticks) took 19.2 ms, 0.07 ms per chunk.
 
 With the gaps closed (cc-gaps; the same session's run of the code before them gave 5.76 ms/chunk median against
 vanilla's 11.90, x0.48, on a busier machine): `beard_ms` 1.07-1.16 per generated chunk on the server thread, almost
@@ -282,3 +366,9 @@ same with 8 workers (unpinned): 2.5 ms/chunk, same checksum. (Before trees and v
     in the same order; not needed for the targets.
 *   **Waterlogged blocks below 0 or above 255** need Backport Core's own store (stream C); until then they are dry.
 *   OptiFine and the Dregora packs were not run with the 1.18 terrain (stream H tested the height there).
+*   **Fluid updates are decided when the chunk is finished**, before 1.12's population: a marked aquifer fluid that a
+    1.12 structure piece (a mineshaft corridor) or another mod's generator opens later stays still, where 1.18's
+    structures, placed during decoration, would let it flow. A fluid in a waterlogged block (Backport Core's
+    waterlogging) gets no tick.
+*   **Quark's big swamp mushrooms** (`DECORATE` BIG_SHROOM) are not fired: current Forge fires that event without a
+    position, so they never generate in a Default world either.

@@ -705,6 +705,7 @@ final class LushCaves {
                         return false;
                     }
                     level.set(x, y, z, s1);
+                    level.mark(x, y, z, Marks.POST);
                     if (random.nextFloat() < 0.5F) {
                         spreadFromFaceTowardRandomDirection(level, s1, x, y, z, d, random);
                     }
@@ -756,6 +757,11 @@ final class LushCaves {
 
     private static boolean spreadToFace(Region level, int x, int y, int z, int d) {
         int s = stateForPlacement(level, level.get(x, y, z), x, y, z, d);
-        return s >= 0 && level.set(x, y, z, s);
+        if (s < 0) {
+            return false;
+        }
+        // The feature's spread marks every face it places (markPostProcess true).
+        level.mark(x, y, z, Marks.POST);
+        return level.set(x, y, z, s);
     }
 }

@@ -72,7 +72,7 @@ final class DynamicTreesGate implements Decorator.TreeGate {
 
     @Override
     public boolean allows(int cx, int cz, int kind) {
-        if (kind == CACTUS && this.vanillaCactus) {
+        if (kind != TREES && kind != CACTUS || kind == CACTUS && this.vanillaCactus) {
             return true;
         }
         try {

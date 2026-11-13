@@ -106,6 +106,7 @@ final class Misc {
             }
             if (j == 4 && k == 1) {
                 level.set(x, y, z, fluid);
+                level.mark(x, y, z, Marks.TICK);
                 return true;
             }
             return false;
@@ -158,6 +159,7 @@ final class Misc {
                                 for (int t : targets) {
                                     if (sameBlock(t, block)) {
                                         level.set(i1, i2, j1, state);
+                                        level.markAbove(i1, i2, j1);
                                         flag = true;
                                         flag3 = true;
                                         break;

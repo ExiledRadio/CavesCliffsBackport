@@ -127,6 +127,19 @@ public final class SurfaceBuilder {
         return new DoubleNoise(p.fromHashOf("minecraft:" + name), firstOctave, amplitudes);
     }
 
+    /**
+     * Where the fluids the surface rules place are marked for post-processing (SurfaceSystem's BlockColumn.setBlock
+     * marks every fluid it sets: the swamps' water, the oceans' water over a hole), or null.
+     */
+    Marks marks;
+
+    /** A fluid set by the surface rules (or topMaterial for a carver) at chunk-local x, z: marked. */
+    void markFluid(int localX, int y, int localZ, int code) {
+        if (marks != null && (code == WATER || code == LAVA)) {
+            marks.add(Marks.pack(localX, y, localZ, Marks.POST));
+        }
+    }
+
     // ---- block access ----
 
     private int get(int y) {
@@ -318,6 +331,7 @@ public final class SurfaceBuilder {
                             set(y, r);
                         } else {
                             b[at + y] = (char) r;
+                            markFluid(column >> 4, y, column & 15, r);
                         }
                     }
                 }

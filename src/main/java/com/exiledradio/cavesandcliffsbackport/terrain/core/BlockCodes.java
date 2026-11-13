@@ -119,6 +119,11 @@ public final class BlockCodes {
 
     /** Material.REPLACEABLE_PLANT (grass, ferns, dead bush, vines, glow lichen, hanging roots, the tall plants). */
     public static final int F_REPLACEABLE_PLANT = 4096;
+    /**
+     * BlockBehaviour.Properties.hasPostProcess: WorldGenRegion.setBlock marks the position for post-processing
+     * (the two small mushrooms and the magma block in 1.18.2's Blocks).
+     */
+    public static final int F_POST = 8192;
 
     /** How many codes exist so far. */
     public static int count() {
@@ -254,6 +259,9 @@ public final class BlockCodes {
         }
         if (name.endsWith("_carpet")) {
             f |= F_BOTTOM_FULL;
+        }
+        if (name.equals("brown_mushroom") || name.equals("red_mushroom") || name.equals("magma_block")) {
+            f |= F_POST;
         }
         return f;
     }
