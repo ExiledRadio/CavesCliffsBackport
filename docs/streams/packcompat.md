@@ -51,8 +51,9 @@ mod (Dregora without it still has Core, which V&P needs).
     -64 and 304) with RenderLib, Entity Culling, Better Foliage, ChunkAnimator, FBP and the rest.
 *   **Dregora: works mechanically, Phosphor (Java 8) or Alfheim (Cleanroom) removed, but it is not Dregora.** The
     `cavesandcliffs` world type replaces OTG's terrain, so the DregoraRL preset, its biomes and OTG structures are
-    not in that world. A 80x80-chunk pregen on the Java 8 server ran clean after the two fixes below; stream H ran
-    the Cleanroom clients (Celeritas 22/0, Fast 15/0).
+    not in that world. An 80x80-chunk pregen on the Java 8 server ran clean after the two fixes below. The Cleanroom
+    clients (stream H's copies, Alfheim removed, this branch's jar and the current Core): Celeritas 22/0 (101 sites),
+    Fast 15/0 (105 sites), and both now log "Music: 1.18's tracks join the game music."
 
 ## Fixed here
 
@@ -97,6 +98,11 @@ mod (Dregora without it still has Core, which V&P needs).
     get a slightly different biome layout (grass, sand and snow within 1-4% at spawn, but different), so a seam can
     show at the edge of explored land. Dregora (OTG) is not affected. A choice for the family: keep 1.12's layers in
     worlds created before the backport was added, as extended height does.
+*   **What removing Phosphor costs** (RLCraft server, Default world, seed 1718, a fresh 48x48-chunk pregen at
+    2000, 2000, alternating, twice each): 61 and 58 s without Phosphor, 39 and 37 s with it (38-40 against 59-62
+    chunks/s). In `cavesandcliffs` worlds without Phosphor the same pregen took 30-40 s (58-77 chunks/s): the 1.18
+    generator writes its chunks' sky light itself, so the extended world is no slower than RLCraft's Default world with
+    Phosphor.
 *   **Alfheim and Phosphor** stay incompatible: both pack y into 8 bits of a 64-bit position (Phosphor: z 26, x 26,
     y 8, light 4; a y-overflow bit), keep per-section flags in 16-bit masks, and `@Overwrite` the chunk light
     methods this coremod patches. A compatible path means rewriting their lighting engines' encoding and section
