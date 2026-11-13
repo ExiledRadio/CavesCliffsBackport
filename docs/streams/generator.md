@@ -235,6 +235,16 @@ had chunks when this generator first saw it).
     `eclipse/mods`: their ruins and portals have 1.18's variants (96 and 64, 0 wrong), an outpost's chunk gets a
     beard, and Core's `/locate` for shipwreck, both ocean ruins, buried treasure, ruined portal (and desert) and
     pillager outpost each names a 1.18 start of it.
+*   Fluid ticks and post-processing (`TerrainFluidSelfTest`, in `height,terrain`): 9x9 chunks generated at chunk
+    -250, 260; 39 of the inner 49 wait with updates until their neighbors load, and a ring chunk's list is written into
+    its chunk NBT; after the world tick's run every inner chunk's list is gone, 8 of 8 lava and water springs flowed
+    into their hole and 8 of 8 aquifer edges (marks without a spring) flowed. `MarkStats <seed> <cx> <cz> 12` over four 12x12
+    areas (seeds 42 twice, 12345, 8675309): 3.5 to 7.1 positions per chunk, at most 34 in one chunk. TerrainCheck: ALL
+    IDENTICAL; `PipelineBench 42 16 0`: checksum d70ea2ca54f75550, unchanged.
+*   Other mods' decoration events: the family rig (`docs/streams/packcompat.md`, fixed item 6), Quark r1.6-179 and
+    QuarkRotN r1.6-192 in Caves & Cliffs and Default worlds. `TreeGateCheck 42 8`: with the stone kinds denied no
+    diorite or andesite is left (114,434 without) and the trees are unchanged. (Its tree check fails at seed 42, side 8
+    on `main` as well: 226 leaves above y 40 with every tree denied.)
 *   `sh tools/terrain/restart.sh` (`RestartSelfTest`, three servers in a Caves & Cliffs world): 12x12 chunks at
     2000, 2000 and then the 12x12 east of them in one run, against the first area, a stop, and the second area after
     the restart: every finished chunk (305, with the few populating generates) identical. Without the store (the
@@ -260,6 +270,7 @@ a 24x24 square of chunks at chunk 1000, 1000 generated and populated after an 8x
 
 | Cores | Vanilla 1.12 (coremod off) | 1.18 terrain | vs vanilla's time per chunk |
 | --- | --- | --- | --- |
+| 16 E-cores, with fluid updates and the decoration events (2026-11-12, cc118-fluids-quark) | 11.94 ms/chunk, 84 chunks/s | **5.38 ms/chunk, 186 chunks/s** | **x0.45** |
 | 16 E-cores, with the structure beard, held-chunk store and 3D biomes (2026-11-12, cc-gaps) | 11.95 ms/chunk, 84 chunks/s | **5.24 ms/chunk, 191 chunks/s** | **x0.44** |
 | 16 E-cores (FFFF0000; 6 workers), with trees and vegetation | 11.63 ms/chunk, 86 chunks/s | **5.13 ms/chunk, 195 chunks/s** | **x0.44** |
 | 16 E-cores, before trees and vegetation | 9.76 ms/chunk, 102 chunks/s | 5.99 ms/chunk, 167 chunks/s | x0.61 |
@@ -271,6 +282,12 @@ is the same for it); ours too varies by about 10% between sessions. Where the se
 decorations per generated chunk in a square), waiting for workers 0.5 ms, writing the 1.12 chunk (sections, structure
 starts, sky light) 2.3 ms; the workers' fill + surface + carvers 5.2 ms per chunk on a busy E-core. Saving: 0.5 ms/chunk
 against vanilla's 1.1 (vanilla's population leaves scheduled block ticks to write; ours none).
+
+With fluid updates and the decoration events (cc118-fluids-quark): the same within the sessions' spread (5.35-5.52
+ms/chunk; decoration 1.40-1.59, write 1.08-1.22; saving 0.47 ms/chunk with the waiting lists in the chunks' NBT). The
+marks cost nothing measurable in the pipeline (`PipelineBench 42 16 0` 7.0 ms/chunk on a busy machine, same checksum).
+Running the updates happens on world ticks, not in the bench: in the fluid self-test 265 chunks' updates (198 fluid
+ticks) took 19.2 ms, 0.07 ms per chunk.
 
 With the gaps closed (cc-gaps; the same session's run of the code before them gave 5.76 ms/chunk median against
 vanilla's 11.90, x0.48, on a busier machine): `beard_ms` 1.07-1.16 per generated chunk on the server thread, almost
@@ -322,3 +339,9 @@ same with 8 workers (unpinned): 2.5 ms/chunk, same checksum. (Before trees and v
     in the same order; not needed for the targets.
 *   **Waterlogged blocks below 0 or above 255** need Backport Core's own store (stream C); until then they are dry.
 *   OptiFine and the Dregora packs were not run with the 1.18 terrain (stream H tested the height there).
+*   **Fluid updates are decided when the chunk is finished**, before 1.12's population: a marked aquifer fluid that a
+    1.12 structure piece (a mineshaft corridor) or another mod's generator opens later stays still, where 1.18's
+    structures, placed during decoration, would let it flow. A fluid in a waterlogged block (Backport Core's
+    waterlogging) gets no tick.
+*   **Quark's big swamp mushrooms** (`DECORATE` BIG_SHROOM) are not fired: current Forge fires that event without a
+    position, so they never generate in a Default world either.

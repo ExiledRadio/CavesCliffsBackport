@@ -116,8 +116,12 @@ public final class TerrainFluidSelfTest implements SelfTest {
         }
         check.ok(waiting > 0, "chunks of 1.18 terrain wait with updates until their neighbors load (" + waiting + " of 49)");
         long before = FluidUpdates.ticked;
+        long nanos = FluidUpdates.nanos;
+        long applied = FluidUpdates.applied;
         // What the end of the world tick does, then a few ticks of the scheduled updates the flow made.
         FluidUpdates.run(world);
+        double ms = (FluidUpdates.nanos - nanos) / 1e6;
+        long chunks = FluidUpdates.applied - applied;
         for (int t = 0; t < 40; t++) {
             world.getWorldInfo().setWorldTotalTime(world.getTotalWorldTime() + 1);
             world.tickUpdates(false);
@@ -139,9 +143,10 @@ public final class TerrainFluidSelfTest implements SelfTest {
         }
         com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.LOGGER.info("SELFTEST INFO fluids near {},{}: {} of "
                 + "49 chunks waited with updates, {} fluid ticks; springs {} of {} flowed (first {}), aquifer edges {} of {} "
-                + "(first {}); ring chunk waiting with {}", cx, cz, waiting, FluidUpdates.ticked - before, springsFlowed,
+                + "(first {}); ring chunk waiting with {}; {} chunks' updates ran in {} ms", cx, cz, waiting, FluidUpdates.ticked - before, springsFlowed,
                 springs.size(), springs.isEmpty() ? "-" : springs.get(0), edgesFlowed, edges.size(),
-                edges.isEmpty() ? "-" : edges.get(0), ringUpdates == null ? 0 : ringUpdates.length);
+                edges.isEmpty() ? "-" : edges.get(0), ringUpdates == null ? 0 : ringUpdates.length, chunks,
+                String.format(java.util.Locale.ROOT, "%.2f", ms));
         if (wantSpring && !springs.isEmpty()) {
             check.eq(springs.size(), springsFlowed, "springs near " + cx + "," + cz + " flow into their hole (first "
                     + springs.get(0) + ")");

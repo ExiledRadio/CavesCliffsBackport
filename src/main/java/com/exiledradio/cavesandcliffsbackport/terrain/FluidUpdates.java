@@ -61,6 +61,8 @@ public final class FluidUpdates {
     /** Counters (self-test, log). */
     public static long applied;
     public static long ticked;
+    /** Time spent running updates (not looking for ready chunks), in nanoseconds. */
+    public static long nanos;
 
     private FluidUpdates() {
     }
@@ -149,12 +151,14 @@ public final class FluidUpdates {
                 }
             }
         }
+        long t = System.nanoTime();
         for (Chunk c : ready) {
             int[] updates = PENDING.remove(c);
             if (updates != null) {
                 apply(world, c, updates);
             }
         }
+        nanos += System.nanoTime() - t;
     }
 
     /** The 3x3 around is loaded and the populations that write into the chunk ran. */
