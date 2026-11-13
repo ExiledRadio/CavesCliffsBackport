@@ -36,8 +36,17 @@ public final class ScaffoldSelfTest implements SelfTest {
             String name = (String) sample[1];
             check.eq(!on, com.exiledradio.backportcore.ownership.BlockOwnership.shouldRegister(later, name),
                     "a later update registers its own " + name + " exactly when our stream is off");
-            check.eq(on ? CavesAndCliffsBackport.MOD_ID : com.exiledradio.cavesandcliffsbackport.common.Owners.SWITCHED_OFF,
-                    com.exiledradio.backportcore.ownership.BlockOwnership.owner(name), "owner of " + name);
+            check.eq(CavesAndCliffsBackport.MOD_ID, com.exiledradio.backportcore.ownership.BlockOwnership.owner(name), "owner of " + name);
+            check.eq(on, com.exiledradio.backportcore.ownership.BlockOwnership.ownerProvides(name), name + " provided exactly when our stream is on");
+        }
+        check.eq(ModConfig.copper.enabled, com.exiledradio.backportcore.ownership.ItemOwnership.itemProvided("copper_ingot"),
+                "Core's item table: copper ingot provided exactly when copper is on");
+        // One table for every mod's copper (Core's Oxidation).
+        if (ModConfig.copper.enabled) {
+            net.minecraft.block.Block copper = net.minecraftforge.fml.common.registry.ForgeRegistries.BLOCKS.getValue(
+                    new net.minecraft.util.ResourceLocation(CavesAndCliffsBackport.MOD_ID, "copper_block"));
+            check.ok(com.exiledradio.backportcore.copper.Oxidation.stage(copper) == 0
+                    && com.exiledradio.backportcore.copper.Oxidation.next(copper) != null, "our copper is in Core's oxidation table");
         }
     }
 }

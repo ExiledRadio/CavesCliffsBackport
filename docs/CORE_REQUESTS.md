@@ -17,6 +17,10 @@ and cut copper stairs and slabs, deepslate walls. Meanwhile they place only in a
 
 ## 3. A weathering registry (`weathering.Weathering`)
 
+**Done (Backport Core 1.2.0, branch `tr-core-requests`):** `copper.Oxidation`, the same methods and aging rule.
+`copper/Weathering` delegates its table to it (wax items stay here), so every family mod's copper ages, scrapes and
+waxes through one table.
+
 1.17's copper oxidizes, is waxed with honeycomb, scraped with an axe and cleaned by lightning. Tricky
 Trials' copper (chiseled copper, doors, trapdoors, grates, bulbs, copper golems' statues, 1.21.9's copper
 chests and lanterns) does the same thing and must join the same chain: a lightning strike or an axe
@@ -76,6 +80,9 @@ updates copy (copper, tuff, deepslate, moss, lightning rod, powder snow).
 
 ## 8. A shared modern wall (and slab) class
 
+**Walls done (Core 1.2.0):** `block.ModernWall` is this mod's `BlockCCWall`, moved; the deepslate walls use it (same
+names and states, so saved worlds are unchanged) and Tricky Trials' tuff walls too. **Slabs still open.**
+
 1.16 gave walls low and tall sides; every family mod with new walls needs the same block (our deepslate
 walls, Tricky Trials' tuff walls, Wild Update's mud brick walls), or walls of different mods won't match
 side by side. Ours is `common/BlockCCWall` (sides `none|low|tall`, `up`, all actual state, meta 0, face
@@ -92,6 +99,12 @@ four registered blocks sharing one item (bits in metadata, no tile entity). To s
 and Core before our lush stream (L) is built.
 
 ## 10. Ownership per block, not per mod
+
+**Done (Core 1.2.0):** `BlockOwnership.provides(modid, supplier, names...)`, and tuff and the copper set are in
+Core's table for us. `common/Owners.declare` now declares every name for this mod and switches each stream's names
+with its own supplier; the `switched_off` pseudo-owner is gone. Core's `ItemOwnership` lists copper ingot and raw
+copper for us, switched with the copper stream. A world that held a later update's copies while a stream was off
+gets them renamed to ours when the stream is on again (`ownership.CopyRemapping`).
 
 `BlockOwnership.provides(modid, BooleanSupplier)` keeps one switch per mod (the last call wins), but each of
 our streams switches off on its own: with copper off and deepslate on, Core answered "Caves & Cliffs provides
