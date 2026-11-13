@@ -3,6 +3,7 @@ package com.exiledradio.cavesandcliffsbackport.selftest;
 import com.exiledradio.backportcore.terrain.TerrainHeights;
 import com.exiledradio.cavesandcliffsbackport.height.Heights;
 import com.exiledradio.cavesandcliffsbackport.terrain.ModernGenerator;
+import com.exiledradio.cavesandcliffsbackport.terrain.ModernStructures;
 import com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain;
 import com.exiledradio.cavesandcliffsbackport.terrain.StateMap;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.Biomes;
@@ -16,6 +17,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.gen.structure.MapGenStructureIO;
+import net.minecraft.world.gen.structure.StructureBoundingBox;
+import net.minecraft.world.gen.structure.StructureStart;
 
 /**
  * Stream G: the 1.18 chunk generator of a Caves &amp; Cliffs world ({@code sh tools/height/selftest.sh terrain}). In a
@@ -152,6 +156,31 @@ public final class TerrainSelfTest implements SelfTest {
                         : core.startAt(set, at.getX() >> 4, at.getZ() >> 4) >= 0;
             }
             check.ok(confirmed, names[i] + " at " + at + " is a 1.18 start");
+            if (names[i].equals("Monument")) {
+                monument(check, world, at.getX() >> 4, at.getZ() >> 4);
+            }
+        }
+    }
+
+    /**
+     * The monument's building stands where 1.18.2's OceanMonumentFeature.createTopPiece puts it (corner 29 blocks
+     * west and north of the start chunk's corner, y 39 to 61), also once saved, loaded and laid out again.
+     */
+    private static void monument(Check check, WorldServer world, int cx, int cz) {
+        StructureStart start = new ModernStructures.MonumentStart(world, new java.util.Random(), cx, cz);
+        StructureBoundingBox b = start.getBoundingBox();
+        String want = (cx * 16 - 29) + "," + 39 + "," + (cz * 16 - 29) + " to " + (cx * 16 + 28) + "," + 61 + "," + (cz * 16 + 28);
+        check.eq(want, b.minX + "," + b.minY + "," + b.minZ + " to " + b.maxX + "," + b.maxY + "," + b.maxZ,
+                "the monument at chunk " + cx + "," + cz + " has 1.18's box");
+        StructureStart loaded = MapGenStructureIO.getStructureStart(start.writeStructureComponentsToNBT(cx, cz), world);
+        check.ok(loaded instanceof ModernStructures.MonumentStart, "the monument start loads as ours");
+        if (loaded != null) {
+            // A box no piece reaches: the start lays its rooms out again (as after any load) and places nothing.
+            loaded.generateStructure(world, new java.util.Random(), new StructureBoundingBox(b.minX - 1000, 0, b.minZ - 1000,
+                    b.minX - 999, 1, b.minZ - 999));
+            StructureBoundingBox l = loaded.getBoundingBox();
+            check.ok(l.minX == b.minX && l.minZ == b.minZ && l.maxX == b.maxX && l.maxZ == b.maxZ
+                    && loaded.getComponents().size() == start.getComponents().size(), "after loading it stays there");
         }
     }
 }
