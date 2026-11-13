@@ -146,6 +146,14 @@ public final class CaveRegions {
         if (world.provider.getDimension() != 0 || world.getWorldType() == WorldType.FLAT) {
             return false;
         }
+        if (!world.isRemote) {
+            // A world with 1.18 terrain: its own lush and dripstone caves, 1.18's biomes in three dimensions.
+            int biome = com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain.biomeAt(world, x, y, z);
+            if (biome >= 0) {
+                return biome == (kind == Region.LUSH ? com.exiledradio.cavesandcliffsbackport.terrain.core.Biomes.LUSH_CAVES
+                        : com.exiledradio.cavesandcliffsbackport.terrain.core.Biomes.DRIPSTONE_CAVES);
+            }
+        }
         long key;
         if (world.isRemote) {
             if (!clientKnown || !(kind == Region.LUSH ? clientLush : clientDripstone)) {

@@ -117,6 +117,23 @@ public final class Structures {
 
     // ---- placement ----
 
+    /** The set's RandomSpreadStructurePlacement: spacing, separation, salt, triangular (strongholds: 0s). */
+    public static int spacing(int set) {
+        return SPACING[set];
+    }
+
+    public static int separation(int set) {
+        return SEPARATION[set];
+    }
+
+    public static int salt(int set) {
+        return SALT[set];
+    }
+
+    public static boolean triangular(int set) {
+        return TRIANGULAR[set];
+    }
+
     /** RandomSpreadStructurePlacement.getPotentialFeatureChunk: the candidate of the cell holding chunk cx, cz, packed. */
     public long potentialChunk(int set, int cx, int cz) {
         int i = SPACING[set];

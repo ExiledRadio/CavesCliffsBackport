@@ -1,5 +1,6 @@
 package com.exiledradio.cavesandcliffsbackport.terrain.core;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -19,40 +20,60 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * <p>Decoration of a chunk writes into the 3x3 chunks around it and reads the 5x5 ({@link Region}). So a chunk is
  * finished (no later decoration can change it) once the 3x3 around it is decorated, which needs the 7x7 around it
- * filled. {@link #finish} does exactly that and hands back the chunk; each chunk is filled once and decorated once
- * while it is held. Vanilla 1.18 decorates in whatever order its chunk system reaches chunks, so features that cross
- * a chunk border depend on that order there too; here it is the order 1.12 asks for chunks.
+ * filled. {@link #finish} does exactly that and hands back the chunk; each chunk is filled once and decorated once.
+ * Vanilla 1.18 decorates in whatever order its chunk system reaches chunks, so features that cross a chunk border
+ * depend on that order there too; here it is the order 1.12 asks for chunks.
  *
  * <p>Held chunks ({@link Proto}) are dropped once nothing can read them again (finished, and every chunk within two
- * decorated), and beyond a memory cap the least recently used ones go first. A dropped chunk that is asked for again
- * is filled again; if it had been decorated it is decorated again (its own features come back; what neighbors had
- * written into it before is lost).
+ * decorated: "settled"); a settled chunk is never decorated again. Beyond a memory cap the least recently used ones
+ * go first: with a {@link Store} a dropped chunk that decoration has written into is kept there and comes back as it
+ * was, so the cap changes nothing; without one it is filled again when asked for (what decoration had written into
+ * it is lost). {@link #saveHeld} writes every such chunk still held to the store, so a world stopped and started
+ * again decorates the chunks beyond its explored area exactly as one that never stopped.
  *
- * <p>{@link #finish} and {@link #prefetch} are for one thread (1.12's server thread); the pool is internal.
+ * <p>Structure terrain adaptation: a {@link BeardSource} gives each chunk's beardifier (the structure pieces near
+ * it) when the chunk is first asked for, on the asking thread, before its fill is queued.
+ *
+ * <p>{@link #finish}, {@link #prefetch} and {@link #saveHeld} are for one thread (1.12's server thread); the pool is
+ * internal.
  */
 public final class Pipeline {
     public static final int MIN_Y = OverworldNoise.MIN_Y;
     public static final int HEIGHT = OverworldNoise.HEIGHT;
     public static final int VOLUME = 16 * 16 * HEIGHT;
+    /** BiomeSource.fillChunk's layout: 4 x 4 quart columns of 96 quarts. */
+    public static final int QUARTS = 16 * BiomeSource.QUARTS_Y;
 
     /** One chunk on its way: blocks (ChunkFiller's layout), the worldgen and live heightmaps, the column biomes. */
     public static final class Proto {
         public final int cx;
         public final int cz;
-        public final char[] blocks = new char[VOLUME];
+        public final char[] blocks;
         /** Region.worldgenHeights: OCEAN_FLOOR_WG, then WORLD_SURFACE_WG (512). */
-        public final int[] worldgen = new int[512];
+        public final int[] worldgen;
         /** Region.primeHeightmaps, kept live by decoration (Region.HEIGHTMAPS * 256). */
-        public final int[] heights = new int[Region.HEIGHTMAPS * 256];
+        public final int[] heights;
         /** The biome id at each column's top block after carving (x * 16 + z). */
-        public final byte[] surfaceBiomes = new byte[256];
+        public final byte[] surfaceBiomes;
+        /** The chunk's stored (3D, quart) biomes, BiomeSource.fillChunk's layout. */
+        public final byte[] quarts;
         boolean decorated;
         boolean finished;
+        /** Bumped by every decoration that writes into this chunk; {@code saved} is its value at the last store write. */
+        int changes;
+        int saved;
+        /** The structure pieces' terrain adaptation for the fill, or null. */
+        Beardifier beard;
         final Task task;
 
         Proto(int cx, int cz, Pipeline owner) {
             this.cx = cx;
             this.cz = cz;
+            this.blocks = new char[VOLUME];
+            this.worldgen = new int[512];
+            this.heights = new int[Region.HEIGHTMAPS * 256];
+            this.surfaceBiomes = new byte[256];
+            this.quarts = new byte[QUARTS];
             this.task = new Task(this, owner);
         }
 
@@ -60,6 +81,33 @@ public final class Pipeline {
         public int get(int x, int y, int z) {
             return blocks[(x * 16 + z) * HEIGHT + y - MIN_Y];
         }
+    }
+
+    /** The structure pieces near a chunk, as a beardifier for its fill. */
+    public interface BeardSource {
+        /** Beardifier.forChunk for chunk cx, cz, or null for none. Called on the asking thread. */
+        Beardifier forChunk(int cx, int cz);
+    }
+
+    /**
+     * Where held chunks go when they are dropped or the world is saved, so that nothing decoration wrote is lost.
+     * Called on the asking thread; {@link #save} may hand the bytes to a writer thread, as long as a later
+     * {@link #load} of the same chunk sees them.
+     */
+    public interface Store {
+        /** What {@link #save} kept for this chunk ({@link Pipeline#decode} reads it), or null. */
+        byte[] load(int cx, int cz);
+
+        void save(int cx, int cz, byte[] data);
+
+        /** The chunk settled after being saved here: its entry will never be read again. */
+        void forget(int cx, int cz);
+
+        /**
+         * Whether the world already holds this chunk as finished (a chunk the generator made in an earlier run): it
+         * was decorated then, and is never decorated again.
+         */
+        boolean finished(int cx, int cz);
     }
 
     /** The fill of one Proto, queued on the pool or run by the asking thread if no worker has started it. */
@@ -115,7 +163,8 @@ public final class Pipeline {
 
         void produce(Proto p) {
             long t = System.nanoTime();
-            filler.fill(p.cx, p.cz, p.blocks);
+            filler.fill(p.cx, p.cz, p.blocks, p.beard);
+            p.beard = null;
             surface.build(p.cx, p.cz, p.blocks);
             carvers.carve(p.cx, p.cz, p.blocks);
             Region.worldgenHeights(p.blocks, p.worldgen);
@@ -126,6 +175,7 @@ public final class Pipeline {
                 int top = p.worldgen[256 + c] - 1;
                 p.surfaceBiomes[c] = (byte) zoom.biome(bx + (c >> 4), Math.max(top, MIN_Y), bz + (c & 15));
             }
+            biomes.fillChunk(p.cx, p.cz, p.quarts);
             fillNanos.addAndGet(System.nanoTime() - t);
             filled.incrementAndGet();
         }
@@ -147,6 +197,8 @@ public final class Pipeline {
     /** Chunks dropped once settled: finished and decorated, as is everything within two of them. */
     private final LongSet gone = new LongSet();
     private long sequence;
+    private BeardSource beards;
+    private Store store;
 
     /** Counters for the benchmark and the log. */
     public final AtomicLong fillNanos = new AtomicLong();
@@ -155,6 +207,9 @@ public final class Pipeline {
     public long decorated;
     public long waitNanos;
     public long stolen;
+    public long beardNanos;
+    public long restored;
+    public long stored;
 
     /**
      * @param seed the world seed
@@ -202,7 +257,17 @@ public final class Pipeline {
         return climate;
     }
 
-    /** Stops the workers; queued fills are dropped. */
+    /** The structure pieces' terrain adaptation for every chunk asked for from now on. */
+    public synchronized void setBeards(BeardSource beards) {
+        this.beards = beards;
+    }
+
+    /** Where dropped and saved chunks go (see the class comment). */
+    public synchronized void setStore(Store store) {
+        this.store = store;
+    }
+
+    /** Stops the workers; queued fills are dropped. Call {@link #saveHeld} first to keep what decoration wrote. */
     public void shutdown() {
         if (pool != null) {
             pool.shutdownNow();
@@ -222,7 +287,23 @@ public final class Pipeline {
         Proto p = held.get(k);
         if (p == null) {
             gone.remove(k);
+            if (store != null) {
+                byte[] data = store.load(cx, cz);
+                if (data != null) {
+                    p = decode(data);
+                    if (p != null && p.cx == cx && p.cz == cz) {
+                        restored++;
+                        held.put(k, p);
+                        return p;
+                    }
+                }
+            }
             p = new Proto(cx, cz, this);
+            if (beards != null) {
+                long t = System.nanoTime();
+                p.beard = beards.forChunk(cx, cz);
+                beardNanos += System.nanoTime() - t;
+            }
             held.put(k, p);
             p.task.priority = priority;
             if (pool != null) {
@@ -276,7 +357,7 @@ public final class Pipeline {
         for (int r = 0; r <= radius; r++) {
             for (int dx = -r; dx <= r; dx++) {
                 for (int dz = -r; dz <= r; dz++) {
-                    if (Math.max(Math.abs(dx), Math.abs(dz)) == r) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) == r && !settledAway(cx + dx, cz + dz)) {
                         proto(cx + dx, cz + dz, base + r);
                     }
                 }
@@ -295,6 +376,9 @@ public final class Pipeline {
             for (int dx = -r; dx <= r; dx++) {
                 for (int dz = -r; dz <= r; dz++) {
                     if (Math.max(Math.abs(dx), Math.abs(dz)) == r) {
+                        if (r > 0 && settledAway(cx + dx, cz + dz)) {
+                            continue;
+                        }
                         Proto p = proto(cx + dx, cz + dz, base + r);
                         if (p.task.priority > base + r && p.task.state.get() == Task.QUEUED && pool != null) {
                             // A prefetched fill still queued: move it up.
@@ -313,13 +397,42 @@ public final class Pipeline {
             }
         }
         Proto c = held.get(key(cx, cz));
-        c.finished = true;
+        if (c == null) {
+            // Asked again for a chunk that settled (a world that lost the chunk it had): fill it as it would be.
+            c = filled(proto(cx, cz, base));
+        }
+        if (!c.finished) {
+            c.finished = true;
+            c.changes++;
+        }
         release(cx, cz);
         trim();
         return c;
     }
 
+    /**
+     * A chunk that is not held and settled already (dropped this run, or finished by an earlier run): it is never
+     * decorated or read again, so it need not be filled.
+     */
+    private boolean settledAway(int cx, int cz) {
+        long k = key(cx, cz);
+        if (held.containsKey(k)) {
+            return false;
+        }
+        if (gone.contains(k)) {
+            return true;
+        }
+        if (store != null && store.finished(cx, cz)) {
+            gone.add(k);
+            return true;
+        }
+        return false;
+    }
+
     private void decorate(int cx, int cz, long base) {
+        if (settledAway(cx, cz)) {
+            return;
+        }
         Proto center = filled(proto(cx, cz, base));
         if (center.decorated) {
             return;
@@ -332,6 +445,9 @@ public final class Pipeline {
                 b25[i] = p.blocks;
                 w25[i] = p.worldgen;
                 h25[i] = p.heights;
+                if (dx >= -1 && dx <= 1 && dz >= -1 && dz <= 1) {
+                    p.changes++;
+                }
             }
         }
         long t = System.nanoTime();
@@ -355,8 +471,11 @@ public final class Pipeline {
             }
         }
         for (Long k : drop) {
-            held.remove(k);
+            Proto p = held.remove(k);
             gone.add(k);
+            if (store != null && p.saved != 0) {
+                store.forget(p.cx, p.cz);
+            }
         }
     }
 
@@ -367,7 +486,7 @@ public final class Pipeline {
             for (int dz = -r; dz <= r; dz++) {
                 long k = key(cx + dx, cz + dz);
                 Proto p = held.get(k);
-                if (p == null ? !gone.contains(k) : !p.decorated) {
+                if (p == null ? !settledAway(cx + dx, cz + dz) : !p.decorated) {
                     return false;
                 }
             }
@@ -375,7 +494,7 @@ public final class Pipeline {
         return true;
     }
 
-    /** Above the cap, drops the least recently used chunks that no fill is running for. */
+    /** Above the cap, drops the least recently used chunks that no fill is running for (into the store, if any). */
     private void trim() {
         if (held.size() <= cap) {
             return;
@@ -390,12 +509,107 @@ public final class Pipeline {
             if (s == Task.QUEUED && pool != null) {
                 pool.remove(p.task);
             }
+            if (s == Task.DONE && store != null && p.changes != p.saved && p.task.failure == null) {
+                store.save(p.cx, p.cz, encode(p));
+                stored++;
+            }
             it.remove();
         }
+    }
+
+    /**
+     * Writes every held chunk that decoration wrote into since it was last written to the store (chunks only
+     * filled come back the same from the noise). Call when the world is saved.
+     *
+     * @return how many chunks were written
+     */
+    public synchronized int saveHeld() {
+        if (store == null) {
+            return 0;
+        }
+        int n = 0;
+        for (Proto p : held.values()) {
+            if (p.changes != p.saved && p.task.state.get() == Task.DONE && p.task.failure == null) {
+                store.save(p.cx, p.cz, encode(p));
+                p.saved = p.changes;
+                n++;
+            }
+        }
+        stored += n;
+        return n;
     }
 
     /** How many chunks are held. */
     public synchronized int held() {
         return held.size();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Saved chunks
+
+    private static final int FORMAT = 1;
+
+    /** A held chunk as bytes, for a {@link Store}. */
+    public static byte[] encode(Proto p) {
+        ByteBuffer b = ByteBuffer.allocate(4 * 4 + 1 + VOLUME * 2 + (512 + Region.HEIGHTMAPS * 256) * 4 + 256 + QUARTS);
+        b.putInt(FORMAT).putInt(p.cx).putInt(p.cz).putInt(Math.max(1, p.changes));
+        b.put((byte) ((p.decorated ? 1 : 0) | (p.finished ? 2 : 0)));
+        b.asCharBuffer().put(p.blocks);
+        b.position(b.position() + VOLUME * 2);
+        b.asIntBuffer().put(p.worldgen).put(p.heights);
+        b.position(b.position() + (512 + Region.HEIGHTMAPS * 256) * 4);
+        b.put(p.surfaceBiomes).put(p.quarts);
+        return b.array();
+    }
+
+    /** A chunk {@link #encode} wrote, filled and ready (null for bytes of another format). */
+    public Proto decode(byte[] data) {
+        ByteBuffer b = ByteBuffer.wrap(data);
+        if (data.length != 4 * 4 + 1 + VOLUME * 2 + (512 + Region.HEIGHTMAPS * 256) * 4 + 256 + QUARTS || b.getInt() != FORMAT) {
+            return null;
+        }
+        Proto p = new Proto(b.getInt(), b.getInt(), this);
+        p.changes = b.getInt();
+        p.saved = p.changes;
+        int flags = b.get();
+        p.decorated = (flags & 1) != 0;
+        p.finished = (flags & 2) != 0;
+        b.asCharBuffer().get(p.blocks);
+        b.position(b.position() + VOLUME * 2);
+        b.asIntBuffer().get(p.worldgen).get(p.heights);
+        b.position(b.position() + (512 + Region.HEIGHTMAPS * 256) * 4);
+        b.get(p.surfaceBiomes).get(p.quarts);
+        p.task.state.set(Task.DONE);
+        return p;
+    }
+
+    /**
+     * The order MultifaceBlock.DIRECTIONS is in: the one piece of decoration state that is not a chunk's (every
+     * glow lichen spread in the JVM shuffles it). Saved beside the held chunks.
+     */
+    public static int[] lichenOrder() {
+        synchronized (LushCaves.DIRECTIONS) {
+            return LushCaves.DIRECTIONS.clone();
+        }
+    }
+
+    /** Puts back an order {@link #lichenOrder} gave (a permutation of 0..5; anything else is ignored). */
+    public static void setLichenOrder(int[] order) {
+        if (order == null || order.length != 6) {
+            return;
+        }
+        int seen = 0;
+        for (int d : order) {
+            if (d < 0 || d > 5) {
+                return;
+            }
+            seen |= 1 << d;
+        }
+        if (seen != 63) {
+            return;
+        }
+        synchronized (LushCaves.DIRECTIONS) {
+            System.arraycopy(order, 0, LushCaves.DIRECTIONS, 0, 6);
+        }
     }
 }

@@ -4,6 +4,7 @@ import com.exiledradio.cavesandcliffsbackport.terrain.core.Structures;
 import net.minecraft.init.Biomes;
 import net.minecraft.util.Rotation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.gen.structure.MapGenMineshaft;
@@ -12,15 +13,22 @@ import net.minecraft.world.gen.structure.MapGenStronghold;
 import net.minecraft.world.gen.structure.MapGenStructure;
 import net.minecraft.world.gen.structure.MapGenStructureIO;
 import net.minecraft.world.gen.structure.MapGenVillage;
+import net.minecraft.world.gen.structure.StructureBoundingBox;
 import net.minecraft.world.gen.structure.StructureComponent;
 import net.minecraft.world.gen.structure.StructureMineshaftStart;
 import net.minecraft.world.gen.structure.StructureOceanMonument;
 import net.minecraft.world.gen.structure.StructureStart;
+import net.minecraft.world.gen.structure.StructureVillagePieces;
 import net.minecraft.world.gen.structure.WoodlandMansionPieces;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
+import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.function.Consumer;
 
 /**
  * 1.12's own structures where 1.18.2 puts them: each generator's start check asks the terrain core's
@@ -41,7 +49,34 @@ public final class ModernStructures {
     /** The structure of set starting at the chunk (its index in Structures.STRUCTURE_NAMES[set]), or -1. */
     int startAt(int set, int cx, int cz) {
         synchronized (structures) {
-            return structures.startAt(set, cx, cz);
+            if (!structures.isFeatureChunk(set, cx, cz)) {
+                return -1;
+            }
+            // A candidate's start check reads the noise (biome and heights); 1.12's generators and the beard ask
+            // the same few candidates for every chunk near them.
+            Map<Long, Integer> m = chosen[set];
+            long k = (long) cx << 32 | (cz & 0xFFFFFFFFL);
+            Integer known = m.get(k);
+            if (known == null) {
+                known = structures.startAt(set, cx, cz);
+                m.put(k, known);
+            }
+            return known;
+        }
+    }
+
+    /** Per set, candidates' start checks, the most recently used 1024 kept (a pure function of seed and chunk). */
+    @SuppressWarnings("unchecked")
+    private final Map<Long, Integer>[] chosen = new Map[Structures.SETS];
+
+    {
+        for (int i = 0; i < chosen.length; i++) {
+            chosen[i] = new java.util.LinkedHashMap<Long, Integer>(256, 0.75F, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<Long, Integer> eldest) {
+                    return size() > 1024;
+                }
+            };
         }
     }
 
@@ -83,12 +118,89 @@ public final class ModernStructures {
         }
     }
 
+    /**
+     * The laid-out start of a 1.12 generator at chunk x, z, laying it out first if the generator has not (as its
+     * {@code generate} would), or null if none starts there. Server thread.
+     */
+    static StructureStart laidOut(MapGenStructure generator, Map<Long, StructureStart> map, World world, int x, int z) {
+        long k = ChunkPos.asLong(x, z);
+        StructureStart s = map.get(k);
+        if (s == null) {
+            // Lays out every start within eight chunks, each from its own seed, as when the chunk is generated.
+            generator.generate(world, x, z, null);
+            s = map.get(k);
+        }
+        return s;
+    }
+
+    /** Whether a start's box grown by 12 blocks (1.18's adapt_noise box) reaches chunk cx, cz. */
+    static boolean reaches(StructureStart s, int cx, int cz) {
+        StructureBoundingBox b = s.getBoundingBox();
+        int x = cx << 4;
+        int z = cz << 4;
+        return b != null && b.maxX + 12 >= x && b.minX - 12 <= x + 15 && b.maxZ + 12 >= z && b.minZ - 12 <= z + 15;
+    }
+
     // ---------------------------------------------------------------------------------------------
 
+    /**
+     * 1.12's villages, where 1.18 starts villages. Each house is set on the ground when the village is laid out
+     * rather than when its chunk is populated: 1.12's average ground level over the house's footprint (the first
+     * free block, at least the world's average ground level less one, as {@code getAverageGroundLevel}), but read
+     * from the terrain's noise before any chunk exists, so the terrain can adapt to the houses (1.18's beardifier)
+     * and the heights do not depend on which chunks were generated first. Pieces of other mods keep measuring as
+     * they build.
+     */
     final class Village extends MapGenVillage {
+        private final ModernGenerator generator;
+
+        Village(ModernGenerator generator) {
+            this.generator = generator;
+        }
+
         @Override
         protected boolean canSpawnStructureAtCoords(int chunkX, int chunkZ) {
             return startAt(Structures.VILLAGES, chunkX, chunkZ) >= 0;
+        }
+
+        @Override
+        protected StructureStart getStructureStart(int chunkX, int chunkZ) {
+            StructureStart start = super.getStructureStart(chunkX, chunkZ);
+            ground(start, this.world, generator);
+            return start;
+        }
+
+        /**
+         * Every laid-out village whose adapt_noise box reaches chunk cx, cz, in the order 1.18 lists a chunk's
+         * references ({@link #referenceOrder}). Server thread.
+         */
+        void startsNear(World world, int cx, int cz, Consumer<StructureStart> out) {
+            this.world = world;
+            int s = Structures.spacing(Structures.VILLAGES);
+            long[] found = new long[4];
+            int n = 0;
+            for (int gx = Math.floorDiv(cx - 8, s); gx <= Math.floorDiv(cx + 8, s); gx++) {
+                for (int gz = Math.floorDiv(cz - 8, s); gz <= Math.floorDiv(cz + 8, s); gz++) {
+                    long p;
+                    synchronized (structures) {
+                        p = structures.potentialChunk(Structures.VILLAGES, gx * s, gz * s);
+                    }
+                    int x = (int) (p >> 32);
+                    int z = (int) p;
+                    if (Math.abs(x - cx) <= 8 && Math.abs(z - cz) <= 8 && startAt(Structures.VILLAGES, x, z) >= 0) {
+                        if (n == found.length) {
+                            found = java.util.Arrays.copyOf(found, n * 2);
+                        }
+                        found[n++] = ChunkPos.asLong(x, z);
+                    }
+                }
+            }
+            for (long k : referenceOrder(found, n)) {
+                StructureStart start = laidOut(this, this.structureMap, world, (int) k, (int) (k >> 32));
+                if (start != null && start.isSizeableStructure() && reaches(start, cx, cz)) {
+                    out.accept(start);
+                }
+            }
         }
 
         @Override
@@ -182,6 +294,31 @@ public final class ModernStructures {
         protected boolean canSpawnStructureAtCoords(int chunkX, int chunkZ) {
             synchronized (structures) {
                 return structures.isFeatureChunk(Structures.STRONGHOLDS, chunkX, chunkZ);
+            }
+        }
+
+        /** Every laid-out stronghold whose adapt_noise box reaches chunk cx, cz, in 1.18's reference order. */
+        void startsNear(World world, int cx, int cz, Consumer<StructureStart> out) {
+            this.world = world;
+            int[] rings;
+            synchronized (structures) {
+                rings = structures.ringPositions();
+            }
+            long[] found = new long[2];
+            int n = 0;
+            for (int i = 0; i < rings.length; i += 2) {
+                if (Math.abs(rings[i] - cx) <= 8 && Math.abs(rings[i + 1] - cz) <= 8) {
+                    if (n == found.length) {
+                        found = java.util.Arrays.copyOf(found, n * 2);
+                    }
+                    found[n++] = ChunkPos.asLong(rings[i], rings[i + 1]);
+                }
+            }
+            for (long k : referenceOrder(found, n)) {
+                StructureStart start = laidOut(this, this.structureMap, world, (int) k, (int) (k >> 32));
+                if (start != null && start.isSizeableStructure() && reaches(start, cx, cz)) {
+                    out.accept(start);
+                }
             }
         }
 
@@ -303,6 +440,144 @@ public final class ModernStructures {
         public boolean isSizeableStructure() {
             return !this.components.isEmpty();
         }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Village houses on the ground at layout
+
+    /**
+     * Per 1.12 village piece class, the K of its {@code boundingBox.offset(0, averageGroundLvl - maxY + K, 0)} in
+     * addComponentParts (the box's top above the ground). Roads (Path) follow the ground block by block and are not
+     * here; nor are other mods' pieces.
+     */
+    private static final Map<Class<?>, Integer> TOP_ABOVE_GROUND = new HashMap<>();
+    private static final Field AVERAGE_GROUND;
+
+    static {
+        TOP_ABOVE_GROUND.put(StructureVillagePieces.Church.class, 11);
+        TOP_ABOVE_GROUND.put(StructureVillagePieces.Field1.class, 3);
+        TOP_ABOVE_GROUND.put(StructureVillagePieces.Field2.class, 3);
+        TOP_ABOVE_GROUND.put(StructureVillagePieces.Hall.class, 6);
+        TOP_ABOVE_GROUND.put(StructureVillagePieces.House1.class, 8);
+        TOP_ABOVE_GROUND.put(StructureVillagePieces.House2.class, 5);
+        TOP_ABOVE_GROUND.put(StructureVillagePieces.House3.class, 6);
+        TOP_ABOVE_GROUND.put(StructureVillagePieces.House4Garden.class, 5);
+        TOP_ABOVE_GROUND.put(StructureVillagePieces.Torch.class, 3);
+        TOP_ABOVE_GROUND.put(StructureVillagePieces.Well.class, 3);
+        TOP_ABOVE_GROUND.put(StructureVillagePieces.Start.class, 3);
+        TOP_ABOVE_GROUND.put(StructureVillagePieces.WoodHut.class, 5);
+        AVERAGE_GROUND = ObfuscationReflectionHelper.findField(StructureVillagePieces.Village.class, "field_143015_k");
+    }
+
+    /** A village piece's ground level (averageGroundLvl), or -1 where it is not set yet. */
+    public static int groundOf(StructureComponent piece) {
+        try {
+            return AVERAGE_GROUND.getInt(piece);
+        } catch (IllegalAccessException e) {
+            return -1;
+        }
+    }
+
+    /** Whether a piece is one {@link #ground} sets on the ground (a 1.12 village house, lamp or well). */
+    public static boolean grounded(StructureComponent piece) {
+        return TOP_ABOVE_GROUND.containsKey(piece.getClass()) && groundOf(piece) >= 0;
+    }
+
+    /** Sets each 1.12 village house of a start on the ground of the terrain's noise, and the start's box around them. */
+    static void ground(StructureStart start, World world, ModernGenerator generator) {
+        if (start.getComponents().isEmpty()) {
+            return;
+        }
+        int floor = world.provider.getAverageGroundLevel() - 1;
+        StructureBoundingBox all = null;
+        for (StructureComponent c : start.getComponents()) {
+            Integer top = TOP_ABOVE_GROUND.get(c.getClass());
+            StructureBoundingBox b = c.getBoundingBox();
+            if (top != null && groundOf(c) < 0) {
+                int sum = 0;
+                int count = 0;
+                for (int z = b.minZ; z <= b.maxZ; ++z) {
+                    for (int x = b.minX; x <= b.maxX; ++x) {
+                        sum += Math.max(generator.surface(x, z), floor);
+                        ++count;
+                    }
+                }
+                int average = sum / count;
+                try {
+                    AVERAGE_GROUND.setInt(c, average);
+                } catch (IllegalAccessException e) {
+                    continue;
+                }
+                c.offset(0, average - b.maxY + top, 0);
+            }
+            if (all == null) {
+                all = new StructureBoundingBox(b);
+            } else {
+                all.expandTo(b);
+            }
+        }
+        StructureBoundingBox box = start.getBoundingBox();
+        box.minX = all.minX;
+        box.minY = all.minY;
+        box.minZ = all.minZ;
+        box.maxX = all.maxX;
+        box.maxY = all.maxY;
+        box.maxZ = all.maxZ;
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // 1.18's order of a chunk's structure references
+
+    /**
+     * The order 1.18 iterates one structure's references from a chunk: a fastutil LongOpenHashSet (default
+     * capacity, 32 slots below 24 entries) filled in createReferences' scan order (x outer, z inner), iterated as
+     * its iterator does: the zero key first, then the slots from the top down.
+     */
+    public static long[] referenceOrder(long[] keys, int n) {
+        if (n <= 1) {
+            return java.util.Arrays.copyOf(keys, n);
+        }
+        // Scan order: x outer, z inner (ChunkPos.asLong: x low, z high).
+        Long[] sorted = new Long[n];
+        for (int i = 0; i < n; i++) {
+            sorted[i] = keys[i];
+        }
+        java.util.Arrays.sort(sorted, (a, b) -> {
+            int c = Integer.compare((int) (long) a, (int) (long) b);
+            return c != 0 ? c : Integer.compare((int) (a >> 32), (int) (b >> 32));
+        });
+        int size = 32;
+        while (n >= size * 3 / 4) {
+            size *= 2;
+        }
+        long[] table = new long[size];
+        boolean zero = false;
+        for (Long boxed : sorted) {
+            long k = boxed;
+            if (k == 0L) {
+                zero = true;
+                continue;
+            }
+            long h = k * 0x9E3779B97F4A7C15L;
+            h ^= h >>> 32;
+            h ^= h >>> 16;
+            int pos = (int) h & (size - 1);
+            while (table[pos] != 0L) {
+                pos = (pos + 1) & (size - 1);
+            }
+            table[pos] = k;
+        }
+        long[] out = new long[n];
+        int at = 0;
+        if (zero) {
+            out[at++] = 0L;
+        }
+        for (int pos = size - 1; pos >= 0; pos--) {
+            if (table[pos] != 0L) {
+                out[at++] = table[pos];
+            }
+        }
+        return out;
     }
 
     /** Registers the starts this class saves under its own names. Once, in init. */
