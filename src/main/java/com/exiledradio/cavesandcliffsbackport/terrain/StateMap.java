@@ -386,7 +386,12 @@ public final class StateMap {
         return m;
     }
 
-    /** A block registered under this 1.18 name: this mod's, then vanilla's, then any other mod's. */
+    /**
+     * A block registered under this 1.18 name: this mod's, then vanilla's, then any other mod's (Village &amp; Pillage's
+     * bamboo, sweet berry bush, cornflower and lily of the valley; Buzzy Bees' bee nest; Update Aquatic's kelp and
+     * coral). Of two mods' copies, the one Backport Core's duplicate hiding keeps (Village &amp; Pillage's or Future
+     * MC's sweet berry bush, as its settings say), else the first by id.
+     */
     private static Block byModernName(String name) {
         Block b = block(new ResourceLocation(CavesAndCliffsBackport.MOD_ID, name));
         if (b != null) {
@@ -398,12 +403,15 @@ public final class StateMap {
         }
         Block best = null;
         String bestId = null;
+        boolean bestHidden = true;
         for (Map.Entry<ResourceLocation, Block> e : ForgeRegistries.BLOCKS.getEntries()) {
             if (e.getKey().getPath().equals(name)) {
                 String id = e.getKey().toString();
-                if (bestId == null || id.compareTo(bestId) < 0) {
+                boolean hidden = com.exiledradio.backportcore.duplicate.DuplicateBlocks.isHidden(e.getValue());
+                if (bestId == null || bestHidden && !hidden || bestHidden == hidden && id.compareTo(bestId) < 0) {
                     best = e.getValue();
                     bestId = id;
+                    bestHidden = hidden;
                 }
             }
         }

@@ -30,10 +30,15 @@ import java.util.Set;
  *   <li>Other mods' structures registered with Backport Core's {@link TerrainAdaptation} (Village &amp; Pillage's
  *       outposts), after these.</li>
  * </ul>
+ *
+ * <p>Where a backport builds the villages instead (Village &amp; Pillage's 1.14 villages, through Backport Core's
+ * {@code StructureGenerators}), 1.12's are neither laid out nor adapted to: the backport's registered village kind
+ * takes their place at the front of the order.
  */
 final class StructureBeards implements Pipeline.BeardSource {
 
     private final World world;
+    /** Null where a backport builds the villages in place of 1.12's. */
     private final ModernStructures.Village village;
     private final ModernStructures.Stronghold stronghold;
     private final Set<String> unsupported = new HashSet<>();
@@ -47,29 +52,45 @@ final class StructureBeards implements Pipeline.BeardSource {
     @Override
     public Beardifier forChunk(int cx, int cz) {
         final List<Beardifier.Piece> pieces = new ArrayList<>();
-        village.startsNear(world, cx, cz, start -> {
-            for (StructureComponent c : start.getComponents()) {
-                if (ModernStructures.grounded(c)) {
-                    StructureBoundingBox b = c.getBoundingBox();
-                    pieces.add(new Beardifier.Piece(b.minX, b.minY, b.minZ, b.maxX, b.maxY, b.maxZ, Beardifier.BEARD,
-                            true, ModernStructures.groundOf(c) - b.minY, true, new int[0]));
+        List<TerrainAdaptation.Entry> registered = TerrainAdaptation.registered();
+        if (village != null) {
+            village.startsNear(world, cx, cz, start -> {
+                for (StructureComponent c : start.getComponents()) {
+                    if (ModernStructures.grounded(c)) {
+                        StructureBoundingBox b = c.getBoundingBox();
+                        pieces.add(new Beardifier.Piece(b.minX, b.minY, b.minZ, b.maxX, b.maxY, b.maxZ, Beardifier.BEARD,
+                                true, ModernStructures.groundOf(c) - b.minY, true, new int[0]));
+                    }
+                }
+            });
+        } else {
+            for (TerrainAdaptation.Entry e : registered) {
+                if (e.kind.equals(com.exiledradio.backportcore.structure.Structures.VILLAGE)) {
+                    plan(e, cx, cz, pieces);
                 }
             }
-        });
+        }
         stronghold.startsNear(world, cx, cz, start -> add(start, Beardifier.BURY, pieces));
-        for (TerrainAdaptation.Entry e : TerrainAdaptation.registered()) {
-            final int effect = effect(e);
-            if (effect == Beardifier.NONE) {
-                continue;
-            }
-            try {
-                e.planner.startsNear(world, cx, cz, start -> add(start, effect, pieces));
-            } catch (RuntimeException ex) {
-                CavesAndCliffsBackport.LOGGER.error("Laying out {} near chunk {}, {} failed; the terrain does not adapt to it there.",
-                        e.kind, cx, cz, ex);
+        for (TerrainAdaptation.Entry e : registered) {
+            if (village != null || !e.kind.equals(com.exiledradio.backportcore.structure.Structures.VILLAGE)) {
+                plan(e, cx, cz, pieces);
             }
         }
         return pieces.isEmpty() ? null : Beardifier.forChunk(cx, cz, pieces);
+    }
+
+    /** A registered kind's starts near the chunk, their pieces with its noise effect. */
+    private void plan(TerrainAdaptation.Entry e, int cx, int cz, List<Beardifier.Piece> pieces) {
+        final int effect = effect(e);
+        if (effect == Beardifier.NONE) {
+            return;
+        }
+        try {
+            e.planner.startsNear(world, cx, cz, start -> add(start, effect, pieces));
+        } catch (RuntimeException ex) {
+            CavesAndCliffsBackport.LOGGER.error("Laying out {} near chunk {}, {} failed; the terrain does not adapt to it there.",
+                    e.kind, cx, cz, ex);
+        }
     }
 
     /** A start's pieces with one noise effect; jigsaw pieces by their projection, ground and junctions. */

@@ -131,6 +131,10 @@ public final class TerrainGapsSelfTest implements SelfTest {
 
     /** The village nearest the world's origin: houses on the ground at layout, ground and air by the beard. */
     private static void village(Check check, WorldServer world, ModernGenerator generator, OverworldNoise noise, Structures core) {
+        if (!generator.ownVillages()) {
+            backportVillage(check, world, generator, core);
+            return;
+        }
         List<int[]> starts = core.starts(Structures.VILLAGES, -96, -96, 96, 96);
         int[] best = null;
         for (int[] s : starts) {
@@ -214,6 +218,142 @@ public final class TerrainGapsSelfTest implements SelfTest {
         ok(check, columns > 0 && good[0] * 10 >= columns * 9, "under the house solid ground at " + (ground - 1)
                 + " and air from " + ground + " in " + good[0] + " of " + columns + " columns with the beard (" + good[1]
                 + " without)");
+    }
+
+    /**
+     * With a backport building the villages in place of 1.12's (Village &amp; Pillage's 1.14 villages, through Backport
+     * Core's StructureGenerators): the first 1.18 village start near the spawn, generated, is the backport's village,
+     * of the type 1.18 names; its houses stand on solid ground (the beard filled under them); no 1.12 village is laid
+     * out or saved; the terrain adapts to the village; Core's /locate and 1.12's /locate Village name 1.18 starts.
+     */
+    private static void backportVillage(Check check, WorldServer world, ModernGenerator generator, Structures core) {
+        ok(check, com.exiledradio.backportcore.structure.StructureGenerators.replaced(
+                com.exiledradio.backportcore.structure.Structures.VILLAGE),
+                "villages are a backport's: " + generator.villageGenerator().getClass().getName());
+        BlockPos spawn = world.getSpawnPoint();
+        int scx = spawn.getX() >> 4;
+        int scz = spawn.getZ() >> 4;
+        int[] best = null;
+        for (int[] s : core.starts(Structures.VILLAGES, scx - 96, scz - 96, scx + 96, scz + 96)) {
+            long d = (long) (s[0] - scx) * (s[0] - scx) + (long) (s[1] - scz) * (s[1] - scz);
+            if (best == null || d < (long) (best[0] - scx) * (best[0] - scx) + (long) (best[1] - scz) * (best[1] - scz)) {
+                best = s;
+            }
+        }
+        if (!check.ok(best != null, "a 1.18 village start within 96 chunks of the spawn")) {
+            return;
+        }
+        String type = Structures.STRUCTURE_NAMES[Structures.VILLAGES][best[2]];
+        com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.LOGGER.info(
+                "SELFTEST INFO first 1.18 village near the spawn {}: {} at chunk {},{} (block {}, {})", spawn, type, best[0],
+                best[1], best[0] << 4, best[1] << 4);
+        ok(check, generator.adaptingStartsNear(best[0], best[1], false).isEmpty(), "no 1.12 village is laid out there");
+        // The rule the backport asks names the same start.
+        StartRule rule = StartRules.of(world, com.exiledradio.backportcore.structure.Structures.VILLAGE);
+        ok(check, rule != null && type.equals(rule.startAt(best[0], best[1])) && rule.grid().spacing() == 34,
+                "Core's village rule is 1.18's (" + (rule == null ? null : rule.startAt(best[0], best[1])) + ")");
+        // Generate and populate the chunks around the start.
+        int r = 6;
+        for (int x = best[0] - r - 1; x <= best[0] + r + 1; x++) {
+            for (int z = best[1] - r - 1; z <= best[1] + r + 1; z++) {
+                world.getChunkProvider().provideChunk(x, z);
+            }
+        }
+        StructureStart start = null;
+        for (com.exiledradio.backportcore.structure.TerrainAdaptation.Entry e
+                : com.exiledradio.backportcore.structure.TerrainAdaptation.registered()) {
+            if (e.kind.equals(com.exiledradio.backportcore.structure.Structures.VILLAGE)) {
+                final int[] at = best;
+                final StructureStart[] found = new StructureStart[1];
+                e.planner.startsNear(world, at[0], at[1], s -> {
+                    if (s.getChunkPosX() == at[0] && s.getChunkPosZ() == at[1]) {
+                        found[0] = s;
+                    }
+                });
+                start = found[0];
+            }
+        }
+        if (!check.ok(start != null && start.getClass().getSimpleName().equals("ModernVillageStart"),
+                "the start at chunk " + best[0] + "," + best[1] + " is a 1.14 village: "
+                        + (start == null ? null : start.getClass().getName()))) {
+            return;
+        }
+        int rigid = 0;
+        int standing = 0;
+        int corners = 0;
+        int oldPieces = 0;
+        int[] spread = {Integer.MAX_VALUE, Integer.MIN_VALUE};
+        for (StructureComponent c : start.getComponents()) {
+            oldPieces += c instanceof StructureVillagePieces.Village ? 1 : 0;
+            if (!(c instanceof com.exiledradio.backportcore.structure.TerrainAdaptation.AdaptingPiece)
+                    || !((com.exiledradio.backportcore.structure.TerrainAdaptation.AdaptingPiece) c).rigid()) {
+                continue;
+            }
+            StructureBoundingBox b = c.getBoundingBox();
+            if (b.getXSize() < 3 || b.getZSize() < 3) {
+                continue;
+            }
+            rigid++;
+            int ground = b.minY + ((com.exiledradio.backportcore.structure.TerrainAdaptation.AdaptingPiece) c).groundLevelDelta();
+            int surface = generator.surface((b.minX + b.maxX) / 2, (b.minZ + b.maxZ) / 2);
+            spread[0] = Math.min(spread[0], ground - surface);
+            spread[1] = Math.max(spread[1], ground - surface);
+            int solid = 0;
+            int[][] cs = {{b.minX, b.minZ}, {b.maxX, b.minZ}, {b.minX, b.maxZ}, {b.maxX, b.maxZ}};
+            for (int[] q : cs) {
+                net.minecraft.block.state.IBlockState under = world.getBlockState(new BlockPos(q[0], b.minY - 1, q[1]));
+                solid += under.getMaterial().isSolid() ? 1 : 0;
+            }
+            corners += solid;
+            standing += solid >= 3 ? 1 : 0;
+        }
+        check.eq(0, oldPieces, "the village has no 1.12 village pieces");
+        ok(check, rigid >= 3 && standing * 10 >= rigid * 8, "its houses stand on solid ground: " + standing + " of " + rigid
+                + " rigid pieces have 3+ solid corners under them (" + corners + " corners), ground "
+                + spread[0] + " to " + spread[1] + " from the noise surface");
+        Beardifier beard = generator.beards().forChunk(best[0], best[1]);
+        StructureBoundingBox box = start.getBoundingBox();
+        ok(check, beard != null && beard.touches(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ),
+                "the village's chunk gets a beard");
+        // Nothing saved under 1.12's village id.
+        net.minecraft.world.gen.structure.MapGenStructureData data = (net.minecraft.world.gen.structure.MapGenStructureData)
+                world.getPerWorldStorage().getOrLoadData(net.minecraft.world.gen.structure.MapGenStructureData.class, "Village");
+        int saved = 0;
+        int legacy = 0;
+        if (data != null) {
+            net.minecraft.nbt.NBTTagCompound features = data.getTagCompound();
+            for (String key : features.getKeySet()) {
+                saved++;
+                legacy += "Village".equals(features.getCompoundTag(key).getString("id")) ? 1 : 0;
+            }
+        }
+        check.eq(0, legacy, "no 1.12 village saved (" + saved + " village starts saved)");
+        // /locate agrees.
+        try {
+            com.exiledradio.backportcore.locate.StructureLocate.Found found =
+                    com.exiledradio.backportcore.locate.StructureLocate.nearest(world, spawn, "#minecraft:village");
+            int index = found == null ? -1 : core.startAt(Structures.VILLAGES, found.pos.getX() >> 4, found.pos.getZ() >> 4);
+            ok(check, index >= 0 && found.id.equals("minecraft:" + Structures.STRUCTURE_NAMES[Structures.VILLAGES][index])
+                    && (found.pos.getX() >> 4) == best[0] && (found.pos.getZ() >> 4) == best[1],
+                    "/locate structure #minecraft:village names the first 1.18 start: " + found);
+            for (String name : Structures.STRUCTURE_NAMES[Structures.VILLAGES]) {
+                found = com.exiledradio.backportcore.locate.StructureLocate.nearest(world, spawn, "minecraft:" + name);
+                index = found == null ? -1 : core.startAt(Structures.VILLAGES, found.pos.getX() >> 4, found.pos.getZ() >> 4);
+                ok(check, found == null || index >= 0 && name.equals(Structures.STRUCTURE_NAMES[Structures.VILLAGES][index]),
+                        "/locate structure minecraft:" + name + " finds a 1.18 start of it: " + found);
+            }
+        } catch (com.exiledradio.backportcore.locate.StructureLocate.Unavailable e) {
+            check.fail("/locate villages: " + e.getMessage());
+        }
+        BlockPos old = world.findNearestStructure("Village", spawn, false);
+        ok(check, old != null && core.startAt(Structures.VILLAGES, old.getX() >> 4, old.getZ() >> 4) >= 0,
+                "/locate Village names a 1.18 start: " + old);
+    }
+
+    /** A property's value in a state as its name in the block state string. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static String valueName(net.minecraft.block.properties.IProperty prop, net.minecraft.block.state.IBlockState state) {
+        return prop.getName(state.getValue(prop));
     }
 
     /** The stronghold nearest 0, 0: its pieces buried in solid ground by the beard. */
@@ -421,6 +561,43 @@ public final class TerrainGapsSelfTest implements SelfTest {
             int index = found == null ? -1 : core.startAt(idSets[i], found.pos.getX() >> 4, found.pos.getZ() >> 4);
             ok(check, index >= 0 && ids[i].equals("minecraft:" + Structures.STRUCTURE_NAMES[idSets[i]][index]),
                     "/locate " + ids[i] + " (installed) finds a 1.18 start of it: " + found);
+        }
+        // Village & Pillage's plants: the 1.18 features place its blocks (not the fallbacks), and its own
+        // generators for them step aside.
+        if (net.minecraftforge.fml.common.Loader.isModLoaded("villagerbackport")) {
+            ok(check, com.exiledradio.backportcore.worldgen.FeatureSource.places(world, "1.14"),
+                    "the generator places 1.14's features itself (Village & Pillage's generators step aside)");
+            com.exiledradio.cavesandcliffsbackport.terrain.StateMap map = new com.exiledradio.cavesandcliffsbackport.terrain.StateMap();
+            int seen = 0;
+            StringBuilder wrong = new StringBuilder();
+            for (int c = 0; c < BlockCodes.count(); c++) {
+                String full = BlockCodes.state(c);
+                String name = full.indexOf('[') < 0 ? full : full.substring(0, full.indexOf('['));
+                if (!name.equals("bamboo") && !name.equals("sweet_berry_bush") && !name.equals("cornflower")
+                        && !name.equals("lily_of_the_valley")) {
+                    continue;
+                }
+                seen++;
+                net.minecraft.block.state.IBlockState state = map.state(c);
+                String id = String.valueOf(state.getBlock().getRegistryName());
+                boolean good = id.equals("villagerbackport:" + name);
+                if (good && name.equals("bamboo")) {
+                    // 1.18's leaves and age carried over by name.
+                    for (String kv : full.substring(full.indexOf('[') + 1, full.length() - 1).split(",")) {
+                        String[] p = kv.split("=");
+                        for (net.minecraft.block.properties.IProperty<?> prop : state.getPropertyKeys()) {
+                            if (prop.getName().equals(p[0]) && !valueName(prop, state).equals(p[1])) {
+                                good = false;
+                            }
+                        }
+                    }
+                }
+                if (!good) {
+                    wrong.append(full).append(" -> ").append(state).append("; ");
+                }
+            }
+            ok(check, seen >= 4 && wrong.length() == 0, "1.18's bamboo, sweet berry bushes, cornflowers and lilies of the "
+                    + "valley are Village & Pillage's blocks (" + seen + " states) " + wrong);
         }
         boolean outposts = false;
         for (com.exiledradio.backportcore.structure.TerrainAdaptation.Entry e
