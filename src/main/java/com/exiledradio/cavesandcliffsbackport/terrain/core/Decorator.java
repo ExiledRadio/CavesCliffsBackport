@@ -41,7 +41,7 @@ public final class Decorator {
     private final boolean[][] biomeHas;
     private Set<String> only;
     private TreeGate treeGate;
-    private final int[] gateAnswers = new int[3];
+    private final int[] gateAnswers = new int[TreeGate.KINDS];
     private final byte[] stored = new byte[1536];
     private final boolean[] present = new boolean[256];
     private final boolean[] chosen = new boolean[512];
@@ -52,6 +52,13 @@ public final class Decorator {
         this.biomes = biomes;
         Map<String, Placed> ported = new HashMap<>();
         for (Placed p : Ores.placed()) {
+            if (p.name.startsWith("ore_granite_")) {
+                p.kind = TreeGate.GRANITE;
+            } else if (p.name.startsWith("ore_diorite_")) {
+                p.kind = TreeGate.DIORITE;
+            } else if (p.name.startsWith("ore_andesite_")) {
+                p.kind = TreeGate.ANDESITE;
+            }
             ported.put(p.name, p);
         }
         for (Placed p : Geodes.placed(noise.seed)) {
@@ -146,11 +153,16 @@ public final class Decorator {
      * leaves out that chunk's features of the kind ({@link #TREES}: every surface tree feature, huge mushrooms
      * included, not the azalea tree; {@link #CACTUS}: the cactus patches). Every feature keeps its own seed, so the
      * rest of the chunk is exactly as without a gate. The game answers it for a mod that grows its own trees
-     * instead (Dynamic Trees). Null: everything, as vanilla.
+     * instead (Dynamic Trees), or its own granite, diorite and andesite ({@link #GRANITE}, {@link #DIORITE},
+     * {@link #ANDESITE}: the two ore features of each, for Quark's stone revamp). Null: everything, as vanilla.
      */
     public interface TreeGate {
         int TREES = 1;
         int CACTUS = 2;
+        int GRANITE = 3;
+        int DIORITE = 4;
+        int ANDESITE = 5;
+        int KINDS = 6;
 
         boolean allows(int cx, int cz, int kind);
     }

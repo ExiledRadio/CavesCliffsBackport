@@ -23,6 +23,10 @@ feature the core has ported, block for block what the core computes, which is va
     the world, so features crossing its edge are not cut after a restart.
 *   Generation is fast: the terrain is built on worker threads ahead of need (`height.terrainThreads`, 0 picks a
     number from the computer's cores).
+*   **Quark's world generation works in Caves & Cliffs worlds**: marble, limestone, jasper, slate and its granite,
+    diorite and andesite clusters, underground biomes and varied dungeons (they hang on 1.12's ore and dungeon
+    events, which now fire there). Where Quark places its own granite, diorite and andesite, the 1.18 blobs of them step
+    aside, as 1.12's do in a Default world.
 *   **Springs, waterfalls and lava falls flow.** Water and lava springs in cave walls and the edges of underground
     lakes and lava pools start flowing when you come near, as in 1.18, instead of staying still.
 *   Caves & Cliffs worlds created before this version keep the terrain they were made with (1.12's, with stone below
@@ -100,6 +104,32 @@ loaded and the four populations that write into it are done; until then the list
 `FlowingFluid.tick` does and leaves the source still and unmixed, as 1.18's tick does); a plant that cannot stay is
 removed without a drop (1.18's `updateShape` gives air); anything else gets a neighbor update (sand and gravel over a
 lake fall after 2 ticks, as `FallingBlock.updateShape` schedules them; glow lichen drops faces without support).
+
+**Other mods' decoration events** (`ModDecoration`). 1.12's population and biome decorator fire Forge events that
+other mods generate in; the 1.18 features replace both, so none fired. `populate` now fires, once per chunk after the
+structures and before the animals, the ones the 1.18 terrain has a counterpart for, in 1.12's order and at 1.12's
+positions (the chunk corner; the biome's decorator holds that `chunkPos` meanwhile): `PopulateChunkEvent.Populate`
+DUNGEON, `DecorateBiomeEvent.Pre`, `OreGenEvent.Pre`, `OreGenEvent.GenerateMinable` DIRT, `OreGenEvent.Post`,
+`DecorateBiomeEvent.Post`. The answers are not used (1.18 placed its own monster rooms and dirt). They get a random of
+their own, seeded from the chunk, so the animals after them are the same whatever draws from it. Not fired: the other
+ore types (a mod that denies one to place its own would place it beside 1.18's ores) and `DecorateBiomeEvent.Decorate`
+(Biomes O' Plenty grows its trees in TREE; see Dynamic Trees under pack compatibility). Each Quark world feature, in
+r1.6-179 and QuarkRotN r1.6-192 alike:
+- the stone revamp (`RevampStoneGen`: marble, limestone, jasper, slate, and granite, diorite and andesite clusters) and
+  the underground biomes (`UndergroundBiomes`) run in the DIRT `GenerateMinable` on the ore bus, with the event's world
+  and chunk; they write the 1.12 decoration window (+8) and keep their configured y ranges (stones 20-80, or to 128 for
+  granite, diorite and andesite in the packs; underground biomes 10-40; nothing below 0). The stones replace only stone,
+  so they sit in the stone above y 0 and never in deepslate. The underground biomes decorate with `world.rand`, so a
+  second DIRT event for a chunk would decorate it twice: it fires once;
+- varied dungeons (`VariedDungeons`) run in DUNGEON with the event's random;
+- speleothems, crystal caves, cave roots, monster boxes, the archaeologist, fairy rings, pirate ships and clay are
+  `IWorldGenerator`s and already ran; big swamp mushrooms (`DECORATE` BIG_SHROOM, which current Forge fires without a
+  position) and bigger caves (experimental, off) are not used.
+`RevampStoneGen` denies 1.12's GRANITE, DIORITE and ANDESITE ore events for each of those stones it generates itself;
+`ModDecoration.quarkStones` asks it the same (`ModuleLoader.isFeatureEnabled`, `StoneInfo.enabled`) and the decoration
+gate (`Decorator.TreeGate` kinds GRANITE, DIORITE, ANDESITE) leaves out 1.18's `ore_granite_*`, `ore_diorite_*` and
+`ore_andesite_*` in those worlds, every other feature keeping its own seed. Backport Core's duplicate rules (Quark's
+basalt off beside the Nether backport's) are untouched: they are Core's.
 
 **Biomes for 1.12** (`BiomeMap`). A biome some installed mod registers under the 1.18 name (any namespace but
 `minecraft`) is used first; otherwise the nearest 1.12 biome: the peaks and slopes are 1.12's ice mountains (goats spawn

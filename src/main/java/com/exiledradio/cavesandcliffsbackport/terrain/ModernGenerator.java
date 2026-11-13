@@ -99,7 +99,7 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         this.states.resolveAll();
         // Dynamic Trees grows its own trees where it cancels vanilla's; the 1.18 trees step aside there. Asked on the
         // server thread, which finishes chunks.
-        this.pipeline.treeGate(DynamicTreesGate.of(world));
+        this.pipeline.treeGate(ModDecoration.gate(DynamicTreesGate.of(world), ModDecoration.quarkStones()));
         ColumnCache columns = new ColumnCache(terrain.noise);
         this.heights = new ChunkFiller(terrain.noise, columns);
         this.structures = new ModernStructures(new Structures(terrain.noise, columns,
@@ -300,6 +300,8 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
             this.monument.generateStructure(this.world, this.rand, chunkpos);
             this.mansion.generateStructure(this.world, this.rand, chunkpos);
         }
+        // Other mods' generation in 1.12's dungeon and ore events (Quark's stones and underground biomes).
+        ModDecoration.populate(this, this.world, x, z, village);
         if (TerrainGen.populate(this, this.world, this.rand, x, z, village, PopulateChunkEvent.Populate.EventType.ANIMALS)) {
             WorldEntitySpawner.performWorldGenSpawning(this.world, biome, i + 8, j + 8, 16, 16, this.rand);
         }
