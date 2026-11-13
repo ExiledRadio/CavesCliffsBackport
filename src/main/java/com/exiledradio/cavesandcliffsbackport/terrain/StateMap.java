@@ -293,6 +293,27 @@ public final class StateMap {
                 props.clear();
                 return BlockGlowLichen.of(mask);
             }
+            case "kelp": {
+                // 1.18's kelp top has ages 0-25 (generated 20-23) and grows until 25. A backport's kelp with fewer
+                // ages (Update Aquatic's 0-15) gets the age that leaves it as many growth steps to its top.
+                Block block = byModernName(name);
+                if (block == null) {
+                    return null;
+                }
+                IBlockState s = block.getDefaultState();
+                String age = props.remove("age");
+                for (IProperty<?> p : s.getPropertyKeys()) {
+                    if (p.getName().equals("age") && age != null) {
+                        int max = 0;
+                        for (Object v : p.getAllowedValues()) {
+                            max = Math.max(max, ((Number) v).intValue());
+                        }
+                        int mapped = Math.max(0, Math.min(max, max - (25 - Integer.parseInt(age))));
+                        s = apply(s, single("age", String.valueOf(mapped)));
+                    }
+                }
+                return apply(s, props);
+            }
             case "small_dripleaf": {
                 String half = props.remove("half");
                 Block block = byModernName(name);
