@@ -1,7 +1,9 @@
 package com.exiledradio.cavesandcliffsbackport.lush;
 
 import com.exiledradio.cavesandcliffsbackport.ModConfig;
+import com.exiledradio.cavesandcliffsbackport.common.CaveRegions;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.BlockFaceShape;
 import net.minecraft.block.state.IBlockState;
@@ -31,9 +33,11 @@ import java.util.Random;
  *       in on all sides; a dripleaf on one clay block in ten (four big to one small).</li>
  *   <li><b>Ceilings</b>: moss over most of them; cave vines under 12% of the moss, up to 20 long, a fifth of
  *       their blocks with berries; a spore blossom under 1.5%.</li>
- *   <li><b>Azalea trees</b>: from one lush ceiling per chunk (and half the time a second) the column is
- *       followed up, at most 100 blocks, to the first open ground. An azalea tree goes there, and rooted dirt
- *       runs from it back down to the cave (20 tries a layer within 2 blocks), ending in hanging roots.</li>
+ *   <li><b>Azalea trees</b>: 1.18.2's rooted_azalea_tree ({@link #rootedTrees}): 1-2 tries a chunk at a random
+ *       height, which must land in lush cave air under a ceiling, so most chunks of a lush cave get none. From
+ *       that ceiling the column is followed up, at most 100 blocks, to the first air on dirt, sand, terracotta
+ *       or snow with room above. An azalea tree goes there, and rooted dirt runs from it back down to the cave
+ *       (20 tries a layer within 2 blocks), ending in hanging roots.</li>
  * </ul>
  * Underground means at least 4 below the column's highest block, so an open ravine floor is not a cave.
  *
@@ -56,6 +60,9 @@ public final class LushCaveGenerator implements IWorldGenerator {
         int x0 = chunkX * 16 + 8, z0 = chunkZ * 16 + 8;
         if (ModConfig.caves.lushRegions) {
             decorate(world, random, x0, z0, world.getSeed());
+            if (ModConfig.lush.azaleaTrees) {
+                rootedTrees(world, random, x0, z0, world.getSeed());
+            }
         }
         if (ModConfig.lush.glowLichen) {
             lichen(world, random, x0, z0, ModConfig.lush.lichenTries);
@@ -97,19 +104,59 @@ public final class LushCaveGenerator implements IWorldGenerator {
         for (BlockPos air : floors) {
             floor(world, random, air, seed);
         }
-        List<BlockPos> mossy = new ArrayList<BlockPos>();
         for (BlockPos air : ceilings) {
-            if (ceiling(world, random, air, seed)) {
-                mossy.add(air);
-            }
-        }
-        if (ModConfig.lush.azaleaTrees && !mossy.isEmpty()) {
-            int trees = 1 + random.nextInt(2);
-            for (int i = 0; i < trees; i++) {
-                rootedTree(world, random, mossy.get(random.nextInt(mossy.size())), x0 - 8, z0 - 8);
-            }
+            ceiling(world, random, air, seed);
         }
         return floors.size() + ceilings.size();
+    }
+
+    /**
+     * 1.18.2's rooted_azalea_tree placement over the 16x16 columns from {@code x0, z0}: 1-2 tries, each at a random
+     * column and a random height (bottom to 256 in 1.18, 0-255 here), scanning up at most 12 through air for a
+     * solid ceiling; the air under that ceiling must be lush (vanilla's biome filter) and underground. Most tries
+     * miss, as in vanilla: the random height has to land in a lush cave. Then {@link #rootedTree}.
+     *
+     * @return how many trees were placed
+     */
+    public static int rootedTrees(World world, Random random, int x0, int z0, long seed) {
+        int tries = 1 + random.nextInt(2), placed = 0;
+        BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
+        for (int t = 0; t < tries; t++) {
+            int x = x0 + random.nextInt(16), z = z0 + random.nextInt(16), y = random.nextInt(256);
+            // EnvironmentScanPlacement.scanningFor(UP, solid, only in air, 12), then one down.
+            if (!world.isAirBlock(m.setPos(x, y, z))) {
+                continue;
+            }
+            boolean found = false, outside = false;
+            for (int i = 0; i < 12; i++) {
+                if (world.getBlockState(m).getMaterial().isSolid()) {
+                    found = true;
+                    break;
+                }
+                m.move(EnumFacing.UP);
+                if (m.getY() > 255) {
+                    outside = true;
+                    break;
+                }
+                if (!world.isAirBlock(m)) {
+                    break;
+                }
+            }
+            if (!found && !outside) {
+                found = world.getBlockState(m).getMaterial().isSolid();
+            }
+            if (!found) {
+                continue;
+            }
+            BlockPos origin = m.down();
+            if (origin.getY() > world.getHeight(x, z) - CaveRegions.COVER || !LushRegions.isLush(seed, x, origin.getY(), z)) {
+                continue;
+            }
+            if (rootedTree(world, random, origin, x0 - 8, z0 - 8)) {
+                placed++;
+            }
+        }
+        return placed;
     }
 
     private static void floor(World world, Random random, BlockPos air, long seed) {
@@ -221,22 +268,29 @@ public final class LushCaveGenerator implements IWorldGenerator {
      * @param minX   and minZ: the 32x32 window everything stays in
      */
     public static boolean rootedTree(World world, Random random, BlockPos origin, int minX, int minZ) {
+        if (!world.isAirBlock(origin)) {
+            return false;
+        }
         BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos(origin);
         int x = origin.getX(), z = origin.getZ();
+        // RootSystemFeature.placeDirtAndTree: up at most 100 to a block a tree may take (air, water, leaves or a
+        // replaceable plant) standing on azalea_grows_on, with air above (water allowed in the first block).
         for (int i = 0; i < 100 && m.getY() < 240; i++) {
             m.move(EnumFacing.UP);
-            if (!world.isAirBlock(m) || !world.isAirBlock(m.up()) || !world.isAirBlock(m.up(2))) {
+            if (!treePosition(world.getBlockState(m)) || !azaleaGrowsOn(world.getBlockState(m.down()))
+                    || !spaceForTree(world, m)) {
                 continue;
             }
             IBlockState ground = world.getBlockState(m.down());
-            if (!ground.getMaterial().isSolid() || ground.getMaterial() == Material.LEAVES || ground.getMaterial() == Material.WOOD) {
+            if (ground.getMaterial() == Material.LAVA || !ground.getMaterial().isSolid()) {
                 return false;
             }
             BlockPos base = m.toImmutable();
             if (!AzaleaTree.grow(world, random, base, minX, minZ, 2, true)) {
                 continue;
             }
-            for (int y = origin.getY(); y < base.getY(); y++) {
+            // placeDirt: from the origin up to (not including) the block under the tree, which the tree made rooted dirt.
+            for (int y = origin.getY(); y < base.getY() - 1; y++) {
                 for (int t = 0; t < 20; t++) {
                     m.setPos(x + random.nextInt(3) - random.nextInt(3), y, z + random.nextInt(3) - random.nextInt(3));
                     if (inside(m, minX, minZ) && rootReplaceable(world.getBlockState(m))) {
@@ -248,7 +302,7 @@ public final class LushCaveGenerator implements IWorldGenerator {
                 m.setPos(x + random.nextInt(3) - random.nextInt(3), origin.getY() + random.nextInt(2) - random.nextInt(2),
                         z + random.nextInt(3) - random.nextInt(3));
                 BlockPos up = m.up();
-                if (inside(m, minX, minZ) && airOrWater(world, m)
+                if (inside(m, minX, minZ) && world.isAirBlock(m)
                         && world.getBlockState(up).getBlockFaceShape(world, up, EnumFacing.DOWN) == BlockFaceShape.SOLID) {
                     world.setBlockState(m, LushContent.hangingRoots.getDefaultState(), 2);
                 }
@@ -256,6 +310,33 @@ public final class LushCaveGenerator implements IWorldGenerator {
             return true;
         }
         return false;
+    }
+
+    /** The root system's allowed tree position: air, water, leaves or a replaceable plant. */
+    private static boolean treePosition(IBlockState s) {
+        Material mt = s.getMaterial();
+        return s.getBlock() == Blocks.AIR || mt == Material.WATER || mt == Material.LEAVES
+                || s.getBlock() == Blocks.TALLGRASS || s.getBlock() == Blocks.DEADBUSH || s.getBlock() == Blocks.VINE
+                || s.getBlock() == Blocks.DOUBLE_PLANT || s.getBlock() == LushContent.hangingRoots
+                || s.getBlock() instanceof BlockGlowLichen;
+    }
+
+    /** {@code azalea_grows_on}: the dirt tag, sand, terracotta, snow blocks (and powder snow, which 1.12 lacks here). */
+    private static boolean azaleaGrowsOn(IBlockState s) {
+        Block b = s.getBlock();
+        return Soil.dirt(s) || b == Blocks.SAND || b == Blocks.HARDENED_CLAY || b == Blocks.STAINED_HARDENED_CLAY
+                || b == Blocks.SNOW;
+    }
+
+    /** RootSystemFeature.spaceForTree: the 3 blocks above are air, or water in the first one. */
+    private static boolean spaceForTree(World world, BlockPos pos) {
+        for (int i = 1; i <= 3; i++) {
+            IBlockState s = world.getBlockState(pos.up(i));
+            if (!(s.getBlock() == Blocks.AIR || i + 1 <= 2 && s.getMaterial() == Material.WATER)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** {@code azalea_root_replaceable}: base stone, dirt, clay, gravel, sand, hardened clay, snow blocks. */

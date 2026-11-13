@@ -2,6 +2,8 @@ package com.exiledradio.cavesandcliffsbackport.amethyst;
 
 import com.exiledradio.cavesandcliffsbackport.ModConfig;
 import com.exiledradio.cavesandcliffsbackport.common.Owners;
+import com.exiledradio.cavesandcliffsbackport.terrain.core.DoubleNoise;
+import com.exiledradio.cavesandcliffsbackport.terrain.core.LegacyRandom;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -20,23 +22,47 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Amethyst geodes, 1.17's settings within 1.12's height: one in {@code geodeRarity} chunks (24), between
- * {@code geodeMinY} and {@code geodeMaxY} (6-46).
+ * Amethyst geodes in 1.12 worlds, 1.17's settings within 1.12's height: one in {@code geodeRarity} chunks (24),
+ * between {@code geodeMinY} and {@code geodeMaxY} (6-46).
  *
- * <h2>Shape (our own implementation of 1.17's layered geode)</h2>
- * Three or four points are scattered 4-6 blocks from a corner, each with an offset of 1-2. For every
- * block in reach, {@code s} is the sum over the points of {@code 1 / sqrt(distance^2 + offset)}, plus a
- * little noise. Thresholds from 1.17's layer sizes (filling 1.7, inner 2.2, middle 3.2, outer 4.2, each
- * as {@code 1 / sqrt(size)}, the last three widened by points / 6) pick air, amethyst (budding 8.3% of the
- * time), calcite or smooth basalt. 95% of geodes get a crack: a few points in a line out one side, whose
- * own sum opens the shell to the air inside. Then 35% of the budding blocks get a random bud on their first
- * open face.
+ * <h2>Shape: 1.18.2's GeodeFeature with AMETHYST_GEODE's configuration</h2>
+ * Three or four points 4-6 blocks from a corner on each axis, each with an offset of 1-2. For every block in
+ * reach, {@code s} is the sum over the points of {@code fastInvSqrt(distance^2 + offset) + n}, where {@code n} is
+ * the geode noise there (a NormalNoise on the world seed, first octave -4) times 0.05, so a geode swells or
+ * shrinks with the noise around it. Thresholds from the layer sizes (filling 1.7, inner 2.2, middle 3.2, outer
+ * 4.2, each as {@code 1 / sqrt(size)}, the last three widened by points / 6) pick air, amethyst (budding 8.3% of
+ * the time), calcite or smooth basalt. 95% of geodes get a crack: three points (7, 5 and 1 over the corner) out
+ * one side, at the far corner or at the corner itself, whose own sum opens the shell to the air inside. Then 35%
+ * of the budding blocks get a random bud or cluster on their first open face, in Direction order. This is the
+ * code of the 1.18 terrain's geode ({@code terrain/core/Geodes}) on java.util.Random.
  *
- * <p>A geode aborts if more than one of its points lies in bedrock, water, lava or ice. It never replaces
- * bedrock, spawners or chests, and it stays inside the population window, so it never loads another
- * chunk. Calcite and smooth basalt are stream D's; without them (stream off) no geodes generate.
+ * <p>A geode aborts if more than one of its points lies in air, bedrock, water, lava or ice. It never replaces
+ * bedrock, spawners, chests, end portal frames or tile entities, and it stays inside the population window, so
+ * it never loads another chunk. Calcite and smooth basalt are stream D's; without them (stream off) no geodes
+ * generate.
  */
 public final class GeodeGenerator implements IWorldGenerator {
+
+    private static final double FILLING = 1.7D, INNER = 2.2D, MIDDLE = 3.2D, OUTER = 4.2D;
+    private static final double CRACK_CHANCE = 0.95D, BASE_CRACK = 2.0D, NOISE_MULTIPLIER = 0.05D;
+    private static final int CRACK_OFFSET = 2;
+    private static final double POTENTIAL_PLACEMENTS = 0.35D, ALTERNATE_LAYER0 = 0.083D;
+
+    /** The geode noise of the last world seed asked for (it depends on the seed alone). */
+    private static final class SeedNoise {
+        final long seed;
+        final DoubleNoise noise;
+        /** A bound on |noise * 0.05|, with a margin, for skipping blocks that cannot reach the outer layer. */
+        final double bound;
+
+        SeedNoise(long seed) {
+            this.seed = seed;
+            this.noise = new DoubleNoise(new LegacyRandom(seed), -4, 1.0D);
+            this.bound = noise.maxValue() * NOISE_MULTIPLIER * 1.000001D + 1.0E-9D;
+        }
+    }
+
+    private static volatile SeedNoise last;
 
     @Override
     public void generate(Random random, int chunkX, int chunkZ, World world, IChunkGenerator generator, IChunkProvider provider) {
@@ -49,10 +75,38 @@ public final class GeodeGenerator implements IWorldGenerator {
         }
         int lo = Math.max(1, ModConfig.amethyst.geodeMinY);
         int hi = Math.max(lo + 1, ModConfig.amethyst.geodeMaxY);
-        // The points sit 4-6 blocks from the corner, so the geode's middle is about 5 past it; keep the
-        // whole thing inside the 32x32 population window [chunk*16, chunk*16+32).
+        // The points sit 4-6 blocks past the corner and the shell reaches about 7 past them, so a geode spans
+        // about corner-2 to corner+13: keep it inside the 32x32 population window [chunk*16, chunk*16+32).
         BlockPos corner = new BlockPos(chunkX * 16 + 7 + random.nextInt(8), lo + random.nextInt(hi - lo), chunkZ * 16 + 7 + random.nextInt(8));
         place(world, random, corner, chunkX * 16, chunkZ * 16);
+    }
+
+    private static SeedNoise noise(long seed) {
+        SeedNoise n = last;
+        if (n == null || n.seed != seed) {
+            n = new SeedNoise(seed);
+            last = n;
+        }
+        return n;
+    }
+
+    /** Mth.fastInvSqrt(double). */
+    private static double fastInvSqrt(double x) {
+        double half = 0.5D * x;
+        long i = Double.doubleToRawLongBits(x);
+        i = 6910469410427058090L - (i >> 1);
+        x = Double.longBitsToDouble(i);
+        return x * (1.5D - half * x * x);
+    }
+
+    private static double distSqr(int x, int y, int z, int ox, int oy, int oz) {
+        double dx = (double) x - ox, dy = (double) y - oy, dz = (double) z - oz;
+        return dx * dx + dy * dy + dz * dz;
+    }
+
+    /** UniformInt.of(min, max).sample(random). */
+    private static int between(Random random, int min, int max) {
+        return random.nextInt(max - min + 1) + min;
     }
 
     /**
@@ -66,94 +120,97 @@ public final class GeodeGenerator implements IWorldGenerator {
         if (calcite == null || basalt == null || AmethystContent.amethyst == null) {
             return false;
         }
-        int points = 3 + random.nextInt(2);
-        List<int[]> pts = new ArrayList<int[]>();
+        SeedNoise sn = noise(world.getSeed());
+        DoubleNoise noise = sn.noise;
+        int x = corner.getX(), y = corner.getY(), z = corner.getZ();
+        int k = between(random, 3, 4);
+        double d0 = (double) k / 6.0D;
+        double d1 = 1.0D / Math.sqrt(FILLING);
+        double d2 = 1.0D / Math.sqrt(INNER + d0);
+        double d3 = 1.0D / Math.sqrt(MIDDLE + d0);
+        double d4 = 1.0D / Math.sqrt(OUTER + d0);
+        double d5 = 1.0D / Math.sqrt(BASE_CRACK + random.nextDouble() / 2.0D + (k > 3 ? d0 : 0.0D));
+        boolean cracked = (double) random.nextFloat() < CRACK_CHANCE;
+        int[] px = new int[k], py = new int[k], pz = new int[k], po = new int[k];
         int invalid = 0;
-        for (int i = 0; i < points; i++) {
-            int[] p = {corner.getX() + 4 + random.nextInt(3), corner.getY() + 4 + random.nextInt(3),
-                    corner.getZ() + 4 + random.nextInt(3), 1 + random.nextInt(2)};
-            pts.add(p);
-            if (invalidHere(world.getBlockState(new BlockPos(p[0], p[1], p[2]))) && ++invalid > 1) {
+        BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
+        for (int i = 0; i < k; i++) {
+            int ox = between(random, 4, 6), oy = between(random, 4, 6), oz = between(random, 4, 6);
+            IBlockState s = world.getBlockState(m.setPos(x + ox, y + oy, z + oz));
+            if ((s.getBlock().isAir(s, world, m) || invalidHere(s)) && ++invalid > 1) {
                 return false;
             }
+            px[i] = x + ox;
+            py[i] = y + oy;
+            pz[i] = z + oz;
+            po[i] = between(random, 1, 2);
         }
-        double widen = points / 6.0;
-        double filling = 1 / Math.sqrt(1.7), inner = 1 / Math.sqrt(2.2 + widen),
-                middle = 1 / Math.sqrt(3.2 + widen), outer = 1 / Math.sqrt(4.2 + widen);
-        double crackLimit = 1 / Math.sqrt(2.0 + random.nextDouble() / 2 + (points > 3 ? widen : 0));
-        List<int[]> crack = new ArrayList<int[]>();
-        if (random.nextFloat() < 0.95F) {
-            int side = random.nextInt(4), reach = points * 2 + 1;
-            for (int dy : new int[] {7, 5, 1}) {
-                int cx = corner.getX(), cz = corner.getZ();
-                if (side == 0) {
-                    cx += reach;
-                } else if (side == 1) {
-                    cz += reach;
-                } else if (side == 2) {
-                    cx += reach;
-                    cz += 7;
-                } else {
-                    cx += 7;
-                    cz += reach;
-                }
-                crack.add(new int[] {cx, corner.getY() + dy, cz});
+        int cracks = 0;
+        int[] cx = new int[3], cy = new int[3], cz = new int[3];
+        if (cracked) {
+            int side = random.nextInt(4), reach = k * 2 + 1;
+            int ox = side == 0 || side == 2 ? reach : 0, oz = side == 1 || side == 2 ? reach : 0;
+            int[] ys = {7, 5, 1};
+            for (int c = 0; c < 3; c++) {
+                cx[c] = x + ox;
+                cy[c] = y + ys[c];
+                cz[c] = z + oz;
             }
+            cracks = 3;
         }
+        IBlockState air = Blocks.AIR.getDefaultState();
         IBlockState amethyst = AmethystContent.amethyst.getDefaultState();
         IBlockState budding = AmethystContent.budding.getDefaultState();
-        List<BlockPos> buddingPlaced = new ArrayList<BlockPos>();
-        Random noise = new Random(world.getSeed() ^ corner.toLong());
-        BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
-        for (int x = corner.getX() - 4; x <= corner.getX() + 14; x++) {
-            if (x < minX || x >= minX + 32) {
+        List<BlockPos> placements = new ArrayList<BlockPos>();
+        // Vanilla's order (z, then y, then x): the budding and placement draws follow it.
+        for (int bz = z - 16; bz <= z + 16; bz++) {
+            if (bz < minZ || bz >= minZ + 32) {
                 continue;
             }
-            for (int z = corner.getZ() - 4; z <= corner.getZ() + 14; z++) {
-                if (z < minZ || z >= minZ + 32) {
-                    continue;
-                }
-                for (int y = Math.max(1, corner.getY() - 4); y <= Math.min(254, corner.getY() + 14); y++) {
-                    double s = 0;
-                    for (int[] p : pts) {
-                        double dx = x - p[0], dy = y - p[1], dz = z - p[2];
-                        s += 1 / Math.sqrt(dx * dx + dy * dy + dz * dz + p[3]);
-                    }
-                    s += (noise.nextDouble() - 0.5) * 0.1;
-                    if (s < outer) {
+            for (int by = Math.max(1, y - 16); by <= Math.min(254, y + 16); by++) {
+                for (int bx = x - 16; bx <= x + 16; bx++) {
+                    if (bx < minX || bx >= minX + 32) {
                         continue;
                     }
-                    double c = 0;
-                    for (int[] p : crack) {
-                        double dx = x - p[0], dy = y - p[1], dz = z - p[2];
-                        c += 1 / Math.sqrt(dx * dx + dy * dy + dz * dz + 2);
+                    double base = 0.0D;
+                    for (int p = 0; p < k; p++) {
+                        base += fastInvSqrt(distSqr(bx, by, bz, px[p], py[p], pz[p]) + (double) po[p]);
                     }
-                    m.setPos(x, y, z);
-                    if (cannotReplace(world.getBlockState(m))) {
+                    if (base + k * sn.bound < d4) {
+                        continue; // cannot reach the outer layer whatever the noise
+                    }
+                    double d8 = noise.getValue((double) bx, (double) by, (double) bz) * NOISE_MULTIPLIER;
+                    double d6 = 0.0D, d7 = 0.0D;
+                    for (int p = 0; p < k; p++) {
+                        d6 += fastInvSqrt(distSqr(bx, by, bz, px[p], py[p], pz[p]) + (double) po[p]) + d8;
+                    }
+                    if (d6 < d4) {
                         continue;
                     }
-                    IBlockState put;
-                    if (!crack.isEmpty() && c >= crackLimit && s < filling) {
-                        put = Blocks.AIR.getDefaultState();
-                    } else if (s >= filling) {
-                        put = Blocks.AIR.getDefaultState();
-                    } else if (s >= inner) {
-                        boolean bud = random.nextFloat() < 0.083F;
-                        put = bud ? budding : amethyst;
-                        if (bud && random.nextFloat() < 0.35F) {
-                            buddingPlaced.add(m.toImmutable());
+                    for (int c = 0; c < cracks; c++) {
+                        d7 += fastInvSqrt(distSqr(bx, by, bz, cx[c], cy[c], cz[c]) + (double) CRACK_OFFSET) + d8;
+                    }
+                    m.setPos(bx, by, bz);
+                    if (cracked && d7 >= d5 && d6 < d1) {
+                        safeSet(world, m, air);
+                    } else if (d6 >= d1) {
+                        safeSet(world, m, air);
+                    } else if (d6 >= d2) {
+                        boolean bud = (double) random.nextFloat() < ALTERNATE_LAYER0;
+                        safeSet(world, m, bud ? budding : amethyst);
+                        if (bud && (double) random.nextFloat() < POTENTIAL_PLACEMENTS) {
+                            placements.add(m.toImmutable());
                         }
-                    } else if (s >= middle) {
-                        put = calcite.getDefaultState();
+                    } else if (d6 >= d3) {
+                        safeSet(world, m, calcite.getDefaultState());
                     } else {
-                        put = basalt.getDefaultState();
+                        safeSet(world, m, basalt.getDefaultState());
                     }
-                    world.setBlockState(m, put, 2);
                 }
             }
         }
         BlockAmethystCluster[] buds = AmethystContent.stages;
-        for (BlockPos b : buddingPlaced) {
+        for (BlockPos b : placements) {
             BlockAmethystCluster bud = buds[random.nextInt(buds.length)];
             for (EnumFacing f : EnumFacing.values()) {
                 BlockPos at = b.offset(f);
@@ -161,7 +218,7 @@ public final class GeodeGenerator implements IWorldGenerator {
                     continue;
                 }
                 if (BlockAmethyst.Budding.canGrowInto(world.getBlockState(at))) {
-                    world.setBlockState(at, bud.getDefaultState().withProperty(BlockAmethystCluster.FACING, f), 2);
+                    safeSet(world, at, bud.getDefaultState().withProperty(BlockAmethystCluster.FACING, f));
                     break;
                 }
             }
@@ -169,12 +226,20 @@ public final class GeodeGenerator implements IWorldGenerator {
         return true;
     }
 
+    private static void safeSet(World world, BlockPos pos, IBlockState state) {
+        if (!cannotReplace(world.getBlockState(pos))) {
+            world.setBlockState(pos, state, 2);
+        }
+    }
+
+    /** BlockTags.GEODE_INVALID_BLOCKS (the feature counts air with them). */
     private static boolean invalidHere(IBlockState s) {
         Block b = s.getBlock();
         return b == Blocks.BEDROCK || s.getMaterial() == Material.WATER || s.getMaterial() == Material.LAVA
                 || b == Blocks.ICE || b == Blocks.PACKED_ICE;
     }
 
+    /** BlockTags.FEATURES_CANNOT_REPLACE, and any tile entity. */
     private static boolean cannotReplace(IBlockState s) {
         Block b = s.getBlock();
         return b == Blocks.BEDROCK || b == Blocks.MOB_SPAWNER || b == Blocks.CHEST || b == Blocks.END_PORTAL_FRAME

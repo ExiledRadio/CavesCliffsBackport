@@ -568,6 +568,8 @@ public final class LushSelfTest implements SelfTest {
         // the window too, or that would be counted as ours.
         c.fill(new BlockPos(x0 - 12, 8, z0 - 12), new BlockPos(x0 + 27, 60, z0 + 27), STONE);
         c.fill(new BlockPos(x0 - 12, 61, z0 - 12), new BlockPos(x0 + 27, 100, z0 + 27), AIR);
+        // Grass on top: the root system only plants its tree on azalea_grows_on (dirt, sand, terracotta, snow).
+        c.fill(new BlockPos(x0 - 12, 60, z0 - 12), new BlockPos(x0 + 27, 60, z0 + 27), Blocks.GRASS.getDefaultState());
         c.fill(new BlockPos(x0, 14, z0), new BlockPos(x0 + 15, 21, z0 + 15), AIR);
         Chunk chunk = c.world.getChunk(spot);
         chunk.generateSkylightMap();
@@ -576,6 +578,13 @@ public final class LushSelfTest implements SelfTest {
         c.world.getChunk(spot.add(16, 0, 16)).generateSkylightMap();
         c.world.getChunk(spot.add(-8, 0, -8)).generateSkylightMap();
         int dressed = LushCaveGenerator.decorate(c.world, new Random(77), x0, z0, seed);
+        // The tree's random height rarely lands in a cave (as in 1.18.2), so plant it from the cave's middle.
+        boolean tree = false;
+        for (int d = 0; d < 8 && !tree; d++) {
+            BlockPos origin = new BlockPos(x0 + 8 + d, 21, z0 + 8);
+            tree = c.world.isAirBlock(origin) && LushCaveGenerator.rootedTree(c.world, new Random(77 + d), origin, x0 - 8, z0 - 8);
+        }
+        c.ok(tree, "a root system from the cave's ceiling grows its azalea tree on the grass");
         BlockPos fl = new BlockPos(x0, 13, z0), fh = new BlockPos(x0 + 15, 13, z0 + 15);
         BlockPos cl = new BlockPos(x0, 22, z0), ch = new BlockPos(x0 + 15, 22, z0 + 15);
         BlockPos al = new BlockPos(x0, 14, z0), ah = new BlockPos(x0 + 15, 21, z0 + 15);

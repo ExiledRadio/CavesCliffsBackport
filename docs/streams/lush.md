@@ -83,6 +83,36 @@ blossoms under 1.5%; and one or two tries a chunk at 1.17's root system (azalea 
 within 100 above, rooted dirt down to the cave, hanging roots). Nothing is written outside the window. Glow
 lichen is tried `lichenTries` times a chunk between y 5 and 54, on stone faces, half of them spread once.
 
+### Generation parity pass (2026-11-13, branch `cc-gen-parity`)
+
+A playtest said azalea trees were too common and lush caves too small. Measured on the playtest saves (a 1.12
+world of 3,339 chunks; a `cavesandcliffs` world of 46,870 chunks, whose features are vanilla 1.18.2's exactly):
+
+*   **Azalea trees** were 85 per 1,000 chunks against vanilla's 0.2, nearly always another within 32 blocks
+    (median 14 apart against 167). The root system was tried from a lush ceiling of every lush chunk, and 1.12's
+    caves are shallow enough that it almost always reached open ground. It now places as 1.18.2's
+    rooted_azalea_tree does (`rootedTrees`): 1-2 tries a chunk at a random height 0-255, scanning up at most 12
+    through air to a solid ceiling, kept only where that air is lush and underground; then the root system
+    climbs at most 100 to air, water, leaves or a replaceable plant standing on `azalea_grows_on` (dirt, sand,
+    terracotta, snow) with room above, as `RootSystemFeature` does, rooted dirt stops under the tree's own block,
+    and hanging roots go only in air.
+*   **Lush caves**: the regions were about 2.3 times narrower than 1.18.2's lush caves biome (moss-bearing areas,
+    chunk-weighted median 145 chunks against 792; the largest 173 against 929). `CaveRegions`' lattice is twice as
+    wide now (256 and 96 across), the same 9% share. Dripstone regions grow the same way (the other tail of the
+    same noise), as 1.18's two cave biomes are alike in size. Worlds generated before this get a seam where old
+    and new chunks meet. Lush caves are still dressed 1.12 caves, so they stay thinner than 1.18's noise caves.
+
+Before and after, the dev server (`-Pselftest=genscan`, `GenScanSelfTest`, a square of chunks named in
+`eclipse/genscan.txt`) on the playtest seed -2903490073629024182, 3,940 chunks around chunk 21,56, scanned offline:
+
+| | before | after | 1.18.2 (`cavesandcliffs` save) |
+| --- | --- | --- | --- |
+| azalea trees per 1,000 chunks | 76.6 | 0.3 | 0.2 |
+| lush areas, chunk-weighted median / largest (chunks) | 166 / 211 | 342 / 342 | 792 / 929 |
+| largest lush patch (blocks) | 9,153 | 12,189 | 42,924 |
+| geode amethyst, median | 294 | 370 | 405 |
+| buds per geode, median (10th-90th) | 6 (2-11) | 6 (3-11) | 6 (2-11) |
+
 ## Differences from current Java
 
 *   No waterlogging yet (the plan's later pass): glow lichen, hanging roots and both dripleaves go only in air,

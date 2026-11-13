@@ -17,11 +17,11 @@ import net.minecraft.world.WorldType;
  * their music.
  *
  * <h2>The noise</h2>
- * One 3D value noise, stateless and cheap (two octaves, 16 hashes a sample): lattice cells 128 blocks wide and 48
- * tall, with a quarter-weight octave of 48 by 24 for ragged edges. Its value is in -1..1 and centered on 0.
+ * One 3D value noise, stateless and cheap (two octaves, 16 hashes a sample): lattice cells 256 blocks wide and 48
+ * tall, with a quarter-weight octave of 96 by 24 for ragged edges. Its value is in -1..1 and centered on 0.
  * <b>Dripstone</b> regions are where it is above {@link #THRESHOLD}, <b>lush</b> regions where it is below
  * {@code -THRESHOLD}: the two tails of one noise, so the two kinds never overlap and never touch. Each tail is
- * 9% of the underground (measured), in blobs a hundred to a few hundred blocks across and a few tens tall.
+ * 9% of the underground (measured), in blobs two hundred to several hundred blocks across and a few tens tall.
  *
  * <h2>The key</h2>
  * The noise is keyed by the first eight bytes of the SHA-256 of the world seed, not by the seed: clients need the
@@ -41,7 +41,12 @@ public final class CaveRegions {
     public static final double THRESHOLD = 0.40;
     public static final int COVER = 4;
 
-    private static final double XZ = 1 / 128.0, Y = 1 / 48.0, XZ2 = 1 / 48.0, Y2 = 1 / 24.0;
+    /**
+     * Lattice spacing. Until 2026-11-13 the cells were 128 and 48 wide: lush areas then came out about 2.3 times
+     * narrower than 1.18.2's lush caves biome (by moss-bearing chunks, chunk-weighted median 145 against 792), so
+     * they read as small pockets. Twice as wide puts them at 360-870 on three seeds with the same 9% share.
+     */
+    private static final double XZ = 1 / 256.0, Y = 1 / 48.0, XZ2 = 1 / 96.0, Y2 = 1 / 24.0;
 
     /**
      * The most the noise changes per block along x or z, and along y. Each octave is a trilinear blend of lattice
