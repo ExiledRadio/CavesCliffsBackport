@@ -68,8 +68,9 @@ stream calls another's classes; when one needs another's block or item it looks 
 | X | Other 1.17 blocks, items and changes | `blocks` | `blocks` | none | 55-59 | 1.17 |
 | Mu | 1.18 music and the Otherside disc | `music` | `music` | none | 60-64 | 1.18 |
 | T | 1.18 terrain: extended height (coremod) and the terrain | `height`, `terrain` | `terrain` | none | 65-74 | 1.18 |
+| Lf | Look and feel of 1.17 and 1.18 (panoramas, splashes, options, defaults, fog, clouds, F3) through Backport Core's `presentation` | `lookfeel` | none (always on, as the other backports' look and feel) | none | 75-79 | 1.17, 1.18 |
 
-Packet ids 0-4 are `common`'s. Build order: D, Cu, Am, Dr, L, Ps, Ca, Gs, Ax, Gt, X, Mu; T when decided.
+Packet ids 0-4 are `common`'s. Stream Lf's dev-server port is 25854 (`docs/streams/lookfeel.md`). Build order: D, Cu, Am, Dr, L, Ps, Ca, Gs, Ax, Gt, X, Mu; T when decided.
 D comes first because copper ore, geodes and dripstone caves sit in its deepslate.
 
 **Status (2026-11-11):** every 1.17 stream and Mu built, tested and merged (`docs/streams/*.md`). Double slabs

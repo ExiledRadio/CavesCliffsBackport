@@ -60,7 +60,7 @@ public final class HeightContent {
 
     public static void preInit(boolean client) {
         String clientTest = System.getProperty(CavesAndCliffsBackport.MOD_ID + ".clienttest");
-        if (client && clientTest != null) {
+        if (client && ("height".equals(clientTest) || "startup".equals(clientTest))) {
             // A test build's client test (runClient -Pclienttest=height), reached by name: a release has no test classes.
             try {
                 Class.forName("com.exiledradio.cavesandcliffsbackport.selftest.HeightClientSelfTest")

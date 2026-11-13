@@ -54,6 +54,7 @@ public final class ClientSetup {
             com.exiledradio.cavesandcliffsbackport.blocks.client.LightClient.init();
         }
         com.exiledradio.cavesandcliffsbackport.music.client.MusicClient.init();
+        com.exiledradio.cavesandcliffsbackport.lookfeel.client.LookAndFeelClient.init();
     }
 
     @SubscribeEvent
