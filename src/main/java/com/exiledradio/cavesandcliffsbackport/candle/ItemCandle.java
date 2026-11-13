@@ -14,6 +14,10 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+
+import javax.annotation.Nullable;
 
 /**
  * A candle in the hand. Used on a block of the same candles that holds fewer than four (or on something next
@@ -34,13 +38,8 @@ public class ItemCandle extends ItemBlock {
     public EnumActionResult onItemUse(EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing facing,
                                       float hitX, float hitY, float hitZ) {
         ItemStack stack = player.getHeldItem(hand);
-        if (!player.isSneaking() && !stack.isEmpty()) {
-            BlockPos target = null;
-            if (takesMore(world, pos)) {
-                target = pos;
-            } else if (!world.getBlockState(pos).getBlock().isReplaceable(world, pos) && takesMore(world, pos.offset(facing))) {
-                target = pos.offset(facing);
-            }
+        if (!stack.isEmpty()) {
+            BlockPos target = addTarget(player, world, pos, facing);
             if (target != null && player.canPlayerEdit(target, facing, stack)) {
                 IBlockState state = world.getBlockState(target);
                 world.setBlockState(target, state.withProperty(BlockCandle.CANDLES, state.getValue(BlockCandle.CANDLES) + 1), 11);
@@ -55,5 +54,34 @@ public class ItemCandle extends ItemBlock {
             }
         }
         return super.onItemUse(player, world, pos, hand, facing, hitX, hitY, hitZ);
+    }
+
+    /**
+     * The candles a click adds one to: the clicked block, or the block the click would place into, while it holds
+     * fewer than four of these candles; null when the click places a new block (always while sneaking).
+     */
+    @Nullable
+    private BlockPos addTarget(EntityPlayer player, World world, BlockPos pos, EnumFacing facing) {
+        if (player.isSneaking()) {
+            return null;
+        }
+        if (takesMore(world, pos)) {
+            return pos;
+        }
+        if (!world.getBlockState(pos).getBlock().isReplaceable(world, pos) && takesMore(world, pos.offset(facing))) {
+            return pos.offset(facing);
+        }
+        return null;
+    }
+
+    /**
+     * The client asks this before it sends a click to the server (as it does for slabs, which {@code ItemSlab} answers
+     * the same way): without it, a click on candles is refused on the client because a candle cannot stand on a
+     * candle or go into one, and adding a candle never happens in a real game.
+     */
+    @Override
+    @SideOnly(Side.CLIENT)
+    public boolean canPlaceBlockOnSide(World world, BlockPos pos, EnumFacing side, EntityPlayer player, ItemStack stack) {
+        return addTarget(player, world, pos, side) != null || super.canPlaceBlockOnSide(world, pos, side, player, stack);
     }
 }
