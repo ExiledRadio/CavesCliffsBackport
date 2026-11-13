@@ -91,6 +91,15 @@ corner heights). `/locate` and explorer maps search the same starts (growing squ
 outposts, buried treasure, ruined portals, shipwrecks and ocean ruins have no 1.12 pieces: the family's backports
 build them, where this generator says (below).
 
+**Village & Pillage's villages** (branch `cc118-villages`; Core's `StructureGenerators`). The generator offers its
+village generator to Backport Core before using it; with Village & Pillage installed (villages.style MODERN) its 1.14
+jigsaw villages take 1.12's place: they start where the start rule says (1.18.2's village set and its type, plains,
+desert, savanna, snowy or taiga), are laid out on this generator's WORLD_SURFACE_WG, register with `TerrainAdaptation`
+as beard_thin (rigid houses beard, streets follow the ground; no junctions), and answer `/locate` and `/locate
+Village`. 1.12's villages are then neither laid out nor adapted to. The generator is also Core's `FeatureSource`
+("1.18.2"), so Village & Pillage's sweet berry, flower and jungle bamboo generators step aside: the 1.18 features place
+its blocks (`StateMap` by modern name, preferring the copy Core's duplicate hiding keeps).
+
 **The family's structures** (Backport Core's `StructureSource`, `docs/CORE_REQUESTS.md` 12). The generator gives Core a
 start rule for shipwrecks, ocean ruins, buried treasure, ruined portals and pillager outposts: 1.18's grid for the
 set, and at a chunk the core's `Structures.startAt` (placement, the biome at the start's height, the weighted choice
@@ -243,8 +252,9 @@ same with 8 workers (unpinned): 2.5 ms/chunk, same checksum. (Before trees and v
 
 *   **Plants and corals without a 1.12 block** stand in as listed under Block states when no family backport adds
     them: bamboo jungles have no bamboo, warm oceans terracotta reefs.
-*   **Village pieces are 1.12's**, so the beard is 1.12's houses' (no jigsaw junctions: 1.12's roads do not record
-    where they meet a house). Village & Pillage's outposts keep no junctions either.
+*   **Village pieces are 1.12's** without Village & Pillage, so the beard is 1.12's houses' (no jigsaw junctions:
+    1.12's roads do not record where they meet a house). Village & Pillage's villages and outposts are its 1.14
+    jigsaw pieces (not 1.18.2's pools) and keep no junctions either.
 *   **The family's structures need their `cc-structures` branches** (Core 1.2.0 with `StructureSource`; Update
     Aquatic, Nether Update and Village & Pillage asking it). Their released jars keep their own placement.
 *   **Spawn point**: dry land nearest 0, 0 by the noise, not 1.18's climate-based `findSpawnPosition`; no bonus chest.

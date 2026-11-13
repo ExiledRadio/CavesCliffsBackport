@@ -2,10 +2,12 @@ package com.exiledradio.cavesandcliffsbackport.terrain;
 
 import com.exiledradio.backportcore.structure.ScatteredPlacement;
 import com.exiledradio.backportcore.structure.StartRule;
+import com.exiledradio.backportcore.structure.StructureGenerators;
 import com.exiledradio.backportcore.structure.StructureSource;
 import com.exiledradio.backportcore.terrain.ColumnTerrain;
 import com.exiledradio.backportcore.terrain.TerrainSource;
 import com.exiledradio.backportcore.waterlog.Waterlogging;
+import com.exiledradio.backportcore.worldgen.FeatureSource;
 import com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport;
 import com.exiledradio.cavesandcliffsbackport.height.HeightLayout;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.BiomeSource;
@@ -27,6 +29,7 @@ import net.minecraft.world.biome.Biome;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 import net.minecraft.world.gen.IChunkGenerator;
+import net.minecraft.world.gen.structure.MapGenStructure;
 import net.minecraft.world.storage.loot.LootTableList;
 import net.minecraftforge.common.DungeonHooks;
 import net.minecraftforge.event.ForgeEventFactory;
@@ -54,7 +57,7 @@ import java.util.Random;
  *       ({@link ModernTerrain#owns}).</li>
  * </ul>
  */
-public final class ModernGenerator implements IChunkGenerator, TerrainSource, StructureSource {
+public final class ModernGenerator implements IChunkGenerator, TerrainSource, StructureSource, FeatureSource {
 
     /** How far around each asked-for chunk the workers fill ahead, in chunks. */
     static final int PREFETCH = 4;
@@ -68,7 +71,14 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
     private final boolean sky;
     private final Random rand = new Random();
     private final ModernStructures structures;
+    /** 1.12's villages where 1.18 starts villages, or null where a backport builds them instead ({@link #villages}). */
+    @Nullable
     private final ModernStructures.Village village;
+    /**
+     * The village generator in use: {@link #village}, or the one a backport put in its place through Backport Core's
+     * {@code StructureGenerators} (Village &amp; Pillage's 1.14 villages, which ask {@link #startRule} where they start).
+     */
+    private final MapGenStructure villages;
     private final ModernStructures.Temple temple;
     private final ModernStructures.Monument monument;
     private final ModernStructures.Mineshaft mineshaft;
@@ -104,7 +114,9 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         this.heights = new ChunkFiller(terrain.noise, columns);
         this.structures = new ModernStructures(new Structures(terrain.noise, columns,
                 new BiomeSource(terrain.noise, columns, terrain.climate)));
-        this.village = structures.new Village(this);
+        ModernStructures.Village own = structures.new Village(this);
+        this.villages = StructureGenerators.replace(world, com.exiledradio.backportcore.structure.Structures.VILLAGE, own);
+        this.village = this.villages == own ? own : null;
         this.temple = structures.new Temple(this);
         this.monument = structures.new Monument();
         this.mineshaft = structures.new Mineshaft();
@@ -187,7 +199,7 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         }
         if (this.features) {
             this.mineshaft.generate(this.world, x, z, null);
-            this.village.generate(this.world, x, z, null);
+            this.villages.generate(this.world, x, z, null);
             this.stronghold.generate(this.world, x, z, null);
             this.temple.generate(this.world, x, z, null);
             this.monument.generate(this.world, x, z, null);
@@ -292,7 +304,7 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         ForgeEventFactory.onChunkPopulate(true, this, this.world, this.rand, x, z, false);
         if (this.features) {
             this.mineshaft.generateStructure(this.world, this.rand, chunkpos);
-            village = this.village.generateStructure(this.world, this.rand, chunkpos);
+            village = this.villages.generateStructure(this.world, this.rand, chunkpos);
             this.stronghold.generateStructure(this.world, this.rand, chunkpos);
             this.temple.generateStructure(this.world, this.rand, chunkpos);
             this.monument.generateStructure(this.world, this.rand, chunkpos);
@@ -367,6 +379,10 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
             case com.exiledradio.backportcore.structure.Structures.PILLAGER_OUTPOST:
                 set = Structures.PILLAGER_OUTPOSTS;
                 break;
+            case com.exiledradio.backportcore.structure.Structures.VILLAGE:
+                // For a backport's villages in place of 1.12's (Village & Pillage's): village_plains, _desert, ...
+                set = Structures.VILLAGES;
+                break;
             default:
                 return null;
         }
@@ -387,6 +403,16 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         };
     }
 
+    /**
+     * Every 1.18.2 placed feature is the terrain core's ({@code Decorator}), with the family's blocks where their
+     * backports are installed ({@link StateMap}): a backport's own generators for features 1.18 has step aside.
+     */
+    @Nullable
+    @Override
+    public String featureVersion(World world) {
+        return world == this.world ? "1.18.2" : null;
+    }
+
     @Override
     public boolean isInsideStructure(World worldIn, String structureName, BlockPos pos) {
         if (!this.features) {
@@ -400,7 +426,7 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
             case "Monument":
                 return this.monument.isInsideStructure(pos);
             case "Village":
-                return this.village.isInsideStructure(pos);
+                return this.villages.isInsideStructure(pos);
             case "Mineshaft":
                 return this.mineshaft.isInsideStructure(pos);
             case "Temple":
@@ -424,7 +450,7 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
             case "Monument":
                 return this.monument.getNearestStructurePos(worldIn, position, findUnexplored);
             case "Village":
-                return this.village.getNearestStructurePos(worldIn, position, findUnexplored);
+                return this.villages.getNearestStructurePos(worldIn, position, findUnexplored);
             case "Mineshaft":
                 return this.mineshaft.getNearestStructurePos(worldIn, position, findUnexplored);
             case "Temple":
@@ -438,7 +464,7 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
     public void recreateStructures(Chunk chunkIn, int x, int z) {
         if (this.features) {
             this.mineshaft.generate(this.world, x, z, null);
-            this.village.generate(this.world, x, z, null);
+            this.villages.generate(this.world, x, z, null);
             this.stronghold.generate(this.world, x, z, null);
             this.temple.generate(this.world, x, z, null);
             this.monument.generate(this.world, x, z, null);
@@ -536,12 +562,25 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
                 ModernTerrain.threads());
     }
 
-    /** For the self-test: the laid-out villages (or strongholds) whose 1.18 adapt_noise box reaches the chunk. */
+    /** For the self-test: whether the villages are 1.12's (false: a backport builds them in their place). */
+    public boolean ownVillages() {
+        return village != null;
+    }
+
+    /** For the self-test: the village generator in use (1.12's, or a backport's in its place). */
+    public MapGenStructure villageGenerator() {
+        return villages;
+    }
+
+    /**
+     * For the self-test: the laid-out villages (or strongholds) whose 1.18 adapt_noise box reaches the chunk; no
+     * villages where a backport builds them.
+     */
     public List<net.minecraft.world.gen.structure.StructureStart> adaptingStartsNear(int cx, int cz, boolean strongholds) {
         List<net.minecraft.world.gen.structure.StructureStart> out = new java.util.ArrayList<>();
         if (strongholds) {
             stronghold.startsNear(world, cx, cz, out::add);
-        } else {
+        } else if (village != null) {
             village.startsNear(world, cx, cz, out::add);
         }
         return out;
