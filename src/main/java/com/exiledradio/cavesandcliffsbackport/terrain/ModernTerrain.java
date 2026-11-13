@@ -149,6 +149,32 @@ public final class ModernTerrain {
     // ---------------------------------------------------------------------------------------------
     // Events
 
+    /** 1.18's biome id at a block of a world with 1.18 terrain (three dimensions), or -1 for any other world. */
+    public static int biomeAt(World world, int x, int y, int z) {
+        if (world.isRemote || !owns(world)) {
+            return -1;
+        }
+        return ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).biome3d(x, y, z);
+    }
+
+    /** The held chunks go to disk with the world, so a restart decorates the chunks beyond the explored area alike. */
+    @SubscribeEvent
+    public static void onWorldSave(WorldEvent.Save event) {
+        World world = event.getWorld();
+        if (!world.isRemote && owns(world)) {
+            ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).saveHeld();
+        }
+    }
+
+    @SubscribeEvent
+    public static void onChunkUnload(ChunkEvent.Unload event) {
+        World world = event.getWorld();
+        if (!world.isRemote && owns(world)) {
+            ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).biomes3d.remove(
+                    event.getChunk().x, event.getChunk().z);
+        }
+    }
+
     /** A chunk the generator just made is now in the world: its waterlogged blocks get their water. */
     @SubscribeEvent
     public static void onChunkLoad(ChunkEvent.Load event) {

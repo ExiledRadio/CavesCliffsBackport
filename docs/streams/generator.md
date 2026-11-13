@@ -13,7 +13,14 @@ feature the core has ported, block for block what the core computes, which is va
     y 319, deepslate and the deep caves down to bedrock at y -64, cheese, spaghetti and noodle caves, aquifers, ore
     veins, 1.18's biomes and their surfaces, geodes, dripstone and lush caves where 1.18 puts them. Seeds give 1.18's
     terrain and biomes, and villages, temples, monuments, mansions, mineshafts and strongholds start where 1.18 starts
-    them (their buildings are 1.12's).
+    them (their buildings are 1.12's). With the family's backports installed, shipwrecks, ocean ruins, buried
+    treasure, ruined portals and pillager outposts start where 1.18 starts them too.
+*   **The terrain meets the structures** as 1.18's does: the ground is shaped under and around village houses and
+    pillager outposts, and strongholds are buried in rock.
+*   **Lush caves and dripstone caves spawn their own mobs**, under any biome: bats, glow squid and cave monsters, no
+    animals; axolotls in 1.18's lush caves.
+*   **Stopping the server changes nothing.** The chunks the generator holds ahead of the explored area are saved with
+    the world, so features crossing its edge are not cut after a restart.
 *   Generation is fast: the terrain is built on worker threads ahead of need (`height.terrainThreads`, 0 picks a
     number from the computer's cores).
 *   Caves & Cliffs worlds created before this version keep the terrain they were made with (1.12's, with stone below
@@ -24,15 +31,16 @@ feature the core has ported, block for block what the core computes, which is va
 **The generator** (`ModernGenerator`, an `IChunkGenerator`). `generateChunk(x, z)`:
 
 1. `Pipeline.finish(x, z)` (core): the chunk with every placed feature of the 3x3 chunks around it applied (a chunk's
-   features write into its 3x3 and read its 5x5, so a chunk is final once its 3x3 is decorated). The fill, biomes,
-   surface and carvers of each chunk run on a pool of worker threads; `finish` asks for the whole 7x7 at once, nearest
-   first, and runs any fill no worker has started yet itself. Decoration runs on the server thread in 1.18's step order
-   (`Decorator`), each chunk once.
+   features write into its 3x3 and read its 5x5, so a chunk is final once its 3x3 is decorated). The fill (with the
+   beardifier of the structures near it, see Structure terrain), biomes, surface and carvers of each chunk run on a pool
+   of worker threads; `finish` asks for the whole 7x7 at once, nearest first, and runs any fill no worker has started
+   yet itself. Decoration runs on the server thread in 1.18's step order (`Decorator`), each chunk once: a chunk that
+   settled (or that the world already holds, from an earlier run) is never decorated again.
 2. The finished codes go straight into the chunk's sections (`SectionWriter`: each distinct state into the section's
    palette through vanilla's `set`, then every block's palette index into the bit array, block and tick counts set
    once), at the height coremod's slots (`HeightLayout.slotBase`). Codes become 1.12 states through `StateMap`.
 3. The column biomes: 1.18's biome at each column's top block (the core's zoom, `BiomeZoom`), as a 1.12 biome
-   (`BiomeMap`).
+   (`BiomeMap`). The chunk's 3D biomes (1.18's stored quarts) are kept while it is loaded (`ChunkBiomes`).
 4. 1.12's structure generators record their starts (`ModernStructures`), then `generateSkylightMap`.
 5. The workers are told to fill the chunks within 4 of this one (`Pipeline.prefetch`).
 
@@ -44,11 +52,17 @@ mods' `IWorldGenerator`s run after it as in any world.
 chunk border sees what neighbours decorated before it; so does this generator, in the order 1.12 asks for chunks.
 `PipelineBench` checks that the result does not depend on the number of worker threads.
 
-**Memory.** A held chunk is about 200 KB (384 x 256 codes plus heightmaps). Chunks are dropped once nothing can read
-them again (finished, and every chunk within two decorated); beyond a cap (a sixteenth of the heap, 256 to 2048
-chunks) the least recently used go first. A dropped chunk asked for again is filled and decorated again; what
-neighbours had written into it is then lost (features crossing that border are cut). Held chunks are not saved: after
-a restart the chunks next to the explored area are filled again, with the same result except for those crossings.
+**Memory and restarts.** A held chunk is about 225 KB (384 x 256 codes, heightmaps, 3D biomes). Chunks are dropped
+once nothing can read them again (finished, and every chunk within two decorated: settled); beyond a cap (a sixteenth
+of the heap, 256 to 2048 chunks) the least recently used go first. A held chunk that decoration wrote into goes to the
+world's held-chunk store when it is dropped above the cap and whenever the world saves (`HeldStore`:
+`<world>/cavesandcliffsbackport_terrain/r.x.z.mca`, region files deflated as 1.12's, written by one thread of their
+own); asked for again, it comes back as it was. A chunk that settles gets a one-byte entry in place of its data, so
+the files stay about the size of the area held at once. Chunks only filled are not stored (the noise gives them
+again). The one piece of decoration state that is not a chunk's, the order glow lichen's direction list is in
+(vanilla's `MultifaceBlock.DIRECTIONS`, shuffled by every spread in the JVM), is saved beside them (`state.dat`).
+So a world stopped and started again decorates the chunks beyond its explored area exactly as one that never
+stopped (`RestartSelfTest`), and the cap no longer cuts features.
 
 **Biomes for 1.12** (`BiomeMap`). A biome some installed mod registers under the 1.18 name (any namespace but
 `minecraft`) is used first; otherwise the nearest 1.12 biome: the peaks and slopes are 1.12's ice mountains (goats spawn
@@ -70,14 +84,53 @@ blocks terracotta of their color (tube blue, brain pink, bubble magenta, fire re
 
 **Structures** (`ModernStructures`). Each 1.12 structure generator's start check asks the core's `Structures`: 1.18.2's
 placement, the structure chosen and its own start checks, so starts are where Chunkbase shows them. Villages
-(`MapGenVillage`), desert pyramids, jungle temples, swamp huts and igloos (`MapGenScatteredFeature`, the piece by set;
+(`MapGenVillage`; houses set on the ground at layout, see Structure terrain), desert pyramids, jungle temples, swamp huts and igloos (`MapGenScatteredFeature`, the piece by set;
 the pyramid is moved from 1.12's fixed y 64 to the lowest corner of its footprint), ocean monuments, mineshafts (mesa
 ones in badlands), strongholds (the 128 ring positions) and woodland mansions (`MansionStart`, 1.12's pieces on our
 corner heights). `/locate` and explorer maps search the same starts (growing squares; strongholds the rings). Pillager
 outposts, buried treasure, ruined portals, shipwrecks and ocean ruins have no 1.12 pieces: the family's backports
-place their own.
+build them, where this generator says (below).
 
-**Backport Core** (1.2.0 from its `cc-heights` branch, `deps/BackportCore-1.2.0-dev.jar`). The generator is a
+**The family's structures** (Backport Core's `StructureSource`, `docs/CORE_REQUESTS.md` 12). The generator gives Core a
+start rule for shipwrecks, ocean ruins, buried treasure, ruined portals and pillager outposts: 1.18's grid for the
+set, and at a chunk the core's `Structures.startAt` (placement, the biome at the start's height, the weighted choice
+of the set's structures). Every `ScatteredStructure` (Update Aquatic's shipwrecks, ruins and treasure, the Nether
+backport's ruined portals) follows it in its start check, nearest search and `/locate` grid, and picks the variant
+the rule names (beached or sunken, warm or cold, the portal's type); Village & Pillage's outposts ask the same
+(`StartRules`). Their pieces stay their own.
+
+**Structure terrain** (`StructureBeards`, a `Pipeline.BeardSource`). 1.18.2 adds the beardifier to the fill around
+the pieces of structures with `adapt_noise`: villages and outposts (beard, `beard_thin` in today's terms) and
+strongholds (bury). 1.12 lays a start out when the chunks around it are generated and builds it when they are
+populated, after the terrain. So when the pipeline first asks for a chunk (on the server thread, before its fill is
+queued), the village and stronghold starts within eight chunks are laid out (`ModernStructures.laidOut`: the
+generator's own `generate`, each start from its own seed, so nothing changes but when), and every start whose box
+grown by 12 blocks reaches the chunk gives its pieces to `Beardifier.forChunk`, in 1.18's order: villages, then
+strongholds, then the kinds other backports register with Core's `TerrainAdaptation` (Village & Pillage's outposts:
+their jigsaw pieces with projection and ground level delta); within a structure its starts in the order 1.18 lists a
+chunk's references (fastutil's `LongOpenHashSet` over the start chunks in `createReferences`' scan order,
+`ModernStructures.referenceOrder`); each start's pieces in order. (Between structures vanilla's order is a hash
+map's over identity hashes, not reproducible; one start almost always reaches a chunk alone.)
+- 1.12's village houses measure the ground as they build, so their height depended on which chunks existed. Here
+  each house, lamp and well is set on the ground when the village is laid out: 1.12's own rule (the average over its
+  footprint of the first free block, at least the world's average ground level less one, the box moved by the
+  class's own offset), read from the bare noise (WORLD_SURFACE_WG). It is then a rigid jigsaw piece to the beard,
+  its ground at that level, as 1.18's houses are. Roads follow the ground block by block (1.18's terrain-matching
+  pieces have no beard). Other mods' village pieces keep measuring as they build and get no beard.
+- Stronghold pieces are buried (1.18's `StrongholdPiece` noise effect).
+- 1.19's `beard_box` and `encapsulate` (ancient cities, trial chambers) have no 1.18.2 formula; a kind registered with
+  them gets none (logged once). There are no ancient cities in 1.18.2.
+
+**Mob spawning** (`ChunkBiomes`). `getPossibleCreatures` reads 1.18's biome at the spawn position in three dimensions
+(the zoom over the chunk's stored quarts, as 1.18's spawner reads `getBiome`): under a desert, a lush cave spawns
+what 1.18's lush caves do. The two cave biomes get 1.18.2's lists (`commonSpawns`: bats, glow squid in their own
+group, spider, zombie, zombie villager, skeleton, creeper, slime, enderman, witch; drowned in dripstone caves;
+tropical fish in lush caves where a mod adds a water ambient group; no animals), resolved against the mobs
+installed, unless a mod registers a 1.12 biome under the cave biome's name (then its lists). Other positions get
+their 1.18 biome's 1.12 lists. The axolotls' spawner and every other server-side `CaveRegions.lush` / `dripstone`
+question in these worlds answer from the same 3D biome.
+
+**Backport Core** (1.2.0 from its `cc-structures` branch, on `cc-heights`; `deps/BackportCore-1.2.0-dev.jar`). The generator is a
 `TerrainSource`: `TerrainHeights.forWorld` gets a `ColumnTerrain` that answers from the core's noise (1.18's
 WORLD_SURFACE_WG and OCEAN_FLOOR_WG of the bare terrain, `ChunkFiller.baseHeight`), so 1.14-style villages and other
 planned structures stand on our ground.
@@ -103,10 +156,28 @@ had chunks when this generator first saw it).
     answers the generator's surface; the spawn is on dry land.
 *   `sh tools/terrain/run.sh PipelineBench 42 16 <threads>`: the same checksum over 256 finished chunks with 0 and 8
     workers.
-*   The whole suite, `./gradlew runServer -Pselftest=all` in a fresh Default world (seed 1718): 4481 pass, 0 fail.
+*   `TerrainGapsSelfTest` (in `height,terrain`): a village's houses are on their footprint's noise ground and the
+    fill with the generator's beard puts solid ground under a house and air over it (15 of 15 columns; 2 without the
+    beard); every chunk a stronghold touches gets a bury beard (at least 1.0 at all 184 piece floors); the reference
+    order is fastutil's (2,000 random sets against a real `LongOpenHashSet`); Core's start rules name exactly the
+    core's 1.18 starts (61 shipwrecks, 96 ocean ruins, 6 buried treasures, 64 ruined portals, 3 outposts) on 1.18's
+    grids, and a `ScatteredStructure` follows them (starts, variant, nearest); the 3D biome is the core's zoom;
+    lush and dripstone caves under other biomes spawn bats, zombies and glow squid and no animals, and the surface
+    above its column biome's animals; `CaveRegions` answers 1.18's caves; a held chunk survives its bytes exactly.
+    With Update Aquatic, the Nether backport and Village & Pillage from their `cc-structures` branches in
+    `eclipse/mods`: their ruins and portals have 1.18's variants (96 and 64, 0 wrong), an outpost's chunk gets a
+    beard, and Core's `/locate` for shipwreck, both ocean ruins, buried treasure, ruined portal (and desert) and
+    pillager outpost each names a 1.18 start of it.
+*   `sh tools/terrain/restart.sh` (`RestartSelfTest`, three servers in a Caves & Cliffs world): 12x12 chunks at
+    2000, 2000 and then the 12x12 east of them in one run, against the first area, a stop, and the second area after
+    the restart: every finished chunk (305, with the few populating generates) identical. Without the store (the
+    same test with `setStore` left out): 110 differ.
+*   The whole suite, `./gradlew runServer -Pselftest=all` in a fresh Default world (seed 1718): 4481 pass, 0 fail; with the gaps closed 4482 pass, 0 fail (one earlier run of the same code failed the
+    goat test's jump cooldown by one tick, 299 for at least 300; the next passed).
     (On seed 42 the lush test's moss check fails 3 times in a Default world: 1.12's population snows on its test
     floor. Not this stream's; the suite's seed is 1718.)
-*   `sh tools/height/selftest.sh`: 127 pass, 0 fail; with `height,terrain`: 150 pass, 0 fail.
+*   `sh tools/height/selftest.sh`: 127 pass, 0 fail; with `height,terrain`: 150 pass, 0 fail; with the gaps closed 204 pass, 0 fail (88 for `terrain` alone with the
+    three family backports installed).
 *   `./gradlew runClient -Pclienttest=height`: a single-player Caves & Cliffs world, now with the 1.18 generator:
     18 pass, 0 fail.
 *   The release jar in a plain Forge 2860 server (the head-to-head below) generates and saves without errors.
@@ -122,6 +193,7 @@ a 24x24 square of chunks at chunk 1000, 1000 generated and populated after an 8x
 
 | Cores | Vanilla 1.12 (coremod off) | 1.18 terrain | vs vanilla's time per chunk |
 | --- | --- | --- | --- |
+| 16 E-cores, with the structure beard, held-chunk store and 3D biomes (2026-11-12, cc-gaps) | 11.95 ms/chunk, 84 chunks/s | **5.24 ms/chunk, 191 chunks/s** | **x0.44** |
 | 16 E-cores (FFFF0000; 6 workers), with trees and vegetation | 11.63 ms/chunk, 86 chunks/s | **5.13 ms/chunk, 195 chunks/s** | **x0.44** |
 | 16 E-cores, before trees and vegetation | 9.76 ms/chunk, 102 chunks/s | 5.99 ms/chunk, 167 chunks/s | x0.61 |
 | 4 E-cores (F0000000; 2 workers, a small machine), before trees and vegetation | 10.43 ms/chunk, 96 chunks/s | **7.20 ms/chunk, 139 chunks/s** | **x0.69** |
@@ -132,6 +204,15 @@ is the same for it); ours too varies by about 10% between sessions. Where the se
 decorations per generated chunk in a square), waiting for workers 0.5 ms, writing the 1.12 chunk (sections, structure
 starts, sky light) 2.3 ms; the workers' fill + surface + carvers 5.2 ms per chunk on a busy E-core. Saving: 0.5 ms/chunk
 against vanilla's 1.1 (vanilla's population leaves scheduled block ticks to write; ours none).
+
+With the gaps closed (cc-gaps; the same session's run of the code before them gave 5.76 ms/chunk median against
+vanilla's 11.90, x0.48, on a busier machine): `beard_ms` 1.07-1.16 per generated chunk on the server thread, almost
+all of it the stronghold rings' one-time biome search (about 1.4 s once per world, which used to land in the 1.12
+write: `write_ms` fell from 2.3-2.6 to 1.0-1.2); laying out and summing the villages and strongholds near each new
+chunk is about 0.07 ms. A candidate's structure start check is kept (1,024 per set), so 1.12's six generators and
+the beard no longer recompute it for every chunk near it. Settled chunks are no longer filled and decorated again:
+2,467 fills and 1,579 decorations for the 1,331 chunks against 2,715 and 1,648 before, 1,360 chunks held at the end
+against 2,026. No chunk was stored or restored in the bench (below the cap).
 
 **Head-to-head, `python tools/terrain/pregenbench.py G:/VBPTest/genbench 3`** (plain Forge 14.23.5.2860 servers, release
 jars, Chunk Pregenerator's `pregen gen startradius square 300 300 16` (33x33 chunks), seed -3892104814965596348, -Xmx4G,
@@ -151,7 +232,9 @@ Targets (EXTENDED_HEIGHT section 4): at least 34 chunks/s and at most 2x vanilla
 measurement, by 4 to 5 times the rate the competing 1.18 terrain mods reach.
 
 **The core alone, one E-core** (`tools\terrain\bench.cmd 8 PipelineBench 42 16 0`: 16x16 chunks finished in a spiral,
-fill on the same thread, no Minecraft): 15.0 ms/chunk (67 chunks/s), fill 3.6 ms x 1.9 fills per chunk, decoration
+fill on the same thread, no Minecraft): 15.0 ms/chunk (67 chunks/s); with the gaps closed 15.5-15.7 against
+15.9-16.0 for the code before, in the same session, the same checksum (d70ea2ca54f75550, and with 8 workers);
+`TerrainBench 42 12 5` 2.21-2.27 against 2.28 ms/chunk, fill 3.6 ms x 1.9 fills per chunk, decoration
 6.2 ms (every placed feature, trees and vegetation included; 0, 0 at seed 42 is dark forest, the heaviest trees). The
 same with 8 workers (unpinned): 2.5 ms/chunk, same checksum. (Before trees and vegetation: 11.7 ms/chunk, decoration
 3.6 ms.)
@@ -160,17 +243,14 @@ same with 8 workers (unpinned): 2.5 ms/chunk, same checksum. (Before trees and v
 
 *   **Plants and corals without a 1.12 block** stand in as listed under Block states when no family backport adds
     them: bamboo jungles have no bamboo, warm oceans terracotta reefs.
-*   **The beardifier is not used.** 1.12's pieces are laid out after the terrain exists (in `populate`), so 1.18's
-    terrain adaptation around villages, outposts and strongholds cannot apply; 1.12 villages measure the ground as
-    they build, as everywhere.
-*   **Held chunks are not saved** (see Memory): after a restart, features that cross from the explored area's edge
-    into the chunks beyond are cut there. A per-world store for decorated chunks (RegionFile) would fix it.
-*   **Structures without 1.12 pieces** (pillager outposts, shipwrecks, ocean ruins, ruined portals, buried treasure)
-    come from the family's backports with their own placement, not 1.18's. Core's `StructurePlacements` could take a
-    1.18 entry from this mod.
+*   **Village pieces are 1.12's**, so the beard is 1.12's houses' (no jigsaw junctions: 1.12's roads do not record
+    where they meet a house). Village & Pillage's outposts keep no junctions either.
+*   **The family's structures need their `cc-structures` branches** (Core 1.2.0 with `StructureSource`; Update
+    Aquatic, Nether Update and Village & Pillage asking it). Their released jars keep their own placement.
 *   **Spawn point**: dry land nearest 0, 0 by the noise, not 1.18's climate-based `findSpawnPosition`; no bonus chest.
-*   **Mob spawning reads the column's surface biome.** 1.18's underground biomes (lush caves, dripstone caves) are not
-    seen by 1.12's spawner: axolotls and the like follow their own stream's rules.
+*   **Clients still hear cave music by the 1.17 regions** (`CaveRegions` on the client has the noise key, not the 3D
+    biomes); the server side (spawning, axolotls) uses 1.18's biomes.
+*   **A crash** (not a stop) loses what decoration wrote since the last world save into chunks not yet generated.
 *   **Decoration runs on the server thread** (about 1.5 ms of the 5 in the dev bench, more in forests). It could run on one more thread ahead of need,
     in the same order; not needed for the targets.
 *   **Waterlogged blocks below 0 or above 255** need Backport Core's own store (stream C); until then they are dry.

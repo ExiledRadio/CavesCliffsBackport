@@ -1,5 +1,8 @@
 package com.exiledradio.cavesandcliffsbackport.terrain;
 
+import com.exiledradio.backportcore.structure.ScatteredPlacement;
+import com.exiledradio.backportcore.structure.StartRule;
+import com.exiledradio.backportcore.structure.StructureSource;
 import com.exiledradio.backportcore.terrain.ColumnTerrain;
 import com.exiledradio.backportcore.terrain.TerrainSource;
 import com.exiledradio.backportcore.waterlog.Waterlogging;
@@ -51,7 +54,7 @@ import java.util.Random;
  *       ({@link ModernTerrain#owns}).</li>
  * </ul>
  */
-public final class ModernGenerator implements IChunkGenerator, TerrainSource {
+public final class ModernGenerator implements IChunkGenerator, TerrainSource, StructureSource {
 
     /** How far around each asked-for chunk the workers fill ahead, in chunks. */
     static final int PREFETCH = 4;
@@ -76,6 +79,12 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource {
     private final char[] column = new char[OverworldNoise.HEIGHT];
     /** Waterlogged positions of generated chunks, placed once the chunk is in the world ({@link #placeWater}). */
     private final Map<Long, long[]> water = new HashMap<>();
+    /** The structure pieces' terrain adaptation for the fills (null without structures). */
+    private final StructureBeards beards;
+    /** Held chunks across restarts (null for a world without a save directory). */
+    private final HeldStore store;
+    /** 1.18's biomes in three dimensions for loaded chunks: mob spawning, the axolotls' lush caves. */
+    final ChunkBiomes biomes3d;
 
     /** Time spent writing finished chunks into 1.12 chunks, for the benchmark. */
     public long writeNanos;
@@ -92,12 +101,27 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource {
         this.heights = new ChunkFiller(terrain.noise, columns);
         this.structures = new ModernStructures(new Structures(terrain.noise, columns,
                 new BiomeSource(terrain.noise, columns, terrain.climate)));
-        this.village = structures.new Village();
+        this.village = structures.new Village(this);
         this.temple = structures.new Temple(this);
         this.monument = structures.new Monument();
         this.mineshaft = structures.new Mineshaft();
         this.stronghold = structures.new Stronghold();
         this.mansion = structures.new Mansion(this);
+        this.biomes3d = new ChunkBiomes(world, terrain);
+        if (this.features) {
+            this.beards = new StructureBeards(world, this.village, this.stronghold);
+            this.pipeline.setBeards(this.beards);
+        } else {
+            this.beards = null;
+        }
+        java.io.File dir = world.getSaveHandler().getWorldDirectory();
+        if (dir != null && world instanceof net.minecraft.world.WorldServer) {
+            this.store = new HeldStore((net.minecraft.world.WorldServer) world, dir);
+            this.store.loadState();
+            this.pipeline.setStore(this.store);
+        } else {
+            this.store = null;
+        }
         CavesAndCliffsBackport.LOGGER.info("1.18 terrain for {}: {} worker threads, up to {} chunks held ahead.",
                 world.getWorldInfo().getWorldName(), ModernTerrain.threads(), ModernTerrain.cap());
     }
@@ -106,7 +130,34 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource {
         return pipeline;
     }
 
+    /** The structure pieces' terrain adaptation, for the self-test's second pipeline (null without structures). */
+    public Pipeline.BeardSource beards() {
+        return beards;
+    }
+
+    /** Saves the held chunks decoration wrote into and the decoration state, for a restart (when the world saves). */
+    public void saveHeld() {
+        if (store != null) {
+            int n = pipeline.saveHeld();
+            store.saveState();
+            if (n > 0) {
+                CavesAndCliffsBackport.LOGGER.debug("Saved {} held chunks of {}.", n, world.getWorldInfo().getWorldName());
+            }
+        }
+    }
+
+    /** Waits for every held chunk handed to the store to be written (the self-test). */
+    public void flushHeld() {
+        if (store != null) {
+            store.flush();
+        }
+    }
+
     void shutdown() {
+        saveHeld();
+        if (store != null) {
+            store.close();
+        }
         pipeline.shutdown();
     }
 
@@ -117,6 +168,11 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource {
     public Chunk generateChunk(int x, int z) {
         Pipeline.Proto p = pipeline.finish(x, z);
         long t = System.nanoTime();
+        biomes3d.put(x, z, p.quarts.clone());
+        java.util.function.BiConsumer<Long, char[]> hook = onFinished;
+        if (hook != null) {
+            hook.accept(ChunkPos.asLong(x, z), p.blocks);
+        }
         Chunk chunk = new Chunk(this.world, x, z);
         this.rand.setSeed((long) x * 341873128712L + (long) z * 132897987541L);
         write(chunk, p);
@@ -210,7 +266,10 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource {
             return;
         }
         for (long l : wet) {
-            Waterlogging.setWater(this.world, BlockPos.fromLong(l), true, 2);
+            // 2 | 16: no observer updates. They read the neighbors, and a neighbor in a chunk not generated yet
+            // would be generated from here, whose water would generate the next (a stack overflow with Update
+            // Aquatic's kelp and seagrass, which hold water where the stand-ins were water themselves).
+            Waterlogging.setWater(this.world, BlockPos.fromLong(l), true, 2 | 16);
         }
     }
 
@@ -252,9 +311,12 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource {
         return flag;
     }
 
+    /**
+     * The spawn list at a position: 1.18's biome there in three dimensions ({@link ChunkBiomes}), so lush caves and
+     * dripstone caves under other biomes spawn what 1.18's do; swamp huts and monuments as 1.12's.
+     */
     @Override
     public List<Biome.SpawnListEntry> getPossibleCreatures(EnumCreatureType creatureType, BlockPos pos) {
-        Biome biome = this.world.getBiome(pos);
         if (this.features && creatureType == EnumCreatureType.MONSTER) {
             if (this.temple.isSwampHut(pos)) {
                 return this.temple.getMonsters();
@@ -263,7 +325,63 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource {
                 return this.monument.getMonsters();
             }
         }
-        return biome.getSpawnableList(creatureType);
+        return biomes3d.spawns(creatureType, pos.getX(), pos.getY(), pos.getZ());
+    }
+
+    /** 1.18's biome id at a block (three dimensions: the cave biomes under the surface ones). Server thread. */
+    public int biome3d(int x, int y, int z) {
+        return biomes3d.biome(x, y, z);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Where the family's structures start (Backport Core's StructureSource)
+
+    /**
+     * 1.18.2's structure sets for the structures other backports build (Update Aquatic's shipwrecks, ocean ruins and
+     * buried treasure, the Nether backport's ruined portals, Village &amp; Pillage's outposts): the terrain core's
+     * placement, biome checks at the start's height and weighted choice, as for this generator's own structures.
+     */
+    @Nullable
+    @Override
+    public StartRule startRule(World world, String kind) {
+        if (world != this.world || !this.features) {
+            return null;
+        }
+        final int set;
+        switch (kind) {
+            case com.exiledradio.backportcore.structure.Structures.SHIPWRECK:
+                set = Structures.SHIPWRECKS;
+                break;
+            case com.exiledradio.backportcore.structure.Structures.OCEAN_RUIN:
+                set = Structures.OCEAN_RUINS;
+                break;
+            case com.exiledradio.backportcore.structure.Structures.BURIED_TREASURE:
+                set = Structures.BURIED_TREASURES;
+                break;
+            case com.exiledradio.backportcore.structure.Structures.RUINED_PORTAL:
+                set = Structures.RUINED_PORTALS;
+                break;
+            case com.exiledradio.backportcore.structure.Structures.PILLAGER_OUTPOST:
+                set = Structures.PILLAGER_OUTPOSTS;
+                break;
+            default:
+                return null;
+        }
+        final ScatteredPlacement grid = new ScatteredPlacement(Structures.spacing(set), Structures.separation(set),
+                Structures.salt(set), Structures.triangular(set));
+        return new StartRule() {
+            @Override
+            public ScatteredPlacement grid() {
+                return grid;
+            }
+
+            @Nullable
+            @Override
+            public String startAt(int chunkX, int chunkZ) {
+                int i = structures.startAt(set, chunkX, chunkZ);
+                return i < 0 ? null : Structures.STRUCTURE_NAMES[set][i];
+            }
+        };
     }
 
     @Override
@@ -407,10 +525,31 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource {
         Pipeline p = this.pipeline;
         long n = Math.max(1, this.chunks);
         return String.format(java.util.Locale.ROOT,
-                "chunks=%d fill_ms=%.3f(x%d, workers) decorate_ms=%.3f(x%d) wait_ms=%.3f write_ms=%.3f stolen=%d held=%d threads=%d",
+                "chunks=%d fill_ms=%.3f(x%d, workers) decorate_ms=%.3f(x%d) wait_ms=%.3f write_ms=%.3f beard_ms=%.3f"
+                        + " stolen=%d held=%d stored=%d restored=%d threads=%d",
                 this.chunks, p.fillNanos.get() / 1e6 / Math.max(1, p.filled.get()), p.filled.get(),
                 p.decorateNanos / 1e6 / Math.max(1, p.decorated), p.decorated, p.waitNanos / 1e6 / n,
-                this.writeNanos / 1e6 / n, p.stolen, p.held(), ModernTerrain.threads());
+                this.writeNanos / 1e6 / n, p.beardNanos / 1e6 / n, p.stolen, p.held(), p.stored, p.restored,
+                ModernTerrain.threads());
+    }
+
+    /** For the self-test: the laid-out villages (or strongholds) whose 1.18 adapt_noise box reaches the chunk. */
+    public List<net.minecraft.world.gen.structure.StructureStart> adaptingStartsNear(int cx, int cz, boolean strongholds) {
+        List<net.minecraft.world.gen.structure.StructureStart> out = new java.util.ArrayList<>();
+        if (strongholds) {
+            stronghold.startsNear(world, cx, cz, out::add);
+        } else {
+            village.startsNear(world, cx, cz, out::add);
+        }
+        return out;
+    }
+
+    /** For the restart self-test: told each chunk's finished 1.18 blocks as the generator makes it. */
+    public static volatile java.util.function.BiConsumer<Long, char[]> onFinished;
+
+    /** For the self-test: how many chunks' 3D biomes are kept. */
+    public int biomeChunks() {
+        return biomes3d.size();
     }
 
     /** For the self-test: the pipeline's held chunk count. */

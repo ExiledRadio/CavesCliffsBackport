@@ -52,7 +52,7 @@ public final class TerrainSelfTest implements SelfTest {
             return;
         }
         ModernGenerator generator = (ModernGenerator) world.getChunkProvider().chunkGenerator;
-        exact(check, world);
+        exact(check, world, generator);
         structures(check, world, generator);
         TerrainHeights heights = TerrainHeights.forWorld(world);
         check.ok(heights != null, "Backport Core's TerrainHeights has a sampler for this world");
@@ -71,9 +71,10 @@ public final class TerrainSelfTest implements SelfTest {
     }
 
     /** One chunk, block for block, against a second pipeline. */
-    private static void exact(Check check, WorldServer world) {
+    private static void exact(Check check, WorldServer world, ModernGenerator generator) {
         Chunk chunk = world.getChunkProvider().provideChunk(CX, CZ);
         Pipeline own = new Pipeline(world.getSeed(), 0, 1024);
+        own.setBeards(generator.beards());
         Pipeline.Proto p = own.finish(CX, CZ);
         StateMap map = new StateMap();
         map.resolveAll();

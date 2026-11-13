@@ -8,10 +8,20 @@ package com.exiledradio.cavesandcliffsbackport.terrain.core;
  */
 public final class BiomeZoom {
     private final long zoomSeed;
-    private final BiomeSource biomes;
+    private final Quarts biomes;
+
+    /** Stored biomes by quart: BiomeSource.stored, or a chunk store kept elsewhere (the same numbers). */
+    public interface Quarts {
+        int stored(int qx, int qy, int qz);
+    }
 
     public BiomeZoom(OverworldNoise noise, BiomeSource biomes) {
-        this.zoomSeed = SurfaceBuilder.obfuscateSeed(noise.seed);
+        this(noise.seed, biomes::stored);
+    }
+
+    /** Over stored biomes kept by the caller, for the world seed. */
+    public BiomeZoom(long seed, Quarts biomes) {
+        this.zoomSeed = SurfaceBuilder.obfuscateSeed(seed);
         this.biomes = biomes;
     }
 
@@ -23,7 +33,7 @@ public final class BiomeZoom {
         int l = i >> 2;
         int i1 = j >> 2;
         int j1 = k >> 2;
-        BiomeSource s = biomes;
+        Quarts s = biomes;
         int b = s.stored(l, i1, j1);
         if (s.stored(l + 1, i1, j1) == b && s.stored(l, i1 + 1, j1) == b && s.stored(l + 1, i1 + 1, j1) == b
                 && s.stored(l, i1, j1 + 1) == b && s.stored(l + 1, i1, j1 + 1) == b && s.stored(l, i1 + 1, j1 + 1) == b

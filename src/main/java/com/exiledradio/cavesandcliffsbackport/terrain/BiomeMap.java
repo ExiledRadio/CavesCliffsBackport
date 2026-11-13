@@ -82,10 +82,13 @@ public final class BiomeMap {
 
     private final Biome[] biomes = new Biome[Biomes.COUNT];
     private final byte[] ids = new byte[Biomes.COUNT];
+    /** Whether a mod registers a 1.12 biome under the 1.18 name (so it is that biome, spawns and all). */
+    private final boolean[] registered = new boolean[Biomes.COUNT];
 
     public BiomeMap() {
         for (int i = 0; i < Biomes.COUNT; i++) {
             Biome b = modern(Biomes.name(i));
+            registered[i] = b != null;
             if (b == null) {
                 b = ForgeRegistries.BIOMES.getValue(new ResourceLocation("minecraft", LEGACY[i]));
             }
@@ -116,6 +119,11 @@ public final class BiomeMap {
     /** The 1.12 biome of a 1.18 biome id. */
     public Biome biome(int modern) {
         return biomes[modern];
+    }
+
+    /** Whether some mod registers a 1.12 biome under this 1.18 biome's name (not a nearest stand-in). */
+    public boolean registered(int modern) {
+        return registered[modern];
     }
 
     /** Its numeric 1.12 id, as a chunk's biome array holds it. */

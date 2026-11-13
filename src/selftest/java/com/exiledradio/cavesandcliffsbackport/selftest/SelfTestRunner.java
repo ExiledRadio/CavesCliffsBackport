@@ -59,6 +59,10 @@ public final class SelfTestRunner {
             new WaterlogSelfTest(),
             new HeightSelfTest(),
             new TerrainSelfTest(),
+            new TerrainGapsSelfTest(),
+            new RestartSelfTest("restartwhole"),
+            new RestartSelfTest("restart1"),
+            new RestartSelfTest("restart2"),
             new HeightBenchSelfTest(),
     };
 
@@ -89,7 +93,9 @@ public final class SelfTestRunner {
             check.fail("dump: " + e);
         }
         for (SelfTest test : TESTS) {
-            if (this.wanted.contains("all") || this.wanted.contains(test.name())) {
+            // The restart phases need a server of their own each (tools/terrain/restart.sh): never part of "all".
+            boolean all = this.wanted.contains("all") && !(test instanceof RestartSelfTest);
+            if (all || this.wanted.contains(test.name())) {
                 check.section(test.name());
                 clearEntities(world);
                 try {

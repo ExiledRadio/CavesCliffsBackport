@@ -176,3 +176,33 @@ v.addGameMusic("modid:music/game/comforting_memories", 1, 0.4F);   // sound name
 ```
 
 resolved like the menu list (a later version can remove a track). Our pack then goes away.
+
+## 12. Where a world's generator starts the family's structures, and terrain adaptation
+
+The 1.18 generator (stream G) knows 1.18.2's placement of every overworld structure set, but shipwrecks, ocean
+ruins, buried treasure (Update Aquatic), ruined portals (Nether Update) and pillager outposts (Village & Pillage) are
+placed by their own mods, by their versions' rules. Wanted: a way for a chunk generator to rule where a kind starts
+in its worlds, which those mods follow without knowing about this mod, and `/locate` with them.
+
+```java
+// com.exiledradio.backportcore.structure
+public interface StructureSource { @Nullable StartRule startRule(World world, String kind); }   // on the IChunkGenerator
+public interface StartRule { ScatteredPlacement grid(); @Nullable String startAt(int chunkX, int chunkZ); }
+StartRules.of(world, kind);                          // the world generator's rule, or null
+scatteredStructure.ruledStart(world, chunkX, chunkZ); // today's id of the start there: picks the variant
+```
+
+1.18 also shapes its terrain around villages, outposts and strongholds (`adapt_noise`); a structure another mod lays
+out must be known before the chunk is filled:
+
+```java
+TerrainAdaptation.register(kind, TerrainAdaptation.Kind.BEARD_THIN, planner);   // planner lays starts out ahead
+TerrainAdaptation.AdaptingPiece                                                 // rigid, ground level delta, junctions
+```
+
+**Status (2026-11-12):** built on Core branch `cc-structures` (bb6b2de, worktree `Workspaces/BackportCore-ccstructures`,
+cut from `main` d152653), for 1.2.0; `deps/BackportCore-1.2.0-dev.jar` here is that build. `ScatteredStructure`
+follows a rule in its start check, `locatableAt`, `nearest` and `placement()`, so Core's `/locate` agrees. The
+owners' changes, each on a `cc-structures` branch: Update Aquatic (8cddaaa: shipwreck kind, ruin warmth),
+Nether Update (1cfda62: ruined portal type), Village & Pillage (7281f9e, cut from `languages`, its newest line:
+outposts ask `StartRules` and register with `TerrainAdaptation`). Each now requires Core 1.2.0.
