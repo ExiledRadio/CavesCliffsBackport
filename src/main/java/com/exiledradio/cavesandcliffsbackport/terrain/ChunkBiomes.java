@@ -109,6 +109,10 @@ final class ChunkBiomes implements BiomeZoom.Quarts {
     /** The spawn list for a group at a block: its 1.18 biome's (see the class comment). */
     synchronized List<Biome.SpawnListEntry> spawns(EnumCreatureType type, int x, int y, int z) {
         int b = zoom.biome(x, y, z);
+        if (b == Biomes.DEEP_DARK && !map.registered(b)) {
+            // 1.19's deep dark spawns nothing (OverworldBiomes.deepDark: an empty MobSpawnSettings).
+            return Collections.<Biome.SpawnListEntry>emptyList();
+        }
         if ((b == Biomes.LUSH_CAVES || b == Biomes.DRIPSTONE_CAVES) && !map.registered(b)) {
             if (caves == null) {
                 caves = new ArrayList<>();

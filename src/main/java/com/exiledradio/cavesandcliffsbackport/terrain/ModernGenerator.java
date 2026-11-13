@@ -4,6 +4,7 @@ import com.exiledradio.backportcore.structure.ScatteredPlacement;
 import com.exiledradio.backportcore.structure.StartRule;
 import com.exiledradio.backportcore.structure.StructureSource;
 import com.exiledradio.backportcore.terrain.ColumnTerrain;
+import com.exiledradio.backportcore.terrain.DecorationSource;
 import com.exiledradio.backportcore.terrain.TerrainSource;
 import com.exiledradio.backportcore.waterlog.Waterlogging;
 import com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport;
@@ -54,7 +55,7 @@ import java.util.Random;
  *       ({@link ModernTerrain#owns}).</li>
  * </ul>
  */
-public final class ModernGenerator implements IChunkGenerator, TerrainSource, StructureSource {
+public final class ModernGenerator implements IChunkGenerator, TerrainSource, StructureSource, DecorationSource {
 
     /** How far around each asked-for chunk the workers fill ahead, in chunks. */
     static final int PREFETCH = 4;
@@ -247,6 +248,8 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
                 TileEntityMobSpawner spawner = new TileEntityMobSpawner();
                 spawner.getSpawnerBaseLogic().setEntityId(DungeonHooks.getRandomDungeonMob(this.rand));
                 chunk.addTileEntity(pos, spawner);
+            } else if ((lastFlags & StateMap.NEST) != 0) {
+                Nests.fill(this.world, chunk, pos, map.state(code));
             }
         }
         if (wet != null) {
@@ -476,6 +479,32 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
             this.heights.baseColumn(x, z, this.column);
             return BlockCodes.liquid(this.column[h - 1 - OverworldNoise.MIN_Y]);
         }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // What this generator decorates itself (Backport Core's DecorationSource)
+
+    private java.util.Set<String> placed;
+
+    /**
+     * Every placed feature the world's biomes list (1.18.2's, and the newer ones it has), and every block the core's
+     * features put down: 1.12 hooks the
+     * family's backports use to add them (bee nests on trees, say) step aside in these worlds.
+     */
+    @Override
+    public boolean placesFeature(World world, String feature) {
+        if (world != this.world) {
+            return false;
+        }
+        java.util.Set<String> names = placed;
+        if (names == null) {
+            names = com.exiledradio.cavesandcliffsbackport.terrain.core.Decorator.placedFeatureNames(terrain.editions);
+            for (int c = 0; c < BlockCodes.count(); c++) {
+                names.add(BlockCodes.name(c));
+            }
+            placed = names;
+        }
+        return names.contains(feature);
     }
 
     @Nullable

@@ -46,6 +46,43 @@ public final class Decorator {
     private final boolean[] present = new boolean[256];
     private final boolean[] chosen = new boolean[512];
 
+    /** Every placed feature the overworld's biomes list (ported or not) with these editions, by name, any step. */
+    public static java.util.Set<String> placedFeatureNames(int editions) {
+        java.util.Set<String> names = new java.util.HashSet<>();
+        for (String[] step : steps(editions)) {
+            names.addAll(Arrays.asList(step));
+        }
+        return names;
+    }
+
+    /** FeatureSorter's per-step order for the editions' biomes. */
+    static String[][] steps(int editions) {
+        switch (editions) {
+            case Editions.WILD:
+                return NewerFeatureTables.STEPS_WILD;
+            case Editions.CHERRY:
+                return NewerFeatureTables.STEPS_CHERRY;
+            case Editions.WILD | Editions.CHERRY:
+                return NewerFeatureTables.STEPS_BOTH;
+            default:
+                return FeatureTables.STEPS;
+        }
+    }
+
+    /** A biome's placed features per step (the deep dark's are 1.19.2's or, with the cherry grove, 1.20.1's). */
+    static String[][] biomeFeatures(int biome, int editions) {
+        switch (biome) {
+            case Biomes.MANGROVE_SWAMP:
+                return NewerFeatureTables.MANGROVE_SWAMP;
+            case Biomes.DEEP_DARK:
+                return (editions & Editions.CHERRY) != 0 ? NewerFeatureTables.DEEP_DARK : NewerFeatureTables.DEEP_DARK_119;
+            case Biomes.CHERRY_GROVE:
+                return NewerFeatureTables.CHERRY_GROVE;
+            default:
+                return FeatureTables.BIOMES[biome];
+        }
+    }
+
     public Decorator(OverworldNoise noise, BiomeSource biomes) {
         this.seed = noise.seed;
         this.zoomSeed = SurfaceBuilder.obfuscateSeed(noise.seed);
@@ -86,9 +123,10 @@ public final class Decorator {
         for (Placed p : Misc.placed()) {
             ported.put(p.name, p);
         }
+        String[][] order = steps(noise.editions);
         Map<String, Integer> ids = new HashMap<>();
         for (int k = 0; k < STEPS; k++) {
-            String[] names = FeatureTables.STEPS[k];
+            String[] names = order[k];
             features[k] = new Placed[names.length];
             for (int i = 0; i < names.length; i++) {
                 if (!ids.containsKey(names[i])) {
@@ -101,18 +139,18 @@ public final class Decorator {
                 }
             }
         }
-        int n = FeatureTables.BIOMES.length;
+        int n = Biomes.COUNT;
         biomeSteps = new int[n][][];
         biomeHas = new boolean[n][ids.size()];
         for (int b = 0; b < n; b++) {
-            String[][] steps = FeatureTables.BIOMES[b];
+            String[][] steps = biomeFeatures(b, noise.editions);
             biomeSteps[b] = new int[steps.length][];
             for (int k = 0; k < steps.length; k++) {
                 // Biomes outside the overworld's biome source (nether, end) list features no step order holds.
                 int[] idx = new int[steps[k].length];
                 int m = 0;
                 for (int i = 0; i < idx.length; i++) {
-                    int at = k < STEPS ? Arrays.asList(FeatureTables.STEPS[k]).indexOf(steps[k][i]) : -1;
+                    int at = k < STEPS ? Arrays.asList(order[k]).indexOf(steps[k][i]) : -1;
                     if (at >= 0) {
                         idx[m++] = at;
                         biomeHas[b][ids.get(steps[k][i])] = true;

@@ -97,6 +97,18 @@ public final class Structures {
         for (int b : StructureTables.OCEAN_OR_RIVER) {
             oceanOrRiver[b] = true;
         }
+        // The newer versions' biome tags (has_structure/*, tools/terrain/structure_biome_tags.py on the 1.19.2 and
+        // 1.20.1 jars). 1.19's stronghold tag (all of the overworld) changes nothing here: 1.18.2's strongholds start
+        // without a biome check, and the rings are still biased to 1.18.2's list (stronghold_biased_to).
+        if ((noise.editions & Editions.WILD) != 0) {
+            allowed[MINESHAFTS][0][Biomes.MANGROVE_SWAMP] = true;
+            allowed[RUINED_PORTALS][3][Biomes.MANGROVE_SWAMP] = true;
+        }
+        if ((noise.editions & Editions.CHERRY) != 0) {
+            allowed[MINESHAFTS][0][Biomes.CHERRY_GROVE] = true;
+            allowed[PILLAGER_OUTPOSTS][0][Biomes.CHERRY_GROVE] = true;
+            allowed[RUINED_PORTALS][4][Biomes.CHERRY_GROVE] = true;
+        }
         poolEntries = new int[StructureTables.START_POOLS.length][];
         for (int p = 0; p < poolEntries.length; p++) {
             int[] runs = StructureTables.START_POOLS[p];

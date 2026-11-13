@@ -434,4 +434,6 @@ config.cavesandcliffsbackport.height.enabled.tooltip=The Caves & Cliffs world ty
 config.cavesandcliffsbackport.height.defaultForNewWorlds=Default for new worlds
 config.cavesandcliffsbackport.height.terrainThreads=Terrain threads
 config.cavesandcliffsbackport.height.terrainThreads.tooltip=Worker threads that build the 1.18 terrain of a Caves & Cliffs world ahead of the server thread. 0: the computer's cores less two, from 1 to 6.
+config.cavesandcliffsbackport.height.newerBiomes=Newer biomes
+config.cavesandcliffsbackport.height.newerBiomes.tooltip=New Caves & Cliffs worlds with 1.18 terrain also get the newer versions' biomes the installed backports have blocks for: 1.19's mangrove swamps and deep dark with Wild Update Backport, 1.20's cherry groves with Trails & Tales Backport, placed where those versions place them. Worlds keep the biomes they were made with.
 config.cavesandcliffsbackport.height.defaultForNewWorlds.tooltip=New worlds that would get the Default world type get the Caves & Cliffs type instead: in single player and on a server whose level-type is DEFAULT. Takes effect for worlds created afterwards.
