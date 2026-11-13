@@ -8,7 +8,8 @@ import java.util.Arrays;
  * own trees instead): side x side chunks around 0,0 of one seed, three ways. A gate that always says yes must give
  * exactly the chunks no gate gives (same checksum); a gate that always says no must leave no leaves above y 40 (the
  * surface trees gone) while the azalea trees under the lush caves stay; and the blocks below y 0 must not change
- * either way. Arguments: seed side. Prints the counts and "TREE GATE OK", or the failure and exit status 1.
+ * either way. The stone kinds (granite, diorite and andesite, for Quark's stone revamp): denied, no diorite or andesite
+ * is left (only their ore blobs make them) and the trees are as without a gate. Arguments: seed side. Prints the counts and "TREE GATE OK", or the failure and exit status 1.
  */
 public final class TreeGateCheck {
     public static void main(String[] args) {
@@ -17,12 +18,23 @@ public final class TreeGateCheck {
         long[] none = run(seed, side, 0);
         long[] yes = run(seed, side, 1);
         long[] no = run(seed, side, 2);
+        long[] stones = run(seed, side, 3);
         System.out.println("no gate: checksum " + Long.toHexString(none[0]) + ", leaves above 40: " + none[1]
                 + ", leaves below 40: " + none[2] + ", deep checksum " + Long.toHexString(none[3]));
         System.out.println("gate yes: checksum " + Long.toHexString(yes[0]) + ", leaves above 40: " + yes[1]);
         System.out.println("gate no: leaves above 40: " + no[1] + ", leaves below 40: " + no[2] + ", deep checksum "
                 + Long.toHexString(no[3]));
+        System.out.println("stones denied: diorite and andesite " + stones[5] + " (no gate " + none[5] + "), granite "
+                + stones[4] + " (" + none[4] + "), leaves above 40: " + stones[1]);
         boolean ok = true;
+        if (none[5] == 0 || stones[5] != 0) {
+            System.out.println("FAIL: denying the stones left " + stones[5] + " diorite and andesite (" + none[5] + " without)");
+            ok = false;
+        }
+        if (stones[1] != none[1] || stones[4] >= none[4]) {
+            System.out.println("FAIL: denying the stones changed the trees or kept every granite");
+            ok = false;
+        }
         if (yes[0] != none[0]) {
             System.out.println("FAIL: a gate that allows every tree changed the chunks");
             ok = false;
@@ -64,15 +76,22 @@ public final class TreeGateCheck {
         }
     }
 
-    /** mode 0: no gate; 1: every tree; 2: no tree. Returns checksum, leaves above 40, leaves at or below 40, deep checksum. */
+    /**
+     * mode 0: no gate; 1: everything; 2: no tree or cactus; 3: no granite, diorite or andesite blobs. Returns checksum,
+     * leaves above 40, leaves at or below 40, deep checksum, granite, diorite and andesite.
+     */
     private static long[] run(long seed, int side, int mode) {
         resetLichenDirections();
         Pipeline p = new Pipeline(seed, 0, 4096);
         if (mode == 1) {
             p.treeGate((cx, cz, kind) -> true);
         } else if (mode == 2) {
-            p.treeGate((cx, cz, kind) -> false);
+            p.treeGate((cx, cz, kind) -> kind != 1 && kind != 2);
+        } else if (mode == 3) {
+            p.treeGate((cx, cz, kind) -> kind < 3);
         }
+        long granite = 0L;
+        long da = 0L;
         long sum = 0L;
         long deep = 0L;
         long high = 0L;
@@ -89,7 +108,13 @@ public final class TreeGateCheck {
                         if (wy < 0) {
                             deep = deep * 31L + code;
                         }
-                        if (BlockCodes.name(code).contains("leaves")) {
+                        String name = BlockCodes.name(code);
+                        if (name.equals("granite")) {
+                            granite++;
+                        } else if (name.equals("diorite") || name.equals("andesite")) {
+                            da++;
+                        }
+                        if (name.contains("leaves")) {
                             if (wy > 40) {
                                 high++;
                             } else {
@@ -101,6 +126,6 @@ public final class TreeGateCheck {
             }
         }
         p.shutdown();
-        return new long[] {sum, high, low, deep};
+        return new long[] {sum, high, low, deep, granite, da};
     }
 }
