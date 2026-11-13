@@ -25,6 +25,12 @@ feature the core has ported, block for block what the core computes, which is va
     number from the computer's cores).
 *   Caves & Cliffs worlds created before this version keep the terrain they were made with (1.12's, with stone below
     y 0), so no seam runs through them.
+*   **Newer biomes with the family's backports.** With Wild Update Backport installed, new worlds get 1.19's mangrove
+    swamps (mud, mangrove trees with their roots and hanging propagules) and the deep dark, where 1.19 puts them; with
+    Trails & Tales Backport, 1.20's cherry groves (cherry trees, pink petals). Seeds match 1.19 and 1.20. A world keeps
+    the biomes it was made with (`height.newerBiomes` turns this off).
+*   **Bee nests on 1.18's trees have their bees** with Buzzy Bees Backport, and the backport no longer adds a second
+    nest in these worlds.
 
 ## How it works
 
@@ -70,6 +76,33 @@ there), stony peaks extreme hills, meadow plains, grove cold taiga, the warm and
 ocean. `ModernBiomeProvider` answers for columns no chunk has yet (1.12 structures' biome checks, the spawn search,
 other mods): 1.18's biome at the column's preliminary surface level, as 1.18's structures read it.
 
+**Newer biomes** (`terrain/core/Editions`). The terrain is 1.18.2's; a world made while a backport with the blocks is
+installed gets that version's additions, saved with the world (`Biomes` in `data/cavesandcliffsbackport_terrain.dat`:
+"1.18", "1.19", "1.20", "1.20-cherry"), so adding or removing a backport later puts no seam through it:
+- **WILD** (Wild Update Backport's mud and mangrove wood registered): 1.19.2's mangrove swamp and deep dark. The biome
+  builder's 1.19 lines (the swamp line split at the warm temperatures, the deep dark as a bottom biome at depth 1.1),
+  1.19's swap of badlands and eroded badlands in `pickBadlandsBiome`, 1.19's terrain numerics (ridges_folded and the
+  offset's -0.50375 in double, `lerp(alpha, 10, factor)` with its rounding: the terrain differs from 1.18.2's by a
+  rounding here and there), 1.19's aquifers (none in the deep dark's region; the lava test on the chosen level), 1.19's
+  surface rules (mud floor and under-floor in the mangrove swamp, its water from y 60), FeatureSorter's 1.19.2 order,
+  1.19's structure biome tags (mangrove swamps get mineshafts and swamp ruined portals; the stronghold tag's change
+  does not matter here). The deep dark spawns nothing.
+- **CHERRY** (Trails & Tales Backport's cherry wood and pink petals): 1.20.1's cherry grove in `PLATEAU_BIOMES_VARIANT`,
+  1.20's RTree (6 children per node, which moves ties), 1.20's aquifer sampling order, the cherry grove's tags
+  (mineshafts, outposts, mountain ruined portals). Alone, the swamp keeps 1.18.2's line and FeatureSorter's order is
+  1.20.1's over its biomes without the two 1.19 ones.
+- Features ported for them, from Mojang's code: `trees_mangrove` (UpwardsBranchingTrunkPlacer, MangroveRootPlacer with
+  muddy roots and moss carpets, 70-try random spread leaves, 1.19's leave vines, AttachedToLeavesDecorator's hanging
+  propagules, the beehive last), `disk_grass` (1.19's DiskFeature on mud), `trees_cherry` (CherryTrunkPlacer,
+  CherryFoliagePlacer with hanging leaves, bees 0.05), `flower_cherry`. 1.19's dirt tag holds mud and muddy roots.
+  The deep dark's sculk features are not placed: no backport has sculk yet.
+- 1.12 biomes: a mangrove swamp is 1.12's swamp, the cherry grove plains (as the meadow), the deep dark plains for 1.12
+  code that asks (it is always underground), unless a mod registers a biome under the modern name.
+
+**Decoration the generator does itself** (Backport Core 1.2.0 `DecorationSource`). `placesFeature(world, name)` is true
+for every placed feature the world's biomes list and every block the core's features put down; a backport's 1.12 hook
+for the same thing steps aside (Buzzy Bees' populate nest scan). `DecorationSource.places(world, "bee_nest")`.
+
 **Block states** (`StateMap`). Each code is a 1.18.2 state; it is resolved once: a table of the vanilla blocks whose
 1.12 name or variant differs (`grass_block` is `grass`, `granite` is `stone[variant=granite]`, slabs' `type` is `half`
 or a double slab block ...), else a block registered under the 1.18 name (this mod's first, then vanilla's, then any
@@ -77,7 +110,11 @@ other mod's: the family's backports register 1.13+ blocks under modern names), p
 and small dripleaf have their own mapping; huge mushroom blocks turn 1.18's face mask into 1.12's compass variant
 (`north_west`, `center`, ...; a mask 1.12 cannot name is `all_outside`, a stem with top and bottom `all_stem`). `waterlogged=true` (and water plants) becomes a flag: the water is placed
 through Backport Core's waterlogging when the chunk is loaded into the world (`ModernTerrain.onChunkLoad`). Chests get
-the simple dungeon loot table and spawners a dungeon mob. Without a backport that adds them: blue ice is packed ice, tuff andesite, calcite diorite;
+the simple dungeon loot table and spawners a dungeon mob; a bee nest (1.18's beehive decorator, Buzzy Bees' block) gets
+2 or 3 bees in 1.15's `Bees` format (`Nests`: an entity id each, 0-598 ticks into the stay, 600 minimum; the counts
+from a random of the nest's position, as the core keeps vanilla's draws but not their values). The newer biomes'
+blocks stand in as dirt (mud, muddy roots), jungle and birch wood and leaves, air (roots, propagules, petals) only if
+their backport is removed from a world that has them. Without a backport that adds them: blue ice is packed ice, tuff andesite, calcite diorite;
 cornflower a blue orchid, lily of the valley an oxeye daisy, a sweet berry bush a fern; bamboo and bee nests nothing
 (no 1.12 block stands in for them); kelp, seagrass, sea pickles, coral and coral fans the water they stand in; coral
 blocks terracotta of their color (tube blue, brain pink, bubble magenta, fire red, horn yellow).
@@ -183,7 +220,28 @@ had chunks when this generator first saw it).
 *   The release jar in a plain Forge 2860 server (the head-to-head below) generates and saves without errors.
 *   `TerrainCheck`: ALL IDENTICAL.
 
+*   **Newer biomes** (`tools/terrain/oracle-newer`, vanilla 1.19.2 and 1.20.1 from Mojang's client jars and mappings,
+    decompiled with ForgeFlower, run on their libraries): `NewerBiomeCheck` compares every OverworldBiomeBuilder
+    parameter point (7,593 leaves for 1.19.2 and 1.20.1, 7,578 for 1.20 without the Wild biomes: identical) and the
+    biome of every quart of 1,452 chunks per seed on four seeds, cold searches (8.9 million quarts per version: ALL
+    IDENTICAL). `TerrainCheck -Deditions=1` and `=3` against 1.19.2's and 1.20.1's noise fill (`FillDump119`,
+    `FillDump120`, 912 chunks: ALL IDENTICAL). `compare_newer.py`: 1.18.2's biomes keep every feature in 1.19.2 and
+    1.20.1, FeatureSorter's 1.19.2 order without the two new biomes is 1.18.2's exactly. Without the backports:
+    TerrainCheck and BiomeCheck ALL IDENTICAL, FeatureCheck (`fdef`, 2,048 chunks) ALL IDENTICAL.
+*   `NewerBiomesSelfTest` (in `terrain`): with Buzzy Bees, Wild Update and Trails & Tales in `eclipse/mods` the world
+    gets 1.20's biomes; a mangrove swamp near 0, 0 has mud (1,999 in 3 x 3 chunks), mangrove logs, leaves, roots and
+    muddy roots and hanging propagules, the deep dark spawns nothing, a cherry grove has cherry logs, leaves and pink
+    petals, meadow nests have 2-3 bees and the world holds exactly the core's nests (no second one from Buzzy Bees);
+    the generator says it places bee nests, and mangrove and cherry trees only with their biomes. `height,terrain`
+    without them: 212 pass, 0 fail. The whole suite (`runServer -Pselftest=all`, fresh Default world): 4482 pass, 0 fail.
+
 ## Speed
+
+**Newer biomes (2026-11-12, cc118-biomes).** One E-core, `PipelineBench 42 16 0` (`-Deditions`): 1.18.2 16.1 ms/chunk
+on main, 16.3 on this branch; with 1.20's biomes (editions 3) 15.6, with 1.19's (1) 15.7. `TerrainBench 42 12 5` 2.17
+(main) and 2.26 (branch) ms/chunk, checksum f4cb385d0674f0f7 on both. PipelineBench's checksum hashes block codes, and
+the new trees register codes, so its 1.18.2 value moved (d70ea2ca54f75550 to 628033d72d65df32) with the same states
+(FeatureCheck identical); with editions 3 it is bb743f03407c7f38 with 0 and with 8 workers.
 
 Measured 2026-11-12 on the 14900K, every run a fresh world.
 
@@ -240,6 +298,15 @@ same with 8 workers (unpinned): 2.5 ms/chunk, same checksum. (Before trees and v
 3.6 ms.)
 
 ## Not done
+
+*   **The newer versions' changes to 1.18.2's own features** are not ported: in a 1.19 or 1.20 world they decorate
+    as 1.18.2's (in 1.19's feature order). 1.19 changed DiskFeature (disk_sand gets sandstone over air, the water test
+    moved to the placement), LeaveVineDecorator (nextFloat against 0.25 for nextInt(4)), and TreeFeature.validTreePos
+    (seagrass is replaceable); a 1.19 decoration oracle would be the next step. The mangroves and cherries are ported
+    from 1.19.2 and 1.20.1 line by line but not yet checked against a vanilla decoration dump.
+*   **The deep dark has no sculk** (no backport has sculk blocks yet) and no ancient cities; trail ruins (1.20) and
+    trial chambers (1.21) have no builder in the family yet, so no start rule is offered for them.
+*   **Leaves in water**: 1.19 waterlogs mangrove leaves that grow into water; here they are dry.
 
 *   **Plants and corals without a 1.12 block** stand in as listed under Block states when no family backport adds
     them: bamboo jungles have no bamboo, warm oceans terracotta reefs.

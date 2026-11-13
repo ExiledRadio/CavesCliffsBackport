@@ -134,6 +134,11 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         return pipeline;
     }
 
+    /** The newer versions' biomes this world has ({@code terrain.core.Editions} flags). */
+    public int editions() {
+        return terrain.editions;
+    }
+
     /** The structure pieces' terrain adaptation, for the self-test's second pipeline (null without structures). */
     public Pipeline.BeardSource beards() {
         return beards;

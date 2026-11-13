@@ -77,9 +77,9 @@ public final class TerrainGapsSelfTest implements SelfTest {
             return;
         }
         ModernGenerator generator = (ModernGenerator) world.getChunkProvider().chunkGenerator;
-        OverworldNoise noise = new OverworldNoise(world.getSeed());
+        OverworldNoise noise = new OverworldNoise(world.getSeed(), generator.editions());
         ColumnCache columns = new ColumnCache(noise);
-        Climate climate = new Climate();
+        Climate climate = new Climate(generator.editions());
         Structures core = new Structures(noise, columns, new BiomeSource(noise, columns, climate));
         referenceOrder(check);
         village(check, world, generator, noise, core);
@@ -522,7 +522,8 @@ public final class TerrainGapsSelfTest implements SelfTest {
     // Held chunks
 
     private static void held(Check check, WorldServer world, ModernGenerator generator) {
-        Pipeline own = new Pipeline(world.getSeed(), 0, 1024);
+        Pipeline own = new Pipeline(new OverworldNoise(world.getSeed(), generator.editions()),
+                new Climate(generator.editions()), 0, 1024);
         Pipeline.Proto p = own.finish(-4000, 4000);
         byte[] a = Pipeline.encode(p);
         Pipeline.Proto q = own.decode(a);
