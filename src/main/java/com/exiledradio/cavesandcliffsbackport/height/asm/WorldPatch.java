@@ -81,6 +81,14 @@ final class WorldPatch extends ClassPatch {
 
         m = method(node, "getTopSolidOrLiquidBlock", "func_175672_r", POS + "Lnet/minecraft/util/math/BlockPos;");
         minAndMax(m, "getTopSolidOrLiquidBlock", 1, 0);
+
+        // getHeight(x, z) (and getHeight(BlockPos), which calls it): a column whose highest block is below 0 (a 1.18
+        // pit) answers 0, 1.12's "nothing here", never a negative height: 1.12 mods draw random heights from it
+        // (Future MC's flowers: nextInt(height + 32)), which throws for a height of -32 or less.
+        m = method(node, "getHeight", "func_189649_b", "(II)I");
+        for (AbstractInsnNode ret : expect("getHeight.return", m, 1, op(Opcodes.IRETURN))) {
+            m.instructions.insertBefore(ret, list(hooks("surfaceHeight", "(I)I")));
+        }
     }
 
     /** {@code pos.getY() <cmp> 0} becomes {@code < minY}, {@code pos.getY() <cmp> 256} becomes {@code < maxY}. */

@@ -220,6 +220,11 @@ public final class Pipeline {
         this(new OverworldNoise(seed), new Climate(), threads, cap);
     }
 
+    /** Which chunks get their surface trees ({@link Decorator.TreeGate}); asked on the thread that calls {@link #finish}. */
+    public void treeGate(Decorator.TreeGate gate) {
+        decorator.treeGate(gate);
+    }
+
     /** Over a world's noise and climate, shared with its biome provider (both are read only). */
     public Pipeline(OverworldNoise noise, Climate climate, int threads, int cap) {
         this.noise = noise;

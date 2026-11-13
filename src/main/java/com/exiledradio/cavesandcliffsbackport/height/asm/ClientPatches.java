@@ -6,6 +6,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.FrameNode;
 import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
@@ -149,10 +150,19 @@ final class ClientPatches {
             // A render chunk's entities: its chunk's entity list for its section, counted from the world's bottom.
             MethodNode m = method(node, "renderEntities", "func_180446_a",
                     "(Lnet/minecraft/entity/Entity;Lnet/minecraft/client/renderer/culling/ICamera;F)V");
-            for (AbstractInsnNode n : expect("renderEntities.list", m, 1, getY(), icst(16), op(Opcodes.IDIV), op(Opcodes.AALOAD))) {
-                InsnList l = worldInt(world(), "minSection");
-                l.add(insn(Opcodes.ISUB));
-                m.instructions.insert(at(n, 2), l);
+            // RenderLib (meldexun; RLCraft) replaces that loop with its own, which walks the world's entity list and
+            // never indexes sections: nothing to patch then.
+            boolean renderLib = m != null && !Asm.find(m, n -> n.getOpcode() == Opcodes.INVOKESTATIC
+                    && "meldexun/renderlib/renderer/EntityRenderManager".equals(((MethodInsnNode) n).owner)
+                    && "renderEntities".equals(((MethodInsnNode) n).name)).isEmpty();
+            if (renderLib && Asm.find(m, getY(), icst(16), op(Opcodes.IDIV), op(Opcodes.AALOAD)).isEmpty()) {
+                site("renderEntities.list (RenderLib's loop)", true);
+            } else {
+                for (AbstractInsnNode n : expect("renderEntities.list", m, 1, getY(), icst(16), op(Opcodes.IDIV), op(Opcodes.AALOAD))) {
+                    InsnList l = worldInt(world(), "minSection");
+                    l.add(insn(Opcodes.ISUB));
+                    m.instructions.insert(at(n, 2), l);
+                }
             }
 
             m = method(node, "setupTerrain", "func_174970_a",
@@ -272,6 +282,37 @@ final class ClientPatches {
                 // The original body follows unreachable; the verifier needs a frame on its first instruction.
                 head.add(new FrameNode(Opcodes.F_SAME, 0, null, 0, null));
                 m.instructions.insert(head);
+            }
+        }
+    }
+
+    /**
+     * Entity Culling (meldexun; RLCraft): its ray tracer's {@code CachedBlockAccess.getChunkSection(x, sectionY, z)}
+     * reads {@code chunk.getBlockStorageArray()[sectionY]}, which throws for a section below 0 once the world's
+     * build height lets the ray get there; it reads our slot instead (null outside the world, as an empty section).
+     */
+    static final class EntityCullingAccessPatch extends ClassPatch {
+        EntityCullingAccessPatch() {
+            super("meldexun.entityculling.util.CachedBlockAccess");
+        }
+
+        @Override
+        protected void apply(ClassNode node) {
+            String ebs = "Lnet/minecraft/world/chunk/storage/ExtendedBlockStorage;";
+            MethodNode m = Asm.method(node, "getChunkSection", "getChunkSection", "(III)" + ebs);
+            P[] read = {invoke(Opcodes.INVOKEVIRTUAL, "getBlockStorageArray", "func_76587_i", "()[" + ebs), iload(2),
+                    op(Opcodes.AALOAD)};
+            if (m != null && Asm.find(m, read).isEmpty()) {
+                // 6.5.0 (Dregora) reads sections through a lambda that answers null outside 0-15 itself: rays pass
+                // through the sections outside it as through air, which never throws.
+                site("EntityCulling.getChunkSection (no unchecked read)", true);
+                return;
+            }
+            for (AbstractInsnNode n : expect("EntityCulling.getChunkSection", m, 1, read)) {
+                AbstractInsnNode load = next(n);
+                AbstractInsnNode aaload = next(load);
+                m.instructions.remove(n);
+                m.instructions.set(aaload, hooks("sectionAt", "(Lnet/minecraft/world/chunk/Chunk;I)" + ebs));
             }
         }
     }

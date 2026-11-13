@@ -49,6 +49,7 @@ public final class HeightTransformer implements IClassTransformer {
                 new ClientPatches.CeleritasManagerPatch(),
                 new ClientPatches.CeleritasSectionPatch(),
                 new ClientPatches.CeleritasSlicePatch(),
+                new ClientPatches.EntityCullingAccessPatch(),
                 new ClientPatches.NothiriumWorldUtilPatch(),
                 new ClientPatches.NothiriumRenderChunkPatch(),
                 new ClientPatches.NothiriumDirectionPatch(true),
@@ -76,12 +77,32 @@ public final class HeightTransformer implements IClassTransformer {
         return Collections.unmodifiableMap(out);
     }
 
+    /**
+     * {@code -Dcavesandcliffsbackport.height.dump=<dir>}: each target class is written there as this transformer
+     * receives it (after every earlier transformer, OptiFine's class replacements included), to read the code a
+     * pack's other mods leave when a site is not found.
+     */
+    private static final String DUMP = System.getProperty("cavesandcliffsbackport.height.dump");
+
+    private static void dump(String name, byte[] bytes) {
+        try {
+            java.io.File f = new java.io.File(DUMP, name + ".class");
+            f.getParentFile().mkdirs();
+            java.nio.file.Files.write(f.toPath(), bytes);
+        } catch (java.io.IOException e) {
+            HeightCorePlugin.LOG.warn("Could not dump {}: {}", name, e.toString());
+        }
+    }
+
     @Override
     public byte[] transform(String name, String transformedName, byte[] basicClass) {
         if (basicClass == null || !HeightCorePlugin.active) {
             return basicClass;
         }
         ClassPatch patch = this.patches.get(transformedName);
+        if (patch != null && DUMP != null) {
+            dump(transformedName, basicClass);
+        }
         return patch == null ? basicClass : patch.transform(basicClass);
     }
 }

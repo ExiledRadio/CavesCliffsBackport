@@ -97,6 +97,12 @@ public final class HeightContent {
                 return mod[1] + " is installed (it changes the same height and lighting code)";
             }
         }
+        // Early builds of Backport Core 1.2.0 lack what the 1.18 generator implements; making a Caves & Cliffs world
+        // with one would crash with NoClassDefFoundError.
+        if (HeightContent.class.getClassLoader().getResource("com/exiledradio/backportcore/terrain/TerrainSource.class") == null) {
+            return "the installed Backport Core is an early 1.2.0 build without its terrain API; install the current "
+                    + "Backport Core 1.2.0";
+        }
         ClassLoader loader = HeightContent.class.getClassLoader();
         for (Map.Entry<String, Boolean> target : HeightTransformer.targets(client).entrySet()) {
             String name = target.getKey();

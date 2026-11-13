@@ -82,7 +82,9 @@ public final class HeightClientSelfTest {
     private void step(Minecraft mc) {
         switch (this.state) {
             case 0:
-                if (!(mc.currentScreen instanceof GuiMainMenu)) {
+                // The title screen, or the one Custom Main Menu (RLCraft) puts in its place.
+                if (!(mc.currentScreen instanceof GuiMainMenu) && (mc.currentScreen == null || mc.world != null
+                        || !"lumien.custommainmenu.gui.GuiCustom".equals(mc.currentScreen.getClass().getName()))) {
                     return;
                 }
                 mc.gameSettings.pauseOnLostFocus = false;
@@ -95,6 +97,11 @@ public final class HeightClientSelfTest {
                 }
                 ok(HeightContent.allowed(), "extended height is on (refusal: " + HeightContent.refusal() + ")");
                 eq(new ArrayList<String>(), PatchReport.missed(), "client patch sites not found");
+                if (!HeightContent.allowed()) {
+                    // No Caves & Cliffs world type to make a world with.
+                    finish(mc);
+                    return;
+                }
                 mc.getSaveLoader().deleteWorldDirectory(WORLD);
                 WorldSettings settings = new WorldSettings(1718L, GameType.CREATIVE, true, false, HeightContent.worldType());
                 mc.launchIntegratedServer(WORLD, WORLD, settings);

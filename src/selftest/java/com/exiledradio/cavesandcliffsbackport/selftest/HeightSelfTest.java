@@ -237,6 +237,9 @@ public final class HeightSelfTest implements SelfTest {
         BlockPos bottom = new BlockPos(x, -64, Z);
         Chunk chunk = world.getChunk(bottom);
         check.eq(-64, chunk.getHeightValue(x & 15, Z & 15), "height map of an open column");
+        check.eq(0, world.getHeight(x, Z), "World.getHeight of a column open below 0 is 1.12's 0, never negative");
+        check.eq(0, world.getHeight(bottom).getY(), "World.getHeight(BlockPos) of that column too");
+        check.eq(320, world.getHeight(X, Z), "World.getHeight of a column built to y 319");
         check.ok(world.canSeeSky(bottom), "y -64 sees the sky up an open column");
         check.eq(15, world.getLightFor(EnumSkyBlock.SKY, bottom), "sky light at y -64 under open sky");
         check.eq(15, world.getLightFor(EnumSkyBlock.SKY, new BlockPos(x, 0, Z)), "sky light at y 0 in the open column");
