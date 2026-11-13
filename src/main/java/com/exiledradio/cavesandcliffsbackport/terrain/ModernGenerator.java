@@ -88,6 +88,9 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource {
         this.sky = world.provider.hasSkyLight();
         this.pipeline = new Pipeline(terrain.noise, terrain.climate, ModernTerrain.threads(), ModernTerrain.cap());
         this.states.resolveAll();
+        // Dynamic Trees grows its own trees where it cancels vanilla's; the 1.18 trees step aside there. Asked on the
+        // server thread, which finishes chunks.
+        this.pipeline.treeGate(DynamicTreesGate.of(world));
         ColumnCache columns = new ColumnCache(terrain.noise);
         this.heights = new ChunkFiller(terrain.noise, columns);
         this.structures = new ModernStructures(new Structures(terrain.noise, columns,

@@ -68,8 +68,9 @@ public final class MusicClient {
                 throw new IllegalStateException(GameMusicPack.FILE + " is missing from the jar");
             }
             Minecraft mc = Minecraft.getMinecraft();
-            // Kept for every later reload (F3+T, a resource pack change), which rebuilds from this list...
-            List<IResourcePack> defaults = ReflectionHelper.getPrivateValue(Minecraft.class, mc, "field_110449_ao", "defaultResourcePacks");
+            // Kept for every later reload (F3+T, a resource pack change), which rebuilds from this list... (The
+            // (name, obfName) overload takes the dev name first; the other order failed in every game and dev run.)
+            List<IResourcePack> defaults = ReflectionHelper.getPrivateValue(Minecraft.class, mc, "defaultResourcePacks", "field_110449_ao");
             defaults.add(pack);
             // ...and added to the live manager now: the startup reload has happened, the sound handler's has not.
             IReloadableResourceManager manager = (IReloadableResourceManager) mc.getResourceManager();

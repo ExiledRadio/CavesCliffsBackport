@@ -71,6 +71,10 @@ public final class SelfTestRunner {
 
     public static void start(String which) {
         CavesAndCliffsBackport.LOGGER.info("SELFTEST requested: {}", which);
+        if ("packprobe".equals(which)) {
+            PackProbe.start();
+            return;
+        }
         MinecraftForge.EVENT_BUS.register(new SelfTestRunner(Arrays.asList(which.split(","))));
     }
 

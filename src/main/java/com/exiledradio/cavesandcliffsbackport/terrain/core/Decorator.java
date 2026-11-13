@@ -40,6 +40,8 @@ public final class Decorator {
     /** Per biome: every feature it has, any step (BiomeGenerationSettings.hasFeature), by Placed.id. */
     private final boolean[][] biomeHas;
     private Set<String> only;
+    private TreeGate treeGate;
+    private final int[] gateAnswers = new int[3];
     private final byte[] stored = new byte[1536];
     private final boolean[] present = new boolean[256];
     private final boolean[] chosen = new boolean[512];
@@ -68,12 +70,17 @@ public final class Decorator {
             ported.put(p.name, p);
         }
         for (Placed p : Trees.placed()) {
+            // The azalea tree grows from a lush cave's ceiling, not a forest: no 1.12 mod replaces it.
+            p.kind = "rooted_azalea_tree".equals(p.name) ? 0 : TreeGate.TREES;
             ported.put(p.name, p);
         }
         for (Placed p : Fossils.placed()) {
             ported.put(p.name, p);
         }
         for (Placed p : Vegetation.placed()) {
+            if (p.name.startsWith("patch_cactus")) {
+                p.kind = TreeGate.CACTUS;
+            }
             ported.put(p.name, p);
         }
         for (Placed p : Misc.placed()) {
@@ -134,6 +141,24 @@ public final class Decorator {
         only = names;
     }
 
+    /**
+     * Asked at most once per decorated chunk and kind, when the chunk has a feature of that kind to place: false
+     * leaves out that chunk's features of the kind ({@link #TREES}: every surface tree feature, huge mushrooms
+     * included, not the azalea tree; {@link #CACTUS}: the cactus patches). Every feature keeps its own seed, so the
+     * rest of the chunk is exactly as without a gate. The game answers it for a mod that grows its own trees
+     * instead (Dynamic Trees). Null: everything, as vanilla.
+     */
+    public interface TreeGate {
+        int TREES = 1;
+        int CACTUS = 2;
+
+        boolean allows(int cx, int cz, int kind);
+    }
+
+    public void treeGate(TreeGate gate) {
+        treeGate = gate;
+    }
+
     // ---- the loop ----
 
     private Region region;
@@ -156,6 +181,9 @@ public final class Decorator {
         for (int b = 0; b < 64; b++) {
             present[b] = (mask >>> b & 1L) != 0L;
         }
+        // Per kind: 1 allowed, 0 denied, -1 not asked yet.
+        int[] gate = this.gateAnswers;
+        Arrays.fill(gate, treeGate == null ? 1 : -1);
         for (int k = 0; k < STEPS; k++) {
             Placed[] list = features[k];
             Arrays.fill(chosen, 0, list.length, false);
@@ -169,6 +197,14 @@ public final class Decorator {
             for (int i = 0; i < list.length; i++) {
                 Placed p = list[i];
                 if (chosen[i] && p != null && (only == null || only.contains(p.name))) {
+                    if (p.kind != 0 && gate[p.kind] != 1) {
+                        if (gate[p.kind] == -1) {
+                            gate[p.kind] = treeGate.allows(cx, cz, p.kind) ? 1 : 0;
+                        }
+                        if (gate[p.kind] == 0) {
+                            continue;
+                        }
+                    }
                     random.setFeatureSeed(decorationSeed, i, k);
                     run(p, 0, ox, MIN_Y, oz);
                 }
@@ -232,6 +268,8 @@ public final class Decorator {
         final Feature feature;
         Modifier[] mods = new Modifier[0];
         int id;
+        /** 0, or the {@link TreeGate} kind that may leave this feature out. */
+        int kind;
 
         Placed(String name, Feature feature, int... ops) {
             this.name = name;

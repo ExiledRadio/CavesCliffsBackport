@@ -51,6 +51,14 @@ public final class HeightHooks {
     // ---------------------------------------------------------------------------------------------
 
     /**
+     * {@code World.getHeight(x, z)}'s answer: 1.12's never goes below 0 (0 means nothing in the column), so neither
+     * does an extended world's; only a column open to the sky down past y 0 ever had one.
+     */
+    public static int surfaceHeight(int height) {
+        return height < 0 ? 0 : height;
+    }
+
+    /**
      * End of {@code World}'s constructor, before the world has a chunk. A Caves & Cliffs overworld gets y -64..319;
      * every other world keeps vanilla's range. The server takes the height saved with the world when there is one
      * (writing it for a new world), so a world never changes height; the client goes by the world type the server

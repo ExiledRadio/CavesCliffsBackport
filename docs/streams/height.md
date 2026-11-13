@@ -71,11 +71,14 @@ registered and no world is extended; every patched site then computes what vanil
 (an instance). A class with any site not found is left exactly as it was, the site is logged, and extended height is
 off for the session. No patch replaces a method; most change one constant or one shift, and none adds a jump except
 the two head guards below (each with its own frame). Sorting index 1500, after Fluidlogged API's 1401, so its
-patterns see vanilla's code. 73 sites on a dedicated server, 96 on a client; 100 in the Dregora Celeritas pack and 104 in the Fast one (Nothirium and VintageFix).
+patterns see vanilla's code. 74 sites on a dedicated server (RLCraft's and Dregora's too), 97 on a client; 98 in
+RLCraft's client (RenderLib, Entity Culling); 100 in the Dregora Celeritas pack and 104 in the Fast one (Nothirium and
+VintageFix), counted before `getHeight.return` was added. `-Dcavesandcliffsbackport.height.dump=<dir>` writes every target class there as
+the transformer receives it, to read what another mod left when a site is not found.
 
 | Class | Sites |
 | --- | --- |
-| `World` | `HeightWorld` (fields, getters); end of the constructor; `isOutsideBuildHeight`, `isAreaLoaded`, `getLight` (both), `getLightFor`, `getLightFromNeighborsFor` (client), `canBlockFreezeBody`, `canSnowAtBody`, `getTopSolidOrLiquidBlock`: 0/256/255 become the world's bottom, top and top - 1 |
+| `World` | `HeightWorld` (fields, getters); end of the constructor; `isOutsideBuildHeight`, `isAreaLoaded`, `getLight` (both), `getLightFor`, `getLightFromNeighborsFor` (client), `canBlockFreezeBody`, `canSnowAtBody`, `getTopSolidOrLiquidBlock`: 0/256/255 become the world's bottom, top and top - 1; `getHeight(x, z)` never answers below 0 (1.12's "nothing here"; mods draw `nextInt(height + 32)` from it, which threw in a 1.18 pit open down to y -44) |
 | `WorldProvider` | `getHeight`, `getActualHeight`: 256 becomes the world's top (320) |
 | `Chunk` | constructor: 24 sections and 24 entity lists; every `storageArrays[y >> 4]` (getBlockState, setBlockState, light get/set/subtracted, generateSkylightMap, relightBlock, isEmptyBetween); `getBlockState`'s `y >= 0` guard; `getLastExtendedBlockStorage` walks by height; height loops stop at the bottom (generateHeightMap, generateSkylightMap, relightBlock, checkLight, getPrecipitationHeight); `relightBlock`'s `& 255`; `isEmptyBetween`'s clamps; the relight round robin covers 24 sections; client `read` builds each section at its slot's height; entity lists per section from the bottom (`addEntity`, `removeEntityAtIndex`, both area queries), `chunkCoordY` stays the section y |
 | `ChunkCache` | `getBlockState`, `isSideSolid`, client `getLightForExt`, `getLightFor` |
@@ -94,6 +97,8 @@ patterns see vanilla's code. 73 sites on a dedicated server, 96 on a client; 100
 | Celeritas 2.5.0 (client) | `VintageRenderSectionManager.create`: the world's section range; `isSectionVisuallyEmpty`, `WorldSlice.prepare`, `ClonedChunkSection.getChunkSection` (head redirect): section y to our slot |
 | Nothirium 0.4.9 (client) | `WorldUtil.getSection` (head redirect): our slots; `RenderChunk.markDirty`, `Direction.UP/DOWN.isFaceCulled`: the world's section range |
 | VintageFix 0.7.0 | its `chunk_access.ChunkMixin` overwrite of `Chunk.getBlockState`: the same three sites as vanilla's |
+| RenderLib 1.2.8 (client, RLCraft) | replaces `RenderGlobal.renderEntities`' per-render-chunk loop with its own over the world's entity list: the `renderEntities.list` site is then not needed (and counted found) |
+| Entity Culling 6.3.1 (client, RLCraft) | `CachedBlockAccess.getChunkSection`: `getBlockStorageArray()[sectionY]` becomes our slot (it threw for a section below 0); 6.5.0 (Dregora) reads through its own 0-15 check and needs nothing |
 
 **Saving** (`HeightHooks`): vanilla's `Sections` gets exactly slots 0-15, written by vanilla's own code; slots 16-23
 go to `cavesandcliffsbackport:Sections` in vanilla's per-section format with a signed `Y` (-4..-1, 16..19). Reading
@@ -169,7 +174,7 @@ transformer chain, our transformer gives that overwrite the same three sites as 
 
 ## Not tested
 
-*   OptiFine (the Shaders instances): not in the brief's list.
+*   OptiFine (the Shaders instances): extended height refuses with it (`docs/streams/packcompat.md`).
 *   Looking at the screen in the packs: the checks read the renderers' state (sections built, not empty), not pixels.
 *   Overrides other than the ones found in Dregora: the probes cover `World.isOutsideBuildHeight`/`isValid` and
     `Chunk.getBlockState`; another mod overwriting another patched method would still go unnoticed until something
