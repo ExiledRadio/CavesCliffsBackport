@@ -101,8 +101,8 @@ mod (Dregora without it still has Core, which V&P needs).
 *   **What removing Phosphor costs** (RLCraft server, Default world, seed 1718, a fresh 48x48-chunk pregen at
     2000, 2000, alternating, twice each): 61 and 58 s without Phosphor, 39 and 37 s with it (38-40 against 59-62
     chunks/s). In `cavesandcliffs` worlds without Phosphor the same pregen took 30-40 s (58-77 chunks/s): the 1.18
-    generator writes its chunks' sky light itself, so the extended world is no slower than RLCraft's Default world with
-    Phosphor.
+    generator places its features before a chunk is in the world, so they cause no light updates; the extended world
+    is no slower than RLCraft's Default world with Phosphor.
 *   **Alfheim and Phosphor** stay incompatible: both pack y into 8 bits of a 64-bit position (Phosphor: z 26, x 26,
     y 8, light 4; a y-overflow bit), keep per-section flags in 16-bit masks, and `@Overwrite` the chunk light
     methods this coremod patches. A compatible path means rewriting their lighting engines' encoding and section
