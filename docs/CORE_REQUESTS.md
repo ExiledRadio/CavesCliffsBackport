@@ -206,3 +206,51 @@ follows a rule in its start check, `locatableAt`, `nearest` and `placement()`, s
 owners' changes, each on a `cc-structures` branch: Update Aquatic (8cddaaa: shipwreck kind, ruin warmth),
 Nether Update (1cfda62: ruined portal type), Village & Pillage (7281f9e, cut from `languages`, its newest line:
 outposts ask `StartRules` and register with `TerrainAdaptation`). Each now requires Core 1.2.0.
+
+## Lf-1. Cylindrical fog (1.18.1)
+
+1.18.1 draws terrain fog, the sky's and the water's past the render distance as a cylinder around the camera
+(`FogShape.CYLINDER`: horizontal distance only), so looking up or down never fogs the near sky or a cliff above you.
+Stream Lf sets 1.18.1's distances through `FogPipeline` (a `distance` step), but 1.12.2's fixed-function fog measures
+either the eye's radial distance (`GL_NV_fog_distance`, which vanilla turns on) or the eye's plane depth, never a
+cylinder. Wanted, owned by Core because every fog step would share it:
+
+```java
+FogPipeline.Distance.shape(FogPipeline.Shape.CYLINDER);   // this frame's fog measured horizontally
+```
+
+One way: `GL_EXT_fog_coord` with a per-vertex fog coordinate of the horizontal distance (render chunk upload and the
+entity, sky and cloud passes), falling back to spheres where the extension is missing.
+
+## Lf-2. 1.18's Key Binds and Online Options screens
+
+21w37a moved Sneak, Sprint and Auto-Jump from Accessibility Settings to Controls and the key list into a "Key
+Binds..." sub-screen; 21w44a added Online Options (Realms Notifications, Allow Server Listings, Server
+Difficulty). `OptionScreen.KEY_BINDS` and `ONLINE` exist at 1.18 but are not built (docs/PRESENTATION.md). Wanted: both
+screens in 1.18.2's layout, and Controls in 1.18.2's (Mouse Settings, Key Binds, Auto-Jump, Sneak, Sprint), applied
+from version 1.18. Buzzy Bees' toggle sneak and sprint options would move with them.
+
+## Lf-3. The Brightness slider's 1.18 label
+
+1.18.2's `Option.GAMMA` reads "Brightness: Moody" at 0, "Brightness: Default" at 50, "Brightness: Bright" at 100
+and "Brightness: N" between (1.12.2: "+N%"). Video Settings' vanilla entries are Core's (`VideoOptions`). Wanted, from
+version 1.18: that label (vanilla's key `options.gamma.default`, "Default", comes with it). The 1.18 brightness
+default itself (`gamma:0.5`) is stream Lf's, through `gameOptionDefault`.
+
+## Lf-4. 1.17's cycling buttons
+
+21w03a: a button cycling through a set of values (Graphics, Clouds, Particles ...) moves with the mouse wheel, and
+Shift+click cycles backward. Those buttons are vanilla's `GuiOptionButton`s and Core's `CycleOption` widgets, both
+drawn on Core's screens. Wanted from version 1.17.
+
+## Lf-5. 1.18.2's 32-bit warning on the title screen
+
+On a 32-bit Java, 1.18.2's title screen shows `title.32bit.deprecation` ("32-bit system detected: ...") centered at
+`buttonsTop - 24`, wrapped at 350 pixels on two lines, over a translucent box (`0x55200000`), fading in with the
+rest. The title screen is Core's (`TitleScreenExtras`). The Realms screen it may open does not apply to 1.12.2.
+
+## Lf-6. 1.18's inventory effect list
+
+1.18 moved the status effects to the right of the inventory (beside the recipe book when it is open), in a classic
+or compact (icons only) layout chosen by the room left, and hides the HUD's effect icons while the inventory is open.
+1.12.2's `InventoryEffectRenderer` shifts the inventory instead. A screen every backport's containers share: Core's.

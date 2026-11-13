@@ -25,7 +25,8 @@ uses the key the server sends at login) and `MusicContent.preInit` installs it w
 2.  **This stream registers the 1.18 presentation version** (`Presentation.version("1.18")` in
     `MusicContent.preInit`). Core skips a version's music step until that version is installed, so the biome music
     needs it; it also means the game's look follows 1.18 wherever Core's tables say so, and only while the music
-    stream is on. If the mod gets a look-and-feel module, the call belongs there, unconditional.
+    stream is on. **Since stream Lf** (`lookfeel.LookAndFeel`) 1.18 is registered unconditionally there too; this
+    call now only adds the menu tracks to the same contribution.
 3.  **Jar size**: see the end of this file. The eight tracks and the disc are 112.3 MB of the jar.
 4.  **Core requests**: `Mu-1` (jukebox comparator signal) and `Mu-2` (a game music list) in `docs/CORE_REQUESTS.md`.
 

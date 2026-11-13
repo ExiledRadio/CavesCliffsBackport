@@ -1,0 +1,2 @@
+Java 16 + 1 = 17!
+[this splash text is now available]

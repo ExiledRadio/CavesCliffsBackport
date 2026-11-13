@@ -1,0 +1,309 @@
+package com.exiledradio.cavesandcliffsbackport.selftest;
+
+import com.exiledradio.backportcore.presentation.Contribution;
+import com.exiledradio.backportcore.presentation.GameVersion;
+import com.exiledradio.backportcore.presentation.LoadingRevision;
+import com.exiledradio.backportcore.presentation.Presentation;
+import com.exiledradio.backportcore.presentation.Splashes;
+import com.exiledradio.backportcore.presentation.VersionedDefaults;
+import com.exiledradio.backportcore.presentation.option.OptionScreen;
+import com.exiledradio.backportcore.presentation.option.PresentationOption;
+import com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport;
+import com.exiledradio.cavesandcliffsbackport.lookfeel.LookAndFeel;
+import com.exiledradio.cavesandcliffsbackport.lookfeel.LookHooks;
+import net.minecraft.util.ResourceLocation;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
+/**
+ * Stream Lf: 1.17's and 1.18's look and feel registered with Backport Core, its assets and text, its options and
+ * defaults, and the numbers of its client steps (checked against 1.18.2's code).
+ */
+public final class LookFeelSelfTest implements SelfTest {
+
+    private static final String ID = CavesAndCliffsBackport.MOD_ID;
+    private static final String[] CODES = {"en_us", "de_de", "es_ar", "es_es", "es_mx", "es_uy", "es_ve", "fr_fr", "it_it",
+            "ja_jp", "ko_kr", "nl_nl", "pl_pl", "pt_br", "ru_ru", "tr_tr", "uk_ua", "zh_cn", "zh_tw"};
+
+    @Override
+    public String name() {
+        return "lookfeel";
+    }
+
+    @Override
+    public void run(Check c) throws Exception {
+        registration(c);
+        panoramas(c);
+        splashes(c);
+        options(c);
+        defaults(c);
+        text(c);
+        numbers(c);
+    }
+
+    private static void registration(Check c) throws IOException {
+        for (String v : new String[] {"1.17", "1.18", "1.18.1", "1.18.2"}) {
+            Contribution con = Presentation.contribution(v);
+            c.ok(con != null && con.owners().contains(ID), v + " is registered by " + ID + ": " + con);
+        }
+        // C&C is the newest installed backport in this dev server: 1.18.2 wins every single-slot piece.
+        GameVersion newest = Presentation.newest();
+        c.ok(newest.isAtLeast("1.18.2"), "the newest installed version is at least 1.18.2: " + newest);
+        c.ok(Presentation.isAtLeast("1.17") && Presentation.isAtLeast("1.18"), "isAtLeast(1.17) and (1.18)");
+        c.eq(LoadingRevision.DATA_1_16, Presentation.loadingRevision(), "the world-loading screen stays 1.16's");
+        if (newest.isAtLeast("1.19")) {
+            return; // a later backport owns the single slots
+        }
+        String[][] assets = {
+                {"textures/gui/title/minecraft.png", "256x256"},
+                {"textures/gui/title/mojangstudios.png", null},
+                {"textures/gui/widgets.png", "256x256"},
+                {"textures/gui/checkbox.png", "64x64"},
+        };
+        for (String[] a : assets) {
+            ResourceLocation src = Presentation.asset(a[0]);
+            c.eq(new ResourceLocation(ID, a[0]), src, "Core serves vanilla's " + a[0] + " from 1.18's");
+            int[] size = src == null ? null : pngSize(src);
+            c.ok(size != null && (a[1] == null || a[1].equals(size[0] + "x" + size[1])), a[0] + " is in the jar: " + Arrays.toString(size));
+        }
+        c.eq(new ResourceLocation(ID, "textures/gui/accessibility.png"), Presentation.titleAccessibilityIcon(), "the title screen's Accessibility icon");
+        c.ok(pngSize(new ResourceLocation(ID, "textures/gui/accessibility.png")) != null, "accessibility.png is in the jar");
+        String[] warn = Presentation.multiplayerWarning();
+        c.ok(warn != null && "multiplayerWarning.header".equals(warn[0]) && "multiplayerWarning.check".equals(warn[2]),
+                "the multiplayer warning uses vanilla's keys: " + Arrays.toString(warn));
+        c.ok(Presentation.vanillaTexts().contains(new ResourceLocation(ID, "vanilla_text")), "1.18's vanilla text is registered");
+    }
+
+    private static void panoramas(Check c) throws IOException {
+        List<Presentation.Panorama> all = Presentation.panoramas();
+        Presentation.Panorama p117 = null;
+        Presentation.Panorama p118 = null;
+        for (Presentation.Panorama p : all) {
+            if (p.version.equals(GameVersion.parse("1.17"))) {
+                p117 = p;
+            } else if (p.version.equals(GameVersion.parse("1.18"))) {
+                p118 = p;
+            }
+        }
+        if (!c.ok(p117 != null && p118 != null, "1.17's and 1.18's panoramas are registered: " + all.size())) {
+            return;
+        }
+        if (!Presentation.newest().isAtLeast("1.19")) {
+            c.ok(all.get(all.size() - 1) == p118, "the newest panorama, LATEST's choice, is 1.18's");
+        }
+        for (int i = 0; i < 6; i++) {
+            c.eq(new ResourceLocation(ID, "textures/gui/title/background/panorama_" + i + ".png"), p118.faces[i], "1.18 face " + i);
+            c.eq(new ResourceLocation(ID, "textures/gui/title/background/1_17/panorama_" + i + ".png"), p117.faces[i], "1.17 face " + i);
+            int[] s18 = pngSize(p118.faces[i]);
+            int[] s17 = pngSize(p117.faces[i]);
+            // Mojang's faces are 1024x1024 (1.18.2's top, face 4, is plain sky and compresses to 7 KB).
+            c.ok(s18 != null && s18[0] == 1024 && s18[1] == 1024, "1.18 face " + i + " is a 1024x1024 image: " + Arrays.toString(s18));
+            c.ok(s17 != null && s17[0] == 1024 && s17[1] == 1024, "1.17 face " + i + " is a 1024x1024 image: " + Arrays.toString(s17));
+        }
+        ResourceLocation overlay = Presentation.panoramaOverlay();
+        if (!Presentation.newest().isAtLeast("1.19")) {
+            c.eq(new ResourceLocation(ID, "textures/gui/title/background/panorama_overlay.png"), overlay, "the panorama overlay");
+        }
+        int[] size = pngSize(new ResourceLocation(ID, "textures/gui/title/background/panorama_overlay.png"));
+        c.ok(size != null && size[0] == 1 && size[1] == 1, "1.18.2's overlay is one clear pixel: " + Arrays.toString(size));
+    }
+
+    private static void splashes(Check c) throws IOException {
+        List<String> add17 = lines(new ResourceLocation(ID, "texts/splashes_added_1_17.txt"));
+        List<String> rem17 = lines(new ResourceLocation(ID, "texts/splashes_removed_1_17.txt"));
+        List<String> add18 = lines(new ResourceLocation(ID, "texts/splashes_added_1_18.txt"));
+        List<String> rem18 = lines(new ResourceLocation(ID, "texts/splashes_removed_1_18.txt"));
+        c.eq(13, add17.size(), "1.17.1 adds this many splashes to 1.16.5's");
+        c.eq(3, rem17.size(), "1.17.1 removes this many");
+        c.eq(2, add18.size(), "1.18.2 adds this many to 1.17.1's");
+        c.eq(2, rem18.size(), "1.18.2 removes this many");
+        List<String> base = lines("/assets/minecraft/texts/splashes.txt");
+        List<String> pool = Splashes.pool(base, Presentation.installed(), f -> lines(f));
+        for (String s : new String[] {"Contains simulated goats!", "Get to the coppah!", "Honey, I waxed the copper!",
+                "Made by \"real\" people!", "[this splash text is now available]"}) {
+            c.ok(pool.contains(s), "the splash pool has \"" + s + "\"");
+        }
+        c.ok(!pool.contains("[this splash text has been delayed until part 2]"), "1.18 took back 1.17's placeholder splash");
+        c.ok(base.contains("Woo, /v/!") && !pool.contains("Woo, /v/!"), "1.17 removed \"Woo, /v/!\"");
+        c.ok(!pool.contains("Now Java 16!") && !pool.contains("Java 16 + 1 = 17!") && !pool.contains("Now on OpenGL 3.2 core profile!"),
+                "the splashes naming a Java or OpenGL version are not shown (false on 1.12.2)");
+        if (Presentation.installed().size() == 4) {
+            // Alone: 1.12.2's list, less 1.17's and 1.18's removals, plus their additions (Core drops the runtime ones).
+            Set<String> expected = new LinkedHashSet<String>(base);
+            expected.removeAll(rem17);
+            expected.addAll(add17);
+            expected.removeAll(rem18);
+            expected.addAll(add18);
+            expected.removeIf(Splashes::isAboutTheRuntime);
+            Set<String> got = new LinkedHashSet<String>(pool);
+            got.removeIf(Splashes::isAboutTheRuntime);
+            c.eq(expected.size(), got.size(), "pool size: 1.12.2's less the removals plus the additions");
+        }
+    }
+
+    private static void options(Check c) {
+        PresentationOption hide = Presentation.option(LookAndFeel.HIDE_LIGHTNING_FLASHES.id());
+        PresentationOption save = Presentation.option(LookAndFeel.AUTOSAVE_INDICATOR.id());
+        c.ok(hide == LookAndFeel.HIDE_LIGHTNING_FLASHES, "Hide Lightning Flashes is registered");
+        c.ok(save == LookAndFeel.AUTOSAVE_INDICATOR, "Autosave Indicator is registered");
+        c.eq(OptionScreen.ACCESSIBILITY, LookAndFeel.HIDE_LIGHTNING_FLASHES.screen(), "Hide Lightning Flashes is on Accessibility Settings");
+        c.eq(OptionScreen.VIDEO, LookAndFeel.AUTOSAVE_INDICATOR.screen(), "Autosave Indicator is on Video Settings");
+        c.eq(GameVersion.parse("1.18"), LookAndFeel.HIDE_LIGHTNING_FLASHES.since(), "Hide Lightning Flashes since 1.18");
+        c.eq(GameVersion.parse("1.18"), LookAndFeel.AUTOSAVE_INDICATOR.since(), "Autosave Indicator since 1.18");
+        c.eq("options.hideLightningFlashes", LookAndFeel.HIDE_LIGHTNING_FLASHES.labelKey(), "its label is vanilla's key");
+        c.eq("options.hideLightningFlashes.tooltip", LookAndFeel.HIDE_LIGHTNING_FLASHES.tooltipKey(), "its tooltip");
+        c.eq("options.autosaveIndicator", LookAndFeel.AUTOSAVE_INDICATOR.labelKey(), "Autosave Indicator's label");
+        c.eq(false, LookAndFeel.HIDE_LIGHTNING_FLASHES.defaultValue(), "Hide Lightning Flashes is OFF by default");
+        c.eq(true, LookAndFeel.AUTOSAVE_INDICATOR.defaultValue(), "Autosave Indicator is ON by default");
+        c.ok(LookAndFeel.HIDE_LIGHTNING_FLASHES.isShown() && LookAndFeel.AUTOSAVE_INDICATOR.isShown(), "both show at the newest version");
+        c.ok(!LookAndFeel.HIDE_LIGHTNING_FLASHES.isShownAt(GameVersion.parse("1.17.1")), "neither shows before 1.18");
+        // 1.18.2's Accessibility Settings: ... FOV Effects, Monochrome Logo, Hide Lightning Flashes.
+        c.eq(Presentation.MONOCHROME_LOGO.id(), LookAndFeel.HIDE_LIGHTNING_FLASHES.after(), "Hide Lightning Flashes follows Monochrome Logo");
+        List<String> access = ids(Presentation.optionsOn(OptionScreen.ACCESSIBILITY));
+        int mono = access.indexOf(Presentation.MONOCHROME_LOGO.id());
+        int hideAt = access.indexOf(LookAndFeel.HIDE_LIGHTNING_FLASHES.id());
+        c.ok(mono >= 0 && hideAt == mono + 1, "Accessibility Settings: Monochrome Logo (1.17, Core's), then Hide Lightning Flashes: " + access);
+        List<String> video = ids(Presentation.optionsOn(OptionScreen.VIDEO));
+        c.ok(!video.isEmpty() && video.get(video.size() - 1).equals(LookAndFeel.AUTOSAVE_INDICATOR.id()),
+                "Video Settings ends with Autosave Indicator, as 1.18.2's does: " + video);
+        LookAndFeel.HIDE_LIGHTNING_FLASHES.set(true);
+        c.eq(true, LookAndFeel.HIDE_LIGHTNING_FLASHES.get(), "Hide Lightning Flashes can be set");
+        LookAndFeel.HIDE_LIGHTNING_FLASHES.reset();
+        c.eq(false, LookAndFeel.HIDE_LIGHTNING_FLASHES.get(), "and reset");
+    }
+
+    private static void defaults(Check c) {
+        boolean found = false;
+        for (VersionedDefaults.Entry e : VersionedDefaults.pending(Presentation.installed())) {
+            if (e.kind == VersionedDefaults.Kind.GAME_OPTION && "gamma".equals(e.key)) {
+                found = "0.5".equals(e.value) && e.version.equals(GameVersion.parse("1.18"));
+            }
+        }
+        // A dedicated server never applies a vanilla setting (client only), so the entry stays pending here.
+        c.ok(found, "1.18's brightness default (options.txt gamma:0.5, 21w39a) is a versioned default, applied once per instance");
+    }
+
+    private static void text(Check c) throws IOException {
+        List<String> keys = null;
+        for (String code : CODES) {
+            List<String> lines = lines(new ResourceLocation(ID, "vanilla_text/" + code + ".lang"));
+            List<String> k = new ArrayList<String>();
+            for (String l : lines) {
+                k.add(l.substring(0, l.indexOf('=')));
+            }
+            if (keys == null) {
+                keys = k;
+            } else {
+                c.ok(keys.equals(k), "vanilla_text/" + code + ".lang has en_us's keys");
+            }
+        }
+        List<String> en = lines(new ResourceLocation(ID, "vanilla_text/en_us.lang"));
+        for (String want : new String[] {"options.vsync=VSync", "tile.blockLapis.name=Block of Lapis Lazuli",
+                "build.tooHigh=Height limit for building is %s", "menu.savingLevel=Saving world",
+                "options.hideLightningFlashes=Hide Lightning Flashes", "options.autosaveIndicator=Autosave Indicator",
+                "entity.PigZombie.name=Zombified Piglin"}) {
+            c.ok(en.contains(want), "1.18.2's wording: " + want);
+        }
+        c.ok(!String.join("\n", en).contains("selectWorld.mapType"), "World Type keeps its colon (1.12.2's button adds no \": \")");
+    }
+
+    private static void numbers(Check c) {
+        c.eq(192.0F, LookHooks.cloudHeight(0, 128.0F), "the overworld's clouds are at 192 (1.18)");
+        c.eq(128.0F, LookHooks.cloudHeight(7, 128.0F), "another dimension keeps its own");
+        c.eq(150.0F, LookHooks.cloudHeight(0, 150.0F), "a provider's own cloud height stays");
+        // FogRenderer.setupFog (1.18.2): start = far - clamp(far / 10, 4, 64), end = far, far at least 32.
+        float[][] fog = {{32, 28, 32}, {128, 115.2F, 128}, {192, 172.8F, 192}, {512, 460.8F, 512}, {1024, 960, 1024}, {16, 28, 32}};
+        for (float[] f : fog) {
+            c.ok(Math.abs(LookHooks.terrainFogStart(f[0]) - f[1]) < 1e-3, "fog start at " + f[0] + " is " + f[1] + ": " + LookHooks.terrainFogStart(f[0]));
+            c.eq(f[2], LookHooks.terrainFogEnd(f[0]), "fog end at " + f[0]);
+        }
+        // The flash: World.getSkyColorBody blends toward (0.8, 0.8, 1.0); undoing it gives the sky back.
+        double[] sky = {0.47, 0.65, 1.0};
+        int bolt = 2;
+        float pt = 0.3F;
+        float f = Math.min(bolt - pt, 1.0F) * 0.45F;
+        double[] flashed = {(float) sky[0] * (1 - f) + 0.8F * f, (float) sky[1] * (1 - f) + 0.8F * f, (float) sky[2] * (1 - f) + 1.0F * f};
+        LookHooks.undoLightningFlash(flashed, bolt, pt);
+        c.ok(Math.abs(flashed[0] - sky[0]) < 1e-5 && Math.abs(flashed[1] - sky[1]) < 1e-5 && Math.abs(flashed[2] - sky[2]) < 1e-5,
+                "Hide Lightning Flashes gives back the sky without the flash: " + Arrays.toString(flashed));
+        double[] none = {0.1, 0.2, 0.3};
+        LookHooks.undoLightningFlash(none, 0, 0.5F);
+        c.ok(none[0] == 0.1 && none[1] == 0.2 && none[2] == 0.3, "no bolt, no change");
+        c.eq("Block: -17 70 33 [15 6 1]", LookHooks.blockRow(-17, 70, 33), "1.18.2's F3 Block row");
+        c.eq("Chunk: -2 4 2 [30 2 in r.-1.0.mca]", LookHooks.chunkRow(-17, 70, 33), "1.18.2's F3 Chunk row");
+        c.eq("Chunk: 40 -4 -33 [8 31 in r.1.-2.mca]", LookHooks.chunkRow(640, -60, -520), "below y 0 and in a negative region");
+        float v = 0.0F;
+        for (int i = 0; i < 3; i++) {
+            v = LookHooks.autosaveStep(v, true);
+        }
+        c.ok(Math.abs(v - 0.488F) < 1e-4, "the indicator fades in by 20% of the rest each tick: " + v);
+        c.eq(108, LookHooks.autosaveAlpha(0.36F, 0.488F, 0.5F), "its alpha between ticks");
+    }
+
+    // ---- helpers ----
+
+    private static List<String> ids(List<PresentationOption> options) {
+        List<String> out = new ArrayList<String>();
+        for (PresentationOption o : options) {
+            out.add(o.id());
+        }
+        return out;
+    }
+
+    private static List<String> lines(ResourceLocation rl) {
+        return lines("/assets/" + rl.getNamespace() + "/" + rl.getPath());
+    }
+
+    private static List<String> lines(String path) {
+        List<String> out = new ArrayList<String>();
+        InputStream in = LookFeelSelfTest.class.getResourceAsStream(path);
+        if (in == null) {
+            return out;
+        }
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+            for (String line; (line = r.readLine()) != null; ) {
+                if (!line.trim().isEmpty()) {
+                    out.add(line);
+                }
+            }
+        } catch (IOException e) {
+            return out;
+        }
+        return out;
+    }
+
+    /** @return a PNG's width and height from its IHDR chunk, or null when it is missing */
+    private static int[] pngSize(ResourceLocation rl) throws IOException {
+        InputStream in = LookFeelSelfTest.class.getResourceAsStream("/assets/" + rl.getNamespace() + "/" + rl.getPath());
+        if (in == null) {
+            return null;
+        }
+        try {
+            byte[] h = new byte[24];
+            int n = 0;
+            while (n < 24) {
+                int r = in.read(h, n, 24 - n);
+                if (r < 0) {
+                    return null;
+                }
+                n += r;
+            }
+            return new int[] {readInt(h, 16), readInt(h, 20)};
+        } finally {
+            in.close();
+        }
+    }
+
+    private static int readInt(byte[] b, int at) {
+        return (b[at] & 0xFF) << 24 | (b[at + 1] & 0xFF) << 16 | (b[at + 2] & 0xFF) << 8 | (b[at + 3] & 0xFF);
+    }
+}
