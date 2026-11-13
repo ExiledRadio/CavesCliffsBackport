@@ -567,6 +567,9 @@ public final class ChunkFiller {
         private static final double FLOWING_UPDATE_SIMILARITY = similarity(10 * 10, 12 * 12);
         private static final int[][] SURFACE_SAMPLING_OFFSETS_IN_CHUNKS = {{-2, -1}, {-1, -1}, {0, -1}, {1, -1}, {-3, 0},
             {-2, 0}, {-1, 0}, {0, 0}, {1, 0}, {-2, 1}, {-1, 1}, {0, 1}, {1, 1}};
+        /** 1.20 moved the chunk itself to the front, so its own early return comes first. */
+        private static final int[][] SURFACE_SAMPLING_OFFSETS_IN_CHUNKS_120 = {{0, 0}, {-2, -1}, {-1, -1}, {0, -1},
+            {1, -1}, {-3, 0}, {-2, 0}, {-1, 0}, {1, 0}, {-2, 1}, {-1, 1}, {0, 1}, {1, 1}};
         private static final int NOT_COMPUTED = Integer.MIN_VALUE;
 
         private final OverworldNoise noise;
@@ -582,12 +585,27 @@ public final class ChunkFiller {
         private int[] statusLevel = new int[0];
         private boolean[] statusLava = new boolean[0];
 
+        /** 1.19's aquifer ({@link Editions#newerAquifers}). */
+        private final boolean newer;
+        /** The neighbors computeFluid reads, in its version's order. */
+        private final int[][] sampling;
+        /** The chunk's first quart, for NoiseChunk's flat caches (1.19's deep dark test reads two of them). */
+        private int firstQuartX;
+        private int firstQuartZ;
+        private final double[] deepDarkColumn = new double[OverworldNoise.COL_SIZE];
+        private final float[] deepDarkPoint = new float[4];
+
         Aquifer(OverworldNoise noise, ColumnCache columns) {
             this.noise = noise;
             this.columns = columns;
+            this.newer = Editions.newerAquifers(noise.editions);
+            this.sampling = (noise.editions & Editions.CHERRY) != 0 ? SURFACE_SAMPLING_OFFSETS_IN_CHUNKS_120
+                    : SURFACE_SAMPLING_OFFSETS_IN_CHUNKS;
         }
 
         void begin(int cx, int cz) {
+            firstQuartX = cx << 2;
+            firstQuartZ = cz << 2;
             minGridX = Math.floorDiv(cx << 4, 16) - 1;
             int maxGridX = Math.floorDiv((cx << 4) + 15, 16) + 1;
             gridSizeX = maxGridX - minGridX + 1;
@@ -919,7 +937,7 @@ public final class ChunkFiller {
             int above = y + 12;
             int below = y - 12;
             boolean surfaceFluid = false;
-            for (int[] offset : SURFACE_SAMPLING_OFFSETS_IN_CHUNKS) {
+            for (int[] offset : sampling) {
                 int sx = x + (offset[0] << 4);
                 int sz = z + (offset[1] << 4);
                 int surface = columns.preliminarySurfaceLevel(sx, sz);
@@ -945,6 +963,11 @@ public final class ChunkFiller {
                 }
                 minSurface = Math.min(minSurface, surface);
             }
+            if (newer && deepDarkRegion(x, y, z)) {
+                // 1.19's computeSurfaceLevel: both thresholds -1, so no fluid level; the type stays the global one.
+                set(index, WAY_BELOW_MIN_Y, globalLava);
+                return;
+            }
             int depth = minSurface + 8 - y;
             double d2 = surfaceFluid ? OverworldNoise.clampedMap((double) depth, 0.0D, 64.0D, 1.0D, 0.0D) : 0.0D;
             double d3 = OverworldNoise.clamp(noise.floodedness(x, y, z), -1.0D, 1.0D);
@@ -966,7 +989,9 @@ public final class ChunkFiller {
             int j3 = floor(d0 / 3.0D) * 3;
             int k3 = l2 + j3;
             int l3 = Math.min(minSurface, k3);
-            if (k3 <= -10) {
+            // 1.18.2 tests the spread level k3; 1.19's computeFluidType tests the level chosen, l3, when the global
+            // fluid is not already lava (lava is lava either way).
+            if (newer ? l3 <= -10 && !globalLava : k3 <= -10) {
                 double d1 = noise.lava(Math.floorDiv(x, 64), Math.floorDiv(y, 40), Math.floorDiv(z, 64));
                 if (Math.abs(d1) > 0.3D) {
                     set(index, l3, true);
@@ -974,6 +999,24 @@ public final class ChunkFiller {
                 }
             }
             set(index, l3, globalLava);
+        }
+
+        /**
+         * OverworldBiomeBuilder.isDeepDarkRegion(erosion, depth) on the NoiseChunk's router: erosion and the offset in
+         * depth are flat-cached, so inside the chunk's 5 x 5 quarts they are the quart corner's values, and exact at
+         * the block outside them.
+         */
+        private boolean deepDarkRegion(int x, int y, int z) {
+            int qx = (x >> 2) - firstQuartX;
+            int qz = (z >> 2) - firstQuartZ;
+            double[] c = deepDarkColumn;
+            if (qx >= 0 && qz >= 0 && qx <= 4 && qz <= 4) {
+                columns.get(x, z, c);
+            } else {
+                noise.column(x, z, c, 0, deepDarkPoint);
+            }
+            return c[OverworldNoise.COL_EROSION] < (double) -0.225F
+                    && OverworldNoise.depth(y, c[OverworldNoise.COL_OFFSET]) > (double) 0.9F;
         }
 
         private static double map(double v, double fromA, double fromB, double toA, double toB) {

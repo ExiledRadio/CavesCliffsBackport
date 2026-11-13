@@ -77,8 +77,16 @@ public final class OverworldNoise {
     private static final double Y_FROM = -4064.0D;
     private static final double Y_TO = 4062.0D;
 
+    /** The newer versions' additions the world has ({@link Editions}): only the aquifers read it here. */
+    public final int editions;
+
     public OverworldNoise(long seed) {
+        this(seed, Editions.NONE);
+    }
+
+    public OverworldNoise(long seed, int editions) {
         this.seed = seed;
+        this.editions = editions;
         Xoroshiro.Positional positional = Xoroshiro.ofSeed(seed).forkPositional();
         this.positional = positional;
         shift = noise(positional, "offset", -3, 1, 1, 1, 0);
@@ -179,11 +187,26 @@ public final class OverworldNoise {
         point[Spline.CONTINENTS] = (float) c;
         point[Spline.EROSION] = (float) e;
         point[Spline.WEIRDNESS] = (float) r;
-        point[Spline.RIDGES] = TerrainShaper.peaksAndValleys((float) r);
-        // lerp(blendAlpha = 1, blendValue, spline) leaves the spline value, plus a positive zero.
-        double offset = clamp((double) shaper.offset(point), -0.81D, 2.5D) + 0.0D;
-        double factor = clamp((double) shaper.factor(point), 0.0D, 8.0D) + 0.0D;
-        double jaggedness = clamp((double) shaper.jaggedness(point), 0.0D, 1.28D) + 0.0D;
+        double offset;
+        double factor;
+        double jaggedness;
+        if (editions == Editions.NONE) {
+            point[Spline.RIDGES] = TerrainShaper.peaksAndValleys((float) r);
+            // lerp(blendAlpha = 1, blendValue, spline) leaves the spline value, plus a positive zero.
+            offset = clamp((double) shaper.offset(point), -0.81D, 2.5D) + 0.0D;
+            factor = clamp((double) shaper.factor(point), 0.0D, 8.0D) + 0.0D;
+            jaggedness = clamp((double) shaper.jaggedness(point), 0.0D, 1.28D) + 0.0D;
+        } else {
+            // 1.19 (TerrainShaper became TerrainProvider's splines on density functions): ridges_folded is a density
+            // function, in double; the offset adds -0.50375F in double; 1.19's lerp(alpha, constant, f) is
+            // alpha * (f - constant) + constant, which for the factor's blending constant 10 can round. No clamps
+            // (the splines stay inside 1.18.2's bounds anyway).
+            double folded = (Math.abs(Math.abs(r) + -0.6666666666666666D) + -0.3333333333333333D) * -3.0D;
+            point[Spline.RIDGES] = (float) folded;
+            offset = (double) shaper.offsetSpline(point) + (double) -0.50375F + 0.0D;
+            factor = 1.0D * ((double) shaper.factor(point) + -10.0D) + 10.0D;
+            jaggedness = 1.0D * ((double) shaper.jaggedness(point) + -0.0D) + 0.0D;
+        }
         out[at + COL_SHIFT_X] = sx;
         out[at + COL_SHIFT_Z] = sz;
         out[at + COL_CONTINENTS] = c;

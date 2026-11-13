@@ -17,12 +17,14 @@ public final class PipelineBench {
         int cap = args.length > 4 ? Integer.parseInt(args[4]) : 4096;
         int[][] order = spiral(side);
         // Warm-up elsewhere, so class loading and the JIT are not in the timing.
-        Pipeline warm = new Pipeline(seed, threads, cap);
+        // -Deditions=N: a world with the newer biomes (Editions flags).
+        int e = Integer.getInteger("editions", 0);
+        Pipeline warm = pipeline(seed, e, threads, cap);
         for (int i = 0; i < 64; i++) {
             warm.finish(1000 + order[i][0], 1000 + order[i][1]);
         }
         warm.shutdown();
-        Pipeline p = new Pipeline(seed, threads, cap);
+        Pipeline p = pipeline(seed, e, threads, cap);
         long checksum = 0L;
         long t = System.nanoTime();
         for (int[] c : order) {
@@ -39,6 +41,12 @@ public final class PipelineBench {
             p.fillNanos.get() / 1e6 / Math.max(1, p.filled.get()), p.filled.get(), p.decorateNanos / 1e6 / Math.max(1, p.decorated),
             p.waitNanos / 1e6 / n, p.stolen, p.held(), checksum));
         p.shutdown();
+    }
+
+    static Pipeline pipeline(long seed, int editions, int threads, int cap) {
+        return editions == 0 ? new Pipeline(seed, threads, cap) : new Pipeline(
+            new com.exiledradio.cavesandcliffsbackport.terrain.core.OverworldNoise(seed, editions),
+            new com.exiledradio.cavesandcliffsbackport.terrain.core.Climate(editions), threads, cap);
     }
 
     /** Chunks of a side x side square around 0,0, from the middle outwards, ring by ring. */

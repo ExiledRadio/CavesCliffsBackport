@@ -9,6 +9,9 @@ import java.io.FileInputStream;
 /**
  * Compares the terrain core with the vanilla 1.18.2 oracle output (MC1182Reference, Oracle1182Terrain).
  * Arguments: oracleDir [seeds...]. Exit code 1 on any difference.
+ *
+ * <p>-Deditions=N (Editions flags, e.g. 1 for 1.19's WILD) checks that edition's fill against a newer oracle's
+ * bigchunks files only (oracle-newer's FillDump119): the router points and the small chunk set are 1.18.2's.
  */
 public final class TerrainCheck {
     static final String[] ROUTER = {"barrier", "floodedness", "spread", "lava", "temperature", "vegetation",
@@ -26,6 +29,10 @@ public final class TerrainCheck {
         }
         long bad = 0;
         for (long seed : seeds) {
+            if (EDITIONS != 0) {
+                bad += chunks(dir, seed, "bigchunks_");
+                continue;
+            }
             bad += points(dir, seed);
             bad += chunks(dir, seed, "chunks_");
             if (new File(dir, "bigchunks_" + seed + ".bin").isFile()) {
@@ -88,8 +95,10 @@ public final class TerrainCheck {
         return total;
     }
 
+    static final int EDITIONS = Integer.getInteger("editions", 0);
+
     static long chunks(File dir, long seed, String prefix) throws Exception {
-        OverworldNoise n = new OverworldNoise(seed);
+        OverworldNoise n = new OverworldNoise(seed, EDITIONS);
         ChunkFiller filler = new ChunkFiller(n);
         char[] ours = new char[16 * 16 * 384];
         byte[] theirs = new byte[16 * 16 * 384];

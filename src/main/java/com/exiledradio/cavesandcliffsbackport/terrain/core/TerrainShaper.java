@@ -33,6 +33,11 @@ public final class TerrainShaper {
         return offsetSampler.apply(point) + GLOBAL_OFFSET;
     }
 
+    /** The offset spline alone (1.19 adds the global offset in double: NoiseRouterData's add(constant, spline)). */
+    public float offsetSpline(float[] point) {
+        return offsetSampler.apply(point);
+    }
+
     public float factor(float[] point) {
         return factorSampler.apply(point);
     }

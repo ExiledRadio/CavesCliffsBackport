@@ -32,22 +32,39 @@ final class Trees {
     private Trees() {
     }
 
-    static final String[] WOODS = {"oak", "spruce", "birch", "jungle", "acacia", "dark_oak"};
+    static final String[] WOODS = {"oak", "spruce", "birch", "jungle", "acacia", "dark_oak", "cherry", "mangrove"};
     static final int OAK = 0;
     static final int SPRUCE = 1;
     static final int BIRCH = 2;
     static final int JUNGLE = 3;
     static final int ACACIA = 4;
     static final int DARK_OAK = 5;
+    /** 1.20 (Editions.CHERRY) and 1.19 (Editions.WILD). */
+    static final int CHERRY = 6;
+    static final int MANGROVE = 7;
     /** log[wood][axis x, y, z]. */
     static final int[][] LOG = new int[WOODS.length][3];
     /** The leaves: the woods, then azalea and flowering azalea. */
-    static final String[] LEAF_TYPES = {"oak", "spruce", "birch", "jungle", "acacia", "dark_oak", "azalea", "flowering_azalea"};
+    static final String[] LEAF_TYPES = {"oak", "spruce", "birch", "jungle", "acacia", "dark_oak", "azalea", "flowering_azalea",
+        "cherry", "mangrove"};
     static final int AZALEA_LEAVES = 6;
     static final int FLOWERING_AZALEA_LEAVES = 7;
+    static final int CHERRY_LEAVES = 8;
+    static final int MANGROVE_LEAVES = 9;
     /** leaves[type][distance 1..7] (persistent=false). */
     static final int[][] LEAVES = new int[LEAF_TYPES.length][8];
     static final int BEE_NEST = register("bee_nest[facing=south,honey_level=0]");
+    /** 1.19's mangrove roots (dry, waterlogged), muddy mangrove roots, hanging propagules by age. */
+    static final int MANGROVE_ROOTS = register("mangrove_roots[waterlogged=false]");
+    static final int MANGROVE_ROOTS_WET = register("mangrove_roots[waterlogged=true]");
+    static final int MUDDY_MANGROVE_ROOTS = register("muddy_mangrove_roots[axis=y]");
+    static final int[] HANGING_PROPAGULE = new int[5];
+
+    static {
+        for (int a = 0; a < 5; a++) {
+            HANGING_PROPAGULE[a] = register("mangrove_propagule[age=" + a + ",hanging=true,stage=0,waterlogged=false]");
+        }
+    }
     static final int ROOTED_DIRT = register("rooted_dirt");
     static final int HANGING_ROOTS = register("hanging_roots[waterlogged=false]");
     /** cocoa[age][facing as Direction ordinal 2..5]. */
@@ -202,7 +219,71 @@ final class Trees {
                 new Feature[]{birchBees0002Checked, new Checked(fancyOak(0.002F))}, new Checked(oakBees(0.002F))),
                 COUNT_EXTRA, 10, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
             new Placed("trees_grove",new Selector(new float[]{0.33333334F}, new Feature[]{new OnSnow(pine)}, new OnSnow(spruce)),
-                COUNT_EXTRA, 10, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME));
+                COUNT_EXTRA, 10, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
+            // 1.19.2: Count 25, in square, surface water depth 5, ocean floor, biome, wouldSurvive(propagule); a
+            // RANDOM_SELECTOR of tall_mangrove_checked (0.85) and mangrove_checked, each wouldSurvive(propagule) too.
+            new Placed("trees_mangrove", new Selector(new float[]{0.85F}, new Feature[]{new PropaguleChecked(mangrove(true))},
+                new PropaguleChecked(mangrove(false))), COUNT, 25, IN_SQUARE, WATER_DEPTH, 5, HEIGHTMAP, of, BIOME, CUSTOM, 0)
+                .mods((level, random, next, x, y, z) -> {
+                    if (propaguleSurvives(level, x, y, z)) {
+                        next.at(x, y, z);
+                    }
+                }),
+            // 1.20.1: treePlacement(countExtra(10, 0.1F, 1), cherry sapling) of cherry_bees_005.
+            new Placed("trees_cherry", cherry(0.05F), COUNT_EXTRA, 10, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME,
+                CUSTOM, 0).mods(sapling));
+    }
+
+    /**
+     * 1.19.2's TreeFeatures.MANGROVE and TALL_MANGROVE: UpwardsBranchingTrunkPlacer(2, 1, 4 / 4, 1, 9, extra branch
+     * steps 1-4 / 1-6, 0.5, extra branch length 0-1, mangrove_logs_can_grow_through), RandomSpreadFoliagePlacer(3, 0,
+     * 2, 70), MangroveRootPlacer(trunk offset 1-3 / 3-7, mangrove roots, moss carpet above 0.5, mangrove root placement
+     * (mangrove_roots_can_grow_through, muddy roots in mud and muddy roots, width 8, length 15, skew 0.2)),
+     * TwoLayersFeatureSize(2 / 3, 0, 2); decorators LeaveVineDecorator(0.125), AttachedToLeavesDecorator(0.14, 1, 0,
+     * hanging propagule of age 0-4, 2, down), BeehiveDecorator(0.01); ignoring vines.
+     */
+    private static Tree mangrove(boolean tall) {
+        Tree t = new Tree(LOG[MANGROVE][1], LEAVES[MANGROVE_LEAVES][7], true, 0.01F, UPWARDS_BRANCHING, tall ? 4 : 2, 1,
+            tall ? 9 : 4, RANDOM_SPREAD_FOLIAGE, c(3), c(0), 0, c(2), tall ? 3 : 2, 0, 2);
+        t.v119 = true;
+        t.spreadAttempts = 70;
+        t.branchSteps = tall ? u(1, 6) : u(1, 4);
+        t.branchChance = 0.5F;
+        t.branchLength = u(0, 1);
+        t.rootOffset = tall ? u(3, 7) : u(1, 3);
+        t.leaveVineChance = 0.125F;
+        t.decorators = new int[]{D_LEAVE_VINE_119, D_PROPAGULE, D_BEEHIVE};
+        return t;
+    }
+
+    /** BlockPredicate.wouldSurvive(mangrove propagule): BushBlock.mayPlaceOn (dirt tag, farmland) or clay below. */
+    static boolean propaguleSurvives(Region level, int x, int y, int z) {
+        int below = level.get(x, y - 1, z);
+        return LushCaves.dirt(below) || name(below).equals("farmland") || below == CLAY;
+    }
+
+    /** mangrove_checked / tall_mangrove_checked: wouldSurvive(propagule), then the tree. */
+    static final class PropaguleChecked implements Feature {
+        final Feature tree;
+
+        PropaguleChecked(Feature tree) {
+            this.tree = tree;
+        }
+
+        @Override
+        public boolean place(Region level, XoroRandom random, int x, int y, int z) {
+            return propaguleSurvives(level, x, y, z) && LushCaves.placeInline(tree, level, random, x, y, z);
+        }
+    }
+
+    /**
+     * 1.20.1's TreeFeatures.cherry(): CherryTrunkPlacer(7, 1, 0, branch count 1-3 by weight, branch length 2-4, branch
+     * start -4 to -3 from the top, branch end -1 to 0), CherryFoliagePlacer(4, 0, 5, 0.25, 0.5, 1/6, 1/3),
+     * TwoLayersFeatureSize(1, 0, 2), ignoring vines; with a BeehiveDecorator of {@code bees} (negative: none).
+     */
+    private static Tree cherry(float bees) {
+        return new Tree(LOG[CHERRY][1], LEAVES[CHERRY_LEAVES][7], true, bees, CHERRY_TRUNK, 7, 1, 0, CHERRY_FOLIAGE, c(4), c(0), 0,
+            c(5), 1, 0, 2);
     }
 
     private static Tree oakBees(float bees) {
@@ -340,6 +421,37 @@ final class Trees {
         return (f & F_NOT_AIR) == 0 || (f & (F_LEAVES | F_REPLACEABLE_PLANT)) != 0 || sameBlock(code, WATER);
     }
 
+    /** 1.19's TreeFeature.validTreePos: also Material.REPLACEABLE_WATER_PLANT (seagrass). */
+    static boolean validTreePos119(int code) {
+        if (validTreePos(code)) {
+            return true;
+        }
+        String n = name(code);
+        return n.equals("seagrass") || n.equals("tall_seagrass");
+    }
+
+    /** BlockTags.MANGROVE_LOGS_CAN_GROW_THROUGH (1.19.2). */
+    static boolean mangroveLogsGrowThrough(int code) {
+        switch (name(code)) {
+            case "mud": case "muddy_mangrove_roots": case "mangrove_roots": case "mangrove_leaves": case "mangrove_log":
+            case "mangrove_propagule": case "moss_carpet": case "vine":
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /** BlockTags.MANGROVE_ROOTS_CAN_GROW_THROUGH (1.19.2). */
+    static boolean mangroveRootsGrowThrough(int code) {
+        switch (name(code)) {
+            case "mud": case "muddy_mangrove_roots": case "mangrove_roots": case "moss_carpet": case "vine":
+            case "mangrove_propagule": case "snow":
+                return true;
+            default:
+                return false;
+        }
+    }
+
     /** TreeFeature.isFree: validTreePos or BlockTags.LOGS. */
     static boolean isFree(int code) {
         if (validTreePos(code)) {
@@ -373,12 +485,23 @@ final class Trees {
     static final int GIANT = 4;
     static final int MEGA_JUNGLE_TRUNK = 5;
     static final int BENDING = 6;
+    /** 1.20's CherryTrunkPlacer and CherryFoliagePlacer. */
+    static final int CHERRY_TRUNK = 7;
+    /** 1.19's UpwardsBranchingTrunkPlacer (the mangroves'). */
+    static final int UPWARDS_BRANCHING = 8;
+    static final int CHERRY_FOLIAGE = 10;
 
     // Tree decorators (the beehive is its own field).
     static final int D_COCOA = 1;
     static final int D_TRUNK_VINE = 2;
     static final int D_LEAVE_VINE = 3;
     static final int D_ALTER_GROUND = 4;
+    /** 1.19's LeaveVineDecorator (nextFloat against its probability; 1.18's draws nextInt(4)). */
+    static final int D_LEAVE_VINE_119 = 5;
+    /** 1.19's AttachedToLeavesDecorator with the mangroves' hanging propagules. */
+    static final int D_PROPAGULE = 6;
+    /** The beehive at this place in the list (else it runs first: every 1.18 tree with one has no other). */
+    static final int D_BEEHIVE = 7;
 
     /** VineBlock.EAST, WEST, SOUTH, NORTH (Direction ordinals). */
     private static final int EAST = 5;
@@ -436,6 +559,18 @@ final class Trees {
         boolean forceDirt;
         /** azalea_tree's leaves: WeightedStateProvider(azalea leaves 3, flowering azalea leaves 1). */
         boolean azaleaLeaves;
+        /** 1.19's TreeFeature (validTreePos with water plants, roots), for the 1.19 trees. */
+        boolean v119;
+        /** RandomSpreadFoliagePlacer's leaf placement attempts. */
+        int spreadAttempts = 50;
+        /** UpwardsBranchingTrunkPlacer: extra branch steps, branch per log chance, extra branch length. */
+        IntP branchSteps;
+        float branchChance;
+        IntP branchLength;
+        /** MangroveRootPlacer's trunk offset, or null for no root placer. */
+        IntP rootOffset;
+        /** LeaveVineDecorator's probability (1.19's D_LEAVE_VINE_119). */
+        float leaveVineChance;
 
         Tree three(int limit, int upperLimit, int lower, int middle, int upper) {
             three = new int[]{limit, upperLimit, lower, middle, upper};
@@ -482,6 +617,7 @@ final class Trees {
         private HashSet<LushCaves.Pos> trunk;
         private HashSet<LushCaves.Pos> foliage;
         private HashSet<LushCaves.Pos> decorations;
+        private HashSet<LushCaves.Pos> roots;
         private Region level;
 
         Tree(int log, int leaves, boolean ignoreVines, float beehive, int trunkType, int baseHeight, int randA, int randB,
@@ -525,19 +661,33 @@ final class Trees {
             trunk = new HashSet<>();
             foliage = new HashSet<>();
             decorations = new HashSet<>();
+            roots = new HashSet<>();
             boolean flag = doPlace(random, x, y, z);
             if (flag && (!trunk.isEmpty() || !foliage.isEmpty())) {
+                boolean beehiveInList = false;
+                for (int d : decorators) {
+                    beehiveInList |= d == D_BEEHIVE;
+                }
                 if (beehive >= 0.0F || decorators.length > 0) {
                     List<LushCaves.Pos> logs = new ArrayList<>(trunk);
                     List<LushCaves.Pos> leafList = new ArrayList<>(foliage);
                     Comparator<LushCaves.Pos> byY = Comparator.comparingInt(p -> p.y);
                     logs.sort(byY);
                     leafList.sort(byY);
-                    if (beehive >= 0.0F) {
+                    if (beehive >= 0.0F && !beehiveInList) {
                         beehive(random, logs, leafList);
                     }
                     for (int d : decorators) {
                         switch (d) {
+                            case D_BEEHIVE:
+                                beehive(random, logs, leafList);
+                                break;
+                            case D_LEAVE_VINE_119:
+                                leaveVines119(random, leafList);
+                                break;
+                            case D_PROPAGULE:
+                                hangingPropagules(random, leafList);
+                                break;
                             case D_COCOA:
                                 cocoa(random, logs);
                                 break;
@@ -553,10 +703,17 @@ final class Trees {
                     }
                 }
                 int[] box = {Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE};
+                encapsulate(box, roots);
                 encapsulate(box, trunk);
                 encapsulate(box, foliage);
                 encapsulate(box, decorations);
-                Shape shape = updateLeaves(level, box, trunk, decorations);
+                HashSet<LushCaves.Pos> filled = decorations;
+                if (!roots.isEmpty()) {
+                    // 1.19: the roots fill the shape as decorations do (Sets.union(decorations, roots)).
+                    filled = new HashSet<>(decorations);
+                    filled.addAll(roots);
+                }
+                Shape shape = updateLeaves(level, box, trunk, filled);
                 shape.updateShapeAtEdge(level);
                 this.level = null;
                 return true;
@@ -581,6 +738,23 @@ final class Trees {
             int j = foliageHeight(random, i);
             int k = i - j;
             int l = foliageRadius(random, k);
+            if (rootOffset != null) {
+                // 1.19: the root placer's trunk origin, above the feature's position.
+                int oy = y + rootOffset.sample(random);
+                if (y >= -64 + 1 && oy + i + 1 <= 320) {
+                    int i1 = maxFreeTreeHeight(i, x, oy, z);
+                    if (i1 >= i || minClipped >= 0 && i1 >= minClipped) {
+                        if (!mangroveRoots(random, x, y, z, oy)) {
+                            return false;
+                        }
+                        for (int[] a : upwardsBranchingTrunk(random, i1, x, oy, z)) {
+                            createFoliage(random, a[0], a[1], a[2], a[3], a[4] != 0, i1, j, l);
+                        }
+                        return true;
+                    }
+                }
+                return false;
+            }
             if (y >= -64 + 1 && y + i + 1 <= 320) {
                 int i1 = maxFreeTreeHeight(i, x, y, z);
                 if (i1 >= i || minClipped >= 0 && i1 >= minClipped) {
@@ -595,6 +769,9 @@ final class Trees {
                                 break;
                             case MEGA_JUNGLE_TRUNK:
                                 list = megaJungleTrunk(random, i1, x, y, z);
+                                break;
+                            case CHERRY_TRUNK:
+                                list = cherryTrunk(random, i1, x, y, z);
                                 break;
                             default:
                                 list = bendingTrunk(random, i1, x, y, z);
@@ -637,6 +814,7 @@ final class Trees {
                     return 4;
                 case MEGA_PINE_FOLIAGE:
                 case RANDOM_SPREAD_FOLIAGE:
+                case CHERRY_FOLIAGE:
                     return foliageInt.sample(random);
                 case SPRUCE_FOLIAGE:
                     return Math.max(4, treeHeight - foliageInt.sample(random));
@@ -661,7 +839,9 @@ final class Trees {
                 for (int k = -j; k <= j; ++k) {
                     for (int l = -j; l <= j; ++l) {
                         int s = level.get(x + k, y + i, z + l);
-                        if (!isFree(s) || !ignoreVines && name(s).equals("vine")) {
+                        boolean free = trunkType == UPWARDS_BRANCHING
+                            ? validTreePos119(s) || mangroveLogsGrowThrough(s) || isFree(s) : isFree(s);
+                        if (!free || !ignoreVines && name(s).equals("vine")) {
                             return i - 2;
                         }
                     }
@@ -758,6 +938,268 @@ final class Trees {
                 list.add(new int[]{x + j, y + i, z + k, -2, 0});
             }
             return list;
+        }
+
+        // ---- UpwardsBranchingTrunkPlacer and MangroveRootPlacer (1.19.2) ----
+
+        private boolean placeUpwardsLog(int x, int y, int z) {
+            int s = level.get(x, y, z);
+            if (validTreePos119(s) || mangroveLogsGrowThrough(s)) {
+                trunk(x, y, z, log);
+                return true;
+            }
+            return false;
+        }
+
+        private List<int[]> upwardsBranchingTrunk(XoroRandom random, int h, int x, int y, int z) {
+            List<int[]> list = new ArrayList<>();
+            for (int q = 0; q < h; ++q) {
+                int yy = y + q;
+                if (placeUpwardsLog(x, yy, z) && q < h - 1 && random.nextFloat() < branchChance) {
+                    int direction = random.nextInt(4);
+                    int a = branchLength.sample(random);
+                    int start = Math.max(0, a - branchLength.sample(random) - 1);
+                    int steps = branchSteps.sample(random);
+                    upwardsBranch(h, list, x, yy, z, direction, start, steps);
+                }
+                if (q == h - 1) {
+                    list.add(new int[]{x, yy + 1, z, 0, 0});
+                }
+            }
+            return list;
+        }
+
+        private void upwardsBranch(int h, List<int[]> list, int x, int y, int z, int direction, int start, int steps) {
+            int top = y + start;
+            int bx = x;
+            int bz = z;
+            for (int s = start; s < h && steps > 0; --steps) {
+                if (s >= 1) {
+                    int sy = y + s;
+                    bx += HX[direction];
+                    bz += HZ[direction];
+                    top = sy;
+                    if (placeUpwardsLog(bx, sy, bz)) {
+                        top = sy + 1;
+                    }
+                    list.add(new int[]{bx, sy, bz, 0, 0});
+                }
+                ++s;
+            }
+            if (top - y > 1) {
+                list.add(new int[]{bx, top, bz, 0, 0});
+                list.add(new int[]{bx, top - 2, bz, 0, 0});
+            }
+        }
+
+        /** MangroveRootPlacer.canPlaceRoot: TreeFeature.validTreePos or mangrove_roots_can_grow_through. */
+        private boolean canPlaceRoot(int code) {
+            return validTreePos119(code) || mangroveRootsGrowThrough(code);
+        }
+
+        /** MangroveRootPlacer.placeRoots, from the feature's position x, y, z to the trunk origin y oy. */
+        private boolean mangroveRoots(XoroRandom random, int x, int y, int z, int oy) {
+            for (int yy = y; yy < oy; ++yy) {
+                if (!canPlaceRoot(level.get(x, yy, z))) {
+                    return false;
+                }
+            }
+            List<LushCaves.Pos> list = new ArrayList<>();
+            list.add(new LushCaves.Pos(x, oy - 1, z));
+            for (int d = 0; d < 4; d++) {
+                LushCaves.Pos p = new LushCaves.Pos(x + HX[d], oy, z + HZ[d]);
+                List<LushCaves.Pos> l = new ArrayList<>();
+                if (!simulateRoots(random, p, d, x, oy, z, l, 0)) {
+                    return false;
+                }
+                list.addAll(l);
+                list.add(p);
+            }
+            for (LushCaves.Pos p : list) {
+                placeRoot(random, p.x, p.y, p.z);
+            }
+            return true;
+        }
+
+        private boolean simulateRoots(XoroRandom random, LushCaves.Pos pos, int direction, int ox, int oy, int oz,
+                                      List<LushCaves.Pos> list, int depth) {
+            if (depth != 15 && list.size() <= 15) {
+                for (LushCaves.Pos q : potentialRoots(pos, direction, random, ox, oy, oz)) {
+                    if (canPlaceRoot(level.get(q.x, q.y, q.z))) {
+                        list.add(q);
+                        if (!simulateRoots(random, q, direction, ox, oy, oz, list, depth + 1)) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+
+        private List<LushCaves.Pos> potentialRoots(LushCaves.Pos pos, int direction, XoroRandom random, int ox, int oy, int oz) {
+            LushCaves.Pos below = new LushCaves.Pos(pos.x, pos.y - 1, pos.z);
+            int dist = Math.abs(pos.x - ox) + Math.abs(pos.y - oy) + Math.abs(pos.z - oz);
+            if (dist > 8 - 3 && dist <= 8) {
+                if (random.nextFloat() < 0.2F) {
+                    return Arrays.asList(below, new LushCaves.Pos(pos.x + HX[direction], pos.y - 1, pos.z + HZ[direction]));
+                }
+                return Collections.singletonList(below);
+            }
+            if (dist > 8) {
+                return Collections.singletonList(below);
+            }
+            if (random.nextFloat() < 0.2F) {
+                return Collections.singletonList(below);
+            }
+            return random.nextBoolean() ? Collections.singletonList(new LushCaves.Pos(pos.x + HX[direction], pos.y, pos.z + HZ[direction]))
+                : Collections.singletonList(below);
+        }
+
+        private void root(int x, int y, int z, int state) {
+            roots.add(new LushCaves.Pos(x, y, z));
+            level.set(x, y, z, state);
+        }
+
+        /** MangroveRootPlacer.placeRoot: muddy roots in mud, else RootPlacer.placeRoot (roots, moss carpet above 0.5). */
+        private void placeRoot(XoroRandom random, int x, int y, int z) {
+            int s = level.get(x, y, z);
+            String n = name(s);
+            if (n.equals("mud") || n.equals("muddy_mangrove_roots")) {
+                root(x, y, z, MUDDY_MANGROVE_ROOTS);
+                return;
+            }
+            if (canPlaceRoot(s)) {
+                // getPotentiallyWaterloggedState: FluidTags.WATER at the position.
+                root(x, y, z, (flags(s) & F_WATER) != 0 ? MANGROVE_ROOTS_WET : MANGROVE_ROOTS);
+                if (random.nextFloat() < 0.5F && isAir(level.get(x, y + 1, z))) {
+                    root(x, y + 1, z, LushCaves.MOSS_CARPET);
+                }
+            }
+        }
+
+        /** LeaveVineDecorator (1.19): nextFloat against the probability, each side of each leaf. */
+        private void leaveVines119(XoroRandom random, List<LushCaves.Pos> leafList) {
+            for (LushCaves.Pos p : leafList) {
+                if (random.nextFloat() < leaveVineChance && isAir(level.get(p.x - 1, p.y, p.z))) {
+                    hangingVine(p.x - 1, p.y, p.z, EAST);
+                }
+                if (random.nextFloat() < leaveVineChance && isAir(level.get(p.x + 1, p.y, p.z))) {
+                    hangingVine(p.x + 1, p.y, p.z, WEST);
+                }
+                if (random.nextFloat() < leaveVineChance && isAir(level.get(p.x, p.y, p.z - 1))) {
+                    hangingVine(p.x, p.y, p.z - 1, SOUTH);
+                }
+                if (random.nextFloat() < leaveVineChance && isAir(level.get(p.x, p.y, p.z + 1))) {
+                    hangingVine(p.x, p.y, p.z + 1, NORTH);
+                }
+            }
+        }
+
+        /**
+         * AttachedToLeavesDecorator(0.14, 1, 0, propagule, 2, [down]): the leaves in Util.shuffledCopy's order; a leaf
+         * with two air blocks below gets a hanging propagule under it, keeping 1 block around it free of others.
+         */
+        private void hangingPropagules(XoroRandom random, List<LushCaves.Pos> leafList) {
+            List<LushCaves.Pos> shuffled = new ArrayList<>(leafList);
+            for (int i = shuffled.size(); i > 1; --i) {
+                int j = random.nextInt(i);
+                shuffled.set(i - 1, shuffled.set(j, shuffled.get(i - 1)));
+            }
+            HashSet<LushCaves.Pos> excluded = new HashSet<>();
+            for (LushCaves.Pos p : shuffled) {
+                random.nextInt(1); // Util.getRandom(directions = [down])
+                LushCaves.Pos q = new LushCaves.Pos(p.x, p.y - 1, p.z);
+                if (!excluded.contains(q) && random.nextFloat() < 0.14F && isAir(level.get(p.x, p.y - 1, p.z))
+                        && isAir(level.get(p.x, p.y - 2, p.z))) {
+                    for (int dx = -1; dx <= 1; dx++) {
+                        for (int dz = -1; dz <= 1; dz++) {
+                            excluded.add(new LushCaves.Pos(q.x + dx, q.y, q.z + dz));
+                        }
+                    }
+                    decoration(q.x, q.y, q.z, HANGING_PROPAGULE[random.nextInt(5)]);
+                }
+            }
+        }
+
+        // ---- CherryTrunkPlacer (1.20.1) ----
+
+        private List<int[]> cherryTrunk(XoroRandom random, int h, int x, int y, int z) {
+            setDirtAt(x, y - 1, z);
+            // branchStartOffsetFromTop UniformInt(-4, -3); secondBranchStartOffsetFromTop UniformInt(-4, -4), which draws.
+            int i = Math.max(0, h - 1 + random.nextInt(2) - 4);
+            int j = Math.max(0, h - 1 + random.nextInt(1) - 4);
+            if (j >= i) {
+                ++j;
+            }
+            // WeightedListInt of ConstantInt 1, 2, 3, weight 1 each: nextInt(3), then the constant (no draw).
+            int count = random.nextInt(3) + 1;
+            boolean three = count == 3;
+            boolean two = count >= 2;
+            int top;
+            if (three) {
+                top = h;
+            } else if (two) {
+                top = Math.max(i, j) + 1;
+            } else {
+                top = i + 1;
+            }
+            for (int q = 0; q < top; ++q) {
+                placeLog(x, y + q, z);
+            }
+            List<int[]> list = new ArrayList<>();
+            if (three) {
+                list.add(new int[]{x, y + top, z, 0, 0});
+            }
+            int direction = random.nextInt(4);
+            list.add(cherryBranch(random, h, x, y, z, direction, i, i < top - 1));
+            if (two) {
+                list.add(cherryBranch(random, h, x, y, z, (direction + 2) & 3, j, j < top - 1));
+            }
+            return list;
+        }
+
+        private int[] cherryBranch(XoroRandom random, int h, int x, int y, int z, int direction, int start, boolean flag) {
+            int mx = x;
+            int my = y + start;
+            int mz = z;
+            // branchEndOffsetFromTop UniformInt(-1, 0), branchHorizontalLength UniformInt(2, 4).
+            int end = h - 1 + random.nextInt(2) - 1;
+            boolean far = flag || end < start;
+            int length = random.nextInt(3) + 2 + (far ? 1 : 0);
+            int tx = x + HX[direction] * length;
+            int ty = y + end;
+            int tz = z + HZ[direction] * length;
+            int[] axes = LOG_BY_STATE.get(log);
+            int sideways = axes[HX[direction] != 0 ? 0 : 2];
+            int n = far ? 2 : 1;
+            for (int k = 0; k < n; ++k) {
+                mx += HX[direction];
+                mz += HZ[direction];
+                placeLog(mx, my, mz, sideways);
+            }
+            int vertical = ty > my ? 1 : -1;
+            while (true) {
+                int d = Math.abs(tx - mx) + Math.abs(ty - my) + Math.abs(tz - mz);
+                if (d == 0) {
+                    return new int[]{tx, ty + 1, tz, 0, 0};
+                }
+                float f = (float) Math.abs(ty - my) / (float) d;
+                boolean up = random.nextFloat() < f;
+                if (up) {
+                    my += vertical;
+                } else {
+                    mx += HX[direction];
+                    mz += HZ[direction];
+                }
+                placeLog(mx, my, mz, up ? log : sideways);
+            }
+        }
+
+        private void placeLog(int x, int y, int z, int state) {
+            if (validTreePos(level.get(x, y, z))) {
+                trunk(x, y, z, state);
+            }
         }
 
         private List<int[]> bendingTrunk(XoroRandom random, int h, int x, int y, int z) {
@@ -1050,15 +1492,28 @@ final class Trees {
                     }
                     return;
                 case RANDOM_SPREAD_FOLIAGE:
-                    for (int i = 0; i < 50; ++i) {
+                    for (int i = 0; i < spreadAttempts; ++i) {
                         int x = ax + random.nextInt(foliageRadius) - random.nextInt(foliageRadius);
                         int y = ay + random.nextInt(foliageHeight) - random.nextInt(foliageHeight);
                         int z = az + random.nextInt(foliageRadius) - random.nextInt(foliageRadius);
-                        if (validTreePos(level.get(x, y, z))) {
+                        if (v119 ? validTreePos119(level.get(x, y, z)) : validTreePos(level.get(x, y, z))) {
                             foliage(x, y, z, leafState(random));
                         }
                     }
                     return;
+                case CHERRY_FOLIAGE: {
+                    // CherryFoliagePlacer.createFoliage (1.20.1).
+                    int by = ay + off;
+                    int r = foliageRadius + radiusOffset - 1;
+                    leavesRow(random, ax, by, az, r - 2, foliageHeight - 3, doubleTrunk);
+                    leavesRow(random, ax, by, az, r - 1, foliageHeight - 4, doubleTrunk);
+                    for (int dy = foliageHeight - 5; dy >= 0; --dy) {
+                        leavesRow(random, ax, by, az, r, dy, doubleTrunk);
+                    }
+                    hangingLeavesRow(random, ax, by, az, r, -1, doubleTrunk, 0.16666667F, 0.33333334F);
+                    hangingLeavesRow(random, ax, by, az, r - 1, -2, doubleTrunk, 0.16666667F, 0.33333334F);
+                    return;
+                }
                 case FANCY_FOLIAGE:
                     for (int i = off; i >= off - foliageHeight; --i) {
                         int j = foliageRadius + (i != off && i != off - foliageHeight ? 1 : 0);
@@ -1074,6 +1529,17 @@ final class Trees {
         }
 
         private boolean skip(XoroRandom random, int dx, int dy, int dz, int r, boolean doubleTrunk) {
+            if (foliageType == CHERRY_FOLIAGE) {
+                // CherryFoliagePlacer.shouldSkipLocation: wide bottom layer hole 0.25, corner hole 0.5.
+                if (dy == -1 && (dx == r || dz == r) && random.nextFloat() < 0.25F) {
+                    return true;
+                }
+                boolean corner = dx == r && dz == r;
+                if (r > 2) {
+                    return corner || dx + dz > r * 2 - 2 && random.nextFloat() < 0.5F;
+                }
+                return corner && random.nextFloat() < 0.5F;
+            }
             if (foliageType == BLOB) {
                 return dx == r && dz == r && (random.nextInt(2) == 0 || dy == 0);
             }
@@ -1106,6 +1572,50 @@ final class Trees {
             }
             // spruce, pine
             return dx == r && dz == r && r > 0;
+        }
+
+        /** Direction.Plane.HORIZONTAL's clockwise turn: north east, east south, south west, west north. */
+        private static final int[] CLOCKWISE = {1, 2, 3, 0};
+
+        /** FoliagePlacer.placeLeavesRowWithHangingLeavesBelow (1.20.1). */
+        private void hangingLeavesRow(XoroRandom random, int ax, int ay, int az, int r, int dy, boolean doubleTrunk,
+                                      float chance, float extensionChance) {
+            leavesRow(random, ax, ay, az, r, dy, doubleTrunk);
+            int i = doubleTrunk ? 1 : 0;
+            int bx = ax;
+            int by = ay - 1;
+            int bz = az;
+            for (int d = 0; d < 4; d++) {
+                int cw = CLOCKWISE[d];
+                // East and south are the positive axis directions.
+                int n = cw == 1 || cw == 2 ? r + i : r;
+                int mx = ax + HX[cw] * n - HX[d] * r;
+                int my = ay + dy - 1;
+                int mz = az + HZ[cw] * n - HZ[d] * r;
+                for (int k = -r; k < r + i; ++k) {
+                    boolean set = foliage.contains(new LushCaves.Pos(mx, my + 1, mz));
+                    if (set && hangingExtension(random, chance, bx, by, bz, mx, my, mz)) {
+                        hangingExtension(random, extensionChance, bx, by, bz, mx, my - 1, mz);
+                    }
+                    mx += HX[d];
+                    mz += HZ[d];
+                }
+            }
+        }
+
+        /** FoliagePlacer.tryPlaceExtension: within 7 (Manhattan) of the row's centre below, by chance, a leaf. */
+        private boolean hangingExtension(XoroRandom random, float chance, int bx, int by, int bz, int x, int y, int z) {
+            if (Math.abs(x - bx) + Math.abs(y - by) + Math.abs(z - bz) >= 7) {
+                return false;
+            }
+            if (random.nextFloat() > chance) {
+                return false;
+            }
+            if (!validTreePos(level.get(x, y, z))) {
+                return false;
+            }
+            foliage(x, y, z, leafState(random));
+            return true;
         }
 
         private void leavesRow(XoroRandom random, int ax, int ay, int az, int r, int dy, boolean doubleTrunk) {

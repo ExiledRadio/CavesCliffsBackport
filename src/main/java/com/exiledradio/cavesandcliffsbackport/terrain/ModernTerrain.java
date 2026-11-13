@@ -4,6 +4,7 @@ import com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport;
 import com.exiledradio.cavesandcliffsbackport.ModConfig;
 import com.exiledradio.cavesandcliffsbackport.height.Heights;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.Climate;
+import com.exiledradio.cavesandcliffsbackport.terrain.core.Editions;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.OverworldNoise;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
@@ -39,9 +40,13 @@ public final class ModernTerrain {
 
     private static final Map<World, ModernTerrain> WORLDS = new WeakHashMap<>();
 
-    private ModernTerrain(long seed) {
-        this.noise = new OverworldNoise(seed);
-        this.climate = new Climate();
+    /** The newer versions' additions this world has ({@link Editions}), decided when it was made. */
+    final int editions;
+
+    private ModernTerrain(long seed, int editions) {
+        this.editions = editions;
+        this.noise = new OverworldNoise(seed, editions);
+        this.climate = new Climate(editions);
         this.map = new BiomeMap();
     }
 
@@ -53,10 +58,11 @@ public final class ModernTerrain {
         }
         ModernTerrain t = WORLDS.get(world);
         if (t == null) {
-            if (!decide(world)) {
+            int editions = decide(world);
+            if (editions < 0) {
                 return null;
             }
-            t = new ModernTerrain(world.getSeed());
+            t = new ModernTerrain(world.getSeed(), editions);
             WORLDS.put(world, t);
         }
         return t;
@@ -107,19 +113,58 @@ public final class ModernTerrain {
     private static final String DATA_FILE = CavesAndCliffsBackport.MOD_ID + "_terrain.dat";
 
     /**
-     * Reads the world's saved choice, or makes it (1.18 for a world with no chunks yet) and saves it. Runs in the
-     * world's constructor, before its per-world storage can save, so the file is read and written directly.
+     * The newer versions' additions the installed backports have the blocks for: 1.19's mangrove swamp and deep dark
+     * with a mod registering mud and the mangrove wood (Wild Update Backport), 1.20's cherry grove with one registering
+     * the cherry wood and pink petals (Trails &amp; Tales Backport). Read when a world is made.
      */
-    private static boolean decide(World world) {
+    static int installedEditions() {
+        int e = Editions.NONE;
+        if (ModConfig.height.newerBiomes) {
+            if (blocks("mud", "mangrove_log", "mangrove_leaves", "mangrove_roots", "muddy_mangrove_roots", "mangrove_propagule")) {
+                e |= Editions.WILD;
+            }
+            if (blocks("cherry_log", "cherry_leaves", "pink_petals")) {
+                e |= Editions.CHERRY;
+            }
+        }
+        return e;
+    }
+
+    private static boolean blocks(String... names) {
+        java.util.Set<String> want = new java.util.HashSet<>(java.util.Arrays.asList(names));
+        for (net.minecraft.util.ResourceLocation id : net.minecraftforge.fml.common.registry.ForgeRegistries.BLOCKS.getKeys()) {
+            want.remove(id.getPath());
+        }
+        return want.isEmpty();
+    }
+
+    /**
+     * Reads the world's saved choice, or makes it (1.18 for a world with no chunks yet, with the newer biomes the
+     * installed backports have blocks for) and saves it: the editions (1.18 terrain), or -1 for 1.12's. Runs in the
+     * world's constructor, before its per-world storage can save, so the file is read and written directly. A world
+     * keeps its biomes when a backport is added or removed later, so no seam runs through it.
+     */
+    private static int decide(World world) {
         File dir = world.getSaveHandler().getWorldDirectory();
         if (dir == null) {
-            return true;
+            return installedEditions();
         }
         File file = new File(new File(dir, "data"), DATA_FILE);
         try {
             if (file.isFile()) {
                 try (java.io.FileInputStream in = new java.io.FileInputStream(file)) {
-                    return "1.18".equals(CompressedStreamTools.readCompressed(in).getString("Terrain"));
+                    NBTTagCompound tag = CompressedStreamTools.readCompressed(in);
+                    if (!"1.18".equals(tag.getString("Terrain"))) {
+                        return -1;
+                    }
+                    // Worlds made before the newer biomes have no Biomes entry: 1.18.2's.
+                    int e = tag.hasKey("Biomes") ? Editions.byName(tag.getString("Biomes")) : Editions.NONE;
+                    if (e < 0) {
+                        CavesAndCliffsBackport.LOGGER.warn("This world's 1.18 terrain has biomes from a newer version of "
+                                + "this mod ({}); it gets 1.18.2's.", tag.getString("Biomes"));
+                        e = Editions.NONE;
+                    }
+                    return e;
                 }
             }
             String[] files = new File(dir, "region").list();
@@ -133,16 +178,24 @@ public final class ModernTerrain {
                 CavesAndCliffsBackport.LOGGER.info("This Caves & Cliffs world was made before the 1.18 terrain: it keeps "
                         + "1.12's terrain (with stone below y 0), so no seam runs through it.");
             }
+            int editions = old ? -1 : installedEditions();
             NBTTagCompound tag = new NBTTagCompound();
             tag.setString("Terrain", old ? "1.12" : "1.18");
+            if (!old) {
+                tag.setString("Biomes", Editions.name(editions));
+                if (editions != Editions.NONE) {
+                    CavesAndCliffsBackport.LOGGER.info("1.18 terrain with {}'s biomes (the installed backports have their "
+                            + "blocks).", Editions.name(editions));
+                }
+            }
             file.getParentFile().mkdirs();
             try (java.io.FileOutputStream out = new java.io.FileOutputStream(file)) {
                 CompressedStreamTools.writeCompressed(tag, out);
             }
-            return !old;
+            return editions;
         } catch (java.io.IOException e) {
             CavesAndCliffsBackport.LOGGER.error("Could not read or save {}; this world gets the 1.18 terrain.", file, e);
-            return true;
+            return installedEditions();
         }
     }
 

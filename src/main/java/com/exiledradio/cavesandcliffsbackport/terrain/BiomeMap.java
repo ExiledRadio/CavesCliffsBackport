@@ -75,9 +75,15 @@ public final class BiomeMap {
         m(Biomes.MUSHROOM_FIELDS, "mushroom_island");
         m(Biomes.DRIPSTONE_CAVES, "extreme_hills");
         m(Biomes.LUSH_CAVES, "forest");
-        for (int i = Biomes.NETHER_WASTES; i < Biomes.COUNT; i++) {
+        for (int i = Biomes.NETHER_WASTES; i <= Biomes.END_BARRENS; i++) {
             m(i, i < Biomes.THE_END ? "hell" : "sky");
         }
+        // The newer versions' (Editions), when no mod registers them: a mangrove swamp is 1.12's swamp (slimes,
+        // witch huts' kind of place), the deep dark (always underground) the cave biomes' plains of the column above
+        // stands in only for 1.12 code that asks, the cherry grove (a mountain meadow) plains as the meadow is.
+        m(Biomes.MANGROVE_SWAMP, "swampland");
+        m(Biomes.DEEP_DARK, "plains");
+        m(Biomes.CHERRY_GROVE, "plains");
     }
 
     private final Biome[] biomes = new Biome[Biomes.COUNT];

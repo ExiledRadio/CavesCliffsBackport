@@ -448,6 +448,24 @@ python tools/terrain/make_feature_tables.py E:/MincraftModding/Workspaces/MC1182
 python tools/terrain/make_structure_tables.py E:/MincraftModding/Workspaces/MC1182Reference/oracle-out/structure_tables.txt
 E:\MincraftModding\Workspaces\MC1182Reference\bench-carvers-vanilla.cmd 42 12 5
 E:\MincraftModding\Workspaces\MC1182Reference\bench-surface-vanilla.cmd 42 12 5    (append 0 0 cold for a cold search)
+sh tools/terrain/run.sh FeatureCheck E:/MincraftModding/Workspaces/MC1182Reference/oracle-out/fdef 16 all 42 12345 -7346534567 8675309   (JAVA_OPTS="-Xmx10G -DlooseBees")
+```
+
+The newer versions' biomes (`Editions`, see `docs/streams/generator.md`), against vanilla 1.19.2 and 1.20.1. The oracles
+(`tools/terrain/oracle-newer`) run on Mojang's client jar remapped with ForgeAutoRenamingTool and its libraries
+(`G:/MCDownloads/minecraft-1.19.2` and `minecraft-1.20.1`: `client-named.jar`, `libs/`, decompiled sources in `src/`);
+compile them with JDK 17 against `client-named.jar;libs/*`:
+
+```
+java net.minecraft.world.level.biome.Oracle119 G:/MCDownloads/minecraft-1.19.2/oracle119.txt
+java net.minecraft.world.level.biome.Oracle119 biomes G:/MCDownloads/minecraft-1.19.2/biomes 24 300
+java net.minecraft.world.level.levelgen.FillDump119 G:/MCDownloads/minecraft-1.19.2/fill 8 100   (and the 120 ones)
+sh tools/terrain/run.sh NewerBiomeCheck G:/MCDownloads/minecraft-1.19.2/oracle119.txt G:/MCDownloads/minecraft-1.19.2/biomes G:/MCDownloads/minecraft-1.20.1/oracle120.txt G:/MCDownloads/minecraft-1.20.1/biomes
+JAVA_OPTS=-Deditions=1 sh tools/terrain/run.sh TerrainCheck G:/MCDownloads/minecraft-1.19.2/fill   (=3 for 1.20.1/fill)
+python tools/terrain/compare_newer.py G:/MCDownloads/minecraft-1.19.2/oracle119.txt G:/MCDownloads/minecraft-1.20.1/oracle120.txt
+python tools/terrain/make_newer_feature_tables.py G:/MCDownloads/minecraft-1.19.2/oracle119.txt G:/MCDownloads/minecraft-1.20.1/oracle120.txt
+python tools/terrain/structure_biome_tags.py <1.18.2 client.jar> <1.19.2 client.jar> <1.20.1 client.jar>
+sh tools/terrain/run.sh NewerFeatureCensus 42 3 mangrove_swamp 8 4
 ```
 
 The biome and surface oracle classes (`VanillaWorld`, `VanillaBiomeDump`, `VanillaSurfaceDump`,

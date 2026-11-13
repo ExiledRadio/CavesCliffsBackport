@@ -40,6 +40,8 @@ public final class StateMap {
     public static final int SPAWNER = 4;
     /** Flag: the 1.12 block has a tile entity other than the above; the chunk makes it when first asked. */
     public static final int TILE = 8;
+    /** Flag: a bee nest (1.18's beehive decorator), which gets its bees ({@link Nests}). */
+    public static final int NEST = 16;
 
     private IBlockState[] states = new IBlockState[0];
     /** The states that resolved to nothing (air or water instead), for the self-test. */
@@ -158,6 +160,17 @@ public final class StateMap {
         FALLBACK.put("sweet_berry_bush", "minecraft:tallgrass[type=fern]");
         FALLBACK.put("bamboo", "minecraft:air");
         FALLBACK.put("bee_nest", "minecraft:air");
+        // The newer biomes' blocks (Wild Update's mangrove swamp, Trails & Tales' cherry grove). A world gets those
+        // biomes only when the backport with the blocks is installed, so these show only if it is removed later.
+        FALLBACK.put("mud", "minecraft:dirt");
+        FALLBACK.put("muddy_mangrove_roots", "minecraft:dirt");
+        FALLBACK.put("mangrove_roots", "minecraft:air");
+        FALLBACK.put("mangrove_propagule", "minecraft:air");
+        FALLBACK.put("mangrove_log", "minecraft:log[variant=jungle]");
+        FALLBACK.put("mangrove_leaves", "minecraft:leaves[variant=jungle,check_decay=false,decayable=true]");
+        FALLBACK.put("cherry_log", "minecraft:log[variant=birch]");
+        FALLBACK.put("cherry_leaves", "minecraft:leaves[variant=birch,check_decay=false,decayable=true]");
+        FALLBACK.put("pink_petals", "minecraft:air");
         for (String plant : new String[]{"kelp", "kelp_plant", "seagrass", "tall_seagrass", "sea_pickle"}) {
             FALLBACK.put(plant, "minecraft:water");
         }
@@ -268,6 +281,8 @@ public final class StateMap {
             f |= CHEST;
         } else if (b == Blocks.MOB_SPAWNER) {
             f |= SPAWNER;
+        } else if (name.equals("bee_nest") && b.hasTileEntity(state)) {
+            f |= NEST;
         } else if (b.hasTileEntity(state)) {
             f |= TILE;
         }

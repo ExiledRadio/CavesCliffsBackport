@@ -26,6 +26,8 @@ public final class SurfaceBuilder {
     private static final int MAX_Y = MIN_Y + HEIGHT - 1;
     private static final int SEA_LEVEL = OverworldNoise.SEA_LEVEL;
     private static final int NONE = -1;
+    /** 1.19's mud (SurfaceRuleData.MUD): the mangrove swamp's floor and the ground under it. */
+    private static final int MUD = BlockCodes.register("mud");
     private static final int MIN_QUART_Y = MIN_Y >> 2;
     private static final int MAX_QUART_Y = MIN_QUART_Y + (HEIGHT >> 2) - 1;
 
@@ -581,6 +583,10 @@ public final class SurfaceBuilder {
             if (b == Biomes.SWAMP && y >= 62 && !(y >= 63) && swamp() >= 0.0D && swamp() <= Double.MAX_VALUE) {
                 return WATER;
             }
+            // 1.19: the mangrove swamp's water from y 60.
+            if (b == Biomes.MANGROVE_SWAMP && y >= 60 && !(y >= 63) && swamp() >= 0.0D && swamp() <= Double.MAX_VALUE) {
+                return WATER;
+            }
         }
         int b = biome();
         if (b == Biomes.BADLANDS || b == Biomes.ERODED_BADLANDS || b == Biomes.WOODED_BADLANDS) {
@@ -747,6 +753,9 @@ public final class SurfaceBuilder {
                     return SNOW_BLOCK;
                 }
                 return grass();
+            case Biomes.MANGROVE_SWAMP:
+                // 1.19: after ice spikes, before mushroom fields.
+                return MUD;
             case Biomes.MUSHROOM_FIELDS:
                 return MYCELIUM;
             default: {
@@ -793,6 +802,9 @@ public final class SurfaceBuilder {
                 return DIRT;
             case Biomes.WINDSWEPT_SAVANNA:
                 return surfaceNoiseAbove(1.75D) ? STONE : DIRT;
+            case Biomes.MANGROVE_SWAMP:
+                // 1.19: after windswept gravelly hills, before dirt.
+                return MUD;
             case Biomes.WINDSWEPT_GRAVELLY_HILLS:
                 if (surfaceNoiseAbove(2.0D)) {
                     return gravelRule();

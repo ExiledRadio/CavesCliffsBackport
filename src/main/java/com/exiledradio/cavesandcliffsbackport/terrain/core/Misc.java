@@ -37,6 +37,13 @@ final class Misc {
                 IN_SQUARE, HEIGHTMAP_OCEAN_FLOOR, BIOME),
             new Placed("disk_gravel", new Disk(GRAVEL, 2, 5, 2, true, DIRT, GRASS_BLOCK),
                 IN_SQUARE, HEIGHTMAP_OCEAN_FLOOR, BIOME),
+            // 1.19.2: MiscOverworldPlacements.DISK_GRASS: count 1, in square, HEIGHTMAP_TOP_SOLID, 1 down, on mud, biome.
+            new Placed("disk_grass", new GrassDisk(), Decorator.COUNT, 1, IN_SQUARE, HEIGHTMAP_OCEAN_FLOOR, CUSTOM, 0, BIOME)
+                .mods((level, random, next, x, y, z) -> {
+                    if (sameBlock(level.get(x, y - 1, z), MUD)) {
+                        next.at(x, y - 1, z);
+                    }
+                }),
             new Placed("underwater_magma", new UnderwaterMagma(5, 1, 0.5F),
                 COUNT_UNIFORM, 44, 52, IN_SQUARE, HEIGHT_UNIFORM, BOTTOM, 256,
                 SURFACE_THRESHOLD_OCEAN_FLOOR, Integer.MIN_VALUE, -2, BIOME));
@@ -114,6 +121,39 @@ final class Misc {
     }
 
     /** DiskReplaceFeature: only from water; BaseDiskFeature's columns, sandstone under falling blocks over air. */
+    static final int MUD = register("mud");
+
+    /**
+     * 1.19's disk_grass: DiskFeature (1.19.2: every block of the column from halfHeight above to halfHeight below that
+     * matches the target gets the provider's state, top down) on mud, radius 2-6, half height 2; RuleBasedBlockState
+     * provider: grass block where the block above is neither Material.isSolid nor water (Fluids.WATER), else dirt.
+     */
+    static final class GrassDisk implements Feature {
+        @Override
+        public boolean place(Region level, XoroRandom random, int x, int y, int z) {
+            boolean placed = false;
+            int top = y + 2;
+            int bottom = y - 2 - 1;
+            int r = random.between(2, 6);
+            for (int dz = -r; dz <= r; ++dz) {
+                for (int dx = -r; dx <= r; ++dx) {
+                    if (dx * dx + dz * dz > r * r) {
+                        continue;
+                    }
+                    for (int yy = top; yy > bottom; --yy) {
+                        if (sameBlock(level.get(x + dx, yy, z + dz), MUD)) {
+                            int above = level.get(x + dx, yy + 1, z + dz);
+                            boolean water = above == WATER || (flags(above) & F_WATER) != 0 && !name(above).equals("water");
+                            level.set(x + dx, yy, z + dz, (flags(above) & F_SOLID) != 0 || water ? DIRT : GRASS_BLOCK);
+                            placed = true;
+                        }
+                    }
+                }
+            }
+            return placed;
+        }
+    }
+
     static final class Disk implements Feature {
         final int state;
         final int minRadius;

@@ -7,7 +7,8 @@ import java.util.List;
 
 /**
  * 1.18.2's overworld biome parameters (OverworldBiomeBuilder) and the search Climate.RTree does over them, plus
- * an exact shortcut for the search.
+ * an exact shortcut for the search. With {@link Editions}, the newer versions' parameters: 1.19's mangrove swamp and
+ * deep dark, 1.20's cherry grove (checked against the oracles by tools/terrain/NewerBiomeCheck).
  *
  * <p>Parameters are quantized longs (Climate.quantizeCoord: (long) (value * 10000.0F)) in Mojang's order:
  * temperature, humidity, continentalness, erosion, depth, weirdness, offset.
@@ -65,11 +66,20 @@ public final class Climate {
     private final Node[] byRank;
     private final Node root;
 
+    /** The newer versions' additions this table has ({@link Editions} flags). */
+    public final int editions;
+
     public Climate() {
+        this(Editions.NONE);
+    }
+
+    public Climate(int editions) {
+        this.editions = editions;
         List<Node> list = new ArrayList<>();
-        new Builder(list).addBiomes();
+        new Builder(list, editions).addBiomes();
         leaves = list.toArray(new Node[0]);
-        root = build(new ArrayList<>(list));
+        // Climate.RTree.CHILDREN_PER_NODE: 10 in 1.18.2 and 1.19, 6 from 1.20 (which moves ties).
+        root = build(new ArrayList<>(list), (editions & Editions.CHERRY) != 0 ? 6 : 10);
         List<Node> order = new ArrayList<>();
         rank(root, order);
         byRank = order.toArray(new Node[0]);
@@ -83,6 +93,16 @@ public final class Climate {
         return leaves.length;
     }
 
+    /** Leaf i in the oracles' format: biome name, then min and max of the six parameters, then the offset. */
+    public String describeLeaf(int i) {
+        Node n = leaves[i];
+        StringBuilder sb = new StringBuilder(Biomes.name(n.biome));
+        for (int d = 0; d < OFFSET; d++) {
+            sb.append(' ').append(n.min[d]).append(' ').append(n.max[d]);
+        }
+        return sb.append(' ').append(n.min[OFFSET]).toString();
+    }
+
     // ---- the tree, built exactly as Climate.RTree.create builds it ----
 
     private static long sumAbsCenters(Node n) {
@@ -93,12 +113,12 @@ public final class Climate {
         return s;
     }
 
-    private static Node build(List<Node> nodes) {
+    private static Node build(List<Node> nodes, int perNode) {
         if (nodes.isEmpty()) {
             throw new IllegalStateException("Need at least one child to build a node");
         } else if (nodes.size() == 1) {
             return nodes.get(0);
-        } else if (nodes.size() <= 10) {
+        } else if (nodes.size() <= perNode) {
             nodes.sort(Comparator.comparingLong(Climate::sumAbsCenters));
             return subTree(nodes);
         }
@@ -107,7 +127,7 @@ public final class Climate {
         List<Node> bestBuckets = null;
         for (int k = 0; k < DIMS; k++) {
             sort(nodes, k, false);
-            List<Node> buckets = bucketize(nodes);
+            List<Node> buckets = bucketize(nodes, perNode);
             long cost = 0L;
             for (Node b : buckets) {
                 cost += cost(b);
@@ -121,7 +141,7 @@ public final class Climate {
         sort(bestBuckets, bestDim, true);
         List<Node> children = new ArrayList<>();
         for (Node b : bestBuckets) {
-            children.add(build(Arrays.asList(b.children)));
+            children.add(build(Arrays.asList(b.children), perNode));
         }
         return subTree(children);
     }
@@ -141,10 +161,10 @@ public final class Climate {
         });
     }
 
-    private static List<Node> bucketize(List<Node> nodes) {
+    private static List<Node> bucketize(List<Node> nodes, int perNode) {
         List<Node> out = new ArrayList<>();
         List<Node> current = new ArrayList<>();
-        int size = (int) Math.pow(10.0D, Math.floor(Math.log((double) nodes.size() - 0.01D) / Math.log(10.0D)));
+        int size = (int) Math.pow((double) perNode, Math.floor(Math.log((double) nodes.size() - 0.01D) / Math.log((double) perNode)));
         for (Node n : nodes) {
             current.add(n);
             if (current.size() >= size) {
@@ -564,7 +584,17 @@ public final class Climate {
             {N, N, N, N, N},
             {N, N, N, N, N}};
 
-        Builder(List<Node> out) {
+        /** Editions flags: which newer lines to add (see the methods below). */
+        private final int editions;
+
+        Builder(List<Node> out, int editions) {
+            this.editions = editions;
+            if ((editions & Editions.CHERRY) != 0) {
+                // 1.20: PLATEAU_BIOMES_VARIANT gains the cherry grove.
+                PLATEAU_BIOMES_VARIANT[1][0] = Biomes.CHERRY_GROVE;
+                PLATEAU_BIOMES_VARIANT[2][0] = Biomes.CHERRY_GROVE;
+                PLATEAU_BIOMES_VARIANT[2][1] = Biomes.CHERRY_GROVE;
+            }
             this.out = out;
         }
 
@@ -658,7 +688,7 @@ public final class Climate {
 
         private void addMidSlice(P w) {
             addSurfaceBiome(FULL_RANGE, FULL_RANGE, coastContinentalness, P.span(erosions[0], erosions[2]), w, 0.0F, Biomes.STONY_SHORE);
-            addSurfaceBiome(UNFROZEN_RANGE, FULL_RANGE, P.span(nearInlandContinentalness, farInlandContinentalness), erosions[6], w, 0.0F, Biomes.SWAMP);
+            addSwamp(w, P.span(nearInlandContinentalness, farInlandContinentalness));
             for (int i = 0; i < temperatures.length; ++i) {
                 P t = temperatures[i];
                 for (int j = 0; j < humidities.length; ++j) {
@@ -703,7 +733,7 @@ public final class Climate {
 
         private void addLowSlice(P w) {
             addSurfaceBiome(FULL_RANGE, FULL_RANGE, coastContinentalness, P.span(erosions[0], erosions[2]), w, 0.0F, Biomes.STONY_SHORE);
-            addSurfaceBiome(UNFROZEN_RANGE, FULL_RANGE, P.span(nearInlandContinentalness, farInlandContinentalness), erosions[6], w, 0.0F, Biomes.SWAMP);
+            addSwamp(w, P.span(nearInlandContinentalness, farInlandContinentalness));
             for (int i = 0; i < temperatures.length; ++i) {
                 P t = temperatures[i];
                 for (int j = 0; j < humidities.length; ++j) {
@@ -740,7 +770,7 @@ public final class Climate {
             addSurfaceBiome(UNFROZEN_RANGE, FULL_RANGE, P.span(coastContinentalness, farInlandContinentalness), P.span(erosions[2], erosions[5]), w, 0.0F, Biomes.RIVER);
             addSurfaceBiome(FROZEN_RANGE, FULL_RANGE, coastContinentalness, erosions[6], w, 0.0F, Biomes.FROZEN_RIVER);
             addSurfaceBiome(UNFROZEN_RANGE, FULL_RANGE, coastContinentalness, erosions[6], w, 0.0F, Biomes.RIVER);
-            addSurfaceBiome(UNFROZEN_RANGE, FULL_RANGE, P.span(inlandContinentalness, farInlandContinentalness), erosions[6], w, 0.0F, Biomes.SWAMP);
+            addSwamp(w, P.span(inlandContinentalness, farInlandContinentalness));
             addSurfaceBiome(FROZEN_RANGE, FULL_RANGE, P.span(inlandContinentalness, farInlandContinentalness), erosions[6], w, 0.0F, Biomes.FROZEN_RIVER);
             for (int i = 0; i < temperatures.length; ++i) {
                 P t = temperatures[i];
@@ -752,9 +782,26 @@ public final class Climate {
             }
         }
 
+        /**
+         * The swamp line of the mid slice, the low slice and the valleys: 1.18.2's over every unfrozen temperature;
+         * 1.19's (WILD) swamp in the two cool ones and the mangrove swamp in the two warm ones.
+         */
+        private void addSwamp(P w, P continentalness) {
+            if ((editions & Editions.WILD) == 0) {
+                addSurfaceBiome(UNFROZEN_RANGE, FULL_RANGE, continentalness, erosions[6], w, 0.0F, Biomes.SWAMP);
+                return;
+            }
+            addSurfaceBiome(P.span(temperatures[1], temperatures[2]), FULL_RANGE, continentalness, erosions[6], w, 0.0F, Biomes.SWAMP);
+            addSurfaceBiome(P.span(temperatures[3], temperatures[4]), FULL_RANGE, continentalness, erosions[6], w, 0.0F, Biomes.MANGROVE_SWAMP);
+        }
+
         private void addUndergroundBiomes() {
             addUndergroundBiome(FULL_RANGE, FULL_RANGE, P.span(0.8F, 1.0F), FULL_RANGE, FULL_RANGE, 0.0F, Biomes.DRIPSTONE_CAVES);
             addUndergroundBiome(FULL_RANGE, P.span(0.7F, 1.0F), FULL_RANGE, FULL_RANGE, FULL_RANGE, 0.0F, Biomes.LUSH_CAVES);
+            if ((editions & Editions.WILD) != 0) {
+                // 1.19: addBottomBiome, depth the point 1.1.
+                add(FULL_RANGE, FULL_RANGE, FULL_RANGE, P.span(erosions[0], erosions[1]), P.point(1.1F), FULL_RANGE, 0.0F, Biomes.DEEP_DARK);
+            }
         }
 
         private int pickMiddleBiome(int t, int h, P w) {
@@ -791,6 +838,10 @@ public final class Climate {
 
         private int pickBadlandsBiome(int h, P w) {
             if (h < 2) {
+                if (editions != Editions.NONE) {
+                    // 1.19 (and 1.20) swapped the two.
+                    return w.max < 0L ? Biomes.BADLANDS : Biomes.ERODED_BADLANDS;
+                }
                 return w.max < 0L ? Biomes.ERODED_BADLANDS : Biomes.BADLANDS;
             }
             return h < 3 ? Biomes.BADLANDS : Biomes.WOODED_BADLANDS;
