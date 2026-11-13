@@ -4,6 +4,7 @@ import com.exiledradio.backportcore.structure.ScatteredPlacement;
 import com.exiledradio.backportcore.structure.StartRule;
 import com.exiledradio.backportcore.structure.StructureSource;
 import com.exiledradio.backportcore.terrain.ColumnTerrain;
+import com.exiledradio.backportcore.terrain.ModernGeneration;
 import com.exiledradio.backportcore.terrain.TerrainSource;
 import com.exiledradio.backportcore.waterlog.Waterlogging;
 import com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport;
@@ -54,7 +55,7 @@ import java.util.Random;
  *       ({@link ModernTerrain#owns}).</li>
  * </ul>
  */
-public final class ModernGenerator implements IChunkGenerator, TerrainSource, StructureSource {
+public final class ModernGenerator implements IChunkGenerator, TerrainSource, StructureSource, ModernGeneration {
 
     /** How far around each asked-for chunk the workers fill ahead, in chunks. */
     static final int PREFETCH = 4;
@@ -334,6 +335,20 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
     /** 1.18's biome id at a block (three dimensions: the cave biomes under the surface ones). Server thread. */
     public int biome3d(int x, int y, int z) {
         return biomes3d.biome(x, y, z);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Backport Core's ModernGeneration: other backports' own generators of 1.18's features step aside here, and
+    // their biome rules (Update Aquatic's ocean temperatures, fish, drowned) read 1.18's 3D biome.
+
+    @Override
+    public String generationVersion() {
+        return "1.18.2";
+    }
+
+    @Override
+    public String biomeId(int x, int y, int z) {
+        return "minecraft:" + com.exiledradio.cavesandcliffsbackport.terrain.core.Biomes.name(biome3d(x, y, z));
     }
 
     // ---------------------------------------------------------------------------------------------

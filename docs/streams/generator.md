@@ -135,6 +135,13 @@ question in these worlds answer from the same 3D biome.
 WORLD_SURFACE_WG and OCEAN_FLOOR_WG of the bare terrain, `ChunkFiller.baseHeight`), so 1.14-style villages and other
 planned structures stand on our ground.
 
+**Other backports' generators** (Backport Core's `ModernGeneration`, 1.2.0): the generator says it runs 1.18.2's
+generation in full (`generationVersion()`), and gives 1.18's biome at a block in three dimensions (`biomeId`, the
+spawner's zoom). Update Aquatic's coral, kelp and seagrass generators step aside in these worlds (the core places
+1.18.2's own with its blocks), and its ocean temperature, fish and drowned rules read `biomeId`. Kelp: a backport's
+kelp with fewer ages than 1.18's 0-25 (Update Aquatic's 0-15) gets the age that leaves it as many growth steps
+(`StateMap`: 1.18's generated 20-23 are 10-13).
+
 **The 1.17 generators step aside** in these worlds (`ModernTerrain.owns`): geodes, copper ore, dripstone and lush cave
 regions, powder snow patches and the deepslate layer.
 
@@ -168,6 +175,16 @@ had chunks when this generator first saw it).
     `eclipse/mods`: their ruins and portals have 1.18's variants (96 and 64, 0 wrong), an outpost's chunk gets a
     beard, and Core's `/locate` for shipwreck, both ocean ruins, buried treasure, ruined portal (and desert) and
     pillager outpost each names a 1.18 start of it.
+*   `sh tools/height/selftest.sh terrainocean` (`TerrainOceanSelfTest`; seed -5767635369185270459 in
+    `eclipse/server.properties` adds the plain ocean at -700, -869): five areas of 5x5 chunks (that ocean, and a warm,
+    lukewarm, cold and frozen ocean) generated and populated by the world, every mod's world generators included,
+    against a second pipeline finishing the same chunks in the same order, every block from -64 to 319. Allowed:
+    blocks inside structure starts' boxes, glow lichen (its shuffled direction order), bubble columns on magma.
+    This mod alone: 16 pass, 0 fail (0 other blocks wrong). With Update Aquatic `main` in `eclipse/mods`: 5 fail
+    (coral 8762 against 1.18's 3415, kelp 8600 against 5315, seagrass 10049 against 5705, 116 coral blocks in the
+    plain ocean's chunk, 2447 far from any warm ocean, `OceanKind` wrong at 292 samples). With Update Aquatic
+    `cc118-terrain`: 20 pass, 0 fail (coral 3415, kelp 5315, seagrass 5705, exactly 1.18's; 415 bubble columns, all
+    on magma).
 *   `sh tools/terrain/restart.sh` (`RestartSelfTest`, three servers in a Caves & Cliffs world): 12x12 chunks at
     2000, 2000 and then the 12x12 east of them in one run, against the first area, a stop, and the second area after
     the restart: every finished chunk (305, with the few populating generates) identical. Without the store (the

@@ -60,6 +60,7 @@ public final class SelfTestRunner {
             new HeightSelfTest(),
             new TerrainSelfTest(),
             new TerrainGapsSelfTest(),
+            new TerrainOceanSelfTest(),
             new RestartSelfTest("restartwhole"),
             new RestartSelfTest("restart1"),
             new RestartSelfTest("restart2"),
