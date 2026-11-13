@@ -61,6 +61,8 @@ public final class FluidUpdates {
     /** Counters (self-test, log). */
     public static long applied;
     public static long ticked;
+    /** Chunks whose newer features (ModernFeatures) ran. */
+    public static long modernRuns;
     /** Time spent running updates (not looking for ready chunks), in nanoseconds. */
     public static long nanos;
 
@@ -179,7 +181,13 @@ public final class FluidUpdates {
         int bx = chunk.x << 4;
         int bz = chunk.z << 4;
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int requests = 0;
         for (int e : updates) {
+            if (Marks.kind(e) >= Marks.REQUEST) {
+                // Another backport's newer feature (ModernFeatures), run after 1.18's own updates.
+                requests++;
+                continue;
+            }
             pos.setPos(bx + Marks.x(e), Marks.y(e), bz + Marks.z(e));
             IBlockState state = world.getBlockState(pos);
             Block block = state.getBlock();
@@ -206,6 +214,21 @@ public final class FluidUpdates {
                 }
             } else {
                 state.neighborChanged(world, at, Blocks.AIR, at);
+            }
+        }
+        if (requests > 0 && world instanceof WorldServer
+                && ((WorldServer) world).getChunkProvider().chunkGenerator instanceof ModernGenerator) {
+            ModernFeatures modern = ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).modern();
+            if (modern != null) {
+                int[] list = new int[requests];
+                int n = 0;
+                for (int e : updates) {
+                    if (Marks.kind(e) >= Marks.REQUEST) {
+                        list[n++] = e;
+                    }
+                }
+                modern.run(world, chunk, list);
+                modernRuns++;
             }
         }
         applied++;

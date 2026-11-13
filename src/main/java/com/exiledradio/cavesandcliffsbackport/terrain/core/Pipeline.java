@@ -240,6 +240,11 @@ public final class Pipeline {
         decorator.treeGate(gate);
     }
 
+    /** A newer version's tree selectors ({@link Decorator#modernTrees}); before the first chunk is asked for. */
+    public List<String> modernTrees(Map<String, Decorator.ModernTrees> selectors) {
+        return decorator.modernTrees(selectors);
+    }
+
     /** Over a world's noise and climate, shared with its biome provider (both are read only). */
     public Pipeline(OverworldNoise noise, Climate climate, int threads, int cap) {
         this.noise = noise;

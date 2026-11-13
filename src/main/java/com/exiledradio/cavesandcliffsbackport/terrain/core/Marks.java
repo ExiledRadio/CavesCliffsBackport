@@ -15,11 +15,26 @@ import java.util.Arrays;
  *       mushrooms, magma: {@link BlockCodes#F_POST}), {@code Feature.markAboveForPostProcessing} (lakes, disks) and
  *       glow lichen.</li>
  * </ul>
- * Each entry is an int: kind &lt;&lt; 20 | (y + 64) &lt;&lt; 8 | x &lt;&lt; 4 | z (chunk-local x and z).
+ * Kinds from {@link #REQUEST} on are not 1.18.2's: they ask the game to place a newer version's feature at the
+ * position once the chunk is in the world (another backport's code, which needs a World: the generator's
+ * {@code terrain.ModernFeatures}). Only a generator given those features ({@link Decorator#modernTrees}) makes them,
+ * so a world without them has none.
+ *
+ * <p>Each entry is an int: kind &lt;&lt; 20 | (y + 64) &lt;&lt; 8 | x &lt;&lt; 4 | z (chunk-local x and z).
  */
 public final class Marks {
     public static final int TICK = 0;
     public static final int POST = 1;
+    /** The first request kind. */
+    public static final int REQUEST = 2;
+    /** A fallen tree at the position: FALLEN + the fallen tree's index ({@link Decorator.ModernTrees}), 0 to 7. */
+    public static final int FALLEN = 2;
+    /** Leaf litter around a tree whose lowest log is at the position. */
+    public static final int LITTER = 10;
+    /** Leaf litter around a tree whose lowest logs are the 2x2 from the position (a dark oak). */
+    public static final int LITTER_2X2 = 11;
+    /** The chunk's newer vegetation patches (the generator adds it once per chunk; the position is unused). */
+    public static final int VEGETATION = 12;
 
     private int[] entries = new int[0];
     private int size;

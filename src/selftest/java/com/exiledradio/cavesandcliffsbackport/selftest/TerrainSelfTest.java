@@ -82,6 +82,7 @@ public final class TerrainSelfTest implements SelfTest {
         Pipeline own = new Pipeline(new com.exiledradio.cavesandcliffsbackport.terrain.core.OverworldNoise(world.getSeed(), e),
                 new com.exiledradio.cavesandcliffsbackport.terrain.core.Climate(e), 0, 1024);
         own.setBeards(generator.beards());
+        generator.sameDecoration(own);
         Pipeline.Proto p = own.finish(CX, CZ);
         StateMap map = new StateMap();
         map.resolveAll();

@@ -112,6 +112,7 @@ final class NewerBiomesSelfTest {
                 com.exiledradio.cavesandcliffsbackport.terrain.core.Pipeline own =
                         new com.exiledradio.cavesandcliffsbackport.terrain.core.Pipeline(noise, new Climate(e), 0, 1024);
                 own.setBeards(generator.beards());
+                generator.sameDecoration(own);
                 int coreNests = 0;
                 for (int dx = -2; dx <= 2; dx++) {
                     for (int dz = -2; dz <= 2; dz++) {

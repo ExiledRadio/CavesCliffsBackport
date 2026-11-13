@@ -123,6 +123,7 @@ public final class TerrainOceanSelfTest implements SelfTest {
         map.resolveAll();
         Pipeline own = new Pipeline(world.getSeed(), 0, 4096);
         own.setBeards(generator.beards());
+        generator.sameDecoration(own);
         Census total = new Census();
         try {
             for (long[] c : order) {

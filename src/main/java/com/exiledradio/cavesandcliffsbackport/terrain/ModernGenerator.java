@@ -97,6 +97,9 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
     private final HeldStore store;
     /** 1.18's biomes in three dimensions for loaded chunks: mob spawning, the axolotls' lush caves. */
     final ChunkBiomes biomes3d;
+    /** Other backports' newer placed features (Tricky Trials' spring plants), or null for none. */
+    @Nullable
+    private final ModernFeatures modern;
 
     /** Time spent writing finished chunks into 1.12 chunks, for the benchmark. */
     public long writeNanos;
@@ -111,7 +114,18 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         this.states.resolveAll();
         // Dynamic Trees grows its own trees where it cancels vanilla's; the 1.18 trees step aside there. Asked on the
         // server thread, which finishes chunks.
-        this.pipeline.treeGate(ModDecoration.gate(DynamicTreesGate.of(world), ModDecoration.quarkStones()));
+        com.exiledradio.cavesandcliffsbackport.terrain.core.Decorator.TreeGate trees = DynamicTreesGate.of(world);
+        com.exiledradio.cavesandcliffsbackport.terrain.core.Decorator.TreeGate gate = ModDecoration.gate(trees, ModDecoration.quarkStones());
+        // Tricky Trials' 1.21.5 spring plants: its tree selectors, its cactus patches (see ModernFeatures).
+        this.modern = ModernFeatures.of(trees);
+        if (this.modern != null) {
+            gate = ModDecoration.gate(gate, this.modern.cactusGate());
+            List<String> skipped = this.pipeline.modernTrees(this.modern.selectors);
+            CavesAndCliffsBackport.LOGGER.info("Tricky Trials is installed: 1.21.5's spring plants grow in the 1.18 terrain "
+                    + "({} tree selectors{}).", this.modern.selectors.size() - skipped.size(),
+                    skipped.isEmpty() ? "" : ", not matched: " + skipped);
+        }
+        this.pipeline.treeGate(gate);
         ColumnCache columns = new ColumnCache(terrain.noise);
         this.heights = new ChunkFiller(terrain.noise, columns);
         this.structures = new ModernStructures(new Structures(terrain.noise, columns,
@@ -145,6 +159,28 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
 
     Pipeline pipeline() {
         return pipeline;
+    }
+
+    /** Other backports' newer placed features, or null for none. */
+    @Nullable
+    ModernFeatures modern() {
+        return modern;
+    }
+
+    /** Whether other backports' newer placed features (Tricky Trials' spring plants) grow in this world. */
+    public boolean hasModernFeatures() {
+        return modern != null;
+    }
+
+    /**
+     * Gives a second pipeline (the self-test's) this world's decoration in the core: the newer tree selectors, and the
+     * cactus patches left to the backport. Nothing without one.
+     */
+    public void sameDecoration(Pipeline other) {
+        if (modern != null) {
+            other.modernTrees(modern.selectors);
+            other.treeGate(modern.cactusGate());
+        }
     }
 
     /** The newer versions' biomes this world has ({@code terrain.core.Editions} flags). */
@@ -199,7 +235,7 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         this.rand.setSeed((long) x * 341873128712L + (long) z * 132897987541L);
         write(chunk, p);
         // 1.18's fluid ticks and post-processing, run once the chunk's neighbors are in the world.
-        FluidUpdates.put(chunk, p.updates);
+        FluidUpdates.put(chunk, this.modern == null ? p.updates : ModernFeatures.withVegetation(p.updates));
         byte[] biomes = chunk.getBiomeArray();
         BiomeMap map = terrain.map;
         for (int c = 0; c < 256; c++) {
@@ -322,7 +358,7 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
             this.mansion.generateStructure(this.world, this.rand, chunkpos);
         }
         // Other mods' generation in 1.12's dungeon and ore events (Quark's stones and underground biomes).
-        ModDecoration.populate(this, this.world, x, z, village);
+        ModDecoration.populate(this, this.world, x, z, village, this.modern);
         if (TerrainGen.populate(this, this.world, this.rand, x, z, village, PopulateChunkEvent.Populate.EventType.ANIMALS)) {
             WorldEntitySpawner.performWorldGenSpawning(this.world, biome, i + 8, j + 8, 16, 16, this.rand);
         }

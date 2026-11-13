@@ -209,6 +209,62 @@ public final class Decorator {
         treeGate = gate;
     }
 
+    /**
+     * A newer version's tree selector for one of 1.18.2's tree features, as another backport gives it (1.21.5's
+     * fallen trees and leaf litter, from Tricky Trials): its entries in order, each a chance and either one of
+     * 1.18.2's entries ({@link #TERRAIN}: in their order, with their chances) or a fallen tree (its index, 0 to 7).
+     */
+    public static final class ModernTrees {
+        public static final int TERRAIN = -1;
+        final float[] chances;
+        final int[] fallen;
+        final boolean litter;
+
+        /** @param litter the selector's trees (not its fallen trees or huge mushrooms) drop leaf litter */
+        public ModernTrees(float[] chances, int[] fallen, boolean litter) {
+            this.chances = chances.clone();
+            this.fallen = fallen.clone();
+            this.litter = litter;
+        }
+    }
+
+    /**
+     * Gives 1.18.2's tree features a newer version's selectors (keyed by the 1.18.2 placed feature's name): a fallen
+     * tree picked leaves a {@link Marks#FALLEN} request at its position, a tree that drops leaf litter a
+     * {@link Marks#LITTER} request at its foot once it stands. The placements (count, square, filters) stay 1.18.2's.
+     * Never called for a world without that backport, so its decoration stays exactly 1.18.2's.
+     *
+     * @return the names that did not match 1.18.2's entries (left as they were)
+     */
+    public java.util.List<String> modernTrees(Map<String, ModernTrees> selectors) {
+        java.util.List<String> skipped = new java.util.ArrayList<>();
+        for (Map.Entry<String, ModernTrees> e : selectors.entrySet()) {
+            boolean found = false;
+            for (Placed[] step : features) {
+                for (int i = 0; i < step.length; i++) {
+                    Placed p = step[i];
+                    if (p == null || !p.name.equals(e.getKey())) {
+                        continue;
+                    }
+                    found = true;
+                    Feature f = Trees.modern(p.feature, e.getValue());
+                    if (f == null) {
+                        skipped.add(p.name);
+                        continue;
+                    }
+                    Placed q = new Placed(p.name, f, p.ops).mods(p.mods);
+                    q.id = p.id;
+                    q.kind = p.kind;
+                    step[i] = q;
+                }
+            }
+            if (!found) {
+                skipped.add(e.getKey());
+            }
+        }
+        return skipped;
+    }
+
     // ---- the loop ----
 
     private Region region;

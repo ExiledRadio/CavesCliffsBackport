@@ -38,6 +38,11 @@ public final class FluidMarks {
         Marks out = new Marks();
         for (int k = 0; k < decoration.size(); k++) {
             int e = decoration.get(k);
+            if (Marks.kind(e) >= Marks.REQUEST) {
+                // A newer feature to place in the world: kept whatever the block is.
+                out.add(e);
+                continue;
+            }
             int lx = Marks.x(e);
             int lz = Marks.z(e);
             int i = Marks.y(e) - MIN_Y;

@@ -37,6 +37,9 @@ feature the core has ported, block for block what the core computes, which is va
     the biomes it was made with (`height.newerBiomes` turns this off).
 *   **Bee nests on 1.18's trees have their bees** with Buzzy Bees Backport, and the backport no longer adds a second
     nest in these worlds.
+*   **1.21.5's spring plants with Tricky Trials Backport**: bushes, firefly bushes, dry grass, wildflowers (meadows
+    too), leaf litter under forest and dark forest trees, fallen trees and flowered cacti grow in these worlds, where
+    1.21.5 puts them. Without Tricky Trials the world is 1.18.2's exactly.
 
 ## How it works
 
@@ -261,6 +264,39 @@ regions, powder snow patches and the deepslate layer.
 **The spawn point** (`WorldEvent.CreateSpawnPosition`): the nearest chunk centre to 0, 0 whose bare terrain is dry
 land above the sea, found from the noise alone (1.12's search would generate chunks until it finds grass). 1.12's
 bonus chest is not placed then.
+
+**Other backports' newer placed features** (`ModernFeatures`; Tricky Trials' `docs/CORE_REQUESTS.md` #11). The
+family's rule is that the newest installed backport's version wins, so with Tricky Trials (1.21.x) installed its 1.21.5
+spring plants belong in these worlds; without it nothing below runs and decoration is 1.18.2's exactly (FeatureCheck,
+TerrainCheck: ALL IDENTICAL). Tricky Trials' code takes a `World`, and the core decorates held chunks before they are
+in the world, so the core leaves requests in the chunk's `Marks` (kinds from `Marks.REQUEST`: `FALLEN` + the fallen
+tree, `LITTER`, `LITTER_2X2`, `VEGETATION`), which wait with the chunk like the fluid ticks (held store, chunk NBT)
+and run in `FluidUpdates` once the chunk's 3x3 is loaded, after 1.18's own updates. All calls go by name through
+reflection, null-safe without Tricky Trials (or with its `flora.enabled` off):
+*   **Tree selectors** (`Decorator.modernTrees`, `Trees.modern`): each of 1.18.2's tree features named in Tricky
+    Trials' `FallenTrees.SELECTORS` gets 1.21.5's entries at its chances, 1.18.2's own entries kept in their order
+    (checked: same chances; a selector that does not match is left as it was and named in the log). The forest's
+    `trees_birch_and_oak` takes 1.21.5's `trees_birch_and_oak_leaf_litter`; `trees_birch`, `trees_snowy` and
+    `trees_badlands`, single trees in 1.18.2, become selectors with their fallen tree first. A fallen tree that is
+    picked and whose sapling would survive is a `FALLEN` request (`FallenTrees.place`); a forest or dark forest tree
+    (not a huge mushroom) that stands is a `LITTER` request at its foot (a dark oak's 2x2: `LITTER_2X2`;
+    `FallenTrees.leafLitter`). The placements are 1.18.2's; the selector draws one float per new entry, so with Tricky
+    Trials the trees after it differ, as 1.21.5's do from 1.18.2's.
+*   **Cactus patches**: the core's tree gate leaves out `patch_cactus_desert` and `patch_cactus_decorated` (kind
+    CACTUS) and Tricky Trials places its own (`FloraFeatures.place`), the column with its 1-in-4 flower; Dynamic
+    Trees' cactus answer is asked again first.
+*   **Vegetation** (`VEGETATION`, one per chunk, last): every patch of every biome on the chunk's surface (Tricky
+    Trials' `FloraBiomes` lists by its 1.21.5 biome names, merged into one order that keeps each list's), once each,
+    from the chunk corner, through `FloraFeatures.place`; each patch filters by the biome at its position, as
+    vanilla's union of the 3x3's biome features does. For a chunk of one biome this is `FloraFeatures.vegetation`.
+    The random is the world seed's and the chunk's.
+*   Tricky Trials' own 1.12.2 path (`FloraGen`, on `DecorateBiomeEvent.Post`, which `ModDecoration` fires for other
+    mods) is left out of that event in these chunks (its listeners, read from the event bus, are skipped), so nothing
+    grows twice. Before this, that path did run here and grew the 1.12.2 version of the plants (corner + 8 squares,
+    fallen trees as extra attempts, flowers on the 1.18 cacti).
+*   Not 1.21.5's random for random: the patches and fallen trees take their own random after the chunk is in the
+    world (1.21.5 draws them inside the step, so its later features shift), and a fallen tree or litter is placed
+    after the whole chunk is decorated rather than in its place in the step.
 
 **Which worlds** (`ModernTerrain`): the overworld of a world with extended height, decided once and saved in
 `data/cavesandcliffsbackport_terrain.dat` ("1.18", or "1.12" for a Caves & Cliffs world whose `region` folder already

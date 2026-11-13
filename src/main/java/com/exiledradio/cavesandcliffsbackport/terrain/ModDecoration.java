@@ -53,7 +53,8 @@ final class ModDecoration {
     }
 
     /** The events of 1.12's population for chunk x, z (see the class comment). */
-    static void populate(IChunkGenerator generator, World world, int x, int z, boolean village) {
+    static void populate(IChunkGenerator generator, World world, int x, int z, boolean village,
+                         @Nullable ModernFeatures modern) {
         Random rand = new Random(world.getSeed() ^ ((long) x * 341873128712L + (long) z * 132897987541L) ^ 0x5DEECE66DL);
         TerrainGen.populate(generator, world, rand, x, z, village, PopulateChunkEvent.Populate.EventType.DUNGEON);
         BlockPos pos = new BlockPos(x << 4, 0, z << 4);
@@ -70,7 +71,13 @@ final class ModDecoration {
             MinecraftForge.ORE_GEN_BUS.post(new OreGenEvent.Pre(world, rand, pos));
             TerrainGen.generateOre(world, rand, DIRT, pos, OreGenEvent.GenerateMinable.EventType.DIRT);
             MinecraftForge.ORE_GEN_BUS.post(new OreGenEvent.Post(world, rand, pos));
-            MinecraftForge.EVENT_BUS.post(new DecorateBiomeEvent.Post(world, rand, chunk));
+            DecorateBiomeEvent.Post post = new DecorateBiomeEvent.Post(world, rand, chunk);
+            if (modern != null) {
+                // Tricky Trials' 1.12.2 plants step aside: its 1.21.5 ones are placed in the terrain's own steps.
+                modern.postDecorated(post);
+            } else {
+                MinecraftForge.EVENT_BUS.post(post);
+            }
         } finally {
             if (decorator != null) {
                 decorator.chunkPos = before;

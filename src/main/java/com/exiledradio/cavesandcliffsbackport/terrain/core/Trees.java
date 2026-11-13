@@ -364,6 +364,96 @@ final class Trees {
         }
     }
 
+    /**
+     * A tree feature with a newer selector's entries ({@link Decorator#modernTrees}): 1.18.2's entries where the newer
+     * one keeps them (same order and chances), fallen trees as requests, and the trees wrapped for their leaf litter.
+     * Null when the newer entries do not match 1.18.2's.
+     */
+    static Feature modern(Feature feature, Decorator.ModernTrees spec) {
+        Feature[] own;
+        float[] ownChances;
+        Feature fallback;
+        if (feature instanceof Selector) {
+            Selector s = (Selector) feature;
+            own = s.features;
+            ownChances = s.chances;
+            fallback = s.fallback;
+        } else {
+            own = new Feature[0];
+            ownChances = new float[0];
+            fallback = feature;
+        }
+        Feature[] entries = new Feature[spec.chances.length];
+        int t = 0;
+        for (int j = 0; j < entries.length; j++) {
+            if (spec.fallen[j] == Decorator.ModernTrees.TERRAIN) {
+                if (t >= own.length || Float.compare(ownChances[t], spec.chances[j]) != 0) {
+                    return null;
+                }
+                entries[j] = spec.litter ? Litter.of(own[t]) : own[t];
+                t++;
+            } else if (spec.fallen[j] >= 0 && spec.fallen[j] < 8) {
+                entries[j] = new FallenRequest(spec.fallen[j]);
+            } else {
+                return null;
+            }
+        }
+        if (t != own.length) {
+            return null;
+        }
+        return new Selector(spec.chances.clone(), entries, spec.litter ? Litter.of(fallback) : fallback);
+    }
+
+    /**
+     * A fallen tree's placed feature, filtered by its sapling's survival as the trees are: a {@link Marks#FALLEN}
+     * request at the position, for the backport that places it in the world. Draws nothing.
+     */
+    static final class FallenRequest implements Feature {
+        final int index;
+
+        FallenRequest(int index) {
+            this.index = index;
+        }
+
+        @Override
+        public boolean place(Region level, XoroRandom random, int x, int y, int z) {
+            if (!level.canWrite(x, z) || !saplingSurvives(level, x, y, z)) {
+                return false;
+            }
+            level.mark(x, y, z, Marks.FALLEN + index);
+            return true;
+        }
+    }
+
+    /** A checked tree whose decorators drop leaf litter: a {@link Marks#LITTER} request at its foot once it stands. */
+    static final class Litter implements Feature {
+        final Feature tree;
+        final int kind;
+
+        private Litter(Feature tree, int kind) {
+            this.tree = tree;
+            this.kind = kind;
+        }
+
+        /** The tree, wrapped if it is a checked tree (huge mushrooms are not). */
+        static Feature of(Feature f) {
+            if (f instanceof Checked && ((Checked) f).tree instanceof Tree) {
+                Tree tree = (Tree) ((Checked) f).tree;
+                return new Litter(f, tree.trunkType == DARK_OAK_TRUNK ? Marks.LITTER_2X2 : Marks.LITTER);
+            }
+            return f;
+        }
+
+        @Override
+        public boolean place(Region level, XoroRandom random, int x, int y, int z) {
+            if (!tree.place(level, random, x, y, z)) {
+                return false;
+            }
+            level.mark(x, y, z, kind);
+            return true;
+        }
+    }
+
     /** RandomFeatureConfiguration (Feature.RANDOM_SELECTOR): the first entry whose chance passes, else the default. */
     static final class Selector implements Feature {
         final float[] chances;

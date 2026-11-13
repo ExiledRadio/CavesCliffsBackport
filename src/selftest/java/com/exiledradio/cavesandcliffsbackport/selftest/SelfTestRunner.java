@@ -68,6 +68,7 @@ public final class SelfTestRunner {
             new RestartSelfTest("restart2"),
             new HeightBenchSelfTest(),
             new GenScanSelfTest(),
+            new ModernFeaturesSelfTest(),
     };
 
     private final List<String> wanted;
