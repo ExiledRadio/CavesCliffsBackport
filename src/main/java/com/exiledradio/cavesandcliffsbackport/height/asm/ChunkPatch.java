@@ -184,6 +184,18 @@ final class ChunkPatch extends ClassPatch {
         for (AbstractInsnNode n : expect("getPrecipitationHeight.bottom", m, 1, getY(), op(Opcodes.IFLE))) {
             compareWith(m, next(n), minY());
         }
+        // Its "not found yet" marker is -1, which is also the answer for a column topped at y -2: the walk then
+        // never ends (a found block does not step down), hanging the server on the first rain or snow tick over
+        // such a column. The marker becomes one below the world's bottom, which no block's y + 1 can be.
+        List<AbstractInsnNode> marker = expect("getPrecipitationHeight.notFound", m, 1, icst(-1), istore(-1));
+        for (AbstractInsnNode n : marker) {
+            int var = ((VarInsnNode) next(n)).var;
+            for (AbstractInsnNode test : expect("getPrecipitationHeight.notFoundTest", m, 1, iload(var), icst(-1),
+                    op(Opcodes.IF_ICMPNE))) {
+                replace(m, next(test), worldInt(self(worldField()), "belowBottom"));
+            }
+            replace(m, n, worldInt(self(worldField()), "belowBottom"));
+        }
     }
 
     private static P floor() {

@@ -87,7 +87,7 @@ the transformer receives it, to read what another mod left when a site is not fo
 | --- | --- |
 | `World` | `HeightWorld` (fields, getters); end of the constructor; `isOutsideBuildHeight`, `isAreaLoaded`, `getLight` (both), `getLightFor`, `getLightFromNeighborsFor` (client), `canBlockFreezeBody`, `canSnowAtBody`, `getTopSolidOrLiquidBlock`: 0/256/255 become the world's bottom, top and top - 1; `getHeight(x, z)` never answers below 0 (1.12's "nothing here"; mods draw `nextInt(height + 32)` from it, which threw in a 1.18 pit open down to y -44) |
 | `WorldProvider` | `getHeight`, `getActualHeight`: 256 becomes the world's top (320) |
-| `Chunk` | constructor: 24 sections and 24 entity lists; every `storageArrays[y >> 4]` (getBlockState, setBlockState, light get/set/subtracted, generateSkylightMap, relightBlock, isEmptyBetween); `getBlockState`'s `y >= 0` guard; `getLastExtendedBlockStorage` walks by height; height loops stop at the bottom (generateHeightMap, generateSkylightMap, relightBlock, checkLight, getPrecipitationHeight); `relightBlock`'s `& 255`; `isEmptyBetween`'s clamps; the relight round robin covers 24 sections; client `read` builds each section at its slot's height; entity lists per section from the bottom (`addEntity`, `removeEntityAtIndex`, both area queries), `chunkCoordY` stays the section y |
+| `Chunk` | constructor: 24 sections and 24 entity lists; every `storageArrays[y >> 4]` (getBlockState, setBlockState, light get/set/subtracted, generateSkylightMap, relightBlock, isEmptyBetween); `getBlockState`'s `y >= 0` guard; `getLastExtendedBlockStorage` walks by height; height loops stop at the bottom (generateHeightMap, generateSkylightMap, relightBlock, checkLight, getPrecipitationHeight); `getPrecipitationHeight`'s "not found" marker is one below the bottom (`Heights.belowBottom`, vanilla's -1: below 0 that was also the answer for a column topped at y -2, and its walk never ended); `relightBlock`'s `& 255`; `isEmptyBetween`'s clamps; the relight round robin covers 24 sections; client `read` builds each section at its slot's height; entity lists per section from the bottom (`addEntity`, `removeEntityAtIndex`, both area queries), `chunkCoordY` stays the section y |
 | `ChunkCache` | `getBlockState`, `isSideSolid`, client `getLightForExt`, `getLightFor` |
 | `AnvilChunkLoader` | write: vanilla's loop gets slots 0-15, then our list; read: a 24-slot array, then our list |
 | `SPacketChunkData` | "full chunk" (65535) becomes all 24 sections; a block entity's section bit by slot |
@@ -293,6 +293,19 @@ the client-only `ChunkCache` overwrite, on a client its body must read no height
         (see "Not tested"). Both copies were put back as they were.
 *   **Speed** (EXTENDED_HEIGHT section 4, `python tools/height/bench.py`, E-cores): an extended world generates in
     1.11x vanilla's time per chunk (13.30 vs 11.96 ms), 1.15x with saving; a Default world with the coremod on, 1.04x.
+
+*   **Precipitation height** (branch `cc-precip-fix`): a server hung on "Save and Quit" in Backport Showcase; its
+    thread dumps showed the server spinning in `Chunk.getPrecipitationHeight` under `WorldServer.updateBlocks`'s rain
+    and snow pass. Vanilla's walk uses -1 for "not found yet" and does not step down after a hit, so once the walk
+    went below 0, a column topped at y -2 (answer -1) looped forever. The marker is now `minY - 1` (-65; vanilla's -1
+    in any other world), which no block's y + 1 can be. Like vanilla's, the walk never reads the bottom row, so a
+    column with only bedrock at -64 answers "none" (-65), as one with only bedrock at y 0 answers -1 in a Default
+    world (lightning there strikes at -65, out of the world, instead of 2 up; harmless). The -999 "unknown" marker
+    cannot collide, and OptiFine's `ChunkUtils.getPrecipitationHeight` only reads the cache (a negative value goes to
+    the patched method). New height self-test checks (each asked on its own thread, so a regression fails instead of
+    hanging): columns topped at -2, -1, -63, -64, 100 and an empty one. Before the fix the -2 column never answered;
+    after it 157/0 (85 sites). PatchCheck (dev, SRG and the OptiFine pack's dumped `Chunk`) and the frame check
+    clean; full suite 4451/0.
 
 ## Not tested
 

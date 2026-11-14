@@ -94,6 +94,15 @@ public final class Heights {
         return minY(world) - 64.0D;
     }
 
+    /**
+     * {@code Chunk.getPrecipitationHeight}: "no block in this column", one below the world's bottom (vanilla's -1).
+     * Vanilla's -1 is also the answer for a column topped at y -2 (that block's y + 1) once the walk goes below 0,
+     * and its loop then never ends; nothing in the world answers {@code minY - 1}.
+     */
+    public static int belowBottom(World world) {
+        return minY(world) - 1;
+    }
+
     /** {@code EntityFallingBlock.onUpdate}: one above the world's bottom (vanilla's 1). */
     public static int aboveBottom(World world) {
         return minY(world) + 1;

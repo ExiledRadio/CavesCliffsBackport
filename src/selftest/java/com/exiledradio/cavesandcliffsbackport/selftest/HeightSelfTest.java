@@ -93,6 +93,7 @@ public final class HeightSelfTest implements SelfTest {
         entities(check, world);
         removalMarkers(check, world);
         portals(check, world);
+        precipitation(check, world);
         vanillaWorld(check);
     }
 
@@ -180,6 +181,45 @@ public final class HeightSelfTest implements SelfTest {
         }
         check.ok(count == 6 && lowest >= -50 && lowest < -44, "the arrival's portal is built in the room at y -50 ("
                 + count + " portal blocks, lowest y " + (count == 0 ? "none" : lowest) + ")");
+    }
+
+    /**
+     * {@code Chunk.getPrecipitationHeight} (rain, snow and lightning) over columns topped low: one above the top
+     * block, and one below the world's bottom for a column with nothing above its bottom row. Vanilla's "not found" -1 is the answer for a column
+     * topped at y -2, and its walk then never ended (a server hung on a rain tick); each column is asked on its own
+     * thread, so a regression fails here instead of hanging the test.
+     */
+    private static void precipitation(Check check, WorldServer world) throws Exception {
+        int x = X + 600;
+        int z = Z;
+        prepare(world, x, z, 1);
+        // 1.12's walk never reads the bottom row (y 0 in a Default world: a column with only bedrock there answers
+        // -1, "none"), so a column with only bedrock at -64 answers "none" here: one below the bottom, -65.
+        int[][] cases = {{-2, -1}, {-1, 0}, {-63, -62}, {-64, -65}, {Integer.MIN_VALUE, -65}, {100, 101}};
+        for (int c = 0; c < cases.length; c++) {
+            final BlockPos column = new BlockPos(x + c, 0, z);
+            int top = cases[c][0];
+            for (int y = 319; y >= -64; y--) {
+                world.setBlockState(column.up(y), y == top ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState(), 2);
+            }
+            if (top == -64) {
+                world.setBlockState(column.down(64), Blocks.BEDROCK.getDefaultState(), 2);
+            }
+            final Chunk chunk = world.getChunk(column);
+            int[] cache = ObfuscationReflectionHelper.getPrivateValue(Chunk.class, chunk, "field_76638_b");
+            java.util.Arrays.fill(cache, -999);
+            final int[] got = {Integer.MIN_VALUE};
+            Thread ask = new Thread(() -> got[0] = chunk.getPrecipitationHeight(column).getY(), "precipitation check");
+            ask.setDaemon(true);
+            ask.start();
+            ask.join(5000);
+            String what = top == Integer.MIN_VALUE ? "an empty column" : "a column topped at y " + top;
+            if (!check.ok(!ask.isAlive(), "precipitation height of " + what + " answers (it looped forever)")) {
+                continue;
+            }
+            check.eq(cases[c][1], got[0], "precipitation height of " + what);
+            check.eq(cases[c][1], world.getPrecipitationHeight(column).getY(), "World.getPrecipitationHeight of " + what);
+        }
     }
 
     /**
