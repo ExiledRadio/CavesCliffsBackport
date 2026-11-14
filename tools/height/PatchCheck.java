@@ -8,6 +8,7 @@ import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.VarInsnNode;
 import org.objectweb.asm.tree.analysis.Analyzer;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.BasicValue;
@@ -26,7 +27,15 @@ import java.util.zip.ZipFile;
  * <pre>
  *   tools/height/run.sh PatchCheck mcp    &lt;forgeSrc jar&gt;  [celeritas jar [nothirium jar [vintagefix jar]]]   (dev names)
  *   tools/height/run.sh PatchCheck srg    &lt;forgeSrc jar&gt;  &lt;mcp-srg.srg&gt; [celeritas jar [nothirium jar [vintagefix jar]]]   (an instance's names)
+ *   tools/height/run.sh PatchCheck dump   &lt;dir&gt;   (classes an instance's transformer received, SRG names)
  * </pre>
+ * The dump mode reads {@code <dir>/<class name>.class} as written by {@code -Dcavesandcliffsbackport.height.dump}
+ * (for example OptiFine's classes from the Shaders instance) and checks the patches whose class is there.
+ * <p>
+ * Besides ASM's verifier (which infers types itself and ignores the class's stack map frames), a frame check reads
+ * the frames as the JVM does: a local read after a frame must be declared by that frame (or stored since), and code
+ * after a goto, return, throw or switch must start with a frame. ProGuard (OptiFine) writes frames that drop dead
+ * locals, so code a patch inserts after one must not read a local the frame no longer holds.
  * No jar on disk holds Forge-patched classes with SRG names (an instance makes them at run time), so the srg mode
  * renames the forgeSrc jar's classes from MCP to SRG names itself, walking superclasses for inherited members.
  * Both sides are checked: the server's patch set, then the client's.
@@ -34,6 +43,9 @@ import java.util.zip.ZipFile;
 public final class PatchCheck {
 
     public static void main(String[] args) throws Exception {
+        if ("dump".equals(args[0])) {
+            System.exit(dump(new java.io.File(args[1])));
+        }
         Asm.srg = "srg".equals(args[0]);
         ZipFile game = new ZipFile(args[1]);
         int next = 2;
@@ -84,6 +96,52 @@ public final class PatchCheck {
         }
         System.out.println(errors == 0 ? "PATCHCHECK OK" : "PATCHCHECK FAILED: " + errors + " problem(s)");
         System.exit(errors == 0 ? 0 : 1);
+    }
+
+    /** The dump mode: every patch whose class is in the directory. */
+    private static int dump(java.io.File dir) throws Exception {
+        Asm.srg = true;
+        int errors = 0;
+        int checked = 0;
+        for (boolean client : new boolean[] {false, true}) {
+            System.out.println("== " + (client ? "client" : "server") + " patches, dumped classes in " + dir);
+            for (ClassPatch patch : HeightTransformer.all(client)) {
+                java.io.File f = new java.io.File(dir, patch.target + ".class");
+                if (!f.isFile()) {
+                    System.out.println("   (skipped " + patch.target + ": not dumped)");
+                    continue;
+                }
+                byte[] in = java.nio.file.Files.readAllBytes(f.toPath());
+                int version = ((in[6] & 0xFF) << 8) | (in[7] & 0xFF);
+                if (version > 52) {
+                    // Cleanroom's transformers write some classes at their own Java version (69 for Java 25); this
+                    // tool's ASM 5 reads up to Java 8, and none of these classes uses a later constant kind.
+                    System.out.println("   (" + patch.target + ": class version " + version + ", read as 52)");
+                    in[6] = 0;
+                    in[7] = 52;
+                }
+                errors += frames(in, "unpatched ");
+                byte[] out = patch.transform(in);
+                checked++;
+                if (out == in) {
+                    System.out.println("   UNPATCHED " + patch.target);
+                    errors++;
+                    continue;
+                }
+                errors += verify(out);
+            }
+            for (String line : PatchReport.lines()) {
+                System.out.println("   " + line);
+            }
+            errors += PatchReport.missed().size();
+            PatchReport.clear();
+        }
+        if (checked == 0) {
+            System.out.println("   no patched class in " + dir);
+            errors++;
+        }
+        System.out.println(errors == 0 ? "PATCHCHECK OK" : "PATCHCHECK FAILED: " + errors + " problem(s)");
+        return errors == 0 ? 0 : 1;
     }
 
     private static java.util.Map<String, String> mappings;
@@ -144,6 +202,85 @@ public final class PatchCheck {
             } catch (AnalyzerException e) {
                 System.out.println("   VERIFY " + node.name + "." + m.name + m.desc + ": " + e.getMessage());
                 errors++;
+            }
+        }
+        return errors + frames(bytes, "");
+    }
+
+    /**
+     * The frame check (see the class comment), over every method. {@code what} prefixes the messages ("unpatched "
+     * for an input class, to tell a pre-existing oddity from one a patch made).
+     */
+    private static int frames(byte[] bytes, String what) {
+        ClassNode node = new ClassNode();
+        new ClassReader(bytes).accept(node, ClassReader.EXPAND_FRAMES);
+        if ((node.version & 0xFFFF) < org.objectweb.asm.Opcodes.V1_6) {
+            return 0;
+        }
+        int errors = 0;
+        for (MethodNode m : node.methods) {
+            if (m.instructions.size() == 0) {
+                continue;
+            }
+            java.util.Set<Integer> live = new java.util.HashSet<Integer>();
+            int slot = 0;
+            if ((m.access & org.objectweb.asm.Opcodes.ACC_STATIC) == 0) {
+                live.add(slot++);
+            }
+            for (org.objectweb.asm.Type t : org.objectweb.asm.Type.getArgumentTypes(m.desc)) {
+                live.add(slot);
+                if (t.getSize() == 2) {
+                    live.add(slot + 1);
+                }
+                slot += t.getSize();
+            }
+            boolean needFrame = false;
+            for (org.objectweb.asm.tree.AbstractInsnNode i = m.instructions.getFirst(); i != null; i = i.getNext()) {
+                if (i instanceof org.objectweb.asm.tree.FrameNode) {
+                    org.objectweb.asm.tree.FrameNode f = (org.objectweb.asm.tree.FrameNode) i;
+                    live.clear();
+                    int s = 0;
+                    if (f.local != null) {
+                        for (Object o : f.local) {
+                            boolean wide = o == org.objectweb.asm.Opcodes.LONG || o == org.objectweb.asm.Opcodes.DOUBLE;
+                            if (o != org.objectweb.asm.Opcodes.TOP) {
+                                live.add(s);
+                                if (wide) {
+                                    live.add(s + 1);
+                                }
+                            }
+                            s += wide ? 2 : 1;
+                        }
+                    }
+                    needFrame = false;
+                    continue;
+                }
+                int op = i.getOpcode();
+                if (op < 0) {
+                    continue;
+                }
+                String at = what + node.name + "." + m.name + m.desc + " at instruction " + m.instructions.indexOf(i);
+                if (needFrame) {
+                    System.out.println("   FRAME " + at + ": code after an unconditional jump has no frame");
+                    errors++;
+                    needFrame = false;
+                }
+                if (i instanceof VarInsnNode || i instanceof org.objectweb.asm.tree.IincInsnNode) {
+                    int var = i instanceof VarInsnNode ? ((VarInsnNode) i).var : ((org.objectweb.asm.tree.IincInsnNode) i).var;
+                    boolean store = op >= org.objectweb.asm.Opcodes.ISTORE && op <= org.objectweb.asm.Opcodes.ASTORE;
+                    if (store) {
+                        live.add(var);
+                        if (op == org.objectweb.asm.Opcodes.LSTORE || op == org.objectweb.asm.Opcodes.DSTORE) {
+                            live.add(var + 1);
+                        }
+                    } else if (!live.contains(var)) {
+                        System.out.println("   FRAME " + at + ": reads local " + var + ", which the frame before it does not hold");
+                        errors++;
+                    }
+                }
+                needFrame = op == org.objectweb.asm.Opcodes.GOTO || op == org.objectweb.asm.Opcodes.ATHROW
+                        || (op >= org.objectweb.asm.Opcodes.IRETURN && op <= org.objectweb.asm.Opcodes.RETURN)
+                        || op == org.objectweb.asm.Opcodes.TABLESWITCH || op == org.objectweb.asm.Opcodes.LOOKUPSWITCH;
             }
         }
         return errors;
