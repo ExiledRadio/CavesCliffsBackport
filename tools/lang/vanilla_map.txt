@@ -1,0 +1,3 @@
+# our.key = mojang.key forces a match; our.key = ! forces "ours". Read by build_langs.py.
+# The falling stalactite entity is the pointed dripstone block falling.
+entity.cavesandcliffsbackport.falling_stalactite.name = block.minecraft.pointed_dripstone

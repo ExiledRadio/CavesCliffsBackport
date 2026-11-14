@@ -12,7 +12,9 @@ them against the resources:
   * every texture an element uses resolves and the file exists;
   * every item model request resolves the same way, and every item of the mod has one;
   * every item has a language entry;
-  * every sound event in sounds.json points at files that exist.
+  * every sound event in sounds.json points at files that exist;
+  * each of the family's 18 other languages (Rule 4) has a lang file with every en_us key, no key en_us
+    lacks and no empty value, and pack.mcmeta says pack_format 3 (2 would make 1.12.2 rewrite them).
 
 Vanilla parents and textures come from the 1.12.2 client jar in the Gradle cache.
 
@@ -222,6 +224,50 @@ OLD_LANG = set(l.split("=", 1)[0] for l in jar.read("assets/minecraft/lang/en_us
 LANG = open(os.path.join(ASSETS, MODID, "lang", "en_us.lang"), encoding="utf-8").read()
 
 
+# Rule 4 of the family plan: the eighteen languages besides English (1.12.2's lowercase file names).
+LANGUAGES = ["es_es", "es_mx", "es_ar", "es_uy", "es_ve", "pt_br", "fr_fr", "de_de", "ru_ru", "zh_cn",
+             "ja_jp", "ko_kr", "it_it", "pl_pl", "tr_tr", "uk_ua", "zh_tw", "nl_nl"]
+
+
+def lang_keys(path):
+    """@return {key: value} of a lang file, adding an error for each duplicate key."""
+    out = {}
+    for line in open(path, encoding="utf-8"):
+        line = line.rstrip("\r\n")
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        if key in out:
+            errors.append("%s: duplicate key %s" % (os.path.basename(path), key))
+        out[key] = value
+    return out
+
+
+def check_languages():
+    lang_dir = os.path.join(ASSETS, MODID, "lang")
+    english = lang_keys(os.path.join(lang_dir, "en_us.lang"))
+    mcmeta = os.path.join(ROOT, "src", "main", "resources", "pack.mcmeta")
+    if not os.path.exists(mcmeta):
+        errors.append("pack.mcmeta missing: 1.12.2 would look for en_US.lang and find none of the lang files")
+    elif json.load(open(mcmeta, encoding="utf-8"))["pack"].get("pack_format") != 3:
+        errors.append("pack.mcmeta: pack_format must be 3 for lowercase lang file names")
+    for code in LANGUAGES:
+        path = os.path.join(lang_dir, code + ".lang")
+        if not os.path.exists(path):
+            errors.append("lang %s: no file" % code)
+            continue
+        values = lang_keys(path)
+        for key in english:
+            if key not in values:
+                errors.append("lang %s: missing %s" % (code, key))
+            elif not values[key].strip():
+                errors.append("lang %s: empty %s" % (code, key))
+        for key in values:
+            if key not in english:
+                errors.append("lang %s: %s is not in en_us" % (code, key))
+    return len(LANGUAGES), len(english)
+
+
 def main():
     run = os.path.join(ROOT, "eclipse")
     states = [l.rstrip("\n").split("\t") for l in open(os.path.join(run, "selftest-states.txt"), encoding="utf-8") if l.strip()]
@@ -229,10 +275,11 @@ def main():
     nblocks, nstates = check_blocks(states, LANG)
     nitems = check_items(items, LANG)
     nsounds = check_sounds()
+    nlangs, nkeys = check_languages()
     for e in errors:
         print("FAIL", e)
-    print("%d blocks, %d states, %d item models, %d sound files checked, %d errors"
-          % (nblocks, nstates, nitems, nsounds, len(errors)))
+    print("%d blocks, %d states, %d item models, %d sound files, %d languages x %d keys checked, %d errors"
+          % (nblocks, nstates, nitems, nsounds, nlangs, nkeys, len(errors)))
     sys.exit(1 if errors else 0)
 
 
