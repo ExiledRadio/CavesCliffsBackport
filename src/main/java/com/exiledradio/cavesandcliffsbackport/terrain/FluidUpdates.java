@@ -40,9 +40,10 @@ import java.util.WeakHashMap;
  *
  * <p>Per position, as 1.18:
  * <ul>
- *   <li>a still or flowing liquid gets its tick now: BlockDynamicLiquid.updateTick on the still state, which spreads
- *       a source down and to the sides as FlowingFluid.tick does and leaves the source still (no mixing check on the
- *       source itself, as 1.18's tick has none);</li>
+ *   <li>a still or flowing liquid gets its tick now: a still one is first made the flowing block, as 1.12's
+ *       BlockStaticLiquid.updateLiquid does, then BlockDynamicLiquid.updateTick runs on the flowing state, which
+ *       spreads a source down and to the sides as FlowingFluid.tick does (every block it places ticks in turn) and
+ *       leaves the source still (no mixing check on the source itself, as 1.18's tick has none);</li>
  *   <li>post-processing of any other block: a plant that cannot stay goes without a drop (1.18's updateShape gives
  *       air), anything else gets a neighbor update (sand and gravel over a lake fall, glow lichen loses faces
  *       without support).</li>
@@ -194,12 +195,17 @@ public final class FluidUpdates {
             if (block instanceof BlockLiquid) {
                 BlockDynamicLiquid flowing = BlockLiquid.getFlowingBlock(state.getMaterial());
                 BlockPos at = pos.toImmutable();
-                if (block == flowing) {
-                    block.updateTick(world, at, state, world.rand);
-                } else {
-                    // The still state: placeStaticBlock leaves it as it is, the spread runs.
-                    flowing.updateTick(world, at, state, world.rand);
+                if (block != flowing) {
+                    // As 1.12 wakes a still liquid (BlockStaticLiquid.updateLiquid): the flowing block goes in first,
+                    // and its tick is given that state. The tick takes the fluid it spreads from the state it gets
+                    // (Fluidlogged API's FluidFlowHandler.updateDynamic: FluidState.of(state)), so a still state
+                    // spread still blocks with no tick of their own, and the flow stopped one block out.
+                    state = flowing.getDefaultState()
+                            .withProperty(BlockLiquid.LEVEL, state.getValue(BlockLiquid.LEVEL));
+                    world.setBlockState(at, state, 2);
                 }
+                // The tick at once (1.18's delay 0); a source spreads and goes back to still (placeStaticBlock).
+                flowing.updateTick(world, at, state, world.rand);
                 ticked++;
                 continue;
             }

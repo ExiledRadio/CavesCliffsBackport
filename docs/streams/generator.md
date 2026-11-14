@@ -109,8 +109,11 @@ fewer in any chunk of four test areas.
 chunk's list to `FluidUpdates`, which runs it at the end of the world tick after the chunk and its eight neighbors are
 loaded and the four populations that write into it are done; until then the list waits with the chunk (in its NBT,
 `cavesandcliffsbackport.PendingUpdates`, if it is saved first). Per position: a still or flowing liquid gets
-`BlockDynamicLiquid.updateTick` at once, on the still state (it spreads the source down and to the sides as
-`FlowingFluid.tick` does and leaves the source still and unmixed, as 1.18's tick does); a plant that cannot stay is
+`BlockDynamicLiquid.updateTick` at once, on the flowing state, a still one first made the flowing block as 1.12's
+`BlockStaticLiquid.updateLiquid` does (it spreads the source down and to the sides as `FlowingFluid.tick` does, every
+block it places ticks in turn, and it leaves the source still and unmixed, as 1.18's tick does). Ticking the still state
+spread only one block: Fluidlogged API runs the tick as `FluidFlowHandler.updateDynamic(FluidState.of(state))`, so
+the flow placed still blocks with no tick of their own. A plant that cannot stay is
 removed without a drop (1.18's `updateShape` gives air); anything else gets a neighbor update (sand and gravel over a
 lake fall after 2 ticks, as `FallingBlock.updateShape` schedules them; glow lichen drops faces without support).
 
@@ -346,6 +349,13 @@ had chunks when this generator first saw it).
     into their hole and 8 of 8 aquifer edges (marks without a spring) flowed. `MarkStats <seed> <cx> <cz> 12` over four 12x12
     areas (seeds 42 twice, 12345, 8675309): 3.5 to 7.1 positions per chunk, at most 34 in one chunk. TerrainCheck: ALL
     IDENTICAL; `PipelineBench 42 16 0`: checksum d70ea2ca54f75550, unchanged.
+*   Generated fluids keep flowing until they settle (`TerrainFlowSelfTest`, `terrainflow`, in `all`, in a Caves &
+    Cliffs world): fresh 9x9 chunks at block 1500, -1700. Closed flat rooms are built without updates at a lava spring
+    (y -50), a water spring, and a lava and a water aquifer edge; after the chunk's updates and 1,500 ticks, lava covers
+    exactly the 25 blocks 3 out (levels 2, 4, 6) and water the 113 blocks 7 out (levels 1 to 7), all still. The area's
+    own springs and edges leave no flowing block, and no liquid over air, without a tick. Before the fix: 5 failures
+    (5 blocks per room, 3 stuck aquifer blocks), with Fluidlogged API on the classpath (as in the pack); passes with it
+    as without it.
 *   Other mods' decoration events: the family rig (`docs/streams/packcompat.md`, fixed item 6), Quark r1.6-179 and
     QuarkRotN r1.6-192 in Caves & Cliffs and Default worlds. `TreeGateCheck 42 8`: with the stone kinds denied no
     diorite or andesite is left (114,434 without) and the trees are unchanged. (Its tree check fails at seed 42, side 8
