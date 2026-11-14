@@ -362,4 +362,14 @@ public final class HeightHooks {
         int slot = HeightLayout.sectionSlot(sectionY);
         return slot < all.length ? all[slot] : null;
     }
+
+    /**
+     * OptiFine's {@code RenderChunkUtils.getCountBlocks}: {@code sections[sectionY]} by our slots, null outside the
+     * array (a vanilla world's 16 sections read as before).
+     */
+    @Nullable
+    public static ExtendedBlockStorage sectionAt(ExtendedBlockStorage[] sections, int sectionY) {
+        int slot = HeightLayout.sectionSlot(sectionY);
+        return slot < sections.length ? sections[slot] : null;
+    }
 }

@@ -43,6 +43,8 @@ target class. No mixins, no MixinBooter.
     is gone, and the bottom of the world is then open at y 0.
 *   **Not with**: Alfheim, Phosphor, Cubic Chunks, Caves Not Cliffs, Farmer's Future Delight. With any of them
     installed, the world type is not offered (and the log says why); everything else in the mod works.
+*   **Works with OptiFine** (HD U G5), shaders and their shadows included. In a Caves & Cliffs world OptiFine's
+    single-player "chunk visibility" saving (skipping empty heights above the terrain) is off.
 
 ## How it works
 
@@ -73,7 +75,8 @@ off for the session. No patch replaces a method; most change one constant or one
 the two head guards below (each with its own frame). Sorting index 1500, after Fluidlogged API's 1401, so its
 patterns see vanilla's code. 74 sites on a dedicated server (RLCraft's and Dregora's too), 97 on a client; 98 in
 RLCraft's client (RenderLib, Entity Culling); 100 in the Dregora Celeritas pack and 104 in the Fast one (Nothirium and
-VintageFix), counted before `getHeight.return` was added. `-Dcavesandcliffsbackport.height.dump=<dir>` writes every target class there as
+VintageFix), counted before `getHeight.return` was added; 101 in the Dregora Shaders pack (OptiFine) and 106 with
+OptiFine and Nothirium. `-Dcavesandcliffsbackport.height.dump=<dir>` writes every target class there as
 the transformer receives it, to read what another mod left when a site is not found.
 
 | Class | Sites |
@@ -92,13 +95,14 @@ the transformer receives it, to read what another mod left when a site is not fo
 | `WorldEntitySpawner` | spawn attempts draw y from the world's bottom (one random draw either way) |
 | `WorldInfo` | a new save's world type (the `defaultForNewWorlds` switch) |
 | `NetHandlerPlayClient`, `WorldClient` (client) | chunk receive and unload re-render the whole height |
-| `ViewFrustum` (client) | 24 render chunks high, index from the bottom |
-| `RenderGlobal` (client) | neighbour walk bounds, the start chunk for a camera above or below the world, render-chunk entity lists |
+| `ViewFrustum` (client) | 24 render chunks high, index from the bottom (`getRenderChunk`: vanilla's `intFloorDiv(y, 16)` or OptiFine's `y >> 4`) |
+| `RenderGlobal` (client) | neighbour walk bounds, the start chunk for a camera above or below the world, render-chunk entity lists; with OptiFine, its `maxChunkY` local starts at the world's top instead of 256 (see below) |
 | `EntityRenderer` (client) | the fog darkens near the world's bottom (`(y - minY) * voidFogFactor`, as 1.18) |
 | Celeritas 2.5.0 (client) | `VintageRenderSectionManager.create`: the world's section range; `isSectionVisuallyEmpty`, `WorldSlice.prepare`, `ClonedChunkSection.getChunkSection` (head redirect): section y to our slot |
 | Nothirium 0.4.9 (client) | `WorldUtil.getSection` (head redirect): our slots; `RenderChunk.markDirty`, `Direction.UP/DOWN.isFaceCulled`: the world's section range |
 | VintageFix 0.7.0 | its `chunk_access.ChunkMixin` overwrite of `Chunk.getBlockState`: the same three sites as vanilla's |
 | RenderLib 1.2.8 (client, RLCraft) | replaces `RenderGlobal.renderEntities`' per-render-chunk loop with its own over the world's entity list: the `renderEntities.list` site is then not needed (and counted found) |
+| OptiFine HD U G5 (client) | `ChunkVisibility.getMaxChunkY` (head guard): the world's top in an extended world; `RenderChunkUtils.getCountBlocks` (Render Regions' buffer sizes): `sections[y >> 4]` by our slot (it threw below 0) |
 | Entity Culling 6.3.1 (client, RLCraft) | `CachedBlockAccess.getChunkSection`: `getBlockStorageArray()[sectionY]` becomes our slot (it threw for a section below 0); 6.5.0 (Dregora) reads through its own 0-15 check and needs nothing |
 
 **Saving** (`HeightHooks`): vanilla's `Sections` gets exactly slots 0-15, written by vanilla's own code; slots 16-23
@@ -119,6 +123,27 @@ would in any world that holds those heights (ore veins, gravel and dirt blobs, a
 **Other renderers.** Celeritas and Nothirium replace vanilla's chunk rendering with their own; each reads sections
 and bounds its section range itself, and those few places are patched in their own classes (only present with that
 mod). Client-only types appear only in `height/asm/ClientPatches` as strings and in the client test.
+
+**OptiFine** (HD U G5; plan and site list in `docs/streams/optifine-alfheim.md`, section 1). OptiFine ships its
+own `RenderGlobal` and `ViewFrustum`, and four of our client sites differ there. Each such site is a pair of patterns
+on the same patch, vanilla's and OptiFine's: exactly one must match (with its exact count) and the other not at all,
+and the drift report names the variant (`setupTerrain.startHeight (OptiFine)`). Nothing looks for OptiFine by class
+name; the bytecode decides. The OptiFine variants:
+
+| Site | OptiFine's code | Change |
+| --- | --- | --- |
+| `ViewFrustum.getRenderChunk.y` | `y >> 4` | `y - minY` first (a multiple of 16, so still a floor) |
+| `RenderGlobal.getRenderChunkOffset` | `(pos, chunk, facing, fog, maxChunkY)`: reads the frustum's cached neighbour, drops one above `maxChunkY` | nothing; checked to hold no 0/256 compare (bounded by the frustum and by `maxChunkY`) |
+| `RenderGlobal.setupTerrain.maxChunkY` | a local, `256` (the top for the neighbour walk, the start height and the shadow pass) | the world's top |
+| `RenderGlobal.setupTerrain.startHeight` | `y > 0 ? Math.min(maxChunkY, 248) : 8` | `y > minY`, `topSectionMiddle`, `bottomSectionMiddle` |
+| `RenderGlobal.setupTerrain.above` | 1 match (Forge's MC-73139 frustum expansion is gone) | as vanilla's |
+| `ChunkVisibility.getMaxChunkY` | lowers `maxChunkY` to the highest non-empty section slot around the player (single player only); slots 20-23 are y -64..-1 | head guard: the world's top in an extended world, so its "chunk visibility" culling is off there |
+| `RenderChunkUtils.getCountBlocks` | `getBlockStorageArray()[y >> 4]` (Render Regions) | `HeightHooks.sectionAt(sections, sectionY)`: our slot, null outside |
+
+The shadow pass needs nothing of its own: it walks the frustum or looks chunks up through `getRenderChunk`, and
+filters by `maxChunkY`. Code inserted into OptiFine's classes reads a parameter only at the method's first instruction
+(ProGuard's frames drop dead locals later on); `PatchCheck`'s frame check reads the class's own frames to hold every
+patch to that.
 
 **Overrides.** A mixin `@Overwrite` applied after our transformer replaces a patched method silently, and the drift
 report cannot see it. Two guards: when the first extended world is constructed, `World.isOutsideBuildHeight` and
@@ -177,12 +202,30 @@ transformer chain, our transformer gives that overwrite the same three sites as 
     arrival's portal is built in the room at y -50. 139/0 (83 sites on the server). A Default world's portal lit
     the same way at y 70 lights (full suite 4451/0). PatchCheck (Forge 2847's patched classes, dev and SRG names):
     all nine new sites found, the verifier and the frame check clean.
+*   **OptiFine HD U G5** (branch `cc-optifine`; `docs/streams/packcompat.md`, "OptiFine"):
+    *   **Offline drift** (`tools/height/run.sh PatchCheck mcp|srg`, Forge 2847 plus Celeritas, Nothirium and
+        VintageFix): every site found, vanilla's variants; `PatchCheck dump G:\VBPTest\cc-packs\study\optifine\dump`
+        (the classes the Shaders copy's transformer received, OptiFine's own included): all seven OptiFine variants
+        found. ASM's verifier and the new frame check over every patched class and its input: clean (the frame check
+        fails, as it should, when the head guard's frame is left out).
+    *   **Dregora Shaders copy** (`G:\VBPTest\cc-packs\prism\ccheight-Shaders`: Cleanroom 0.5.17, OptiFine G5,
+        Complementary v4.6; Alfheim removed): client test **42/0**, 101 sites. The report names the OptiFine variants;
+        `ChunkVisibility.getMaxChunkY` answers 320; the render chunks at y -64 and 304 are compiled and in
+        `renderInfos` (which spans y -64..304) with Complementary on, in the shadow pass, with Render Regions on and
+        with shaders off. Screenshots of the world bottom, a cave at y -50 and the view from y 280 look right.
+    *   **Dregora Shaders + Nothirium copy** (`ccheight-ShadersNothirium`): **32/0**, 106 sites; Nothirium's render
+        chunks at y -64 and 304 compiled (OptiFine's `setupTerrain` does not run there). One run in three crashed out
+        of direct memory in Nothirium's chunk compiler (packcompat.md).
+    *   **Default world** in the Shaders copy: 13/0, vanilla's frustum, no slowdown against `height.enabled=false`.
+    *   `-Pselftest=all` from a fresh world 4447/0; `sh tools/height/selftest.sh` 130/0 (74 sites).
 *   **Speed** (EXTENDED_HEIGHT section 4, `python tools/height/bench.py`, E-cores): an extended world generates in
     1.11x vanilla's time per chunk (13.30 vs 11.96 ms), 1.15x with saving; a Default world with the coremod on, 1.04x.
 
 ## Not tested
 
-*   OptiFine (the Shaders instances): extended height refuses with it (`docs/streams/packcompat.md`).
+*   OptiFine builds other than HD U G5: a pattern that does not match turns extended height off, as before.
+*   OptiFine with the camera above y 320 or below -64: OptiFine's start chunk lacks Forge's MC-73139 fix, so looking
+    level from outside the world can start with nothing visible (vanilla OptiFine does the same above 256).
 *   Looking at the screen in the packs: the checks read the renderers' state (sections built, not empty), not pixels.
 *   Overrides other than the ones found in Dregora: the probes cover `World.isOutsideBuildHeight`/`isValid` and
     `Chunk.getBlockState`; another mod overwriting another patched method would still go unnoticed until something

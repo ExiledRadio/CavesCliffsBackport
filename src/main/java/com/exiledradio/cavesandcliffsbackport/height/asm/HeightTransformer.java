@@ -57,6 +57,8 @@ public final class HeightTransformer implements IClassTransformer {
                 new ClientPatches.NothiriumRenderChunkPatch(),
                 new ClientPatches.NothiriumDirectionPatch(true),
                 new ClientPatches.NothiriumDirectionPatch(false),
+                new ClientPatches.OptiFineChunkVisibilityPatch(),
+                new ClientPatches.OptiFineRenderChunkUtilsPatch(),
         };
         ClassPatch[] out = new ClassPatch[common.length + clientOnly.length];
         System.arraycopy(common, 0, out, 0, common.length);
@@ -73,9 +75,9 @@ public final class HeightTransformer implements IClassTransformer {
                 // is an error.
                 continue;
             }
-            // Celeritas, Nothirium and VintageFix classes exist only with those mods installed.
+            // Celeritas, Nothirium, VintageFix and OptiFine classes exist only with those mods installed.
             out.put(p.target, !p.target.startsWith("org.taumc.") && !p.target.startsWith("meldexun.")
-                    && !p.target.startsWith("org.embeddedt.vintagefix."));
+                    && !p.target.startsWith("org.embeddedt.vintagefix.") && !p.target.startsWith("net.optifine."));
         }
         return Collections.unmodifiableMap(out);
     }
