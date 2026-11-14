@@ -50,6 +50,16 @@ public final class HeightLayout {
         return sectionY >= EXTENDED_MIN_Y >> 4 ? EXTENDED_SECTIONS + sectionY : OUTSIDE;
     }
 
+    /**
+     * The y origin of OptiFine's render region holding block y: 0 at every height. OptiFine's Render Regions put a
+     * render chunk's vertices in one buffer per 256x256 column, relative to the region's corner, and draw that
+     * buffer from y 0; for the vertices it subtracts {@code y >> 8 << 8}, which is 0 only for y 0-255 (y -64..-1
+     * gave -256, drawing the deep sections 256 blocks up in the sky; y 256-319 gave 256, drawing them 256 down).
+     */
+    public static int renderRegionY(int y) {
+        return 0;
+    }
+
     /** The lowest block y of a slot (what {@code ExtendedBlockStorage.getYLocation()} answers for it). */
     public static int slotBase(int slot) {
         return slot < FIRST_LOW_SLOT ? slot << 4 : (slot - EXTENDED_SECTIONS) << 4;
