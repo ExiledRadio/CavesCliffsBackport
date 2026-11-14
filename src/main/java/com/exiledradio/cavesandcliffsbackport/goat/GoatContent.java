@@ -43,6 +43,9 @@ public final class GoatContent {
             PREPARE_RAM = new SoundEvent[2], RAM_IMPACT = new SoundEvent[2];
     static SoundEvent step;
 
+    /** Wild Update Backport's copy of this goat, for games without this mod. */
+    public static final ResourceLocation WILD_UPDATE_GOAT = new ResourceLocation("wildupdatebackport", "goat");
+
     private static boolean registered;
 
     private GoatContent() {
@@ -95,6 +98,25 @@ public final class GoatContent {
                 .egg(0xA59B8E, 0x55493E)
                 .build());
         registered = true;
+    }
+
+    /**
+     * Wild Update Backport's copy of this goat ({@code wildupdatebackport:goat}, registered when this mod is
+     * absent, family rule 1) becomes this goat when this mod is added to its world. The copy is this code with
+     * the same saved tags, so the remap is a rename: Forge keeps the old name as an alias, and every saved goat
+     * and spawn egg loads as ours.
+     */
+    @SubscribeEvent
+    public static void remapCopy(RegistryEvent.MissingMappings<EntityEntry> event) {
+        if (!on()) {
+            return;
+        }
+        EntityEntry ours = ForgeRegistries.ENTITIES.getValue(Content.id("goat"));
+        for (RegistryEvent.MissingMappings.Mapping<EntityEntry> mapping : event.getAllMappings()) {
+            if (WILD_UPDATE_GOAT.equals(mapping.key) && ours != null) {
+                mapping.remap(ours);
+            }
+        }
     }
 
     /** From the mod's init, after every registry: natural spawning. */
