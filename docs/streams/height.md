@@ -25,7 +25,7 @@ target class. No mixins, no MixinBooter.
     name it falls back to does not match. It was there before this stream.
 4.  `PLAN.md`'s "Build and test" still says "No mixins, no coremod, no ASM"; that is now true of every stream but
     this one.
-5.  **Modpacks (RLCraft Revamped / Dregora):** besides dropping Alfheim, a pack must set StellarCore's
+5.  **Modpacks (RLCraft Revamped / Dregora):** Alfheim 1.6 stays (branch `cc-alfheim`, "Alfheim" below); a pack must set StellarCore's
     `B:WorldBlockPosJudgement=false` (`config/stellar_core.cfg`). That option `@Overwrite`s
     `World.isOutsideBuildHeight` with vanilla's 0-255 check after our patch ran; the world then stays 0-255 and the
     log says which option to change (see "Overrides" below). VintageFix and Nothirium need nothing: both are handled.
@@ -41,8 +41,11 @@ target class. No mixins, no MixinBooter.
 *   **Existing worlds stay as they are**: y 0 to 255, for good. So do the Nether and the End.
 *   **Removing the mod** from a Caves & Cliffs world keeps everything from y 0 to 255; what was below 0 and above 255
     is gone, and the bottom of the world is then open at y 0.
-*   **Not with**: Alfheim, Phosphor, Cubic Chunks, Caves Not Cliffs, Farmer's Future Delight. With any of them
-    installed, the world type is not offered (and the log says why); everything else in the mod works.
+*   **With Alfheim 1.6**: its faster lighting works at every height. Its lighting then covers x and z within
+    16,777,216 blocks of 0 (the world border is at 29,999,984; Alfheim alone covers 33,554,432).
+*   **Not with**: Phosphor, Cubic Chunks, Caves Not Cliffs, Farmer's Future Delight, or an Alfheim other than 1.6.
+    With any of them installed, the world type is not offered (and the log says why); everything else in the mod
+    works.
 *   **Works with OptiFine** (HD U G5), shaders and their shadows included. In a Caves & Cliffs world OptiFine's
     single-player "chunk visibility" saving (skipping empty heights above the terrain) is off.
 
@@ -64,8 +67,9 @@ so a vanilla chunk treats every other height as outside, exactly as before. Out 
 
 **When it is on.** All of these, checked in pre-init (`HeightContent`): the config switch; the coremod ran (it reads
 the switch from the config file itself, and checks for the conflicting mods' coremod classes, before Forge's config
-exists); no conflicting mod id (`alfheim`, `phosphor-lighting`, `cubicchunks`, `cavesnotcliffs`, `cavebiomesapi`,
-`farmers_future_delight`); and every patch site found. To know the last before any world exists, pre-init loads every
+exists); no conflicting mod id (`phosphor-lighting`, `cubicchunks`, `cavesnotcliffs`, `cavebiomesapi`,
+`farmers_future_delight`); Alfheim, if installed, exactly 1.6 (the coremod reads `ProjectConstants.VERSION` from its
+class file, pre-init the mod's version) with its three classes reported patched; and every patch site found. To know the last before any world exists, pre-init loads every
 patched class (which is when the transformer patches it) and reads the drift report. Off, the world type is not
 registered and no world is extended; every patched site then computes what vanilla's did.
 
@@ -112,7 +116,7 @@ fills a 24-slot array from `Sections`, then ours.
 **Sending.** A full chunk packet carries all 24 sections (mask `0xFFFFFF`; the format is vanilla's). A block change
 outside 0-255 cannot go into vanilla's short (`x << 12 | z << 8 | y`), so it waits in a side list until the entry's
 next update and goes as one `SPacketBlockChange` (plus the block entity's update); `SPacketMultiBlockChange` is
-unchanged. A client with extended height off (Alfheim installed on it) in an extended server world reads the 16
+unchanged. A client with extended height off (an Alfheim other than 1.6 installed on it, say) in an extended server world reads the 16
 sections it has room for and ignores the rest: no crash, but it does not see below 0.
 
 **The world type** (`WorldTypeCavesAndCliffs`): biomes and the generator are exactly the Default type's (same seed,
@@ -152,6 +156,28 @@ line naming the cause (StellarCore's `WorldBlockPosJudgement` is the one found);
 y -64 back from its first chunk and logs an error if a `Chunk.getBlockState` override hides it. VintageFix's
 `chunk_access.ChunkMixin` is such an overwrite (of `Chunk.getBlockState`); since Mixin reads mixin classes through the
 transformer chain, our transformer gives that overwrite the same three sites as vanilla's method.
+
+**Alfheim 1.6** (`height/asm/AlfheimPatches`, `height/AlfheimHooks`, `height/AlfheimKey`; plan and the confirmed
+site list: `docs/streams/optifine-alfheim.md`, section 2). Alfheim replaces vanilla's lighting engine with mixins and
+`@Overwrite`s two of the methods we patch (`Chunk.relightBlock`, `Chunk.getLightFor`). Its mixin classes and its
+`LightingEngine` are patched as Mixin reads them, like VintageFix's (reported as `AlfheimLightingEngine.*`,
+`AlfheimChunkMixin.*`, `AlfheimChunkCacheMixin.*`; 26 recorded sites, the last one a check: on a server Forge strips
+the client-only `ChunkCache` overwrite, on a client its body must read no height):
+*   **The position key** (`AlfheimKey`): Alfheim's is z 26 bits, x 26, y 8 (raw), light 4, with "outside 0-255" a
+    carry into the light bits. With extended height on it becomes z 25, x 25, y 9 (as y + 64), a spare bit, light 4;
+    encode and decode go to `AlfheimHooks` (head redirects), the neighbor shifts in `<clinit>` and the two inlined
+    chunk masks follow, and the carry test becomes a compare with the world's height. The layout is fixed once, as a
+    constant, the first time the engine is used; `HeightContent` refuses extended height if it was already fixed
+    narrow. With extended height off every site computes Alfheim's own values, and with the coremod off (config,
+    a conflict, an Alfheim other than 1.6) Alfheim is not touched.
+*   **A queued position outside the world's height is skipped** in the queue's first pass (as an unloaded chunk is):
+    Alfheim's `World.checkLightFor` enqueues any position, and its own key garbles such a y into one inside.
+*   **Sections by slot** in `LightingEngine.fetchNeighborDataFromCursor`, `ChunkMixin.alfheim$getCachedLightFor`
+    (every light read), `alfheim$relightSkylightColumn` and the `generateSkylightMap` redirect; section bases by
+    `slotBase` in `alfheim$initChunkLighting`.
+*   **Boundary flags** stay a `short` per boundary and the save format stays Alfheim's: in an extended world a bit
+    covers two sections (12 bits for 24), so a flagged pair rechecks 32 blocks of height instead of 16.
+*   **Our lost sites back** in its `relightBlock` overwrite: the `& 255` height mask and the `> 0` bottom.
 
 ## Tested
 
@@ -218,6 +244,35 @@ transformer chain, our transformer gives that overwrite the same three sites as 
         of direct memory in Nothirium's chunk compiler (packcompat.md).
     *   **Default world** in the Shaders copy: 13/0, vanilla's frustum, no slowdown against `height.enabled=false`.
     *   `-Pselftest=all` from a fresh world 4447/0; `sh tools/height/selftest.sh` 130/0 (74 sites).
+*   **Alfheim 1.6** (branch `cc-alfheim`, 2026-11-14):
+    *   **Unit test** `tools/height/run.sh AlfheimKeyTest`: 1,881,621/1,881,621. The wide key's round trip for every y
+        -64..319 at x, z = 0, ±1, ±15/16/17, ±(2^24 - 1), -2^24 and others; the light bits change nothing; each
+        neighbor shift lands on the neighbor and the chunk mask tells same chunk from another; `outside` exactly at
+        -65 and 320 (extended), -1 and 256 (a vanilla world); the narrow layout equals Alfheim 1.6's formulas and
+        constants literally; every section in exactly one flag bit, every block in exactly one bit's range.
+    *   **Offline drift**: `PatchCheck` with Alfheim-1.6.jar as the fifth jar, SRG and MCP names: the 26 sites found
+        on each side, ASM's verifier clean; the patched `LightingEngine` also loads under `-Xverify:all`.
+    *   **Dedicated server** (`G:\VBPTest\cc_alfheim_srv`: Forge 2860, MixinBooter 11.18, Red Core 0.7.1, Alfheim
+        1.6, Fluidlogged API 3.3.3, Backport Core 1.2.0 (playtest), the test jar; port 25881; stopped by its PID):
+        `height,alfheimlight1` on a fresh Caves & Cliffs world 159/0 (100 sites); `alfheimlight2` on the same world
+        after the restart 21/0. `selftest/AlfheimLightSelfTest`: a torch at y -30 lights 13 across a chunk border and 8
+        six blocks into the next chunk; a shaft from the surface to -60 has sky light 15 at its bottom and 12 three
+        blocks into a corridor, 0 when capped at y -1, 15 again when opened; a roof at y 310 leaves 12 under its
+        middle; no boundary flag uses a bit above 11; after the restart every value read back the same, the open
+        shaft capped goes dark and the capped one opened gets 15 and 12 again.
+    *   **Default worlds unchanged**: `alfheimdump` (a hash of sky and block light at every block of 9x9 chunks around
+        0, 0) on a fresh Default world, seed `alfheim`, with extended height on and with the config switch off
+        (Alfheim then untouched): the same file.
+    *   **Pregen** (that server, seed 1718, a fresh 48x48-chunk Chunk Pregenerator square at 2000, 2000, alternating,
+        twice each; another session's dev server was running a suite part of the time): Caves & Cliffs world with
+        Alfheim 8 and 12 s (288, 192 chunks/s), without Alfheim 18 and 18 s (128); Default world with Alfheim, extended
+        height on 20 and 21 s, off 21 and 21 s. Alfheim stays faster than vanilla lighting with our patches in, and the
+        patches cost nothing measurable in a Default world.
+    *   **Dregora Cleanroom copies, Alfheim kept** (`G:\VBPTest\cc_height_inst`, StellarCore's option off, the
+        `-Pclienttest` jar, Core 1.2.0 playtest; the client test now also reads block light at -59 and -60 on the
+        client): **Fast 17/0** (131 sites), **Celeritas 24/0** (127 sites) with Demonica moved aside: with the
+        current Core, Demonica 0.6.0's Iris mixin crashes the Celeritas instance at start-up whatever this mod does
+        (see "Not tested"). Both copies were put back as they were.
 *   **Speed** (EXTENDED_HEIGHT section 4, `python tools/height/bench.py`, E-cores): an extended world generates in
     1.11x vanilla's time per chunk (13.30 vs 11.96 ms), 1.15x with saving; a Default world with the coremod on, 1.04x.
 
@@ -234,3 +289,12 @@ transformer chain, our transformer gives that overwrite the same three sites as 
     through the integrated server).
 *   Mods that index sections themselves (EXTENDED_HEIGHT 1.3): none checked yet.
 *   Fluidlogged blocks outside 0-255 (EXTENDED_HEIGHT 3: its storage packs y in 8 bits) are still open with Core.
+*   **Alfheim with Demonica**: the Dregora Celeritas instance does not start with the current Backport Core 1.2.0
+    (every build with `FeatureSource`, which this mod needs): Core's P24 (`SunriseTransformer`, `RenderGlobal.renderSky`)
+    leaves Demonica 0.6.0's `RenderGlobalIrisMixin.demonica$beginSunset` without its target ("Critical injection
+    failure ... (0/1) succeeded"), and `RenderGlobal` fails to load. A Core issue, not Alfheim's or this branch's;
+    the Celeritas client test ran with Demonica moved aside.
+*   Alfheim's boundary flags across an unloaded neighbor: Alfheim sets them only for empty (all-air) sections, which
+    below 0 are rare; the bit mapping is unit-tested and no flag bit above 11 was seen, but a relight that depends on a
+    flag set while the neighbor was unloaded was not staged.
+*   Alfheim in the Shaders copies (with section 1, OptiFine).

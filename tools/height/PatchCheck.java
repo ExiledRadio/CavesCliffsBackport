@@ -25,8 +25,8 @@ import java.util.zip.ZipFile;
  * (stack shapes and types). Exit status 1 on any miss or verify error.
  *
  * <pre>
- *   tools/height/run.sh PatchCheck mcp    &lt;forgeSrc jar&gt;  [celeritas jar [nothirium jar [vintagefix jar]]]   (dev names)
- *   tools/height/run.sh PatchCheck srg    &lt;forgeSrc jar&gt;  &lt;mcp-srg.srg&gt; [celeritas jar [nothirium jar [vintagefix jar]]]   (an instance's names)
+ *   tools/height/run.sh PatchCheck mcp    &lt;forgeSrc jar&gt;  [celeritas jar [nothirium jar [vintagefix jar [alfheim jar]]]]   (dev names)
+ *   tools/height/run.sh PatchCheck srg    &lt;forgeSrc jar&gt;  &lt;mcp-srg.srg&gt; [celeritas jar [nothirium jar [vintagefix jar [alfheim jar]]]]   (an instance's names)
  *   tools/height/run.sh PatchCheck dump   &lt;dir&gt;   (classes an instance's transformer received, SRG names)
  * </pre>
  * The dump mode reads {@code <dir>/<class name>.class} as written by {@code -Dcavesandcliffsbackport.height.dump}
@@ -64,6 +64,7 @@ public final class PatchCheck {
         ZipFile celeritas = args.length > next ? new ZipFile(args[next]) : null;
         ZipFile nothirium = args.length > next + 1 ? new ZipFile(args[next + 1]) : null;
         ZipFile vintagefix = args.length > next + 2 ? new ZipFile(args[next + 2]) : null;
+        ZipFile alfheim = args.length > next + 3 ? new ZipFile(args[next + 3]) : null;
         int errors = 0;
         for (boolean client : new boolean[] {false, true}) {
             System.out.println("== " + (client ? "client" : "server") + " patches, " + args[0] + " names");
@@ -71,7 +72,8 @@ public final class PatchCheck {
                 String path = patch.target.replace('.', '/') + ".class";
                 ZipFile from = patch.target.startsWith("org.taumc.") ? celeritas
                         : patch.target.startsWith("meldexun.") ? nothirium
-                        : patch.target.startsWith("org.embeddedt.vintagefix.") ? vintagefix : game;
+                        : patch.target.startsWith("org.embeddedt.vintagefix.") ? vintagefix
+                        : patch.target.startsWith("dev.redstudio.alfheim.") ? alfheim : game;
                 if (from == null || from.getEntry(path) == null) {
                     System.out.println("   (skipped " + patch.target + ": not in the given jars)");
                     continue;

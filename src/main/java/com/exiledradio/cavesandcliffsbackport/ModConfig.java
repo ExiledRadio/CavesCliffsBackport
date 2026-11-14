@@ -459,8 +459,8 @@ public final class ModConfig {
                 "and every world created before, keep y 0 to 255 for good.",
                 "Removing this mod from such a world keeps everything from y 0 to 255 and loses everything below and above:",
                 "the bedrock is at y -64, so the bottom of the world is then open at y 0.",
-                "Refuses to turn on, and says so in the log, when Alfheim, Phosphor, Cubic Chunks, Caves Not Cliffs or",
-                "Farmer's Future Delight is installed: they change the same parts of the game."})
+                "Refuses to turn on, and says so in the log, when Phosphor, Cubic Chunks, Caves Not Cliffs, an Alfheim",
+                "other than 1.6 or Farmer's Future Delight is installed: they change the same parts of the game."})
         @Config.LangKey("config.cavesandcliffsbackport.height.enabled")
         public boolean enabled = true;
 

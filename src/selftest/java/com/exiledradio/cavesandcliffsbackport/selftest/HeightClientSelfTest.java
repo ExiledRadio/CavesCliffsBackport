@@ -255,6 +255,11 @@ public final class HeightClientSelfTest {
                 block(mc, this.px + 1, -59, this.pz + 2, Blocks.GLOWSTONE);
                 block(mc, this.px + 2, 319, this.pz, Blocks.GLASS);
                 block(mc, this.px + 3, 319, this.pz, Blocks.GOLD_BLOCK);
+                // The client's light below 0 (Alfheim's engine, when installed, runs on the client too).
+                eq(14, mc.world.getLightFor(net.minecraft.world.EnumSkyBlock.BLOCK, new BlockPos(this.px + 1, -59, this.pz + 1)),
+                        "client block light at y -59 next to the glowstone");
+                eq(11, mc.world.getLightFor(net.minecraft.world.EnumSkyBlock.BLOCK, new BlockPos(this.px, -60, this.pz)),
+                        "client block light at y -60, 4 from the glowstone");
                 compiled(mc, new BlockPos(this.px, -62, this.pz), "the render chunk at y -64 (camera at y -61)");
                 if (optifine()) {
                     eq(320, maxChunkY(mc), "OptiFine: ChunkVisibility.getMaxChunkY");

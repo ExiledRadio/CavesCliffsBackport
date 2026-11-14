@@ -1,6 +1,6 @@
 #!/bin/sh
 # Compiles stream H's plain parts (the section layout, the coremod's patch classes) on their own and runs a tool class:
-#   tools/height/run.sh HeightLayoutTest
+#   tools/height/run.sh HeightLayoutTest | AlfheimKeyTest
 #   tools/height/run.sh PatchCheck mcp|srg <minecraft jar> [celeritas jar]
 # Needs a JDK 8+ (JAVA_HOME) and the ForgeGradle caches (ASM, launchwrapper, log4j, the Forge jars).
 set -e
@@ -20,7 +20,7 @@ cp="$cp$sep$(find_jar org.apache.logging.log4j/log4j-api log4j-api-2.8.1.jar)$se
 cp="$cp$sep$(find_jar com.google.code.findbugs/jsr305 jsr305-3.0.1.jar)$sep$(win "$forge/forgeSrc-1.12.2-14.23.5.2847.jar")"
 mkdir -p "$out"
 src="$root/src/main/java/com/exiledradio/cavesandcliffsbackport/height"
-"$javac" -nowarn -encoding UTF-8 -cp "$cp" -d "$out" "$src"/HeightLayout.java "$src"/asm/*.java "$here"/*.java
+"$javac" -nowarn -encoding UTF-8 -cp "$cp" -d "$out" "$src"/HeightLayout.java "$src"/AlfheimKey.java "$src"/asm/*.java "$here"/*.java
 main="$1"
 shift
 "$java" $JAVA_OPTS -cp "$(win "$out")$sep$cp" "$main" "$@"

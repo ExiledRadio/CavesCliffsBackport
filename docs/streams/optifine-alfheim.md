@@ -1,7 +1,7 @@
 # Plan: extended height with OptiFine and Alfheim
 
-Status: plan (2026-11-13). Section 1 (OptiFine) is built on branch `cc-optifine` (2026-11-14; results in
-`docs/streams/height.md` "Tested" and `docs/streams/packcompat.md` "OptiFine"); section 2 (Alfheim) is not. Scope: the `cavesandcliffs` world type (y -64..319) working
+Status: built (2026-11-14). Section 1 (OptiFine) on branch `cc-optifine`, section 2 (Alfheim) on branch
+`cc-alfheim`; results in `docs/streams/height.md` "Tested" and `docs/streams/packcompat.md`. Scope: the `cavesandcliffs` world type (y -64..319) working
 with OptiFine 1.12.2 HD U G5 (including shaders and the shadow pass) and with Alfheim 1.6. Phosphor stays refused.
 
 Same rules as stream H (`docs/streams/height.md`): our own ASM in `height/asm`, no mixins, no MixinBooter; every site
@@ -200,6 +200,48 @@ About 20 sites. The key constants (52, 26, 2^25, the masks) appear only in A1-A6
 (before writing hooks): whether `ChunkCacheMixin`'s body
 reads a section; `BlockStateContainerMixin.alfheim$getLightFor` (neighbor brightness) only calls patched `World`
 methods; `WorldChunkSlice` (x/z only, looks fine).
+
+### Confirmed against Alfheim 1.6 (2026-11-14, before coding)
+
+Read from `Alfheim-1.6.jar` (javap of every class in `study\alfheim`). What changed from the table above:
+
+* **A14 needs nothing.** `ChunkCacheMixin.func_175629_a` is `getBlockState(pos)` then
+  `ILightInfoProvider.alfheim$getLightFor(cache, type, pos)`; no section read, no height constant. The state's
+  `alfheim$getLightFor` (`BlockStateContainerMixin` and `$StateImplementationMixin` forward to `BlockMixin`) reads
+  `ILightLevelProvider.alfheim$getLight`, which is `ChunkCache.getLightFor` (patched, range-checked) or
+  `World.getLightFor` (patched). Neighbor brightness goes through the same two with `pos.offset(facing)`. A14 is a
+  presence check: the body has no `getY()` and exactly one `getBlockState`; any other body is a miss.
+* **A12 needs nothing.** `alfheim$initSkylightForSection` already compares the height map with
+  `section.getYLocation()`, not an index. Recorded as found when that compare is there.
+* **A11: only the section base.** The `isAreaLoaded` box (y 0..255) only gates whether the box meets the world's
+  height; 0..255 meets both kinds of world, and the rest of the test is x/z. The base `i * 16` becomes `slotBase(i)`.
+* **A13: one bottom, not two.** Alfheim's `relightBlock` has one `j > 0` loop bottom and the `& 255` mask, and reads
+  no section.
+* **A9 in detail:** `sections[yMin >> 4]` (slot), `yMin > 0` (world's bottom), the flag loop's `sections[s]` where
+  `s` is a section y (to `sectionSlot`), and the two `1 << s` (to `flagMask`, set and test). Its other section-y
+  arithmetic (`s << 4`, `(s << 4) + 15` for the neighbor columns) is real heights and stays.
+* **New A15: `ChunkMixin.setLightForRedirectGenerateSkylightMap`** (its `@Redirect` in `generateSkylightMap`) reads
+  `storageArrays[pos.getY() >> 4]`: throws below 0. To slot.
+* **A4 becomes a site: the queue's first loop skips positions outside the world.** `World.checkLightFor` (Alfheim's
+  overwrite) enqueues any position, unchecked. In Alfheim's own layout a y outside 0..255 garbles into one inside
+  (256 becomes the light bits and decodes as 0, -1 as 255): harmless. In the new layout y 320 or -65 decodes as itself,
+  and the chunk's section read would throw. `processLightUpdatesForTypeInner` already skips a null chunk there; the
+  chunk becomes null (`AlfheimHooks.inWorld`) when the decoded y is outside the world's range. Neighbors are filtered
+  by A6; nothing else enters the queues.
+* **The layout is decided once, as a constant.** `AlfheimHooks.WIDE` (static final) is read the first time the
+  engine is used, from `HeightContent.allowed()`; `HeightContent` touches it right after deciding and refuses
+  extended height if it was already fixed narrow. With the coremod running but extended height off (a missed site
+  elsewhere), every patched Alfheim site computes Alfheim's own values: encode/decode/shifts/masks/`Y_CHECK` are the
+  narrow ones, `slot`/`slotBase` equal `>> 4`/`<< 4` for 0..255, flags are one per section. With the coremod off
+  (config, conflict, or an Alfheim that is not 1.6) Alfheim's classes are not touched.
+* **Split for testing:** `AlfheimKey` is the plain arithmetic (key layout, flags), unit-tested on its own;
+  `AlfheimHooks` is what the patched sites call (it reads the world's range and `WIDE`, then calls `AlfheimKey`).
+* **Labels:** the patches report as `AlfheimLightingEngine.*`, `AlfheimChunkMixin.*`, `AlfheimChunkCacheMixin.*`
+  (VintageFix's `ChunkMixin` already reports as `ChunkMixin.*`). With Alfheim installed, `HeightContent` also
+  requires all three to be reported patched, and loads `LightingEngine` (not its mixins) at start-up so its sites are
+  in the report before the decision.
+
+Final list: A1-A11, A13, A15 change code (A4 the filter); A12 and A14 are checks. 26 recorded sites (the drift report also records that the fields the sites read exist, and each layout check before a head redirect).
 
 ### Risks
 

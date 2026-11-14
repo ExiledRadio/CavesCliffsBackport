@@ -67,6 +67,9 @@ public final class SelfTestRunner {
             new RestartSelfTest("restartwhole"),
             new RestartSelfTest("restart1"),
             new RestartSelfTest("restart2"),
+            new AlfheimLightSelfTest("alfheimlight1"),
+            new AlfheimLightSelfTest("alfheimlight2"),
+            new AlfheimLightSelfTest("alfheimdump"),
             new HeightBenchSelfTest(),
             new GenScanSelfTest(),
             new ModernFeaturesSelfTest(),
@@ -103,8 +106,9 @@ public final class SelfTestRunner {
             check.fail("dump: " + e);
         }
         for (SelfTest test : TESTS) {
-            // The restart phases need a server of their own each (tools/terrain/restart.sh): never part of "all".
-            boolean all = this.wanted.contains("all") && !(test instanceof RestartSelfTest);
+            // The restart and Alfheim phases need a server of their own each (tools/terrain/restart.sh, Alfheim installed):
+            // never part of "all".
+            boolean all = this.wanted.contains("all") && !(test instanceof RestartSelfTest) && !(test instanceof AlfheimLightSelfTest);
             if (all || this.wanted.contains(test.name())) {
                 check.section(test.name());
                 clearEntities(world);

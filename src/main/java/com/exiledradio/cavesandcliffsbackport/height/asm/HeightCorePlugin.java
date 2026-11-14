@@ -36,7 +36,6 @@ public final class HeightCorePlugin implements IFMLLoadingPlugin {
      * check works before any mod is loaded.
      */
     public static final String[][] CONFLICTS = {
-            {"Alfheim", "dev/redstudio/alfheim/asm/AlfheimPlugin.class"},
             {"Phosphor", "me/jellysquid/mods/phosphor/core/PhosphorFMLPlugin.class"},
             {"Phosphor", "me/jellysquid/mods/phosphor/core/PhosphorFMLLoadingPlugin.class"},
             {"Cubic Chunks", "io/github/opencubicchunks/cubicchunks/core/asm/coremod/CubicChunksCoreMod.class"},
@@ -97,6 +96,13 @@ public final class HeightCorePlugin implements IFMLLoadingPlugin {
                 }
             }
         }
+        if (why == null && Launch.classLoader != null) {
+            String alfheim = alfheimVersion();
+            if (alfheim != null && !ALFHEIM_VERSION.equals(alfheim)) {
+                why = "Alfheim " + alfheim + " is installed (extended height is made for Alfheim " + ALFHEIM_VERSION
+                        + " exactly; its lighting code is patched site by site)";
+            }
+        }
         refusal = why;
         active = why == null;
         if (active) {
@@ -104,6 +110,34 @@ public final class HeightCorePlugin implements IFMLLoadingPlugin {
         } else {
             LOG.warn("Extended height is OFF for this session: {}. Every world keeps y 0-255.", why);
         }
+    }
+
+    /** The one Alfheim version the {@code AlfheimPatches} are written for. */
+    public static final String ALFHEIM_VERSION = "1.6";
+
+    /**
+     * The installed Alfheim's version (its {@code ProjectConstants.VERSION}, read from the class file: no mod is
+     * loaded yet), "unknown" when that cannot be read, or null when Alfheim is not installed.
+     */
+    @Nullable
+    static String alfheimVersion() {
+        if (Launch.classLoader.getResource("dev/redstudio/alfheim/asm/AlfheimPlugin.class") == null) {
+            return null;
+        }
+        try (java.io.InputStream in = Launch.classLoader.getResourceAsStream("dev/redstudio/alfheim/ProjectConstants.class")) {
+            if (in != null) {
+                org.objectweb.asm.tree.ClassNode node = new org.objectweb.asm.tree.ClassNode();
+                new org.objectweb.asm.ClassReader(in).accept(node, org.objectweb.asm.ClassReader.SKIP_CODE);
+                for (org.objectweb.asm.tree.FieldNode f : node.fields) {
+                    if ("VERSION".equals(f.name) && f.value instanceof String) {
+                        return (String) f.value;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("Extended height: could not read Alfheim's version.", e);
+        }
+        return "unknown";
     }
 
     /** The config file's {@code height { B:enabled=... }}, read as text (Forge's config is not loaded yet). */
