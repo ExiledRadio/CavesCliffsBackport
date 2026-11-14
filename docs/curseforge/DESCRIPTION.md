@@ -75,4 +75,4 @@ Removing this mod from a Caves & Cliffs world keeps everything from y 0 to 255. 
 
 Also by me: [Village & Pillage Backport](https://www.curseforge.com/minecraft/mc-mods/villager-backport), all of 1.14 on 1.12.2, [Update Aquatic Backport](https://www.curseforge.com/minecraft/mc-mods/update-aquatic-backport), all of 1.13 on 1.12.2, [Buzzy Bees Backport](https://www.curseforge.com/minecraft/mc-mods/buzzy-bees-backport), all of 1.15 on 1.12.2, [Nether Update Backport](https://www.curseforge.com/minecraft/mc-mods/nether-update-backport), all of 1.16 on 1.12.2, and [Enchantment Recipes](https://www.curseforge.com/minecraft/mc-mods/rlcraft-enchantment-recipes), which lets you craft enchanted books from mod materials.
 
-Not affiliated with Mojang. Source: [github.com/ExiledRadio/CavesAndCliffsBackport](https://github.com/ExiledRadio/CavesAndCliffsBackport)
+Not affiliated with Mojang. Source: [github.com/ExiledRadio/CavesCliffsBackport](https://github.com/ExiledRadio/CavesCliffsBackport)
