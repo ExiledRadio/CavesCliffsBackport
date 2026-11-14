@@ -73,6 +73,7 @@ public final class SelfTestRunner {
             new HeightBenchSelfTest(),
             new GenScanSelfTest(),
             new ModernFeaturesSelfTest(),
+            new FlatSelfTest(),
     };
 
     private final List<String> wanted;
@@ -106,9 +107,10 @@ public final class SelfTestRunner {
             check.fail("dump: " + e);
         }
         for (SelfTest test : TESTS) {
-            // The restart and Alfheim phases need a server of their own each (tools/terrain/restart.sh, Alfheim installed):
-            // never part of "all".
-            boolean all = this.wanted.contains("all") && !(test instanceof RestartSelfTest) && !(test instanceof AlfheimLightSelfTest);
+            // The restart and Alfheim phases need a server of their own each (tools/terrain/restart.sh, Alfheim installed),
+            // and the flat test a superflat world (tools/flat/selftest.sh): never part of "all".
+            boolean all = this.wanted.contains("all") && !(test instanceof RestartSelfTest) && !(test instanceof AlfheimLightSelfTest)
+                    && !(test instanceof FlatSelfTest);
             if (all || this.wanted.contains(test.name())) {
                 check.section(test.name());
                 clearEntities(world);

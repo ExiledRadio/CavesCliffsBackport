@@ -12,7 +12,6 @@ import net.minecraft.init.Blocks;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldType;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.IChunkGenerator;
 import net.minecraftforge.fml.common.IWorldGenerator;
@@ -69,7 +68,8 @@ public final class GeodeGenerator implements IWorldGenerator {
         if (com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain.owns(world)) {
             return; // the 1.18 terrain places its own
         }
-        if (!ModConfig.amethyst.geodes || world.provider.getDimension() != 0 || world.getWorldType() == WorldType.FLAT
+        if (!ModConfig.amethyst.geodes || world.provider.getDimension() != 0
+                || !com.exiledradio.backportcore.worldgen.FlatWorlds.decoration(world) // superflat: only with decoration, as 1.17's geodes
                 || ModConfig.amethyst.geodeRarity <= 0 || random.nextInt(ModConfig.amethyst.geodeRarity) != 0) {
             return;
         }

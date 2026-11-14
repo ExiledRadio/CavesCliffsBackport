@@ -11,7 +11,6 @@ import net.minecraft.init.Blocks;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldType;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.IChunkGenerator;
 import net.minecraftforge.fml.common.IWorldGenerator;
@@ -54,11 +53,14 @@ public final class LushCaveGenerator implements IWorldGenerator {
         if (com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain.owns(world)) {
             return; // the 1.18 terrain places its own
         }
-        if (world.provider.getDimension() != 0 || world.getWorldType() == WorldType.FLAT) {
+        // Superflat: glow lichen only with decoration (1.17 and 1.18 put it in every Overworld biome); never the lush
+        // caves, a cave biome's features, since a superflat world is all its preset's biome.
+        if (world.provider.getDimension() != 0 || !com.exiledradio.backportcore.worldgen.FlatWorlds.decoration(world)) {
             return;
         }
+        boolean flat = com.exiledradio.backportcore.worldgen.FlatWorlds.isFlat(world);
         int x0 = chunkX * 16 + 8, z0 = chunkZ * 16 + 8;
-        if (ModConfig.caves.lushRegions) {
+        if (ModConfig.caves.lushRegions && !flat) {
             decorate(world, random, x0, z0, world.getSeed());
             if (ModConfig.lush.azaleaTrees) {
                 rootedTrees(world, random, x0, z0, world.getSeed());

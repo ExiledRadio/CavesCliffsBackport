@@ -88,7 +88,9 @@ public final class DeepslateLayer implements IWorldGenerator {
 
     static boolean eligible(World world) {
         if (world.isRemote || !DeepslateContent.enabled() || !ModConfig.deepslate.generate
-                || com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain.owns(world)) {
+                || com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain.owns(world)
+                // A superflat world's layers are exactly its preset's, whatever skipWorldTypes says.
+                || com.exiledradio.backportcore.worldgen.FlatWorlds.isFlat(world)) {
             return false;
         }
         int dim = world.provider.getDimension();

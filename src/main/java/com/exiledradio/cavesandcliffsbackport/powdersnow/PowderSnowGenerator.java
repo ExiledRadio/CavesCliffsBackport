@@ -36,7 +36,8 @@ public final class PowderSnowGenerator implements IWorldGenerator {
             return; // the 1.18 terrain places its own
         }
         ModConfig.PowderSnow config = ModConfig.powderSnow;
-        if (!config.patches || !world.provider.isSurfaceWorld() || world.getWorldType() == WorldType.FLAT
+        if (!config.patches || !world.provider.isSurfaceWorld()
+                || world.getWorldType() == WorldType.FLAT // superflat never: 1.18 makes it with a surface rule, not a feature
                 || random.nextInt(config.patchRarity) != 0) {
             return;
         }

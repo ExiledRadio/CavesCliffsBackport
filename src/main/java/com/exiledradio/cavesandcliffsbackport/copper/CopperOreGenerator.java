@@ -32,7 +32,7 @@ public final class CopperOreGenerator implements IWorldGenerator {
             return; // the 1.18 terrain places its own
         }
         if (!ModConfig.copper.generate || world.provider.getDimension() != 0
-                || world.getWorldType() == net.minecraft.world.WorldType.FLAT) {
+                || !com.exiledradio.backportcore.worldgen.FlatWorlds.decoration(world)) { // superflat: only with decoration, as 1.17's ores
             return;
         }
         int lo = Math.max(1, ModConfig.copper.minY);
