@@ -21,7 +21,7 @@ import java.util.Random;
 /**
  * The oxidation chain every copper block belongs to: what it oxidizes into, what scraping returns it to,
  * and its waxed and unwaxed forms. The table and the aging rule are Backport Core's ({@code copper.Oxidation},
- * Core 1.2.0), shared with every family mod's copper: Tricky Trials' bulbs, doors and grates wait for this mod's
+ * Core 1.3.0), shared with every family mod's copper: Tricky Trials' bulbs, doors and grates wait for this mod's
  * copper and age with it, and an axe or honeycomb from either mod treats both alike. Wax items stay here.
  *
  * <h2>Oxidation (current Java)</h2>

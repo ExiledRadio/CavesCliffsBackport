@@ -97,11 +97,10 @@ public final class HeightContent {
                 return mod[1] + " is installed (it changes the same height and lighting code)";
             }
         }
-        // Early builds of Backport Core 1.2.0 lack what the 1.18 generator implements; making a Caves & Cliffs world
-        // with one would crash with NoClassDefFoundError.
+        // A Backport Core without its terrain API (before 1.3.0; Forge's version check normally stops that first)
+        // would crash with NoClassDefFoundError when a Caves & Cliffs world is made.
         if (HeightContent.class.getClassLoader().getResource("com/exiledradio/backportcore/terrain/TerrainSource.class") == null) {
-            return "the installed Backport Core is an early 1.2.0 build without its terrain API; install the current "
-                    + "Backport Core 1.2.0";
+            return "the installed Backport Core has no terrain API; install Backport Core 1.3.0 or newer";
         }
         ClassLoader loader = HeightContent.class.getClassLoader();
         for (Map.Entry<String, Boolean> target : HeightTransformer.targets(client).entrySet()) {

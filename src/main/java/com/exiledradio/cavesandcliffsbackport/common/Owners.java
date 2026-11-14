@@ -41,7 +41,7 @@ public final class Owners {
 
     /**
      * Tells Core's ownership table about one stream's blocks, from pre-init: they are ours, and we register them
-     * exactly while the stream is on (Core 1.2.0's per-name {@code provides}). With the stream off, Core answers
+     * exactly while the stream is on (Core 1.3.0's per-name {@code provides}). With the stream off, Core answers
      * "nobody provides them" and later updates register their own copies; turned on again in a world that has
      * those copies, Core renames them to ours ({@code ownership.CopyRemapping}).
      *
