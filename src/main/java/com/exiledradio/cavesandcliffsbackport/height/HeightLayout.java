@@ -68,6 +68,16 @@ public final class HeightLayout {
     }
 
     /**
+     * The vanilla section (0-15) nearest to entity list {@code index} of a chunk with {@code lists} entity lists
+     * (indexed from the bottom: list 0 holds y -64 in an extended chunk, y 0 in a vanilla one): what a mod's 16-entry
+     * per-section array should use for that list, the same section as {@code clamp(y >> 4, 0, 15)} picks for a y in it.
+     */
+    public static int listSection(int index, int lists) {
+        int section = lists == EXTENDED_SECTIONS ? index + (EXTENDED_MIN_Y >> 4) : index;
+        return section < 0 ? 0 : section >= VANILLA_SECTIONS ? VANILLA_SECTIONS - 1 : section;
+    }
+
+    /**
      * Patched in front of vanilla's {@code y >= 0} section guards: 0 (passes) for every y an extended world can hold,
      * so the guard that follows ({@code slot(y) < length}) decides; -1 below that.
      */
