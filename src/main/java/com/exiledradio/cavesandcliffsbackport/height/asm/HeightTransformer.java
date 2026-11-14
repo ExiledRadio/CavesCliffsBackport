@@ -36,6 +36,9 @@ public final class HeightTransformer implements IClassTransformer {
                 new SmallPatches.SpawnerPatch(),
                 new SmallPatches.WorldInfoPatch(),
                 new SmallPatches.VintageFixChunkPatch(),
+                new PortalPatches.BlockPortalPatch(),
+                new PortalPatches.BlockPortalSizePatch(),
+                new PortalPatches.TeleporterPatch(),
         };
         if (!client) {
             return common;

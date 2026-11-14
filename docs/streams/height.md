@@ -37,7 +37,7 @@ target class. No mixins, no MixinBooter.
     `height.defaultForNewWorlds` makes it the default. The terrain is still 1.12's until the 1.18 terrain arrives: the
     new depth below y 0 is solid stone down to bedrock at y -64, and mobs spawn there as anywhere underground.
 *   Everything works at every height: building (up to 319 and down to -64), light, saving, multiplayer, rendering,
-    falling into the void (from y -128).
+    falling into the void (from y -128), Nether portals (lit, found and built anywhere from -64 to 319).
 *   **Existing worlds stay as they are**: y 0 to 255, for good. So do the Nether and the End.
 *   **Removing the mod** from a Caves & Cliffs world keeps everything from y 0 to 255; what was below 0 and above 255
     is gone, and the bottom of the world is then open at y 0.
@@ -87,6 +87,7 @@ the transformer receives it, to read what another mod left when a site is not fo
 | `PlayerChunkMapEntry` | `blockChanged` head guard: y outside 0-255 goes to a side list; `update` sends those as single-block packets |
 | `Entity` | the void at the world's bottom - 64 |
 | `EntityFallingBlock` | the 1-and-256 limits for dropping a falling block |
+| `BlockPortal`, `BlockPortal$Size`, `Teleporter` | Nether portals as in 1.18 (`PortalPatches`): lighting a frame from above its bottom row walks down to the world's bottom (was `y > 0`: a frame below 0 lit only from its bottom row); zombie pigmen come out of a portal below 0; an arrival's search for a portal (`placeInExistingPortal`) and the column search for where to build one (`makePortal`, both passes, its floor walk too) run down to the world's bottom instead of 0. Their tops are `getActualHeight()` (already 320); the fallback height stays clamped to 70 and up, as 1.18's `max(minY + 1, 70)` |
 | `NetHandlerPlayServer` | the build limit (placing, breaking) is the world's top |
 | `WorldEntitySpawner` | spawn attempts draw y from the world's bottom (one random draw either way) |
 | `WorldInfo` | a new save's world type (the `defaultForNewWorlds` switch) |
@@ -169,6 +170,13 @@ transformer chain, our transformer gives that overwrite the same three sites as 
         Found and fixed on the way: Celeritas's `WorldSlice.prepare` crashed on section y -4, and
         `isSectionVisuallyEmpty` would have hidden every section below 0; VintageFix's `Chunk.getBlockState` overwrite
         hid every block below 0.
+*   **Nether portals** (branch `cc-portal-height`): in the height self-test, before the fix four checks failed (a
+    frame at y -60 lit from its middle row got no portal, no pigman, the trip back from the Nether landed at y 59,
+    the arrival's portal was not built in a room at y -50); after it all pass: the portals at y -60 and 300 light, a
+    pig goes through the one at -60 to the Nether (a portal is made there) and comes back to (x, -60, z), and the
+    arrival's portal is built in the room at y -50. 139/0 (83 sites on the server). A Default world's portal lit
+    the same way at y 70 lights (full suite 4451/0). PatchCheck (Forge 2847's patched classes, dev and SRG names):
+    all nine new sites found, the verifier and the frame check clean.
 *   **Speed** (EXTENDED_HEIGHT section 4, `python tools/height/bench.py`, E-cores): an extended world generates in
     1.11x vanilla's time per chunk (13.30 vs 11.96 ms), 1.15x with saving; a Default world with the coremod on, 1.04x.
 

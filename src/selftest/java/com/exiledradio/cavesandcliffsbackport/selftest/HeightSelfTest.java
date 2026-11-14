@@ -70,6 +70,11 @@ public final class HeightSelfTest implements SelfTest {
             check.eq(0, Heights.minY(world), "a Default overworld's min y");
             check.eq(256, world.getHeight(), "a Default overworld's World.getHeight()");
             check.eq(16, world.getChunk(new BlockPos(X, 0, Z)).getBlockStorageArray().length, "a Default overworld's sections");
+            // Portals as vanilla's: one lit from its middle row at y 70 lights.
+            prepare(world, X + 400, Z, 2);
+            BlockPos portal = frame(world, X + 400, 70, Z);
+            world.setBlockState(portal.up(), Blocks.FIRE.getDefaultState(), 3);
+            check.eq(6, portalBlocks(world, portal), "portal blocks in a frame lit at y 70 in a Default world");
             vanillaWorld(check);
             return;
         }
@@ -87,7 +92,122 @@ public final class HeightSelfTest implements SelfTest {
         voidFall(check, world);
         entities(check, world);
         removalMarkers(check, world);
+        portals(check, world);
         vanillaWorld(check);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Nether portals at every height (1.18.2): lit anywhere from -64 to 319, found over the world's whole height,
+    // and built within the world's bounds.
+    // ---------------------------------------------------------------------------------------------
+
+    private static void portals(Check check, WorldServer world) {
+        MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
+        int x = X + 400;
+        int lowZ = Z;
+        int highZ = Z + 600;
+        int roomZ = Z - 600;
+        prepare(world, x, lowZ, 3);
+        prepare(world, x, highZ, 3);
+        prepare(world, x, roomZ, 3);
+
+        // Lit from the frame's middle row: the lighter walks down to the frame's bottom (vanilla stops at y 0).
+        BlockPos low = frame(world, x, -60, lowZ);
+        world.setBlockState(low.up(), Blocks.FIRE.getDefaultState(), 3);
+        check.eq(6, portalBlocks(world, low), "portal blocks in a frame lit at y -60 (fire in its middle row)");
+        BlockPos high = frame(world, x, 300, highZ);
+        world.setBlockState(high.up(), Blocks.FIRE.getDefaultState(), 3);
+        check.eq(6, portalBlocks(world, high), "portal blocks in a frame lit at y 300");
+
+        // Zombie pigmen come out of a portal below 0 as anywhere (vanilla required the portal above 0).
+        int pigmen = world.getEntitiesWithinAABB(net.minecraft.entity.monster.EntityPigZombie.class,
+                new net.minecraft.util.math.AxisAlignedBB(low).grow(4)).size();
+        Blocks.PORTAL.updateTick(world, low.up(), world.getBlockState(low.up()), new Random() {
+            @Override
+            public int nextInt(int bound) {
+                return 0;
+            }
+        });
+        check.eq(pigmen + 1, world.getEntitiesWithinAABB(net.minecraft.entity.monster.EntityPigZombie.class,
+                new net.minecraft.util.math.AxisAlignedBB(low).grow(4)).size(), "a zombie pigman came out of the portal at y -60");
+
+        // To the Nether and back: the return trip finds the portal below 0.
+        net.minecraft.entity.passive.EntityPig pig = new net.minecraft.entity.passive.EntityPig(world);
+        pig.setLocationAndAngles(low.getX() + 0.5D, low.getY(), low.getZ() + 0.5D, 0F, 0F);
+        world.spawnEntity(pig);
+        pig.setPortal(low);
+        net.minecraft.entity.Entity there = pig.changeDimension(-1);
+        if (!check.ok(there != null && there.dimension == -1, "the pig went through the portal at y -60 to the Nether")) {
+            return;
+        }
+        WorldServer nether = server.getWorld(-1);
+        net.minecraft.world.Teleporter netherPortals = nether.getDefaultTeleporter();
+        check.ok(netherPortals.makePortal(there), "a Nether portal was made for it");
+        netherPortals.placeInExistingPortal(there, there.rotationYaw);
+        BlockPos inNether = new BlockPos(there);
+        if (!check.eq(Blocks.PORTAL, nether.getBlockState(inNether).getBlock(), "the pig stands in the Nether portal")) {
+            return;
+        }
+        there.setPortal(inNether);
+        net.minecraft.entity.Entity back = there.changeDimension(0);
+        check.ok(back != null && back.dimension == 0 && Math.abs(back.posX - (low.getX() + 1)) < 2
+                        && Math.abs(back.posZ - (low.getZ() + 0.5D)) < 2 && back.posY >= -60 && back.posY < -57,
+                "back in the overworld at the portal below 0 (arrived at " + (back == null ? "nowhere" : back.getPosition()) + ")");
+        CavesAndCliffsBackport.LOGGER.info("SELFTEST height: portal trip y -60 -> Nether {} -> {}", inNether,
+                back == null ? null : back.getPosition());
+        if (back != null) {
+            back.setDead();
+        }
+
+        // A portal made for an arrival can be built below 0: in a room at y -50, around the arriving entity.
+        BlockPos room = new BlockPos(x, -50, roomZ);
+        for (BlockPos p : BlockPos.getAllInBox(room.add(-6, 0, -6), room.add(6, 5, 6))) {
+            world.setBlockState(p, Blocks.AIR.getDefaultState(), 2);
+        }
+        for (BlockPos p : BlockPos.getAllInBox(room.add(-6, -1, -6), room.add(6, -1, 6))) {
+            world.setBlockState(p, Blocks.STONE.getDefaultState(), 2);
+        }
+        net.minecraft.entity.passive.EntityPig arriving = new net.minecraft.entity.passive.EntityPig(world);
+        arriving.setLocationAndAngles(room.getX() + 0.5D, room.getY(), room.getZ() + 0.5D, 0F, 0F);
+        check.ok(world.getDefaultTeleporter().makePortal(arriving), "a portal was made for an arrival at y -50");
+        int lowest = Integer.MAX_VALUE;
+        int count = 0;
+        for (BlockPos p : BlockPos.getAllInBox(room.add(-16, -14, -16), room.add(16, 20, 16))) {
+            if (world.getBlockState(p).getBlock() == Blocks.PORTAL) {
+                count++;
+                lowest = Math.min(lowest, p.getY());
+            }
+        }
+        check.ok(count == 6 && lowest >= -50 && lowest < -44, "the arrival's portal is built in the room at y -50 ("
+                + count + " portal blocks, lowest y " + (count == 0 ? "none" : lowest) + ")");
+    }
+
+    /**
+     * An obsidian frame along x, 2 wide and 3 high inside, its inside's bottom left at (x, y, z), cleared around;
+     * answers that corner.
+     */
+    private static BlockPos frame(WorldServer world, int x, int y, int z) {
+        for (BlockPos p : BlockPos.getAllInBox(new BlockPos(x - 2, y - 1, z - 2), new BlockPos(x + 3, y + 4, z + 2))) {
+            world.setBlockState(p, Blocks.AIR.getDefaultState(), 2);
+        }
+        for (int dx = -1; dx <= 2; dx++) {
+            for (int dy = -1; dy <= 3; dy++) {
+                if (dx == -1 || dx == 2 || dy == -1 || dy == 3) {
+                    world.setBlockState(new BlockPos(x + dx, y + dy, z), Blocks.OBSIDIAN.getDefaultState(), 2);
+                }
+            }
+        }
+        return new BlockPos(x, y, z);
+    }
+
+    private static int portalBlocks(WorldServer world, BlockPos corner) {
+        int n = 0;
+        for (BlockPos p : BlockPos.getAllInBox(corner, corner.add(1, 2, 0))) {
+            if (world.getBlockState(p).getBlock() == Blocks.PORTAL) {
+                n++;
+            }
+        }
+        return n;
     }
 
     /**
