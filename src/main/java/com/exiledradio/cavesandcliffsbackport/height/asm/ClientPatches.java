@@ -311,6 +311,44 @@ final class ClientPatches {
         }
     }
 
+    /**
+     * {@code RenderChunk.preRenderBlocks}: with OptiFine's Render Regions on, a render chunk's vertices are written
+     * relative to its region's corner {@code (x >> 8 << 8, y >> 8 << 8, z >> 8 << 8)}, but the region is drawn from
+     * y 0. The y term is 0 for y 0-255 only: below 0 it is -256, which drew every section from y -64 to -1 256 blocks
+     * up (caves floating over the mountains), and above 255 it drew y 256-319 inside the ground. The y term becomes
+     * {@code HeightLayout.renderRegionY}, 0. Vanilla's method has no regions (its {@code setTranslation(-x, -y, -z)}
+     * is right at every height): nothing to patch then.
+     */
+    static final class RenderChunkPatch extends ClassPatch {
+        RenderChunkPatch() {
+            super("net.minecraft.client.renderer.chunk.RenderChunk");
+        }
+
+        @Override
+        protected void apply(ClassNode node) {
+            MethodNode m = method(node, "preRenderBlocks", "func_178573_a",
+                    "(Lnet/minecraft/client/renderer/BufferBuilder;Lnet/minecraft/util/math/BlockPos;)V");
+            if (m == null) {
+                return;
+            }
+            List<AbstractInsnNode> region = Asm.find(m, getY(), iload(-1), op(Opcodes.ISHR), iload(-1), op(Opcodes.ISHL), istore(-1));
+            int plain = Asm.find(m, getY(), op(Opcodes.INEG), op(Opcodes.I2D)).size();
+            if (region.isEmpty()) {
+                site("preRenderBlocks.regionY (vanilla: no render regions)", plain == 1);
+                return;
+            }
+            AbstractInsnNode n = region.get(0);
+            if (!site("preRenderBlocks.regionY (OptiFine)", region.size() == 1 && plain == 1
+                    && ((VarInsnNode) at(n, 1)).var == ((VarInsnNode) at(n, 3)).var)) {
+                return;
+            }
+            for (int k = 0; k < 4; k++) {
+                m.instructions.remove(next(n));
+            }
+            m.instructions.insert(n, layout("renderRegionY", "(I)I"));
+        }
+    }
+
     /** Whether a frame already stands before the method's first instruction (a jump back to it). */
     private static boolean frameAtHead(MethodNode m) {
         for (AbstractInsnNode i = m.instructions.getFirst(); i != null && i.getOpcode() < 0; i = i.getNext()) {

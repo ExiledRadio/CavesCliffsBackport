@@ -62,6 +62,7 @@ public final class HeightTransformer implements IClassTransformer {
                 new ClientPatches.NothiriumDirectionPatch(false),
                 new ClientPatches.OptiFineChunkVisibilityPatch(),
                 new ClientPatches.OptiFineRenderChunkUtilsPatch(),
+                new ClientPatches.RenderChunkPatch(),
         };
         ClassPatch[] out = new ClassPatch[common.length + clientOnly.length];
         System.arraycopy(common, 0, out, 0, common.length);

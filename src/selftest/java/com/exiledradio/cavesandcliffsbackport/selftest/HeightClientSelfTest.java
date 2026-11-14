@@ -301,8 +301,63 @@ public final class HeightClientSelfTest {
                     finish(mc);
                     return;
                 }
-                // Render Regions (O7's path: RenderChunkUtils sizes the region buffers), back in the pocket at -61.
+                // Where blocks are drawn, by pixels, with Render Regions on and shaders off (a plain sky and plain
+                // gold): gold walls at y -40 and y 300, each seen from in front, and the sky over the low one.
                 renderRegions(mc, true);
+                this.regionShaders = shaderName();
+                shaders(mc, "OFF");
+                final int x = this.px + 60;
+                final int z = this.pz;
+                server(mc, world -> {
+                    goldRoom(world, x, -40, z, true);
+                    goldRoom(world, x, 300, z - 300, false);
+                    teleport(world, x + 0.5, -40, z + 0.5, 0F, 0F);
+                });
+                this.wait = 300;
+                this.state = 40;
+                return;
+            }
+            case 40: {
+                int[] g = gold(mc);
+                ok(g[1] * 3 > g[2], "a gold wall at y -40 is drawn at its own height, seen from y -40 (Render Regions on): "
+                        + g[1] + " of " + g[2] + " middle pixels gold");
+                screenshot(mc, "cc-height-regions-y-40");
+                final int x = this.px + 60;
+                final int z = this.pz - 300;
+                server(mc, world -> teleport(world, x + 0.5, 300, z + 0.5, 0F, 0F));
+                this.wait = 200;
+                this.state = 41;
+                return;
+            }
+            case 41: {
+                int[] g = gold(mc);
+                ok(g[1] * 3 > g[2], "a gold wall at y 300 is drawn at its own height, seen from y 300 (Render Regions on): "
+                        + g[1] + " of " + g[2] + " middle pixels gold");
+                screenshot(mc, "cc-height-regions-y300");
+                // 200 blocks north of the low wall, 276 above it, looking down toward it (so its render chunks are in
+                // view): the wall is hidden underground; anything drawn 256 too high hangs in the sky at y 192-255,
+                // where the top of the frame shows only sky (the high room is behind the camera).
+                final int x = this.px + 60;
+                final int z = this.pz - 190;
+                server(mc, world -> teleport(world, x + 0.5, 236, z + 0.5, 0F, 25F));
+                this.wait = 300;
+                this.state = 42;
+                return;
+            }
+            case 42: {
+                int dark = darkSky(mc);
+                ok(dark < 2000, "nothing from below 0 is drawn in the sky (Render Regions on): " + dark
+                        + " dark pixels in the top 40% of the view");
+                screenshot(mc, "cc-height-regions-sky");
+                if (this.regionShaders != null && !"OFF".equals(this.regionShaders)) {
+                    shaders(mc, this.regionShaders);
+                }
+                this.wait = 300;
+                this.state = 43;
+                return;
+            }
+            case 43: {
+                screenshot(mc, "cc-height-regions-sky-shaders");
                 final int x = this.px;
                 final int z = this.pz;
                 server(mc, world -> teleport(world, x + 0.5, -61, z + 0.5, 200F, 35F));
@@ -508,6 +563,92 @@ public final class HeightClientSelfTest {
                     .invoke(null, mc.world, mc.player, mc.gameSettings.renderDistanceChunks);
         } catch (Throwable t) {
             return t.toString();
+        }
+    }
+
+    /** The shader pack to put back after the Render Regions pixel checks. */
+    private String regionShaders;
+
+    /**
+     * Gold pixels in the last frame: {all, in the middle third, middle third's size}. Gold blocks under a plain sky,
+     * shaders off: nothing else in view is that yellow.
+     */
+    private static int[] gold(Minecraft mc) {
+        java.awt.image.BufferedImage img = net.minecraft.util.ScreenShotHelper.createScreenshot(mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
+        int w = img.getWidth();
+        int h = img.getHeight();
+        int all = 0;
+        int middle = 0;
+        int size = 0;
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                int rgb = img.getRGB(x, y);
+                int r = rgb >> 16 & 255;
+                int g = rgb >> 8 & 255;
+                int b = rgb & 255;
+                boolean isGold = r > 150 && g > 110 && b < 110 && r > b + 70;
+                boolean inMiddle = x >= w / 3 && x < 2 * w / 3 && y >= h / 3 && y < 2 * h / 3;
+                if (isGold) {
+                    all++;
+                }
+                if (inMiddle) {
+                    size++;
+                    if (isGold) {
+                        middle++;
+                    }
+                }
+            }
+        }
+        CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST gold pixels at y {}: {} in view, {} of {} in the middle",
+                (int) Math.floor(mc.player.posY), all, middle, size);
+        return new int[] {all, middle, size};
+    }
+
+    /** Dark pixels (any block, not sky) in the top 40% of the last frame; shaders off, noon, clear. */
+    private static int darkSky(Minecraft mc) {
+        java.awt.image.BufferedImage img = net.minecraft.util.ScreenShotHelper.createScreenshot(mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
+        int n = 0;
+        for (int y = 0; y < img.getHeight() * 2 / 5; y++) {
+            for (int x = 0; x < img.getWidth(); x++) {
+                int rgb = img.getRGB(x, y);
+                if ((rgb >> 16 & 255) < 110 && (rgb >> 8 & 255) < 110 && (rgb & 255) < 140) {
+                    n++;
+                }
+            }
+        }
+        CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST dark pixels in the top of the sky view at y {}: {}", (int) Math.floor(mc.player.posY), n);
+        return n;
+    }
+
+    /**
+     * A sealed stone room around (x, y, z) with a 15x15 gold wall 10 blocks south of that point (+z), and, for a room
+     * below the surface, a shaft from it to the sky (so the renderer's visibility walk reaches it from above).
+     */
+    private static void goldRoom(WorldServer world, int x, int y, int z, boolean shaft) {
+        for (BlockPos p : BlockPos.getAllInBox(new BlockPos(x - 9, y - 9, z - 4), new BlockPos(x + 9, y + 9, z + 12))) {
+            world.setBlockState(p, Blocks.STONE.getDefaultState(), 2);
+        }
+        for (BlockPos p : BlockPos.getAllInBox(new BlockPos(x - 8, y - 8, z - 3), new BlockPos(x + 8, y + 8, z + 11))) {
+            world.setBlockState(p, Blocks.AIR.getDefaultState(), 2);
+        }
+        for (BlockPos p : BlockPos.getAllInBox(new BlockPos(x - 7, y - 7, z + 10), new BlockPos(x + 7, y + 7, z + 10))) {
+            world.setBlockState(p, Blocks.GOLD_BLOCK.getDefaultState(), 2);
+        }
+        if (shaft) {
+            int top = world.getHeight(x, z) + 2;
+            for (int sy = y + 9; sy <= Math.max(top, 64); sy++) {
+                for (int dx = -2; dx <= 2; dx++) {
+                    for (int dz = -2; dz <= 2; dz++) {
+                        boolean edge = Math.abs(dx) == 2 || Math.abs(dz) == 2;
+                        BlockPos p = new BlockPos(x + dx, sy, z - 1 + dz);
+                        if (!edge) {
+                            world.setBlockState(p, Blocks.AIR.getDefaultState(), 2);
+                        } else if (sy < 64 && !world.getBlockState(p).isOpaqueCube()) {
+                            world.setBlockState(p, Blocks.STONE.getDefaultState(), 2);
+                        }
+                    }
+                }
+            }
         }
     }
 

@@ -143,6 +143,7 @@ name; the bytecode decides. The OptiFine variants:
 | `RenderGlobal.setupTerrain.above` | 1 match (Forge's MC-73139 frustum expansion is gone) | as vanilla's |
 | `ChunkVisibility.getMaxChunkY` | lowers `maxChunkY` to the highest non-empty section slot around the player (single player only); slots 20-23 are y -64..-1 | head guard: the world's top in an extended world, so its "chunk visibility" culling is off there |
 | `RenderChunkUtils.getCountBlocks` | `getBlockStorageArray()[y >> 4]` (Render Regions) | `HeightHooks.sectionAt(sections, sectionY)`: our slot, null outside |
+| `RenderChunk.preRenderBlocks` | with Render Regions on, vertices relative to the region's corner `(x >> 8 << 8, y >> 8 << 8, z >> 8 << 8)`, the region drawn from y 0 | the y term becomes `HeightLayout.renderRegionY(y)`, 0: it was 0 only for y 0-255, so sections at y -64..-1 were drawn 256 blocks up (caves hanging over the mountains) and y 256-319 256 down. Vanilla's method (no regions) is recorded as found and left alone |
 
 The shadow pass needs nothing of its own: it walks the frustum or looks chunks up through `getRenderChunk`, and
 filters by `maxChunkY`. Code inserted into OptiFine's classes reads a parameter only at the method's first instruction
@@ -244,6 +245,23 @@ the client-only `ChunkCache` overwrite, on a client its body must read no height
         of direct memory in Nothirium's chunk compiler (packcompat.md).
     *   **Default world** in the Shaders copy: 13/0, vanilla's frustum, no slowdown against `height.enabled=false`.
     *   `-Pselftest=all` from a fresh world 4447/0; `sh tools/height/selftest.sh` 130/0 (74 sites).
+    *   **Render Regions** (branch `cc-optifine-fix`): the first run had Render Regions on only briefly, with the
+        camera in a pocket at -61, and its checks read which render chunks were compiled, not where they were drawn.
+        Players with Render Regions on (the user's Backport Showcase instance) saw caves floating over the
+        mountains: `RenderChunk.preRenderBlocks` above. The client test now checks pixels with Render Regions on and
+        shaders off: a 15x15 gold wall at y -40 and one at y 300, each seen from in front (gold fills the middle of
+        the frame), and the sky from y 236 over the low wall, 200 blocks off and looking down toward it (no blocks in
+        the top 40% of the frame). Before the fix all three failed (16 and 0 of 45,600 middle pixels gold; 17,710 dark
+        pixels in the sky, the caves under that column); after it the client test is **51/0** (43,063 of 45,600 middle pixels gold
+        at both walls, 0 dark pixels in the sky; 111 sites). PatchCheck: the vanilla variant (dev and SRG names) and
+        OptiFine's (the dumped `RenderChunk`), verifier and frame check clean. Full suite 4448/0, height self-test
+        139/0. A Default world is unchanged: there `y >> 8 << 8` was already 0. Nothirium draws with its own chunk
+        renderer, so this path does not run there.
+    *   **Found on the way, not fixed (Dregora):** EagleMixins 1.2.4's subchunk radiation for NuclearCraft
+        (`RadiationHandlerMixin`) loops over all of a chunk's entity lists (24 in an extended chunk) and uses the list
+        index as a subchunk index into 16-entry arrays (`ChunkRadiationSource`): a server crash
+        (`ArrayIndexOutOfBoundsException: Index 21 out of bounds for length 16`) once any entity is above y 192 in a
+        chunk the radiation tick visits. The test copy ran with NuclearCraft radiation off to get past it.
 *   **Alfheim 1.6** (branch `cc-alfheim`, 2026-11-14):
     *   **Unit test** `tools/height/run.sh AlfheimKeyTest`: 1,881,621/1,881,621. The wide key's round trip for every y
         -64..319 at x, z = 0, ±1, ±15/16/17, ±(2^24 - 1), -2^24 and others; the light bits change nothing; each
