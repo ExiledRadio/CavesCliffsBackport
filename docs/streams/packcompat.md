@@ -14,7 +14,7 @@ The spawn probe is `selftest/PackProbe` (a test build with `-Dcavesandcliffsback
 | --- | --- | --- | --- |
 | RLCraft 2.9.3 (CurseForge, Forge 2860) | `CavesAndCliffsBackport`, `BackportCore-1.2.0` | `phosphor-1.12.2-0.2.6` (client and server) | none |
 | RLCraft Dregora, Java 8 (CurseForge) | the same (Core 1.2.0 is already there for V&P) | `phosphor`, `PhosphorCrashFix` | none |
-| RLCraft Dregora, Cleanroom (Prism) | the same; Fluidlogged API 3.3.3 (the Fast instance has 3.3.2) | `Alfheim` | StellarCore `B:WorldBlockPosJudgement=false` |
+| RLCraft Dregora, Cleanroom (Prism) | the same; Fluidlogged API 3.3.3 (the Fast instance has 3.3.2) | nothing: Alfheim 1.6 stays (branch `cc-alfheim`; before it, `Alfheim`) | StellarCore `B:WorldBlockPosJudgement=false` |
 
 Without removing anything, every 1.17 part works in the packs' own worlds and extended height turns itself off with a
 log line naming the mod.
@@ -54,6 +54,10 @@ mod (Dregora without it still has Core, which V&P needs).
     not in that world. An 80x80-chunk pregen on the Java 8 server ran clean after the two fixes below. The Cleanroom
     clients (stream H's copies, Alfheim removed, this branch's jar and the current Core): Celeritas 22/0 (101 sites),
     Fast 15/0 (105 sites), and both now log "Music: 1.18's tracks join the game music."
+    **With Alfheim kept** (branch `cc-alfheim`, 2026-11-14; the client test with two more light reads below 0):
+    Fast 17/0 (131 sites), Celeritas 24/0 (127 sites). The Celeritas one ran with Demonica 0.6.0 moved aside: with
+    the current Core 1.2.0 (P24, `RenderGlobal.renderSky`), Demonica's Iris mixin `demonica$beginSunset` loses its
+    target and the instance does not start, with or without Alfheim. That is for Core (`height.md`, "Not tested").
 
 ## Fixed here
 
@@ -123,10 +127,11 @@ mod (Dregora without it still has Core, which V&P needs).
     chunks/s). In `cavesandcliffs` worlds without Phosphor the same pregen took 30-40 s (58-77 chunks/s): the 1.18
     generator places its features before a chunk is in the world, so they cause no light updates; the extended world
     is no slower than RLCraft's Default world with Phosphor.
-*   **Alfheim and Phosphor** stay incompatible: both pack y into 8 bits of a 64-bit position (Phosphor: z 26, x 26,
-    y 8, light 4; a y-overflow bit), keep per-section flags in 16-bit masks, and `@Overwrite` the chunk light
-    methods this coremod patches. A compatible path means rewriting their lighting engines' encoding and section
-    bookkeeping, per mod.
+*   **Phosphor** stays incompatible: it packs y into 8 bits of a 64-bit position (z 26, x 26, y 8, light 4; a
+    y-overflow bit), keeps per-section flags in 16-bit masks, and `@Overwrite`s the chunk light methods this coremod
+    patches. **Alfheim 1.6**, its descendant with the same layout, now works (branch `cc-alfheim`, `height.md`
+    "Alfheim 1.6"): its key, section lookups and flags are patched in its own classes. The same could be done for
+    Phosphor 0.2.6 if a pack needs it; the Java 8 packs that ship it can drop it, as above.
 *   Dregora's CurseForge mod set does not start as a dedicated server as is: `!mixinbooter-11.13.jar` makes FML load
     RenderLib's tweaker as a coremod and it fails (`AsyncKeyboardTransformer`); `RLCraftThreadFix` needs MixinBooter.
     Both are client-side, so the test server left them out. Not this mod's.

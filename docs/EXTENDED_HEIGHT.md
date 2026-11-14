@@ -7,8 +7,9 @@ approved **for this part only**. This document came before any of its code.
 building it added: per-section entity lists (so mobs below 0 render and area queries find them), the falling-block
 limits, the build limit, spawn heights from the bottom, the fog near the bottom, chunk receive/unload re-render
 ranges and the entity lists `RenderGlobal` reads. How it works, every site and what was tested:
-`docs/streams/height.md`. The speed numbers are in section 4. Alfheim was settled by the user (2026-11-11): it packs y
-in 8 bits in its `LightingEngine` and replaces `Chunk.relightBlock`, so extended height refuses to run with it.
+`docs/streams/height.md`. The speed numbers are in section 4. Alfheim was first refused (the user, 2026-11-11: it packs y in 8
+bits in its `LightingEngine` and replaces `Chunk.relightBlock`); Alfheim 1.6 is now patched in its own classes (section
+3, branch `cc-alfheim`).
 
 The work splits in two:
 
@@ -81,9 +82,9 @@ read slots 20-23 as y 320-383: wrong, but only for blocks below y 0. Known users
 
 Sky light enters at the top of the world (320) and goes down to its bottom; the heightmap holds real heights
 (negative ones too). Block light needs only the range checks above. **Alfheim and Phosphor replace vanilla's
-lighting engine**, and RLCraft Revamped uses Alfheim: their engines carry their own 0-255 assumptions, so they
-either need a compat path or are incompatible. To find out before coding: read Alfheim's engine for its
-height checks (section 3).
+lighting engine**, and RLCraft Revamped uses Alfheim: their engines carry their own 0-255 assumptions. Alfheim 1.6 has
+a compat path (section 3: a wider position key, sections by slot, boundary flags two sections to a bit); Phosphor is
+refused.
 
 ### 1.5 The save format, and removing the mod
 
@@ -145,7 +146,8 @@ Rules for the transformer:
 | **VintageFix** | Its `chunk_access` mixin overwrites `Chunk.getBlockState` with a 0-255 body. | **Done (stream H):** that overwrite gets the same patch as vanilla's method (Mixin reads it through our transformer); tested in the Dregora Fast instance. |
 | **Nothirium** | Its own chunk renderer, camera-centred in y, with three 0-16 section limits. | **Done (stream H):** the limits and its section lookup are patched; tested in the Fast instance. |
 | **StellarCore** | `WorldBlockPosJudgement` overwrites `World.isOutsideBuildHeight` with 0-255. | A pack sets `B:WorldBlockPosJudgement=false`; with it on, a probe at world load keeps the world 0-255 and says so. |
-| **Alfheim / Phosphor** | Replace the lighting engine (1.4); Alfheim packs y in 8 bits. | **Incompatible** (the user, 2026-11-11): extended height refuses to turn on with either installed. |
+| **Alfheim 1.6** | Replaces the lighting engine (1.4) with mixins: packs y in 8 bits of its queue key, reads sections by `y >> 4`, keeps one boundary flag bit per section in a `short`, and `@Overwrite`s `Chunk.relightBlock` and `getLightFor`. | **Done (branch `cc-alfheim`):** its `LightingEngine` and mixin classes are patched as Mixin reads them (26 sites): with extended height on, a key with 9 bits of y (x and z within 16,777,216), sections by slot, flags two sections to a bit (same save format), our `relightBlock` sites back in its overwrite. Exactly 1.6: any other version refuses, with the reason. Tested on a dedicated server (light across chunk borders and down shafts below 0, across a restart; Default-world light unchanged) and in the Dregora Cleanroom copies (`height.md`). |
+| **Phosphor** | Replaces the lighting engine (1.4), with Alfheim's 8-bit y. | **Incompatible** (the user, 2026-11-11): extended height refuses to turn on with it installed. |
 | **Cubic Chunks, the other extended-height mods** | Same job, different layouts. | Detected at startup; extended height refuses to turn on, with a message. |
 
 ## 4. Speed
@@ -219,7 +221,6 @@ in our worlds and 0-255 elsewhere.
 
 ## 8. Open points for the user
 
-* **Alfheim**: if it can't be made to work with extended height, RLCraft Revamped would have to drop it for
-  vanilla lighting (or Phosphor, if that works). Known after step 2.
+* **Alfheim**: works (1.6; section 3). A new Alfheim version refuses extended height until its patterns are checked.
 * **Fluidlogged blocks outside 0-255** wait for (a) or (b) in section 3.
 * **Old worlds stay 0-255.** A converter for them is possible later; say if it's wanted.

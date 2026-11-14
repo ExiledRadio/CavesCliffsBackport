@@ -23,8 +23,13 @@ public abstract class ClassPatch {
     private boolean complete;
 
     protected ClassPatch(String target) {
+        this(target, target.substring(target.lastIndexOf('.') + 1));
+    }
+
+    /** With a report label of its own, for a class whose simple name another patch's target already has. */
+    protected ClassPatch(String target, String label) {
         this.target = target;
-        this.label = target.substring(target.lastIndexOf('.') + 1);
+        this.label = label;
     }
 
     /** Finds and applies every site, recording each with {@link #site} or {@link #expect}. */

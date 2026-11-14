@@ -24,7 +24,6 @@ public final class HeightContent {
 
     /** Mod ids of the mods extended height refuses to run with (see {@code HeightCorePlugin.CONFLICTS}). */
     private static final String[][] CONFLICT_MODS = {
-            {"alfheim", "Alfheim"},
             {"phosphor-lighting", "Phosphor"},
             {"cubicchunks", "Cubic Chunks"},
             {"cavesnotcliffs", "Caves Not Cliffs"},
@@ -77,8 +76,20 @@ public final class HeightContent {
                     + "not offered and every world keeps y 0-255.", why);
             return;
         }
-        worldType = new WorldTypeCavesAndCliffs();
         allowed = true;
+        if (Loader.isModLoaded("alfheim") && !AlfheimHooks.wide()) {
+            // Alfheim's engine fixed its key layout before this decision (it reads allowed() once); a narrow key
+            // cannot hold y below 0.
+            allowed = false;
+            refusal = "Alfheim's lighting engine started before pre-init, with its own position key";
+            CavesAndCliffsBackport.LOGGER.warn("Extended height (y -64 to 319) is OFF: {}.", refusal);
+            return;
+        }
+        if (Loader.isModLoaded("alfheim")) {
+            CavesAndCliffsBackport.LOGGER.info("Extended height with Alfheim {}: its lighting covers x and z within "
+                    + "16,777,216 of 0 (Alfheim alone: 33,554,432).", HeightCorePlugin.ALFHEIM_VERSION);
+        }
+        worldType = new WorldTypeCavesAndCliffs();
         CavesAndCliffsBackport.LOGGER.info("Extended height is on: {} patch sites found; world type '{}' registered.",
                 PatchReport.size(), worldType.getName());
     }
@@ -95,6 +106,14 @@ public final class HeightContent {
         for (String[] mod : CONFLICT_MODS) {
             if (Loader.isModLoaded(mod[0])) {
                 return mod[1] + " is installed (it changes the same height and lighting code)";
+            }
+        }
+        boolean alfheim = Loader.isModLoaded("alfheim");
+        if (alfheim) {
+            String version = Loader.instance().getIndexedModList().get("alfheim").getVersion();
+            if (!HeightCorePlugin.ALFHEIM_VERSION.equals(version)) {
+                return "Alfheim " + version + " is installed (extended height is made for Alfheim "
+                        + HeightCorePlugin.ALFHEIM_VERSION + " exactly)";
             }
         }
         // Early builds of Backport Core 1.2.0 lack what the 1.18 generator implements; making a Caves & Cliffs world
@@ -118,6 +137,16 @@ public final class HeightContent {
         List<String> missed = PatchReport.missed();
         if (!missed.isEmpty()) {
             return missed.size() + " patch site(s) not found (" + missed + "); another mod has probably changed that code";
+        }
+        if (alfheim) {
+            // Its mixins are read when Chunk and ChunkCache load (above, at the latest); every one must have been
+            // patched, or its overwrites would undo ours.
+            for (String label : new String[] {"AlfheimLightingEngine", "AlfheimChunkMixin", "AlfheimChunkCacheMixin"}) {
+                if (!PatchReport.classPatched(label)) {
+                    return "Alfheim is installed but its " + label.substring("Alfheim".length())
+                            + " was not patched (not read through the transformers)";
+                }
+            }
         }
         return null;
     }

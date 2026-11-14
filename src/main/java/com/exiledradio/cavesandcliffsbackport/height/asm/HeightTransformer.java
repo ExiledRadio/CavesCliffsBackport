@@ -36,6 +36,9 @@ public final class HeightTransformer implements IClassTransformer {
                 new SmallPatches.SpawnerPatch(),
                 new SmallPatches.WorldInfoPatch(),
                 new SmallPatches.VintageFixChunkPatch(),
+                new AlfheimPatches.LightingEnginePatch(),
+                new AlfheimPatches.ChunkMixinPatch(),
+                new AlfheimPatches.ChunkCacheMixinPatch(client),
         };
         if (!client) {
             return common;
@@ -65,14 +68,14 @@ public final class HeightTransformer implements IClassTransformer {
     public static Map<String, Boolean> targets(boolean client) {
         Map<String, Boolean> out = new LinkedHashMap<String, Boolean>();
         for (ClassPatch p : all(client)) {
-            if (p.target.startsWith("org.embeddedt.vintagefix.")) {
+            if (p.target.startsWith("org.embeddedt.vintagefix.") || p.target.startsWith("dev.redstudio.alfheim.mixin.")) {
                 // A mixin class: Mixin reads it (through the transformers) when it applies it; loading it directly
                 // is an error.
                 continue;
             }
-            // Celeritas, Nothirium and VintageFix classes exist only with those mods installed.
+            // Celeritas, Nothirium, VintageFix and Alfheim classes exist only with those mods installed.
             out.put(p.target, !p.target.startsWith("org.taumc.") && !p.target.startsWith("meldexun.")
-                    && !p.target.startsWith("org.embeddedt.vintagefix."));
+                    && !p.target.startsWith("org.embeddedt.vintagefix.") && !p.target.startsWith("dev.redstudio.alfheim."));
         }
         return Collections.unmodifiableMap(out);
     }
