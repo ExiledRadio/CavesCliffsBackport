@@ -6,9 +6,14 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.FrameNode;
 import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.VarInsnNode;
+
+import java.util.Collections;
+import java.util.List;
 
 import static com.exiledradio.cavesandcliffsbackport.height.asm.Asm.*;
 
@@ -112,8 +117,11 @@ final class ClientPatches {
 
             m = method(node, "getRenderChunk", "func_178161_a",
                     "(Lnet/minecraft/util/math/BlockPos;)Lnet/minecraft/client/renderer/chunk/RenderChunk;");
-            for (AbstractInsnNode n : expect("getRenderChunk.y", m, 1, getY(), icst(16),
-                    invoke(Opcodes.INVOKESTATIC, "intFloorDiv", "func_76137_a", "(II)I"))) {
+            // Vanilla: MathHelper.intFloorDiv(y, 16); OptiFine (O1): y >> 4. Either way y - minY first (minY is a
+            // multiple of 16, so the shift stays a floor).
+            for (AbstractInsnNode n : variant(this, "getRenderChunk.y", m,
+                    1, new P[] {getY(), icst(16), invoke(Opcodes.INVOKESTATIC, "intFloorDiv", "func_76137_a", "(II)I")},
+                    1, new P[] {getY(), icst(4), op(Opcodes.ISHR)}).found) {
                 InsnList l = worldInt(world(), "minY");
                 l.add(insn(Opcodes.ISUB));
                 m.instructions.insert(n, l);
@@ -140,12 +148,27 @@ final class ClientPatches {
             super("net.minecraft.client.renderer.RenderGlobal");
         }
 
+        private static final String OFFSET_ARGS = "Lnet/minecraft/util/math/BlockPos;"
+                + "Lnet/minecraft/client/renderer/chunk/RenderChunk;Lnet/minecraft/util/EnumFacing;";
+        private static final String RENDER_CHUNK = "Lnet/minecraft/client/renderer/chunk/RenderChunk;";
+
         @Override
         protected void apply(ClassNode node) {
-            range(method(node, "getRenderChunkOffset", "func_181562_a", "(Lnet/minecraft/util/math/BlockPos;"
-                            + "Lnet/minecraft/client/renderer/chunk/RenderChunk;Lnet/minecraft/util/EnumFacing;)"
-                            + "Lnet/minecraft/client/renderer/chunk/RenderChunk;"),
-                    "getRenderChunkOffset", 1, 1, RenderGlobalPatch::world);
+            MethodNode vanillaOffset = Asm.method(node, "getRenderChunkOffset", "func_181562_a", "(" + OFFSET_ARGS + ")" + RENDER_CHUNK);
+            // OptiFine (O2) replaces it with (pos, chunk, facing, fog, maxChunkY), which reads the frustum's cached
+            // neighbour (null outside the frustum, so bounded by getRenderChunk) and drops one above maxChunkY
+            // (bounded by setupTerrain's local, O3): no 0 or 256 in it to patch.
+            MethodNode optifineOffset = Asm.method(node, "getRenderChunkOffset", "getRenderChunkOffset", "(" + OFFSET_ARGS + "ZI)" + RENDER_CHUNK);
+            if (vanillaOffset != null && optifineOffset == null) {
+                range(vanillaOffset, "getRenderChunkOffset", 1, 1, RenderGlobalPatch::world);
+            } else if (vanillaOffset == null && optifineOffset != null) {
+                site("getRenderChunkOffset (OptiFine)", Asm.find(optifineOffset, getY(), zeroJump()).isEmpty()
+                        && Asm.find(optifineOffset, getY(), icst(256)).isEmpty()
+                        && Asm.find(optifineOffset, invoke(Opcodes.INVOKEVIRTUAL, "getRenderChunkNeighbour", "getRenderChunkNeighbour", null)).size() == 1
+                        && Asm.find(optifineOffset, getY(), iload(5), op(Opcodes.IF_ICMPLE)).size() == 1);
+            } else {
+                site("getRenderChunkOffset" + (vanillaOffset == null ? "(" + OFFSET_ARGS + ")" + RENDER_CHUNK + " exists" : " (both variants)"), false);
+            }
 
             // A render chunk's entities: its chunk's entity list for its section, counted from the world's bottom.
             MethodNode m = method(node, "renderEntities", "func_180446_a",
@@ -167,14 +190,30 @@ final class ClientPatches {
 
             m = method(node, "setupTerrain", "func_174970_a",
                     "(Lnet/minecraft/entity/Entity;DLnet/minecraft/client/renderer/culling/ICamera;IZ)V");
-            for (AbstractInsnNode n : expect("setupTerrain.startHeight", m, 1, getY(), op(Opcodes.IFLE), icst(248),
-                    op(Opcodes.GOTO), icst(8), istore(-1))) {
-                AbstractInsnNode top = at(n, 2);
-                AbstractInsnNode bottom = at(n, 4);
+            // The start height: vanilla's y > 0 ? 248 : 8, or OptiFine's (O4) y > 0 ? Math.min(maxChunkY, 248) : 8.
+            Variant start = variant(this, "setupTerrain.startHeight", m,
+                    1, new P[] {getY(), op(Opcodes.IFLE), icst(248), op(Opcodes.GOTO), icst(8), istore(-1)},
+                    1, new P[] {getY(), op(Opcodes.IFLE), iload(-1), icst(248),
+                            invoke(Opcodes.INVOKESTATIC, "min", "min", "(II)I"), op(Opcodes.GOTO), icst(8), istore(-1)});
+            int maxChunkY = start.optifine ? ((VarInsnNode) at(start.found.get(0), 2)).var : -1;
+            for (AbstractInsnNode n : start.found) {
+                AbstractInsnNode top = at(n, start.optifine ? 3 : 2);
+                AbstractInsnNode bottom = at(n, start.optifine ? 6 : 4);
                 replace(m, top, worldInt(world(), "topSectionMiddle"));
                 replace(m, bottom, worldInt(world(), "bottomSectionMiddle"));
             }
-            for (AbstractInsnNode n : expect("setupTerrain.above", m, 2, getY(), op(Opcodes.IFLE))) {
+            if (start.optifine) {
+                // O3: OptiFine's maxChunkY local starts at 256 (the frustum's top: a neighbour above it is dropped,
+                // and the shadow pass filters by it); it is the world's top instead. The integrated server's
+                // ChunkVisibility.getMaxChunkY may then lower it (O6 answers the world's top in an extended world).
+                for (AbstractInsnNode n : expect("setupTerrain.maxChunkY (OptiFine)", m, 1, icst(256), istore(maxChunkY))) {
+                    replace(m, n, worldInt(world(), "maxY"));
+                }
+            }
+            // The y > 0 tests: the start height's, and Forge's MC-73139 frustum expansion, which OptiFine (O5) drops
+            // for its own RenderChunk.isBoundingBoxInFrustum.
+            String above = start.optifine ? "setupTerrain.above (OptiFine)" : "setupTerrain.above";
+            for (AbstractInsnNode n : expect(above, m, start.optifine ? 1 : 2, getY(), op(Opcodes.IFLE))) {
                 compareWith(m, next(n), worldInt(world(), "minY"));
             }
         }
@@ -182,6 +221,104 @@ final class ClientPatches {
         private static InsnList world() {
             return selfField("net/minecraft/client/renderer/RenderGlobal", n("world", "field_72769_h"), WORLD_CLIENT_DESC);
         }
+    }
+
+    /** The matches of whichever of a site's two variants a class has. */
+    static final class Variant {
+        final List<AbstractInsnNode> found;
+        /** True when the second (OptiFine's) variant was found. */
+        final boolean optifine;
+
+        Variant(List<AbstractInsnNode> found, boolean optifine) {
+            this.found = found;
+            this.optifine = optifine;
+        }
+    }
+
+    /**
+     * A site with a vanilla and an OptiFine variant: found when exactly one of them has its exact count of matches
+     * and the other none; the report names the variant ({@code id (OptiFine)}). No OptiFine detection by class
+     * name: the bytecode decides.
+     */
+    static Variant variant(ClassPatch patch, String id, MethodNode m, int vanillaCount, P[] vanilla, int optifineCount, P[] optifine) {
+        List<AbstractInsnNode> v = Asm.find(m, vanilla);
+        List<AbstractInsnNode> o = Asm.find(m, optifine);
+        if (v.size() == vanillaCount && o.isEmpty()) {
+            patch.site(id, true);
+            return new Variant(v, false);
+        }
+        if (o.size() == optifineCount && v.isEmpty()) {
+            patch.site(id + " (OptiFine)", true);
+            return new Variant(o, true);
+        }
+        patch.site(id, false);
+        HeightCorePlugin.LOG.error("Extended height: {}: expected {} vanilla or {} OptiFine match(es){}, found {} and {}.",
+                id, vanillaCount, optifineCount, m == null ? " (method not found)" : " in " + m.name + m.desc, v.size(), o.size());
+        return new Variant(Collections.<AbstractInsnNode>emptyList(), false);
+    }
+
+    /**
+     * OptiFine (O6): {@code ChunkVisibility.getMaxChunkY(world, entity, renderDistance)}, which lowers setupTerrain's
+     * maxChunkY to the highest non-empty section around the player, reads section slots as heights (slots 20-23,
+     * our y -64..-1, are always stone). In an extended world it answers the world's top (nothing culled: OptiFine's
+     * "chunk visibility" saving is given up there); in any other world its own body runs.
+     */
+    static final class OptiFineChunkVisibilityPatch extends ClassPatch {
+        OptiFineChunkVisibilityPatch() {
+            super("net.optifine.render.ChunkVisibility");
+        }
+
+        @Override
+        protected void apply(ClassNode node) {
+            MethodNode m = Asm.method(node, "getMaxChunkY", "getMaxChunkY", "(" + WORLD_DESC + "Lnet/minecraft/entity/Entity;I)I");
+            // The head reads the parameter at the method's first instruction, where every local is still the
+            // method's own: ProGuard's frames later in the body may drop it.
+            if (site("getMaxChunkY.head", m != null && !frameAtHead(m))) {
+                LabelNode body = new LabelNode();
+                InsnList head = list(new VarInsnNode(Opcodes.ALOAD, 0), heights("isExtended", "(" + WORLD_DESC + ")Z"),
+                        new JumpInsnNode(Opcodes.IFEQ, body),
+                        new VarInsnNode(Opcodes.ALOAD, 0), heights("maxY", "(" + WORLD_DESC + ")I"), insn(Opcodes.IRETURN),
+                        body, new FrameNode(Opcodes.F_SAME, 0, null, 0, null));
+                m.instructions.insert(head);
+            }
+        }
+    }
+
+    /**
+     * OptiFine (O7): {@code RenderChunkUtils.getCountBlocks(renderChunk)}, which sizes Render Regions' buffers, reads
+     * {@code chunk.getBlockStorageArray()[y >> 4]}, which throws for a render chunk below 0: it reads our slot instead
+     * ({@code HeightHooks.sectionAt(sections, sectionY)}, null outside the array, as an empty section).
+     */
+    static final class OptiFineRenderChunkUtilsPatch extends ClassPatch {
+        OptiFineRenderChunkUtilsPatch() {
+            super("net.optifine.util.RenderChunkUtils");
+        }
+
+        @Override
+        protected void apply(ClassNode node) {
+            String ebs = "Lnet/minecraft/world/chunk/storage/ExtendedBlockStorage;";
+            MethodNode m = Asm.method(node, "getCountBlocks", "getCountBlocks", "(Lnet/minecraft/client/renderer/chunk/RenderChunk;)I");
+            if (!site("getCountBlocks.array", m != null && Asm.find(m,
+                    invoke(Opcodes.INVOKEVIRTUAL, "getBlockStorageArray", "func_76587_i", "()[" + ebs)).size() == 1)) {
+                return;
+            }
+            for (AbstractInsnNode n : expect("getCountBlocks.section", m, 1, getY(), icst(4), op(Opcodes.ISHR),
+                    istore(-1), aload(-1), iload(-1), op(Opcodes.AALOAD))) {
+                if (site("getCountBlocks.sameLocal", ((VarInsnNode) at(n, 3)).var == ((VarInsnNode) at(n, 5)).var)) {
+                    replace(m, at(n, 6), list(hooks("sectionAt", "([" + ebs + "I)" + ebs)));
+                }
+            }
+        }
+    }
+
+    /** Whether a frame already stands before the method's first instruction (a jump back to it). */
+    private static boolean frameAtHead(MethodNode m) {
+        for (AbstractInsnNode i = m.instructions.getFirst(); i != null && i.getOpcode() < 0; i = i.getNext()) {
+            if (i instanceof FrameNode) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -102,13 +102,43 @@ mod (Dregora without it still has Core, which V&P needs).
     worlds: the 21x21-chunk census before and after this change is identical but for 1-9 blocks of dirt, leaves and logs (run to
     run noise), Quark's blocks exactly. No exception in any log.
 
+## OptiFine (branch `cc-optifine`)
+
+**Extended height works with OptiFine HD U G5** (Dregora's Shaders instances), shaders and their shadow pass
+included. Until this branch it refused: OptiFine rewrites `RenderGlobal.getRenderChunkOffset`, `setupTerrain` and
+`ViewFrustum.getRenderChunk`, and six client sites were not found. The patches now carry OptiFine's variant of each
+site beside vanilla's, and two small patches for OptiFine's own `ChunkVisibility` and `RenderChunkUtils`
+(`docs/streams/height.md`, "OptiFine"; the plan is `docs/streams/optifine-alfheim.md`, section 1). Alfheim is still
+removed for extended height (section 2 of that plan).
+
+| Pack copy (on G:, Alfheim removed) | Client test | Notes |
+| --- | --- | --- |
+| `ccheight-Shaders` (Cleanroom 0.5.17, OptiFine G5, Complementary v4.6) | **42/0** (101 sites) | |
+| `ccheight-ShadersNothirium` (plus Nothirium 0.4.9) | **32/0** (106 sites) | Fluidlogged API 3.3.2 swapped for 3.3.3 (Backport Core needs it); one of three runs crashed, below |
+
+Both copies are junctioned into Prism; `tools/packs/launch-prism.sh` stops each by its own PID. The client test makes
+a Caves & Cliffs world and checks, besides stream H's checks: the drift report names the seven OptiFine variants;
+`ChunkVisibility.getMaxChunkY` answers 320; the render chunks at y -64 and 304 are in OptiFine's `renderInfos` and in
+the shadow pass (`renderInfosShadow`) with Complementary on, again with Render Regions on, and with shaders off. With
+Nothirium, OptiFine's `setupTerrain` does not run (Nothirium draws the chunks), so its own render chunks are checked
+instead. It saves screenshots (`screenshots/cc-height-*.png`: the world bottom, a cave at y -50, the view from
+y 280, the bottom with shaders off) and logs the frame rate at spawn.
+
+**Default worlds with OptiFine** (the Shaders copy, `selftest-client-world-default` in the game directory): 13/0,
+the frustum 16 render chunks high from y 0, every OptiFine variant in the report, `ChunkVisibility.getMaxChunkY`
+running its own body (128). Frame rate at spawn over 20 s: 145 with the coremod on, 104 with `height.enabled=false`
+(both swing 75-275 while chunks load; no slowdown).
+
+**Nothirium with OptiFine shaders ran out of direct memory once in three runs** (`ccheight-ShadersNothirium`,
+`OutOfMemoryError: Cannot reserve 524288 bytes of direct buffer memory`, 8 GB in use, in Nothirium's
+`RenderChunkTaskCompile.compileSection`). Nothirium allocates a `RegionRenderCacheBuilder` whenever its pool is empty
+and keeps every one it ever made (an unbounded queue); each holds a compiled section until it is uploaded. The test
+teleports across the world, so whole render distances recompile at once, with shaders' wider vertex format and 24
+sections per column instead of 16. Not ours to fix (Nothirium's pool); a player who flies fast in that instance may
+see it. A larger `-XX:MaxDirectMemorySize` than the heap would be the workaround to try.
+
 ## Not fixed (findings)
 
-*   **OptiFine (Dregora Shaders): extended height refuses**, safely (no crash): OptiFine G5 rewrites
-    `RenderGlobal.getRenderChunkOffset` (two more parameters), `setupTerrain` and `ViewFrustum.getRenderChunk`; six
-    client sites not found. Its classes as our transformer sees them are dumped in
-    `G:\VBPTest\cc-packs\study\optifine\dump`. Supporting it means alternate patterns for those methods plus OptiFine's
-    own chunk cache and shadow pass; a stream of its own. The 1.17 content works with OptiFine in Default worlds.
 *   Overlaps, not clashes: Quark's candles and ours, crystal caves and geodes, speleothems and dripstone,
     underground biomes and lush caves.
 *   **Biomes O' Plenty's decoration** (trees and plants in its biomes) does not run in `cavesandcliffs` worlds for the
