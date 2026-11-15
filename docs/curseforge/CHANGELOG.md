@@ -6,8 +6,15 @@ First full release. Since the beta:
 *   **New worlds spawn where 1.18.2 puts the spawn** for the seed, so a seed's start matches Chunkbase. Worlds made with the beta keep their spawn.
 *   **Fixed a server crash with EagleMixins and NuclearCraft** when an entity was above y 192 in a Caves & Cliffs world.
 *   **Fixed features cut off at the edge of the explored area after a crash.** If the server crashed or was killed, trees, ores and other features crossing into ungenerated chunks could be missing there. They are now kept through a crash.
+*   **Works with Phosphor** (0.2.6 and 0.2.7) **and Hesperus** (0.2.9.1 to 0.2.9.3): the Caves & Cliffs world type no longer turns itself off with them, and their lighting covers y -64 to 319.
+*   **Works with Cubic Chunks**: with it installed, the Caves & Cliffs world type is a cubic world with the same 1.18 terrain, block for block, from y -64 to 319.
+*   **Pale gardens** in new Caves & Cliffs worlds with Tricky Trials Backport, where 1.21.5 and later put them, so seeds match Chunkbase for 1.21.5+. A setting places them as 1.21.4 does instead.
+*   **The newer versions' changes to 1.18's features**: with Wild Update or Trails & Tales installed, trees, vines, disks and the rest decorate as 1.19 and 1.20 do. Mangrove leaves that grow into water hold it.
+*   **Cave and mountain music follows 1.18's biomes**: lush caves, dripstone caves and the mountain biomes play their music where the terrain really has them.
+*   **Water opened by 1.12's structures flows**: an aquifer a mineshaft or another mod's structure cuts into now spills, as in 1.18.
+*   **Fixed goats now and then failing a long jump** they should make.
 
-Needs Backport Core 1.3.0 or newer.
+Needs Backport Core 1.3.0 or newer. Bamboo jungles grow bamboo with Village & Pillage Backport, and warm oceans grow coral reefs with Update Aquatic Backport (without it, terracotta stands in).
 
 # 0.1.0 (beta)
 
