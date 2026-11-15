@@ -67,6 +67,8 @@ public final class SelfTestRunner {
             new RestartSelfTest("restartwhole"),
             new RestartSelfTest("restart1"),
             new RestartSelfTest("restart2"),
+            new RestartSelfTest("crash1"),
+            new RestartSelfTest("crash2"),
             new AlfheimLightSelfTest("alfheimlight1"),
             new AlfheimLightSelfTest("alfheimlight2"),
             new AlfheimLightSelfTest("alfheimdump"),
@@ -122,16 +124,7 @@ public final class SelfTestRunner {
                 }
             }
         }
-        CavesAndCliffsBackport.LOGGER.info("SELFTEST DONE pass={} fail={}", check.passed(), check.failed());
-        try {
-            PrintWriter out = new PrintWriter(server.getFile("selftest-report.txt"), "UTF-8");
-            out.println("pass=" + check.passed() + " fail=" + check.failed());
-            for (String line : check.failures()) {
-                out.println(line);
-            }
-            out.close();
-        } catch (Exception ignored) {
-        }
+        check.report(server.getFile("selftest-report.txt"));
         server.initiateShutdown();
     }
 

@@ -6,7 +6,8 @@ import java.util.Arrays;
  * Times the 1.12 generator's pipeline without a game: side x side chunks around 0,0 finished in a spiral from the
  * middle (the order a 1.12 server asks for spawn chunks), each finish followed by a prefetch as the generator does.
  * Arguments: seed side threads [prefetchRadius] [cap]. Prints ms/chunk, the split between fill and decoration, and a
- * checksum over every finished chunk, which must not depend on the thread count.
+ * checksum over every finished chunk, which must not depend on the thread count. With -Djournal=dir the timed
+ * pipeline writes its decoration journal there, as a world's does (the directory is emptied first and after).
  */
 public final class PipelineBench {
     public static void main(String[] args) {
@@ -25,6 +26,16 @@ public final class PipelineBench {
         }
         warm.shutdown();
         Pipeline p = pipeline(seed, e, threads, cap);
+        String dir = System.getProperty("journal");
+        com.exiledradio.cavesandcliffsbackport.terrain.core.Journal journal = null;
+        java.io.File jdir = dir == null ? null : new java.io.File(dir);
+        if (jdir != null) {
+            empty(jdir);
+            journal = new com.exiledradio.cavesandcliffsbackport.terrain.core.Journal(jdir, x -> {
+                throw new IllegalStateException(x);
+            });
+            p.setLog(journal, 0);
+        }
         long checksum = 0L;
         long t = System.nanoTime();
         for (int[] c : order) {
@@ -33,6 +44,9 @@ public final class PipelineBench {
             p.prefetch(c[0], c[1], prefetch);
         }
         long elapsed = System.nanoTime() - t;
+        if (journal != null) {
+            journal.close();
+        }
         int n = order.length;
         System.out.println(String.format(java.util.Locale.ROOT,
             "seed %d, %d chunks, %d threads, java %s: %.3f ms/chunk (%.1f chunks/s); fill %.3f ms x %d, decorate %.3f ms,"
@@ -41,6 +55,23 @@ public final class PipelineBench {
             p.fillNanos.get() / 1e6 / Math.max(1, p.filled.get()), p.filled.get(), p.decorateNanos / 1e6 / Math.max(1, p.decorated),
             p.waitNanos / 1e6 / n, p.stolen, p.held(), checksum));
         p.shutdown();
+        if (jdir != null) {
+            System.out.println(String.format(java.util.Locale.ROOT, "journal: %d KB, %d records, %.3f ms each on the asking thread",
+                empty(jdir) / 1024, p.journaled, p.journalNanos / 1e6 / Math.max(1, p.journaled)));
+        }
+    }
+
+    /** Deletes the files in dir; returns their total size. */
+    static long empty(java.io.File dir) {
+        long n = 0;
+        java.io.File[] files = dir.listFiles();
+        if (files != null) {
+            for (java.io.File f : files) {
+                n += f.length();
+                f.delete();
+            }
+        }
+        return n;
     }
 
     static Pipeline pipeline(long seed, int editions, int threads, int cap) {

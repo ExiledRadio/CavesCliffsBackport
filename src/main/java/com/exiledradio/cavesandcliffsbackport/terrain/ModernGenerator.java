@@ -151,6 +151,7 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
             this.store = new HeldStore((net.minecraft.world.WorldServer) world, dir);
             this.store.loadState();
             this.pipeline.setStore(this.store);
+            this.store.open(this.pipeline);
         } else {
             this.store = null;
         }
@@ -197,11 +198,20 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
     /** Saves the held chunks decoration wrote into and the decoration state, for a restart (when the world saves). */
     public void saveHeld() {
         if (store != null) {
+            store.recover(pipeline);
             int n = pipeline.saveHeld();
-            store.saveState();
+            store.saveState(pipeline.lsn());
+            store.checkpoint();
             if (n > 0) {
                 CavesAndCliffsBackport.LOGGER.debug("Saved {} held chunks of {}.", n, world.getWorldInfo().getWorldName());
             }
+        }
+    }
+
+    /** The game is about to write a chunk of this world (ChunkDataEvent.Save): the decoration journal goes first. */
+    void beforeChunkSave() {
+        if (store != null) {
+            store.beforeChunkSave();
         }
     }
 
@@ -225,6 +235,9 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
 
     @Override
     public Chunk generateChunk(int x, int z) {
+        if (store != null) {
+            store.recover(pipeline);
+        }
         Pipeline.Proto p = pipeline.finish(x, z);
         long t = System.nanoTime();
         biomes3d.put(x, z, p.quarts.clone());

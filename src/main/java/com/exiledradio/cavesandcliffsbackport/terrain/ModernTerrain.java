@@ -14,6 +14,7 @@ import net.minecraft.world.gen.ChunkProviderServer;
 import net.minecraft.world.gen.IChunkGenerator;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraftforge.event.world.ChunkEvent;
+import net.minecraftforge.event.world.ChunkDataEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
@@ -216,6 +217,18 @@ public final class ModernTerrain {
         World world = event.getWorld();
         if (!world.isRemote && owns(world)) {
             ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).saveHeld();
+        }
+    }
+
+    /**
+     * The game writes a chunk only after the decoration journal has every record so far: a crash never leaves a chunk
+     * on disk whose neighbors' share of its features exists only in memory.
+     */
+    @SubscribeEvent
+    public static void onChunkSave(ChunkDataEvent.Save event) {
+        World world = event.getWorld();
+        if (!world.isRemote && owns(world)) {
+            ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).beforeChunkSave();
         }
     }
 

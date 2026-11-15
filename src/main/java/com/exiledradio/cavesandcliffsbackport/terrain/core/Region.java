@@ -47,6 +47,19 @@ public final class Region {
     private int minX;
     private int minZ;
 
+    /** Recorded writes kinds ({@link #ops}): {@link #set}, {@link #setRaw}, {@link #mark}. */
+    static final int OP_SET = 0;
+    static final int OP_RAW = 1;
+    static final int OP_MARK = 2;
+    /**
+     * With {@link #recording}, every write and mark as two ints, in order: kind &lt;&lt; 30 | chunk index &lt;&lt; 25 |
+     * column (x * 16 + z) &lt;&lt; 17 | y + 64, then the code (or the mark entry). The decoration journal
+     * ({@link Pipeline}) replays them onto the same chunks ({@link #apply}).
+     */
+    int[] ops = new int[4096];
+    int opCount;
+    boolean recording;
+
     /**
      * Center chunk cx, cz; for the CHUNKS chunks (index (dx + READ) * SIDE + dz + READ) the blocks, the OCEAN_FLOOR_WG snapshot
      * (worldgenHeights' output) and the live heightmaps (primeHeightmaps' output, HEIGHTMAPS * 256 ints), all
@@ -185,7 +198,42 @@ public final class Region {
 
     /** A section write (BulkSectionAccess / LevelChunkSection.setBlockState): no heightmap moves. */
     public void setRaw(int x, int y, int z, int code) {
-        blocks[chunk(x, z)][((x & 15) * 16 + (z & 15)) * HEIGHT + y - MIN_Y] = (char) code;
+        int k = chunk(x, z);
+        int col = (x & 15) * 16 + (z & 15);
+        blocks[k][col * HEIGHT + y - MIN_Y] = (char) code;
+        if (recording) {
+            record(OP_RAW, k, col, y, code);
+        }
+    }
+
+    private void record(int kind, int k, int col, int y, int value) {
+        if (opCount + 2 > ops.length) {
+            ops = java.util.Arrays.copyOf(ops, ops.length * 2);
+        }
+        ops[opCount++] = kind << 30 | k << 25 | col << 17 | (y - MIN_Y);
+        ops[opCount++] = value;
+    }
+
+    /** One recorded write ({@link #ops}: op, then value) onto the chunk it was made in, as it was made. */
+    static void apply(int op, int value, char[] b, int[] h, Marks m) {
+        int col = op >> 17 & 255;
+        int y = (op & 511) + MIN_Y;
+        switch (op >>> 30) {
+            case OP_SET:
+                place(b, h, m, col, y, value);
+                break;
+            case OP_RAW:
+                b[col * HEIGHT + y - MIN_Y] = (char) value;
+                break;
+            default:
+                m.add(value);
+                break;
+        }
+    }
+
+    /** The chunk index (dx + READ) * SIDE + dz + READ a recorded write ({@link #ops}) was made in. */
+    static int opChunk(int op) {
+        return op >> 25 & 31;
     }
 
     /**
@@ -197,15 +245,22 @@ public final class Region {
             return false;
         }
         int k = chunk(x, z);
-        char[] b = blocks[k];
         int col = (x & 15) * 16 + (z & 15);
+        place(blocks[k], heights[k], marks[k], col, y, code);
+        if (recording) {
+            record(OP_SET, k, col, y, code);
+        }
+        return true;
+    }
+
+    /** {@link #set} in one chunk's arrays, at column col (x * 16 + z). */
+    private static void place(char[] b, int[] h, Marks m, int col, int y, int code) {
         int at = col * HEIGHT - MIN_Y;
         b[at + y] = (char) code;
-        if ((BlockCodes.flags(code) & BlockCodes.F_POST) != 0 && marks[k] != null) {
+        if ((BlockCodes.flags(code) & BlockCodes.F_POST) != 0 && m != null) {
             // WorldGenRegion.setBlock: a block with hasPostProcess marks its position.
-            marks[k].add(Marks.pack(x, y, z, Marks.POST));
+            m.add(Marks.pack(col >> 4, y, col & 15, Marks.POST));
         }
-        int[] h = heights[k];
         for (int t = 0; t < HEIGHTMAPS; t++) {
             int i = h[t * 256 + col];
             if (y <= i - 2) {
@@ -226,7 +281,6 @@ public final class Region {
                 h[t * 256 + col] = n;
             }
         }
-        return true;
     }
 
     /**
@@ -238,9 +292,14 @@ public final class Region {
         if (!canWrite(x, z) || outsideBuildHeight(y)) {
             return;
         }
-        Marks m = marks[chunk(x, z)];
+        int k = chunk(x, z);
+        Marks m = marks[k];
         if (m != null) {
-            m.add(Marks.pack(x, y, z, kind));
+            int entry = Marks.pack(x, y, z, kind);
+            m.add(entry);
+            if (recording) {
+                record(OP_MARK, k, (x & 15) * 16 + (z & 15), y, entry);
+            }
         }
     }
 

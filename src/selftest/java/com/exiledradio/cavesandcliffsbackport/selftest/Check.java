@@ -69,6 +69,18 @@ public final class Check {
         return this.failures;
     }
 
+    /** Logs SELFTEST DONE and writes the report ({@code selftest-report.txt}: pass and fail counts, then each failure). */
+    void report(java.io.File file) {
+        CavesAndCliffsBackport.LOGGER.info("SELFTEST DONE pass={} fail={}", passed(), failed());
+        try (java.io.PrintWriter out = new java.io.PrintWriter(file, "UTF-8")) {
+            out.println("pass=" + passed() + " fail=" + failed());
+            for (String line : this.failures) {
+                out.println(line);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
     /**
      * @return the corner of a new empty 32x32 area at y=100, cleared (with 8 blocks around it, blocks and entities) from y=60
      * to y=160 with a stone floor at y=99 and its chunks loaded
