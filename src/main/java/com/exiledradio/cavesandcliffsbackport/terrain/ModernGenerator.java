@@ -406,6 +406,16 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         return biomes3d.spawns(creatureType, pos.getX(), pos.getY(), pos.getZ());
     }
 
+    /** A loaded chunk's stored 1.18 biomes (4 x 4 quart columns of 96, not to be written), or null. Server thread. */
+    byte[] quarts(int cx, int cz) {
+        return biomes3d.quarts(cx, cz);
+    }
+
+    /** The world's zoom seed: the seed's SHA-256, which a client may know (never the seed). */
+    long zoomSeed() {
+        return com.exiledradio.cavesandcliffsbackport.terrain.core.BiomeZoom.zoomSeed(terrain.noise.seed);
+    }
+
     /** 1.18's biome id at a block (three dimensions: the cave biomes under the surface ones). Server thread. */
     public int biome3d(int x, int y, int z) {
         return biomes3d.biome(x, y, z);

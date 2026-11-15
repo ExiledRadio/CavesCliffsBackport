@@ -1,27 +1,20 @@
 # Stream Mu: 1.18 music and the Otherside disc
 
 Package `music` (client part in `music.client`). Config `music`: `enabled`, `gameMusic`, `biomeMusic`, `menuMusic`,
-`othersideLoot`. No entity ids; packet ids 60-64 unused. Also changed outside the package: one line each in the mod
+`othersideLoot`. No entity ids; packet ids 60-64 unused (a 1.18 world's biomes come in the terrain's packet 65). Also changed outside the package: one line each in the mod
 class's pre-init, `ClientSetup.init` and `SelfTestRunner.TESTS`; `tools/check_assets.py` now accepts a sound that
 1.12.2's own asset index has (`minecraft:music/game/calm1`), as the other family mods' checkers do.
 
 ## For the integrator
 
-**Done on merge:** `MusicRegions.CAVES` answers lush and dripstone caves from `common/CaveRegions` (the client
-uses the key the server sends at login) and `MusicContent.preInit` installs it when `biomeMusic` is on.
+**Done:** `MusicContent.preInit` installs `MusicRegions.BIOMES` when `biomeMusic` is on. In a world with 1.18
+terrain it answers 1.18's biome at the position from the biomes the server sends with each chunk
+(`terrain.ClientBiomes`, packet 65; see `generator.md`): lush caves, dripstone caves, meadow, grove, snowy slopes,
+jagged, frozen and stony peaks, as 1.18's client. Anywhere else it is `MusicRegions.CAVES`: lush and dripstone caves
+from `common/CaveRegions` (the 1.17 regions, by the key the server sends at login), underground only.
 
-1.  **Cave regions are not wired.** `music/MusicRegions` is the one question this stream asks: which music biome is
-    a position in. It answers `NONE` everywhere until someone installs a locator, so today only the game music
-    plays. Once `common/CaveRegions` is on `main`, one call from common code (it names no client type; it is asked
-    on the client thread, every tick, with the client world, so it must be cheap and must not load chunks):
-
-    ```java
-    MusicRegions.setLocator((world, pos) -> CaveRegions.isLush(world, pos) ? MusicRegions.Region.LUSH_CAVES
-            : CaveRegions.isDripstone(world, pos) ? MusicRegions.Region.DRIPSTONE_CAVES : MusicRegions.Region.NONE);
-    ```
-
-    The terrain stream answers `MEADOW`, `GROVE`, `SNOWY_SLOPES`, `JAGGED_PEAKS`, `FROZEN_PEAKS` and `STONY_PEAKS`
-    through the same locator; their events and tracks are already in the jar.
+1.  **The locator** (`music/MusicRegions`) is asked on the client thread, every tick, with the client world, so it
+    must be cheap and must not load chunks.
 2.  **This stream registers the 1.18 presentation version** (`Presentation.version("1.18")` in
     `MusicContent.preInit`). Core skips a version's music step until that version is installed, so the biome music
     needs it; it also means the game's look follows 1.18 wherever Core's tables say so, and only while the music
@@ -104,18 +97,31 @@ uses the key the server sends at login) and `MusicContent.preInit` installs it w
     dragon, credits or menu music; timing 12000-24000, non-replacing; the game music made non-replacing on leaving
     a biome while its track plays.
 *   `MusicRegions`: none by default, a locator's answers, a null answer and a failing locator are none.
+
+## Tested on a client
+
+`./gradlew runClient -Pclienttest=music` (`MusicClientSelfTest`), 2026-11-15: **`CLIENT SELFTEST DONE pass=28
+fail=0`**. A single-player Caves & Cliffs world (seed 1718); at spawn and at a lush caves, a dripstone caves and a
+mountain spot the server finds by its biome source, the server reads its 1.18 biome on a grid through 7 x 7 chunks
+(every 3 blocks across, every 5 up, y -64 to 319) and the client's `ClientBiomes` id and `MusicRegions.at` are the
+same at every point: 444,752 points, 0 different (lush caves 4,994, dripstone caves 8,130, meadow 24,497). The 1.17
+regions would have given a different music biome at 69,383 of them. The music biome at the player's feet matches
+the server's and the spot's. Then `./gradlew runServer -Pselftest=all` on a fresh `eclipse/`: **`SELFTEST DONE
+pass=4448 fail=0`**.
 *   Switched off (fresh world): boots, nothing registered, no loot entry (`pass=5 fail=0`).
 
 ## Not tested
 
-Nothing here was run on a client.
+Nothing here was listened to.
 
 *   Playback of anything: the disc in a jukebox, the four game tracks, the menu tracks, the biome tracks.
 *   The built-in pack on a real client: that the sound handler merges its `music.game` with 1.12.2's (it is checked
     as a file only), that it survives F3+T and a resource pack change, and that `music.gameMusic` off leaves
     1.12.2's twelve tracks.
-*   Core's ticker taking the "1.18 biome music" step, and the step itself (`MusicClient.biomeMusic`), which no
-    position reaches until a locator is installed.
+*   Core's ticker taking the "1.18 biome music" step, and the step itself (`MusicClient.biomeMusic`): the client
+    test checks the music biome it asks, not what plays.
+*   A dedicated server's client (the test runs single player, where packet 65 goes through the integrated server's
+    local channel).
 *   The disc's model, texture, tooltip and "Now Playing" line.
 *   What the game looks like with 1.18 registered as the presentation version (item 2 above).
 *   The fallback loot pool, used only where another mod has removed a table's `main` pool.

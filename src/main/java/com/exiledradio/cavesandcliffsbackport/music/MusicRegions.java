@@ -1,6 +1,8 @@
 package com.exiledradio.cavesandcliffsbackport.music;
 
 import com.exiledradio.cavesandcliffsbackport.common.CaveRegions;
+import com.exiledradio.cavesandcliffsbackport.terrain.ClientBiomes;
+import com.exiledradio.cavesandcliffsbackport.terrain.core.Biomes;
 
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -15,7 +17,7 @@ import net.minecraft.world.World;
  * <pre>{@code
  * MusicRegions.setLocator((world, pos) -> CaveRegions.isLush(world, pos) ? MusicRegions.Region.LUSH_CAVES : ...);
  * }</pre>
- * {@link MusicContent} installs {@link #CAVES}; until something is installed every position is {@link Region#NONE}.
+ * {@link MusicContent} installs {@link #BIOMES}; until something is installed every position is {@link Region#NONE}.
  */
 public final class MusicRegions {
 
@@ -67,6 +69,45 @@ public final class MusicRegions {
             return Region.NONE;
         }
     };
+
+    /**
+     * 1.18's biome at the position where the server sends 1.18's biomes (a world with 1.18 terrain:
+     * {@code terrain.ClientBiomes}, as 1.18's client reads its chunks' biomes), all eight music biomes, no depth test;
+     * anywhere else {@link #CAVES}.
+     */
+    public static final Locator BIOMES = new Locator() {
+        @Override
+        public Region at(World world, BlockPos pos) {
+            if (ClientBiomes.active(world)) {
+                return of(ClientBiomes.biome(world, pos.getX(), pos.getY(), pos.getZ()));
+            }
+            return CAVES.at(world, pos);
+        }
+    };
+
+    /** @return the music biome of a 1.18 biome id ({@code terrain.core.Biomes}); NONE for any other */
+    public static Region of(int biome) {
+        switch (biome) {
+            case Biomes.LUSH_CAVES:
+                return Region.LUSH_CAVES;
+            case Biomes.DRIPSTONE_CAVES:
+                return Region.DRIPSTONE_CAVES;
+            case Biomes.MEADOW:
+                return Region.MEADOW;
+            case Biomes.GROVE:
+                return Region.GROVE;
+            case Biomes.SNOWY_SLOPES:
+                return Region.SNOWY_SLOPES;
+            case Biomes.JAGGED_PEAKS:
+                return Region.JAGGED_PEAKS;
+            case Biomes.FROZEN_PEAKS:
+                return Region.FROZEN_PEAKS;
+            case Biomes.STONY_PEAKS:
+                return Region.STONY_PEAKS;
+            default:
+                return Region.NONE;
+        }
+    }
 
     private static volatile Locator locator = NOWHERE;
 

@@ -32,7 +32,7 @@ import java.util.List;
 
 /**
  * Stream Mu: the Otherside disc, 1.18's biome music and the tracks 1.18 added to the game and menu music. No
- * entity ids, no packets (ids 60-64 are unused).
+ * entity ids, no packets (ids 60-64 are unused; a 1.18 world's biomes come in the terrain's packet 65).
  *
  * <p>This class is common: the disc, its loot, the sound events and the menu tracks handed to Backport Core. Which
  * music plays is {@link MusicChoice}, where the player is {@link MusicRegions}; the client part is
@@ -92,7 +92,7 @@ public final class MusicContent {
             return;
         }
         if (ModConfig.music.biomeMusic) {
-            MusicRegions.setLocator(MusicRegions.CAVES);
+            MusicRegions.setLocator(MusicRegions.BIOMES);
         }
         Contribution v118 = Presentation.version("1.18");
         if (ModConfig.music.menuMusic) {

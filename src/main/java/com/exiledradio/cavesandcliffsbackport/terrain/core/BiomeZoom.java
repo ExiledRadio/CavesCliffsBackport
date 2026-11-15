@@ -21,8 +21,25 @@ public final class BiomeZoom {
 
     /** Over stored biomes kept by the caller, for the world seed. */
     public BiomeZoom(long seed, Quarts biomes) {
-        this.zoomSeed = SurfaceBuilder.obfuscateSeed(seed);
+        this(biomes, SurfaceBuilder.obfuscateSeed(seed));
+    }
+
+    private BiomeZoom(Quarts biomes, long zoomSeed) {
+        this.zoomSeed = zoomSeed;
         this.biomes = biomes;
+    }
+
+    /** Over stored biomes, for a zoom seed ({@link #zoomSeed}) rather than the world seed: a client's. */
+    public static BiomeZoom ofZoomSeed(long zoomSeed, Quarts biomes) {
+        return new BiomeZoom(biomes, zoomSeed);
+    }
+
+    /**
+     * BiomeManager.obfuscateSeed: the seed's SHA-256, what 1.18's server sends its clients for this zoom (in the
+     * login and respawn packets) in place of the seed.
+     */
+    public static long zoomSeed(long seed) {
+        return SurfaceBuilder.obfuscateSeed(seed);
     }
 
     /** The biome id at block x, y, z. */

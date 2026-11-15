@@ -39,6 +39,15 @@ public final class MusicClient {
                 biomeMusic(s);
             }
         });
+        if ("music".equals(System.getProperty(CavesAndCliffsBackport.MOD_ID + ".clienttest"))) {
+            // A test build's client test (runClient -Pclienttest=music), reached by name: a release has no test classes.
+            try {
+                Class.forName("com.exiledradio.cavesandcliffsbackport.selftest.MusicClientSelfTest")
+                        .getMethod("start", String.class).invoke(null, "music");
+            } catch (ReflectiveOperationException e) {
+                CavesAndCliffsBackport.LOGGER.error("CLIENT SELFTEST DONE pass=0 fail=1: the test classes are not in this build.", e);
+            }
+        }
     }
 
     /** 1.18.2's {@code getSituationalMusic}, its last line: the biome's music where the game music would play. */
