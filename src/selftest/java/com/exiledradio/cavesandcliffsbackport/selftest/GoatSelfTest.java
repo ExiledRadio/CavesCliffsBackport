@@ -479,10 +479,14 @@ public final class GoatSelfTest implements SelfTest {
 
     /** A goat on a pillar five blocks high cannot walk anywhere, so every place it can reach is a jump. */
     private void longJump(Check c) {
-        // 1.17 checks the arc at full speed and flies it at 0.95 of that, so now and then a goat clips the ledge and
-        // drops back: vanilla does that too. Up to three goats; the checks are made on the first that lands clear.
-        for (int attempt = 0; attempt < 3 && !pillarJump(c, attempt == 2); attempt++) {
-            com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.LOGGER.info("SELFTEST goat: jump {} clipped the ledge, again", attempt + 1);
+        // 1.18.2 checks the arc at full speed and flies it at 0.95 of that, so some jumps fall short. On this pillar
+        // they are always the same 20 of its 106 places: the 16 on the ground two blocks out (it comes down on its
+        // own pillar's edge), and four past the ledge's corners (on the ledge, or 2.5 blocks short on the ground).
+        // 1.18.2's own code run on this layout misses 15.6% of its weighted draws, and so does this goat. Up to
+        // eight goats, so all eight miss about once in three million runs; the checks are made on the first that
+        // lands where it aimed, and on the last whatever it did.
+        for (int attempt = 0; attempt < JUMP_ATTEMPTS && !pillarJump(c, attempt == JUMP_ATTEMPTS - 1); attempt++) {
+            com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.LOGGER.info("SELFTEST goat: jump {} fell short, again", attempt + 1);
         }
 
         // On open ground everything is a walk: no jump, half a cooldown.
@@ -500,11 +504,14 @@ public final class GoatSelfTest implements SelfTest {
             cooldown = Math.max(cooldown, flat.getJumpCooldown());
         }
         c.ok(!jumped, "a goat on flat ground does not long jump");
-        c.ok(cooldown >= 300 && cooldown <= 600, "and waits half a cooldown: " + cooldown);
+        // Half of 600-1200 is 300-600, read after the tick that set it has counted it down once.
+        c.ok(cooldown >= 299 && cooldown <= 599, "and waits half a cooldown: " + cooldown);
         remove(c, flat);
     }
 
-    /** @return false if the jump clipped something and fell short (only then, and never on the last try, unchecked) */
+    private static final int JUMP_ATTEMPTS = 8;
+
+    /** @return false if the jump did not land where it aimed (only then, and never on the last try, unchecked) */
     private boolean pillarJump(Check c, boolean last) {
         BlockPos a = c.area();
         BlockPos top = a.add(16, 4, 16);
@@ -518,7 +525,7 @@ public final class GoatSelfTest implements SelfTest {
         c.ok(goat.onGround, "the goat stands on its pillar");
         goat.setJumpCooldown(0);
         boolean flew = false, small = false;
-        double highest = goat.posY;
+        double highest = goat.posY, touchX = goat.posX, touchZ = goat.posZ;
         int t = 0;
         for (; t < 400; t++) {
             tick(c, goat);
@@ -526,6 +533,8 @@ public final class GoatSelfTest implements SelfTest {
                 flew = true;
                 small |= goat.width < 0.7F;
                 highest = Math.max(highest, goat.posY);
+                touchX = goat.posX;
+                touchZ = goat.posZ;
             } else if (flew) {
                 break;
             }
@@ -533,13 +542,17 @@ public final class GoatSelfTest implements SelfTest {
         c.ok(flew, "the goat long jumped");
         c.ok(small, "at 0.7 of its size");
         BlockPos target = goat.getJumpTarget();
-        if (!last && flew && target != null && !(goat.onGround && goat.posY == target.getY())) {
+        double off = target == null ? Double.NaN
+                : Math.sqrt(Math.pow(goat.posX - (target.getX() + 0.5), 2) + Math.pow(goat.posZ - (target.getZ() + 0.5), 2));
+        if (!last && flew && target != null && !(goat.onGround && goat.posY == target.getY() && off < 1.5D)) {
             remove(c, goat);
             return false;
         }
         if (c.ok(target != null, "toward a block it chose") && flew) {
-            double off = Math.sqrt(Math.pow(goat.posX - (target.getX() + 0.5), 2) + Math.pow(goat.posZ - (target.getZ() + 0.5), 2));
             c.ok(goat.onGround && !goat.isMidJump(), "it landed (after " + t + " ticks)");
+            // Growing back to full size keeps it where it came down (1.12's setSize would move it 0.135 toward -x -z).
+            double slide = Math.sqrt(Math.pow(goat.posX - touchX, 2) + Math.pow(goat.posZ - touchZ, 2));
+            c.ok(slide < 0.1D, "and stays where it came down: " + slide);
             c.ok(off < 1.5D, "about where it aimed: " + off + " from " + target + ", at " + goat.getPositionVector());
             c.eq((double) target.getY(), goat.posY, "at the height it aimed for");
             c.ok(highest > top.getY() + 1.01D, "in an arc: up to " + highest);

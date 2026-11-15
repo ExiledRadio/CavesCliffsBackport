@@ -34,6 +34,7 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -324,10 +325,26 @@ public class EntityGoat extends EntityAnimal {
         this.jumpCooldown = this.nextJumpCooldown();
     }
 
-    /** An ageable mob's size only takes effect when its age scale is applied again. */
+    /**
+     * An ageable mob's size only takes effect when its age scale is applied again.
+     *
+     * <p>1.12 grows a box from its low corner and then moves it back by the growth, so every landing would shift
+     * the goat 0.135 blocks toward -x and -z (and off a ledge it landed on the edge of). 1.18 keeps the entity
+     * where it is and only moves it when the bigger box does not fit, so the goat is put back on its center when
+     * the box fits there.
+     */
     private void resize(float width, float height) {
+        double x = this.posX, z = this.posZ;
+        float before = this.width;
         this.setSize(width, height);
         this.setScaleForAge(this.isChild());
+        if (this.width > before && !this.world.isRemote) {
+            double half = this.width / 2.0D;
+            AxisAlignedBB centered = new AxisAlignedBB(x - half, this.posY, z - half, x + half, this.posY + this.height, z + half);
+            if (!this.world.collidesWithAnyBlock(centered)) {
+                this.setPosition(x, this.posY, z);
+            }
+        }
     }
 
     /**
