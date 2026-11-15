@@ -464,10 +464,10 @@ public final class ModConfig {
         @Config.LangKey("config.cavesandcliffsbackport.height.enabled")
         public boolean enabled = true;
 
-        @Config.Comment({"New worlds that would get the Default world type get the Caves & Cliffs type instead: in single player",
-                "and on a server whose level-type is DEFAULT. Takes effect for worlds created afterwards."})
-        @Config.LangKey("config.cavesandcliffsbackport.height.defaultForNewWorlds")
-        public boolean defaultForNewWorlds = false;
+        @Config.Comment({"Create World starts on the Caves & Cliffs world type, and a new server with no level-type in",
+                "server.properties creates its world with it. Default stays in the list as the 1.12 terrain."})
+        @Config.LangKey("config.cavesandcliffsbackport.height.defaultWorldType")
+        public boolean defaultWorldType = true;
 
         @Config.RequiresWorldRestart
         @Config.Comment({"Worker threads that build the 1.18 terrain of a Caves & Cliffs world ahead of the server thread.",

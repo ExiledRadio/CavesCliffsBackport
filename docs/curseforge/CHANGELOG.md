@@ -2,6 +2,7 @@
 
 First full release. Since the beta:
 
+*   **New worlds are Caves & Cliffs worlds**: Create World starts on the Caves & Cliffs world type, as 1.18's terrain is vanilla's default, and a new server uses it unless server.properties names another `level-type`. Default is still under World Type for 1.12's terrain, and existing worlds keep theirs. Setting `height.defaultWorldType` turns this off.
 *   **New worlds spawn where 1.18.2 puts the spawn** for the seed, so a seed's start matches Chunkbase. Worlds made with the beta keep their spawn.
 *   **Fixed a server crash with EagleMixins and NuclearCraft** when an entity was above y 192 in a Caves & Cliffs world.
 

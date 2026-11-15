@@ -204,21 +204,6 @@ public final class HeightHooks {
         }
     }
 
-    /**
-     * End of {@code WorldInfo(WorldSettings, String)}: a new save. With {@code height.defaultForNewWorlds} on, a new
-     * world that would get the Default type gets the Caves & Cliffs type. The client's own copy ("MpServer") takes
-     * whatever the server sent.
-     */
-    public static void newWorldInfo(WorldInfo info, String name) {
-        if ("MpServer".equals(name) || !HeightContent.allowed() || !ModConfig.height.defaultForNewWorlds) {
-            return;
-        }
-        if (info.getTerrainType() == WorldType.DEFAULT && HeightContent.worldType() != null) {
-            info.setTerrainType(HeightContent.worldType());
-            CavesAndCliffsBackport.LOGGER.info("Extended height: new world '{}' gets the Caves & Cliffs world type (height.defaultForNewWorlds).", name);
-        }
-    }
-
     // ---------------------------------------------------------------------------------------------
     // Saving
     // ---------------------------------------------------------------------------------------------

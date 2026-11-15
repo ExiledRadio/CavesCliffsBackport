@@ -111,25 +111,6 @@ final class SmallPatches {
     }
 
     /**
-     * {@code WorldInfo(WorldSettings, String)}, where a new save gets its world type: lets the config switch make the
-     * Caves & Cliffs type the default ({@code height.HeightHooks.newWorldInfo}).
-     */
-    static final class WorldInfoPatch extends ClassPatch {
-        WorldInfoPatch() {
-            super("net.minecraft.world.storage.WorldInfo");
-        }
-
-        @Override
-        protected void apply(ClassNode node) {
-            MethodNode m = method(node, "<init>", "<init>", "(Lnet/minecraft/world/WorldSettings;Ljava/lang/String;)V");
-            for (AbstractInsnNode n : expect("<init>(WorldSettings).return", m, 1, op(Opcodes.RETURN))) {
-                m.instructions.insertBefore(n, list(new VarInsnNode(Opcodes.ALOAD, 0), new VarInsnNode(Opcodes.ALOAD, 2),
-                        hooks("newWorldInfo", "(Lnet/minecraft/world/storage/WorldInfo;Ljava/lang/String;)V")));
-            }
-        }
-    }
-
-    /**
      * VintageFix's {@code chunk_access.ChunkMixin} overwrites {@code Chunk.getBlockState(int, int, int)} with vanilla's
      * body less the debug-world branch, after our transformer patched Chunk. Mixin reads a mixin class through the
      * transformer chain, so its overwrite gets the same three sites as ours: the y guard and both section lookups.

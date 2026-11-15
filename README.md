@@ -7,7 +7,7 @@ All of 1.17 and 1.18 Caves & Cliffs on Minecraft 1.12.2: the Caves & Cliffs worl
 1. Download `CavesAndCliffsBackport-<version>.jar` and `BackportCore-<version>.jar` from [Releases](https://github.com/ExiledRadio/CavesCliffsBackport/releases).
 2. Download [Fluidlogged API](https://www.curseforge.com/minecraft/mc-mods/fluidlogged-api) 3.3.3 or newer.
 3. Put all three in your `mods` folder (Forge 1.12.2, 14.23.5.2847 or newer). Client and server both need them.
-4. Pick the Caves & Cliffs world type when you create a world.
+4. Create a world. New worlds are Caves & Cliffs worlds; pick Default under World Type for 1.12's terrain.
 
 Back up your worlds before adding it to one you play in.
 
