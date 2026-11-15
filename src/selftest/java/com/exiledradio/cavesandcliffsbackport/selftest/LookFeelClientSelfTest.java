@@ -96,6 +96,7 @@ public final class LookFeelClientSelfTest {
                 eq(GameVersion.parse("1.18"), last.version, "the newest panorama");
                 ok(mc.getTextureManager().getTexture(last.faces[0]) != null, "1.18's panorama face 0 is loaded (drawn on the title screen)");
                 eq(0.5F, mc.gameSettings.gammaSetting, "brightness is 1.18's default, 50, once applied");
+                createWorldDefault();
                 this.shot = "cc_lookfeel_title.png";
                 this.wait = 5;
                 this.state = 2;
@@ -149,6 +150,27 @@ public final class LookFeelClientSelfTest {
             default:
                 finish(mc);
         }
+    }
+
+    /** height.defaultWorldType: a new Create World screen starts on Caves & Cliffs; one re-creating a world keeps its type. */
+    private void createWorldDefault() {
+        net.minecraft.world.WorldType type = com.exiledradio.cavesandcliffsbackport.height.HeightContent.worldType();
+        if (type == null) {
+            ok(false, "the Caves & Cliffs world type is registered");
+            return;
+        }
+        net.minecraft.client.gui.GuiCreateWorld fresh = new net.minecraft.client.gui.GuiCreateWorld(null);
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.GuiOpenEvent(fresh));
+        int index = net.minecraftforge.fml.relauncher.ReflectionHelper.getPrivateValue(net.minecraft.client.gui.GuiCreateWorld.class, fresh,
+                "selectedIndex", "field_146331_K");
+        eq(type.getId(), index, "Create World starts on the Caves & Cliffs world type");
+        net.minecraft.client.gui.GuiCreateWorld again = new net.minecraft.client.gui.GuiCreateWorld(null);
+        net.minecraftforge.fml.relauncher.ReflectionHelper.setPrivateValue(net.minecraft.client.gui.GuiCreateWorld.class, again, "12345",
+                "worldSeed", "field_146329_I");
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.GuiOpenEvent(again));
+        int kept = net.minecraftforge.fml.relauncher.ReflectionHelper.getPrivateValue(net.minecraft.client.gui.GuiCreateWorld.class, again,
+                "selectedIndex", "field_146331_K");
+        eq(net.minecraft.world.WorldType.DEFAULT.getId(), kept, "re-creating a Default world keeps Default");
     }
 
     private void ok(boolean condition, String what) {

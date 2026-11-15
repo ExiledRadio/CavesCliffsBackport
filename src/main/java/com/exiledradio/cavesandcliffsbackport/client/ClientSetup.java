@@ -32,6 +32,7 @@ public final class ClientSetup {
 
     public static void init() {
         MinecraftForge.EVENT_BUS.register(new ClientSetup());
+        MinecraftForge.EVENT_BUS.register(new com.exiledradio.cavesandcliffsbackport.height.client.CreateWorldDefault());
         if (com.exiledradio.cavesandcliffsbackport.ModConfig.amethyst.enabled) {
             com.exiledradio.cavesandcliffsbackport.amethyst.client.SpyglassClient.init();
         }

@@ -6,7 +6,7 @@ All of 1.17 and 1.18 Caves & Cliffs, on Minecraft 1.12.2. It needs Backport Core
 
 ## 1.18 terrain
 
-Pick the Caves & Cliffs world type when you create a world. You get 1.18's overworld: mountains up to y 319, caves down to bedrock at y -64, and 1.18's biomes. Seeds give the same terrain, biomes and structure spots as 1.18.2, so Chunkbase works.
+New worlds are Caves & Cliffs worlds, as 1.18's terrain is vanilla's default: 1.18's overworld, mountains up to y 319, caves down to bedrock at y -64, and 1.18's biomes. Seeds give the same terrain, biomes and structure spots as 1.18.2, so Chunkbase works.
 
 The new biomes are meadows, groves, snowy slopes, jagged, frozen and stony peaks, lush caves and dripstone caves.
 
@@ -19,7 +19,7 @@ Underground there are cheese, spaghetti and noodle caves, aquifers with their ow
 
 Generation runs on worker threads, ahead of where you're going. It is faster than vanilla 1.12's.
 
-A config option makes Caves & Cliffs the default world type, in single player and on servers. Existing worlds keep their 0-255 height. They still get the 1.17 blocks, ores, geodes and cave biomes in new chunks.
+Default is still under World Type, for 1.12's terrain, and a server keeps the type it names in server.properties. A config option turns the new default off. Existing worlds keep their 0-255 height. They still get the 1.17 blocks, ores, geodes and cave biomes in new chunks.
 
 ![A huge cave above a lava aquifer](PENDING:cc-deep-caves)
 

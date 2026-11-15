@@ -1,7 +1,7 @@
 # Stream H: extended world height (y -64 to 319)
 
 Package `height` (the coremod in `height.asm`; the design is `docs/EXTENDED_HEIGHT.md`). Config `height`: `enabled`,
-`defaultForNewWorlds`. No blocks, items, entities or packets of its own. Also changed outside the package: one line
+`defaultWorldType`. No blocks, items, entities or packets of its own. Also changed outside the package: one line
 in the mod class's pre-init, two lines in `SelfTestRunner.TESTS`, the coremod's manifest entries and
 `fml.coreMods.load` in `build.gradle` (and a `-Pclienttest` property for the client test), one category name in
 `tools/common/generate.py`, and the PLAN's merge-conflict status lines.
@@ -35,7 +35,7 @@ target class. No mixins, no MixinBooter.
 
 *   **The Caves & Cliffs world type**: a new world from y -64 to 319, as in 1.18. Choose it on the world creation
     screen ("World Type: Caves & Cliffs") or with `level-type=cavesandcliffs` in `server.properties`; the config switch
-    `height.defaultForNewWorlds` makes it the default. The terrain is still 1.12's until the 1.18 terrain arrives: the
+    `height.defaultWorldType` (on) makes it the default: Create World starts on it and a new server with no `level-type` writes `cavesandcliffs` (`DefaultWorldType`); Default stays a choice. The terrain is still 1.12's until the 1.18 terrain arrives: the
     new depth below y 0 is solid stone down to bedrock at y -64, and mobs spawn there as anywhere underground.
 *   Everything works at every height: building (up to 319 and down to -64), light, saving, multiplayer, rendering,
     falling into the void (from y -128), Nether portals (lit, found and built anywhere from -64 to 319).
@@ -102,7 +102,6 @@ the transformer receives it, to read what another mod left when a site is not fo
 | `BlockPortal`, `BlockPortal$Size`, `Teleporter` | Nether portals as in 1.18 (`PortalPatches`): lighting a frame from above its bottom row walks down to the world's bottom (was `y > 0`: a frame below 0 lit only from its bottom row); zombie pigmen come out of a portal below 0; an arrival's search for a portal (`placeInExistingPortal`) and the column search for where to build one (`makePortal`, both passes, its floor walk too) run down to the world's bottom instead of 0. Their tops are `getActualHeight()` (already 320); the fallback height stays clamped to 70 and up, as 1.18's `max(minY + 1, 70)` |
 | `NetHandlerPlayServer` | the build limit (placing, breaking) is the world's top |
 | `WorldEntitySpawner` | spawn attempts draw y from the world's bottom (one random draw either way) |
-| `WorldInfo` | a new save's world type (the `defaultForNewWorlds` switch) |
 | `NetHandlerPlayClient`, `WorldClient` (client) | chunk receive and unload re-render the whole height |
 | `ViewFrustum` (client) | 24 render chunks high, index from the bottom (`getRenderChunk`: vanilla's `intFloorDiv(y, 16)` or OptiFine's `y >> 4`) |
 | `RenderGlobal` (client) | neighbour walk bounds, the start chunk for a camera above or below the world, render-chunk entity lists; with OptiFine, its `maxChunkY` local starts at the world's top instead of 256 (see below) |
