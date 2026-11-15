@@ -71,8 +71,15 @@ public final class TerrainSelfTest implements SelfTest {
             check.eq(0, wrong, "TerrainHeights answers the generator's surface");
         }
         BlockPos spawn = world.getSpawnPoint();
-        int top = generator.surface(spawn.getX(), spawn.getZ());
-        check.ok(top > 63 && !generator.wet(spawn.getX(), spawn.getZ()), "the spawn is on dry land (" + spawn + ")");
+        check.ok(!generator.wet(spawn.getX(), spawn.getZ()), "the spawn is on dry land (" + spawn + ")");
+        // 1.18.2's: within 5 chunks of the climate's spawn position, on a block with a full top face.
+        int[] climate = generator.climateSpawn();
+        check.ok(Math.abs((spawn.getX() >> 4) - (climate[0] >> 4)) <= 5 && Math.abs((spawn.getZ() >> 4) - (climate[1] >> 4)) <= 5,
+                "the spawn " + spawn + " is by the climate's spawn position " + climate[0] + "," + climate[1]);
+        BlockPos below = spawn.down();
+        check.ok(world.getBlockState(below).getBlockFaceShape(world, below, net.minecraft.util.EnumFacing.UP)
+                == net.minecraft.block.state.BlockFaceShape.SOLID, "the spawn stands on a full top face ("
+                + world.getBlockState(below) + ")");
     }
 
     /** One chunk, block for block, against a second pipeline. */

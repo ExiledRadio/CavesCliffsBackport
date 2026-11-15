@@ -349,6 +349,8 @@ pieces, buried pieces, rigid and terrain-matching jigsaw pieces with ground leve
 packed so that many terms overlap): 836 chunks, 82 million blocks, 364,365 of them changed by the beard, identical.
 The beard kernel is checked against `BEARD_KERNEL`.
 
+Spawn, `tools/terrain/SpawnCheck` against `spawns.txt` (`VanillaSpawnDump`: `Climate.Sampler.findSpawnPosition`, where `MinecraftServer.setInitialSpawn` starts): identical on 205 seeds (`oracle-out/spawn`). `SpawnSearch` is that search; `ModernGenerator.findSpawn` then runs vanilla's 11x11 chunk spiral and `getOverworldRespawnPos` on the generated chunks. Seed 650: climate -24,-20, spawn -32,92,-32 (before this, 8,94,8).
+
 Structures, `tools/terrain/StructureCheck` against `structures_SEED.bin.gz` (`VanillaStructureDump`: every
 candidate chunk of every set in chunks -512..511 (mineshafts and buried treasure, which have a candidate in every
 chunk: -128..127), strongholds' 128 ring positions, through vanilla's own `createStructures` choice and
@@ -441,6 +443,7 @@ sh tools/terrain/run.sh CarverCheck E:/MincraftModding/Workspaces/MC1182Referenc
 sh tools/terrain/run.sh BeardCheck E:/MincraftModding/Workspaces/MC1182Reference/oracle-out
 tools\terrain\bench.cmd 8 CarverBench 42 12 5
 sh tools/terrain/run.sh StructureCheck E:/MincraftModding/Workspaces/MC1182Reference/oracle-out 512 128
+sh tools/terrain/run.sh SpawnCheck E:/MincraftModding/Workspaces/MC1182Reference/oracle-out/spawn
 tools\terrain\bench.cmd 8 StructureBench 42 64 5
 sh tools/terrain/run.sh FeatureCheck E:/MincraftModding/Workspaces/MC1182Reference/oracle-out/feat-ores 8 <the 29 ore names>
 tools\terrain\bench.cmd 8 DecorationBench 42 12 5 0 0

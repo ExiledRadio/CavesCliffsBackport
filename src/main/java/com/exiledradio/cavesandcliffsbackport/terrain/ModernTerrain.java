@@ -237,7 +237,7 @@ public final class ModernTerrain {
         }
     }
 
-    /** The spawn point: dry land near 0, 0 by the bare terrain, without generating chunks to look. */
+    /** The spawn point: 1.18.2's for the seed (ModernGenerator.findSpawn). */
     @SubscribeEvent(priority = EventPriority.LOW)
     public static void onCreateSpawn(WorldEvent.CreateSpawnPosition event) {
         World world = event.getWorld();
@@ -245,10 +245,8 @@ public final class ModernTerrain {
             return;
         }
         BlockPos spawn = ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).findSpawn();
-        if (spawn != null) {
-            world.getWorldInfo().setSpawn(spawn);
-            event.setCanceled(true);
-        }
+        world.getWorldInfo().setSpawn(spawn);
+        event.setCanceled(true);
     }
 
     @SubscribeEvent

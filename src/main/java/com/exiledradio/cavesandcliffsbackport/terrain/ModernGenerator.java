@@ -18,6 +18,7 @@ import com.exiledradio.cavesandcliffsbackport.terrain.core.ChunkFiller;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.ColumnCache;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.OverworldNoise;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.Pipeline;
+import com.exiledradio.cavesandcliffsbackport.terrain.core.SpawnSearch;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.Structures;
 import net.minecraft.block.BlockFalling;
 import net.minecraft.entity.EnumCreatureType;
@@ -615,27 +616,108 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
     }
 
     /**
-     * A spawn point near 0, 0 on dry land: the nearest chunk center, spiralling out, whose bare terrain is above
-     * the sea and not under water. Null if none within 128 chunks (the world then uses 1.12's search).
+     * 1.18.2's world spawn ({@code MinecraftServer.setInitialSpawn}): the chunk holding the climate's spawn position
+     * ({@link SpawnSearch}), at y 64 in its middle, then the first spawnable block of that chunk or of the chunks
+     * spiralling out from it, 11 by 11 ({@code PlayerRespawnLogic.getSpawnPosInChunk}). Generates the chunks it
+     * looks at, as vanilla does.
      */
-    @Nullable
     BlockPos findSpawn() {
-        for (int r = 0; r <= 128; r++) {
-            for (int dx = -r; dx <= r; dx++) {
-                for (int dz = -r; dz <= r; dz++) {
-                    if (Math.max(Math.abs(dx), Math.abs(dz)) != r) {
-                        continue;
-                    }
-                    int x = (dx << 4) + 8;
-                    int z = (dz << 4) + 8;
-                    int h = surface(x, z);
-                    if (h > OverworldNoise.SEA_LEVEL + 1 && h == floor(x, z) && h < 200) {
-                        return new BlockPos(x, h, z);
-                    }
+        int[] climate = climateSpawn();
+        int ccx = climate[0] >> 4;
+        int ccz = climate[1] >> 4;
+        BlockPos spawn = new BlockPos((ccx << 4) + 8, 64, (ccz << 4) + 8);
+        int x = 0;
+        int z = 0;
+        int dx = 0;
+        int dz = -1;
+        for (int i = 0; i < 121; i++) {
+            if (x >= -5 && x <= 5 && z >= -5 && z <= 5) {
+                BlockPos pos = spawnInChunk(ccx + x, ccz + z);
+                if (pos != null) {
+                    return pos;
+                }
+            }
+            if (x == z || x < 0 && x == -z || x > 0 && x == 1 - z) {
+                int t = dx;
+                dx = -dz;
+                dz = t;
+            }
+            x += dx;
+            z += dz;
+        }
+        return spawn;
+    }
+
+    /** The climate's spawn position, {x, z} ({@link SpawnSearch}); the self-test checks the spawn against it. */
+    public int[] climateSpawn() {
+        return new SpawnSearch(terrain.noise, new ColumnCache(terrain.noise)).find();
+    }
+
+    /** getSpawnPosInChunk: the first column, x outer and z inner, with a spawnable block. */
+    @Nullable
+    private BlockPos spawnInChunk(int cx, int cz) {
+        Chunk chunk = this.world.getChunk(cx, cz);
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                BlockPos pos = spawnInColumn(chunk, (cx << 4) + x, (cz << 4) + z);
+                if (pos != null) {
+                    return pos;
                 }
             }
         }
         return null;
+    }
+
+    /**
+     * getOverworldRespawnPos: none where the top block is a fluid; else the block above the highest one with a full
+     * top face, searching down from two above the MOTION_BLOCKING height and stopping at a fluid.
+     */
+    @Nullable
+    private BlockPos spawnInColumn(Chunk chunk, int x, int z) {
+        int min = com.exiledradio.cavesandcliffsbackport.height.Heights.minY(this.world);
+        int top = com.exiledradio.cavesandcliffsbackport.height.Heights.topY(this.world);
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        // MOTION_BLOCKING: the highest block that blocks motion or holds a fluid. The highest non-air block
+        // (WORLD_SURFACE) is at or above it; when it is that block and the block does not block motion, it is a fluid.
+        int motion = min - 1;
+        boolean first = true;
+        for (int y = top; y >= min; y--) {
+            pos.setPos(x, y, z);
+            net.minecraft.block.state.IBlockState state = chunk.getBlockState(pos);
+            if (state.getMaterial() == net.minecraft.block.material.Material.AIR) {
+                continue;
+            }
+            boolean blocks = state.getMaterial().blocksMovement();
+            boolean fluid = fluid(state, pos);
+            if (blocks || fluid) {
+                if (first && !blocks) {
+                    return null;
+                }
+                motion = y;
+                break;
+            }
+            first = false;
+        }
+        if (motion < min) {
+            return null;
+        }
+        for (int y = Math.min(motion + 2, top); y >= min; y--) {
+            pos.setPos(x, y, z);
+            net.minecraft.block.state.IBlockState state = chunk.getBlockState(pos);
+            if (fluid(state, pos)) {
+                return null;
+            }
+            if (state.getBlockFaceShape(this.world, pos, net.minecraft.util.EnumFacing.UP)
+                    == net.minecraft.block.state.BlockFaceShape.SOLID
+                    && state.getCollisionBoundingBox(this.world, pos) != null) {
+                return new BlockPos(x, y + 1, z);
+            }
+        }
+        return null;
+    }
+
+    private boolean fluid(net.minecraft.block.state.IBlockState state, BlockPos pos) {
+        return state.getMaterial().isLiquid() || Waterlogging.hasWater(this.world, pos);
     }
 
     /** Counters for the benchmark: where the server thread's time per chunk went. */
