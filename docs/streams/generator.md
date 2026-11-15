@@ -453,6 +453,8 @@ had chunks when this generator first saw it).
     seeds: identical. `FeatureDump12111` (pale garden features, grass, sugar cane, pumpkins; 2,048 chunks: 84,960 pale
     oak logs, 75 creaking hearts): only 47 sugar cane blocks differ (1.21.11's sugar cane patch, one of the changes to
     1.18.2's own features); the pale garden's own blocks are identical. The 1.21.4 check is unchanged.
+    Spot check against Chunkbase (Java 1.21.5, seed 42): x 1344, z -4736 is Pale Garden there, in vanilla 1.21.11 and
+    here with SPRING (y 72); 1.21.4 (vanilla and PALE) has dark forest there.
 *   `NewerBiomesSelfTest` with Tricky Trials Backport's dev jar in `eclipse/mods` (Caves & Cliffs world,
     `height,terrain`): the world gets "1.21.4-pale" (with `paleGarden1214`; "1.21.11-pale", the default, likewise: 262
 pass, 4 natural hearts, `creaking_heart_state=dormant`); a pale garden at -3704, -6264 is Tricky's biome, with pale oak
