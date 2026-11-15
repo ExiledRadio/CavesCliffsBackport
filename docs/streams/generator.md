@@ -255,6 +255,15 @@ installed, unless a mod registers a 1.12 biome under the cave biome's name (then
 their 1.18 biome's 1.12 lists. The axolotls' spawner and every other server-side `CaveRegions.lush` / `dripstone`
 question in these worlds answer from the same 3D biome.
 
+**The client's biomes** (`PacketChunkBiomes`, `ClientBiomes`). 1.18's chunk packet carries each section's biomes and
+its login packet the zoom seed (the seed's SHA-256); its client reads `getBiome` at the camera through the same zoom.
+Here packet 65 follows each chunk packet (`ChunkWatchEvent.Watch`) with the chunk's 1,536 stored quarts as runs
+(usually a few dozen bytes) and the zoom seed, never the seed. The client keeps them per chunk until the chunk or the
+world unloads and answers `ClientBiomes.biome` with `BiomeZoom` over them (a chunk not yet sent is no biome, as
+1.18's empty chunk). The biome music reads it (`MusicRegions.BIOMES`): lush caves, dripstone caves, meadow, grove,
+snowy slopes and the three peaks, as 1.18's client. Worlds without 1.18 terrain send nothing and keep the 1.17
+regions.
+
 **Backport Core** (1.2.0 from its `cc-structures` branch, on `cc-heights`; `deps/BackportCore-1.2.0-dev.jar`). The generator is a
 `TerrainSource`: `TerrainHeights.forWorld` gets a `ColumnTerrain` that answers from the core's noise (1.18's
 WORLD_SURFACE_WG and OCEAN_FLOOR_WG of the bare terrain, `ChunkFiller.baseHeight`), so 1.14-style villages and other
@@ -478,8 +487,6 @@ same with 8 workers (unpinned): 2.5 ms/chunk, same checksum. (Before trees and v
 *   **The family's structures need their `cc-structures` branches** (Core 1.2.0 with `StructureSource`; Update
     Aquatic, Nether Update and Village & Pillage asking it). Their released jars keep their own placement.
 *   **Spawn point**: dry land nearest 0, 0 by the noise, not 1.18's climate-based `findSpawnPosition`; no bonus chest.
-*   **Clients still hear cave music by the 1.17 regions** (`CaveRegions` on the client has the noise key, not the 3D
-    biomes); the server side (spawning, axolotls) uses 1.18's biomes.
 *   **A crash** (not a stop) loses what decoration wrote since the last world save into chunks not yet generated.
 *   **Decoration runs on the server thread** (about 1.5 ms of the 5 in the dev bench, more in forests). It could run on one more thread ahead of need,
     in the same order; not needed for the targets.

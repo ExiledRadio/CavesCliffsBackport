@@ -70,6 +70,22 @@ final class ChunkBiomes implements BiomeZoom.Quarts {
         lastKey = Long.MIN_VALUE;
     }
 
+    /**
+     * A loaded chunk's stored biomes (BiomeSource.fillChunk's layout; the kept array, not to be written), or null for
+     * a chunk not loaded.
+     */
+    synchronized byte[] quarts(int cx, int cz) {
+        long k = key(cx, cz);
+        byte[] q = chunks.get(k);
+        if (q == null && world.getChunkProvider().getLoadedChunk(cx, cz) != null) {
+            q = new byte[Pipeline.QUARTS];
+            source.fillChunk(cx, cz, q);
+            chunks.put(k, q);
+            lastKey = Long.MIN_VALUE;
+        }
+        return q;
+    }
+
     synchronized int size() {
         return chunks.size();
     }
