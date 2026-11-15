@@ -64,6 +64,7 @@ public final class SelfTestRunner {
             new TerrainOceanSelfTest(),
             new TerrainFluidSelfTest(),
             new TerrainFlowSelfTest(),
+            new TerrainOpeningSelfTest(),
             new RestartSelfTest("restartwhole"),
             new RestartSelfTest("restart1"),
             new RestartSelfTest("restart2"),

@@ -437,6 +437,11 @@ public final class Pipeline {
         return c;
     }
 
+    /** The aquifer's fluid-update flag (the openings 1.12's population makes are checked against it). */
+    public FluidMarks fluidMarks() {
+        return fluidMarks;
+    }
+
     /** The finished chunk's updates: decoration's marks, then the aquifer fluids' that can move. */
     private int[] updates(Proto c) {
         return fluidMarks.finish(c.blocks, blocksOf(c.cx, c.cz - 1), blocksOf(c.cx, c.cz + 1), blocksOf(c.cx - 1, c.cz),
