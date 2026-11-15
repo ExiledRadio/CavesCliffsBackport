@@ -38,7 +38,9 @@ keys, so mob names come from Mojang's language files like block and item names.
     degrees reaches with a clear arc; one drawn per tick for 20 ticks, farther ones more often, the first the
     goat cannot walk to is taken; two seconds of looking, then the jump. In the air the goat is 0.7 of its
     size and its movement has no drag (1.17 switches friction off; here `travel` undoes 1.12's), so it lands
-    where the math aimed. No long jumps from a honey block when a mod has one.
+    where the math aimed, except that, as in 1.18.2, the arc is checked at full speed and flown at 0.95 of it, so
+    some jumps fall short. Back at full size it stays where it came down (1.12's `setSize` would shift it 0.135
+    toward -x -z). No long jumps from a honey block when a mod has one.
 *   **Saved data** is current Java's: `IsScreamingGoat`, `HasLeftHorn`, `HasRightHorn` and the two cooldowns
     under `Brain.memories` (`minecraft:ram_cooldown_ticks`, `minecraft:long_jump_cooling_down`). Both horns
     are true and nothing here takes one: goat horns belong to a later update, which can read and write the
@@ -88,7 +90,9 @@ keys, so mob names come from Mojang's language files like block and item names.
     back on: it rams. A screaming goat with nobody to ram waits 100 ticks.
 *   Ramming a survival player: 2 damage on Easy, thrown back, velocity flagged for sending.
 *   A long jump off a five-block pillar: 0.7 size in the air, lands at the block and height it aimed for,
-    unhurt, cooldown 30 to 60 seconds; on flat ground no jump and half a cooldown.
+    stays where it came down, unhurt, cooldown 30 to 60 seconds; on flat ground no jump and half a cooldown.
+    1.18.2's code misses 15.6% of its draws on this pillar (always the same 20 of 106 places), so up to eight
+    goats jump and the first that lands where it aimed is checked.
 *   Spawning: in the five hills biomes at the configured weight, not in plains; on stone, gravel, packed ice
     and snow in light, not on grass, dirt, sand or ice, not in the dark.
 *   *Whatever Floats Your Goat!* granted to a player sharing a boat with a goat, not for a goat alone.

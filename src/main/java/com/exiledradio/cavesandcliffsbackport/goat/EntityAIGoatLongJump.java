@@ -15,12 +15,12 @@ import java.util.List;
 /**
  * The long jump, as 1.17's {@code LongJumpToRandomPos}.
  *
- * <p>When the jump cooldown runs out and the goat stands idle on the ground, it lists every place within 5
+ * <p>When the jump cooldown runs out and the goat is on the ground, it lists every place within 5
  * blocks (each way, up and down) it could stand on and reach with a jump of at most 1.5 blocks per tick,
  * taking off at 65 to 80 degrees, with nothing in the way of the arc. For up to 20 ticks it draws one of them,
  * farther ones more often, and keeps the first it cannot simply walk to. It looks there for two seconds and
  * jumps; the flight is the goat's own ({@link EntityGoat#startLongJump}). With nowhere to jump to it waits
- * half a cooldown.
+ * half a cooldown, as it does when it moved before it chose (a goat that was walking).
  */
 public class EntityAIGoatLongJump extends EntityAIBase {
 
@@ -57,7 +57,8 @@ public class EntityAIGoatLongJump extends EntityAIBase {
 
     @Override
     public boolean shouldExecute() {
-        if (this.goat.getJumpCooldown() != 0 || this.goat.isMidJump() || !this.goat.onGround || !this.goat.getNavigator().noPath()) {
+        // As 1.18.2, a walking goat tries too: it has moved by the next tick, so it gives up with half a cooldown.
+        if (this.goat.getJumpCooldown() != 0 || this.goat.isMidJump() || !this.goat.onGround) {
             return false;
         }
         // No long jumps off honey (when a mod has a honey block).
