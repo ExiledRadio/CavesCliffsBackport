@@ -27,6 +27,9 @@ final class ChunkPatch extends ClassPatch {
     private static final String STORAGE_SRG = "field_76652_q";
     private static final String QUEUED_MCP = "queuedLightChecks";
     private static final String QUEUED_SRG = "field_76649_t";
+    /** Forge's own static field (not obfuscated): the chunk being populated, else null. */
+    private static final String POPULATING = "populating";
+    private static final String POS_DESC = "Lnet/minecraft/util/math/ChunkPos;";
 
     private final boolean client;
 
@@ -124,8 +127,27 @@ final class ChunkPatch extends ClassPatch {
         }
         slots(m, "getBlockState", 1);
 
-        slots(method(node, "setBlockState", "func_177436_a", "(Lnet/minecraft/util/math/BlockPos;"
-                + "Lnet/minecraft/block/state/IBlockState;)Lnet/minecraft/block/state/IBlockState;"), "setBlockState", 2);
+        m = method(node, "setBlockState", "func_177436_a", "(Lnet/minecraft/util/math/BlockPos;"
+                + "Lnet/minecraft/block/state/IBlockState;)Lnet/minecraft/block/state/IBlockState;");
+        slots(m, "setBlockState", 2);
+        // Every block 1.12's population sets (Forge's Chunk.populating is the chunk being populated, else null):
+        // the 1.18 terrain's fluid updates look for the aquifer fluids it opens (terrain.FluidUpdates). No jump, so
+        // no frame: the hook returns at once outside a population.
+        boolean populating = false;
+        for (org.objectweb.asm.tree.FieldNode f : node.fields) {
+            populating |= POPULATING.equals(f.name) && POS_DESC.equals(f.desc) && (f.access & Opcodes.ACC_STATIC) != 0;
+        }
+        if (site("setBlockState.populationWrite", m != null && populating)) {
+            m.instructions.insert(list(
+                    new FieldInsnNode(Opcodes.GETSTATIC, CHUNK, POPULATING, POS_DESC),
+                    new VarInsnNode(Opcodes.ALOAD, 0),
+                    new VarInsnNode(Opcodes.ALOAD, 1),
+                    new VarInsnNode(Opcodes.ALOAD, 2),
+                    new org.objectweb.asm.tree.MethodInsnNode(Opcodes.INVOKESTATIC,
+                            "com/exiledradio/cavesandcliffsbackport/terrain/FluidUpdates", "populationWrite",
+                            "(" + POS_DESC + "L" + CHUNK + ";Lnet/minecraft/util/math/BlockPos;"
+                                    + "Lnet/minecraft/block/state/IBlockState;)V", false)));
+        }
         slots(method(node, "getLightFor", "func_177413_a", "(Lnet/minecraft/world/EnumSkyBlock;"
                 + "Lnet/minecraft/util/math/BlockPos;)I"), "getLightFor", 1);
         slots(method(node, "setLightFor", "func_177431_a", "(Lnet/minecraft/world/EnumSkyBlock;"

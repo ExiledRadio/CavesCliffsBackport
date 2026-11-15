@@ -148,6 +148,28 @@ spread only one block: Fluidlogged API runs the tick as `FluidFlowHandler.update
 the flow placed still blocks with no tick of their own. A plant that cannot stay is
 removed without a drop (1.18's `updateShape` gives air); anything else gets a neighbor update (sand and gravel over a
 lake fall after 2 ticks, as `FallingBlock.updateShape` schedules them; glow lichen drops faces without support).
+Water kept in a block (Backport Core's waterlogging; with Fluidlogged API, Core's section store keeps it below y 0 and
+above 255 too) gets the same tick, which Fluidlogged API runs on the kept water, then the block's own update:
+`postProcessGeneration` ticks whatever fluid state is at a marked position, so `FluidMarks.scan` also takes the
+waterlogged blocks and water plants a feature placed in the aquifer's water.
+
+**Openings made by population** (`FluidUpdates.populationWrite`, patch site `Chunk.setBlockState.populationWrite` in
+`height.asm.ChunkPatch`). 1.18 marks every flagged aquifer fluid, exposed or not, and places its structures during
+decoration, before the chunk ticks, so a piece that cuts a marked fluid lets it flow. Here the list is decided when the
+chunk is finished, before 1.12's population (`Chunk.populate`: 1.12's structure pieces, other mods' `IWorldGenerator`s,
+the family's structures placed through Backport Core's `ScatteredStructure` driver). `Chunk.setBlockState` now starts
+with a call that gets Forge's `Chunk.populating` (the chunk being populated, else null: the call returns at once). While
+a population runs, every block it sets in a chunk still waiting for its updates is recorded as set (no longer the
+terrain's), and a block that does not stop motion and is not a liquid is an opening: the source above it and the four
+beside it (water, lava, or water kept in a block) join their chunk's list if the population has not set them and
+`FluidMarks.flagged` holds at their position. The flag is a function of the position, so that is all 1.18's mark needs.
+Every chunk the generator makes now waits, with or without updates of its own; what the population opened and set is
+saved with the list (`PendingUpdates`, `PendingWritten`). Every write that can open a chunk's fluids comes before its
+updates run: a population writes 8 to 23 blocks from its chunk's corner, and a chunk waits for the four populations
+whose window covers it, which reach 8 blocks past each of its sides. A liquid the population places is not an opening
+(an ocean monument's water beside the ocean's made 1,637 candidates in one test area, none able to flow); the one case
+that differs, aquifer lava over water a population placed, stays as 1.12 places it. An unflagged source beside an
+opening stays still, as in 1.18.2.
 
 **Other mods' decoration events** (`ModDecoration`). 1.12's population and biome decorator fire Forge events that
 other mods generate in; the 1.18 features replace both, so none fired. `populate` now fires, once per chunk after the
@@ -438,6 +460,17 @@ had chunks when this generator first saw it).
     own springs and edges leave no flowing block, and no liquid over air, without a tick. Before the fix: 5 failures
     (5 blocks per room, 3 stuck aquifer blocks), with Fluidlogged API on the classpath (as in the pack); passes with it
     as without it.
+*   Openings made by population (`TerrainOpeningSelfTest`, `terrainopen`, in `all`, in a Caves & Cliffs world, seed
+    1718): 9x9 chunks around 24 mineshaft starts on a spiral from block 3000, -3000. Around chunk 453, -445 a 1.12
+    corridor's cobweb sits beside an aquifer water source at 7272, 31, -7096 that was enclosed when the chunk was
+    finished; after the chunk's updates the water has flowed into the corridor. In the first area (chunk 266, -187)
+    every block state of the inner 49 chunks is compared before and after the updates and 40 ticks: 114 fluid blocks
+    changed, all within reach of one of the 238 updated positions (none elsewhere: no untouched aquifer starts). By
+    hand, in waiting chunks at block -7000, 7000: an enclosed source opened through the hook flows if flagged
+    (-7015, 0, 6977) and stays still if not (-7019, 7, 6978); water kept in a glass pane at y -43 (Core's store under
+    y 0, with Fluidlogged API) flows into its opening and the pane keeps its source. 26 pass, 0 fail. The hook saw
+    0.24-0.40 us per population write (timed), 2,971 to 27,889 writes per 81 chunks. `height,terrain,terrainflow,terrainopen` in a fresh Caves & Cliffs world
+    291 pass, 0 fail; `-Pselftest=all` in a fresh Default world 4448 pass, 0 fail.
 *   Other mods' decoration events: the family rig (`docs/streams/packcompat.md`, fixed item 6), Quark r1.6-179 and
     QuarkRotN r1.6-192 in Caves & Cliffs and Default worlds. `TreeGateCheck 42 8`: with the stone kinds denied no
     diorite or andesite is left (114,434 without) and the trees are unchanged. (Its tree check fails at seed 42, side 8
@@ -550,6 +583,12 @@ marks cost nothing measurable in the pipeline (`PipelineBench 42 16 0` 7.0 ms/ch
 Running the updates happens on world ticks, not in the bench: in the fluid self-test 265 chunks' updates (198 fluid
 ticks) took 19.2 ms, 0.07 ms per chunk.
 
+**Openings made by population** (cc-fluid-openings, 2026-11-15, a busy machine: other sessions' servers running).
+`genbench.py 3`: main (660328e) 7.67 best, 9.70 median ms/chunk (vanilla 14.92); the branch 7.78 / 8.22 (vanilla
+14.81) and, in the run after main's, 6.24 / 6.47 (vanilla 13.03). The sessions' spread is far over the change: the
+hook sees 62 population writes per chunk in the bench square, at about 0.25 us each in the self-test (timed), about
+0.016 ms per chunk. `PipelineBench 42 16 0` (one E-core, the scan now also takes water kept in blocks): main 16.03, 17.46, 18.60 ms/chunk, the branch 17.15, 17.78, 18.01, alternating; checksum 628033d72d65df32 on both.
+
 With the gaps closed (cc-gaps; the same session's run of the code before them gave 5.76 ms/chunk median against
 vanilla's 11.90, x0.48, on a busier machine): `beard_ms` 1.07-1.16 per generated chunk on the server thread, almost
 all of it the stronghold rings' one-time biome search (about 1.4 s once per world, which used to land in the 1.12
@@ -611,9 +650,7 @@ same with 8 workers (unpinned): 2.5 ms/chunk, same checksum. (Before trees and v
     in the same order; not needed for the targets.
 *   **Waterlogged blocks below 0 or above 255** need Backport Core's own store (stream C); until then they are dry.
 *   OptiFine and the Dregora packs were not run with the 1.18 terrain (stream H tested the height there).
-*   **Fluid updates are decided when the chunk is finished**, before 1.12's population: a marked aquifer fluid that a
-    1.12 structure piece (a mineshaft corridor) or another mod's generator opens later stays still, where 1.18's
-    structures, placed during decoration, would let it flow. A fluid in a waterlogged block (Backport Core's
-    waterlogging) gets no tick.
+*   **Openings made outside a population** (a write after the chunk's updates ran: a population that cascades past
+    its window, a retrogen mod) do not wake a flagged aquifer fluid; they get 1.12's own neighbor updates.
 *   **Quark's big swamp mushrooms** (`DECORATE` BIG_SHROOM) are not fired: current Forge fires that event without a
     position, so they never generate in a Default world either.

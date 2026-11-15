@@ -81,7 +81,8 @@ public final class FluidMarks {
     }
 
     /**
-     * Adds a {@link Marks#POST} for every water or lava source of the chunk that the aquifer marked and that has a
+     * Adds a {@link Marks#POST} for every water or lava source of the chunk (water kept in a block included) that the
+     * aquifer marked and that has a
      * neighbor (below or beside) it can flow into or meet. Neighbor chunks' blocks are read where given (north,
      * south, west, east: z - 1, z + 1, x - 1, x + 1; null counts as open).
      */
@@ -94,10 +95,14 @@ public final class FluidMarks {
                 // Below -54 only the global lava fills (flag false); the carvers' lava there takes it too.
                 for (int i = LAVA_LEVEL - MIN_Y; i < HEIGHT; i++) {
                     int code = blocks[col + i];
-                    if (code != BlockCodes.WATER && code != BlockCodes.LAVA) {
+                    // Water, lava, and the water a feature kept in a block it placed in the aquifer's water
+                    // (waterlogged, water plants): the mark is the position's, and postProcessGeneration ticks
+                    // whatever fluid state is there.
+                    boolean lava = code == BlockCodes.LAVA;
+                    if (!lava && code != BlockCodes.WATER && (BlockCodes.flags(code) & BlockCodes.F_WATER) == 0) {
                         continue;
                     }
-                    if (exposed(blocks, north, south, west, east, lx, lz, i, code == BlockCodes.LAVA)
+                    if (exposed(blocks, north, south, west, east, lx, lz, i, lava)
                             && flagged(bx + lx, MIN_Y + i, bz + lz)) {
                         out.add(Marks.pack(lx, MIN_Y + i, lz, Marks.POST));
                     }

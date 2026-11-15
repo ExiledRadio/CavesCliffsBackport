@@ -42,7 +42,7 @@ def run(mode, r, mask):
     set_level_type("cavesandcliffs" if mode == "modern" else "DEFAULT")
     shutil.rmtree(os.path.join(ECL, "world"), ignore_errors=True)
     log = os.path.join(ROOT, "build", "genbench-%s-%d.log" % (mode, r))
-    cmd = 'start "" /D "%s" /b /wait /affinity %s "%s" runServer -Pselftest=heightbench' % (ROOT, mask, os.path.join(ROOT, "gradlew.bat"))
+    cmd = 'start "" /D "%s" /b /wait /affinity %s "%s" --no-daemon runServer -Pselftest=heightbench -PdeployDir= -PcoreDeployDir=' % (ROOT, mask, os.path.join(ROOT, "gradlew.bat"))
     with open(log, "w") as out:
         subprocess.run(cmd, shell=True, cwd=ROOT, stdout=out, stderr=subprocess.STDOUT)
     bench = stats = None

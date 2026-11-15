@@ -39,9 +39,13 @@ public final class HeightBenchSelfTest implements SelfTest {
         WorldServer world = check.world;
         // Warm-up: the JIT, and every class the generators load.
         square(world, START - 200, 8);
+        long writes0 = com.exiledradio.cavesandcliffsbackport.terrain.FluidUpdates.writes;
+        long hook0 = com.exiledradio.cavesandcliffsbackport.terrain.FluidUpdates.writeNanos;
         long t0 = System.nanoTime();
         List<Chunk> chunks = square(world, START, SIDE);
         long gen = System.nanoTime() - t0;
+        long writes = com.exiledradio.cavesandcliffsbackport.terrain.FluidUpdates.writes - writes0;
+        long hook = com.exiledradio.cavesandcliffsbackport.terrain.FluidUpdates.writeNanos - hook0;
 
         AnvilChunkLoader loader = (AnvilChunkLoader) world.getChunkProvider().chunkLoader;
         Method write = ObfuscationReflectionHelper.findMethod(AnvilChunkLoader.class, "func_75820_a", void.class,
@@ -67,6 +71,10 @@ public final class HeightBenchSelfTest implements SelfTest {
         CavesAndCliffsBackport.LOGGER.info(String.format(java.util.Locale.ROOT,
                 "HEIGHTBENCH mode=%s chunks=%d gen_ms_per_chunk=%.3f save_ms_per_chunk=%.3f chunks_per_s=%.1f",
                 mode, n, gen / 1e6 / n, save / 1e6 / n, n / (gen / 1e9)));
+        // The population hook (terrain.FluidUpdates.populationWrite): the writes it saw and its time, in the timed square.
+        CavesAndCliffsBackport.LOGGER.info(String.format(java.util.Locale.ROOT,
+                "FLUIDOPENINGS population_writes_per_chunk=%.0f hook_ms_per_chunk=%.4f",
+                (double) writes / n, hook / 1e6 / n));
         check.ok(true, "benchmark ran");
     }
 

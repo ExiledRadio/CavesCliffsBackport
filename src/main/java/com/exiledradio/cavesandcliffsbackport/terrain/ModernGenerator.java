@@ -92,6 +92,11 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
     private final char[] column = new char[OverworldNoise.HEIGHT];
     /** Waterlogged positions of generated chunks, placed once the chunk is in the world ({@link #placeWater}). */
     private final Map<Long, long[]> water = new HashMap<>();
+    /** The aquifer's fluid-update flag, for the openings 1.12's population makes ({@link FluidUpdates}). */
+    public com.exiledradio.cavesandcliffsbackport.terrain.core.FluidMarks fluidMarks() {
+        return pipeline.fluidMarks();
+    }
+
     /** The structure pieces' terrain adaptation for the fills (null without structures). */
     private final StructureBeards beards;
     /** Held chunks across restarts (null for a world without a save directory). */
