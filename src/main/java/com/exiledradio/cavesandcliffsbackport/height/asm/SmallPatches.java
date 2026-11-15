@@ -155,4 +155,46 @@ final class SmallPatches {
             }
         }
     }
+
+    /**
+     * EagleMixins 1.2.4's sub-chunk radiation ({@code nuclearcraft.subchunkradiation.RadiationHandlerMixin}, its
+     * overwrite of NuclearCraft's {@code RadiationHandler.updateWorldRadiation}) walks a chunk's entity lists and
+     * selects sub-chunk {@code i} of its 16-entry arrays for list {@code i}: list 20 (y 256) and up threw. The list
+     * index becomes the sub-chunk its own {@code setSubchunk(BlockPos)} picks for those heights
+     * ({@code HeightLayout.listSection}). Every other sub-chunk index in its mixins is a 0-15 loop or a clamped
+     * {@code y >> 4}. Mixin reads a mixin class through the transformer chain, as for VintageFix's.
+     */
+    static final class EagleMixinsRadiationPatch extends ClassPatch {
+        static final String TARGET = "eaglemixins.mixin.nuclearcraft.subchunkradiation.RadiationHandlerMixin";
+
+        EagleMixinsRadiationPatch() {
+            super(TARGET, "EagleMixinsRadiationHandler");
+        }
+
+        @Override
+        protected void apply(ClassNode node) {
+            MethodNode m = method(node, "updateWorldRadiation", "updateWorldRadiation",
+                    "(Lnet/minecraftforge/fml/common/gameevent/TickEvent$WorldTickEvent;)V");
+            P lists = invoke(Opcodes.INVOKEVIRTUAL, "getEntityLists", "func_177429_s",
+                    "()[Lnet/minecraft/util/ClassInheritanceMultiMap;");
+            // for (int i = 0; i < chunk.getEntityLists().length; i++): the index and the chunk's locals.
+            int index = -1;
+            int chunk = -1;
+            for (AbstractInsnNode n : expect("updateWorldRadiation.listLoop", m, 1, iload(-1), aload(-1), lists,
+                    op(Opcodes.ARRAYLENGTH), op(Opcodes.IF_ICMPGE))) {
+                index = ((VarInsnNode) n).var;
+                chunk = ((VarInsnNode) next(n)).var;
+            }
+            if (index < 0) {
+                return;
+            }
+            for (AbstractInsnNode n : expect("updateWorldRadiation.listSubchunk", m, 1, iload(index),
+                    invoke(Opcodes.INVOKEVIRTUAL, "setSubchunk", "setSubchunk", "(I)V"))) {
+                m.instructions.insert(n, list(new VarInsnNode(Opcodes.ALOAD, chunk),
+                        new org.objectweb.asm.tree.MethodInsnNode(Opcodes.INVOKEVIRTUAL, "net/minecraft/world/chunk/Chunk",
+                                n("getEntityLists", "func_177429_s"), "()[Lnet/minecraft/util/ClassInheritanceMultiMap;", false),
+                        insn(Opcodes.ARRAYLENGTH), layout("listSection", "(II)I")));
+            }
+        }
+    }
 }

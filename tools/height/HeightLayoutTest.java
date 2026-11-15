@@ -55,6 +55,14 @@ public final class HeightLayoutTest {
         for (int p = 0; p < 16; p++) {
             eq(p, HeightLayout.byHeight(p, 16), "byHeight in a vanilla chunk is the index");
         }
+        // listSection: entity list (from the bottom) to the clamped vanilla section of y >> 4.
+        for (int y = HeightLayout.EXTENDED_MIN_Y; y < HeightLayout.EXTENDED_MAX_Y; y++) {
+            int list = (y - HeightLayout.EXTENDED_MIN_Y) >> 4;
+            eq(Math.max(0, Math.min(15, y >> 4)), HeightLayout.listSection(list, 24), "listSection(" + list + ", 24)");
+        }
+        for (int p = 0; p < 16; p++) {
+            eq(p, HeightLayout.listSection(p, 16), "listSection in a vanilla chunk is the index");
+        }
         System.out.println((failures == 0 ? "HEIGHTLAYOUT OK " : "HEIGHTLAYOUT FAILED ") + (checks - failures) + "/" + checks);
         System.exit(failures == 0 ? 0 : 1);
     }
