@@ -599,7 +599,7 @@ public final class ChunkFiller {
             this.noise = noise;
             this.columns = columns;
             this.newer = Editions.newerAquifers(noise.editions);
-            this.sampling = (noise.editions & Editions.CHERRY) != 0 ? SURFACE_SAMPLING_OFFSETS_IN_CHUNKS_120
+            this.sampling = Editions.from120(noise.editions) ? SURFACE_SAMPLING_OFFSETS_IN_CHUNKS_120
                     : SURFACE_SAMPLING_OFFSETS_IN_CHUNKS;
         }
 
@@ -873,6 +873,86 @@ public final class ChunkFiller {
                 }
             }
             return block;
+        }
+
+        /**
+         * 1.21.4's shouldScheduleFluidUpdate after a fluid answer at x, y, z (y at least -54; {@link Editions#PALE}):
+         * the four nearest aquifer centers now, and a mark only where two near ones hold different fluid statuses
+         * (1.18.2 to 1.20 mark wherever the two nearest are similar). {@link #begin} must be for the chunk holding
+         * x, z.
+         */
+        boolean flagged1214(int x, int y, int z) {
+            int gx0 = Math.floorDiv(x - 5, 16);
+            int gy0 = Math.floorDiv(y + 1, 12);
+            int gz0 = Math.floorDiv(z - 5, 16);
+            int dist1 = Integer.MAX_VALUE;
+            int dist2 = Integer.MAX_VALUE;
+            int dist3 = Integer.MAX_VALUE;
+            int dist4 = Integer.MAX_VALUE;
+            long pos1 = 0L;
+            long pos2 = 0L;
+            long pos3 = 0L;
+            long pos4 = 0L;
+            for (int ox = 0; ox <= 1; ox++) {
+                for (int oy = -1; oy <= 1; oy++) {
+                    for (int oz = 0; oz <= 1; oz++) {
+                        long pos = location(gx0 + ox, gy0 + oy, gz0 + oz);
+                        int ddx = unpackX(pos) - x;
+                        int ddy = unpackY(pos) - y;
+                        int ddz = unpackZ(pos) - z;
+                        int dist = ddx * ddx + ddy * ddy + ddz * ddz;
+                        if (dist1 >= dist) {
+                            pos4 = pos3;
+                            pos3 = pos2;
+                            pos2 = pos1;
+                            pos1 = pos;
+                            dist4 = dist3;
+                            dist3 = dist2;
+                            dist2 = dist1;
+                            dist1 = dist;
+                        } else if (dist2 >= dist) {
+                            pos4 = pos3;
+                            pos3 = pos2;
+                            pos2 = pos;
+                            dist4 = dist3;
+                            dist3 = dist2;
+                            dist2 = dist;
+                        } else if (dist3 >= dist) {
+                            pos4 = pos3;
+                            pos3 = pos;
+                            dist4 = dist3;
+                            dist3 = dist;
+                        } else if (dist4 >= dist) {
+                            pos4 = pos;
+                            dist4 = dist;
+                        }
+                    }
+                }
+            }
+            int s1 = status(pos1);
+            double d1 = similarity(dist1, dist2);
+            if (d1 <= 0.0D) {
+                return d1 >= FLOWING_UPDATE_SIMILARITY && !sameStatus(s1, status(pos2));
+            }
+            int block = y < statusLevel[s1] ? (statusLava[s1] ? LAVA : WATER) : AIR;
+            if (block == WATER && globalLava(y - 1)) {
+                return true;
+            }
+            int s2 = status(pos2);
+            int s3 = status(pos3);
+            double d0 = similarity(dist1, dist3);
+            double d4 = similarity(dist2, dist3);
+            if (!sameStatus(s1, s2) || d4 >= FLOWING_UPDATE_SIMILARITY && !sameStatus(s2, s3)
+                    || d0 >= FLOWING_UPDATE_SIMILARITY && !sameStatus(s1, s3)) {
+                return true;
+            }
+            return d0 >= FLOWING_UPDATE_SIMILARITY && similarity(dist1, dist4) >= FLOWING_UPDATE_SIMILARITY
+                    && !sameStatus(s1, status(pos4));
+        }
+
+        /** Aquifer.FluidStatus.equals: the same level and the same fluid. */
+        private boolean sameStatus(int a, int b) {
+            return statusLevel[a] == statusLevel[b] && statusLava[a] == statusLava[b];
         }
 
         /** The barrier noise at the block being decided, computed at most once (NaN until then). */

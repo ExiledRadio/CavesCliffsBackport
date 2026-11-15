@@ -84,6 +84,8 @@ public final class BiomeMap {
         m(Biomes.MANGROVE_SWAMP, "swampland");
         m(Biomes.DEEP_DARK, "plains");
         m(Biomes.CHERRY_GROVE, "plains");
+        // The pale garden (always Tricky Trials Backport's when a world has it): 1.12's roofed forest otherwise.
+        m(Biomes.PALE_GARDEN, "roofed_forest");
     }
 
     private final Biome[] biomes = new Biome[Biomes.COUNT];

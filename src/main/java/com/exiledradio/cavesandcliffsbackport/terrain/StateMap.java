@@ -42,6 +42,8 @@ public final class StateMap {
     public static final int TILE = 8;
     /** Flag: a bee nest (1.18's beehive decorator), which gets its bees ({@link Nests}). */
     public static final int NEST = 16;
+    /** Flag: a creaking heart a pale oak grew (1.21.4), whose tile is marked natural (Tricky Trials Backport's). */
+    public static final int HEART = 32;
 
     private IBlockState[] states = new IBlockState[0];
     /** The states that resolved to nothing (air or water instead), for the self-test. */
@@ -171,6 +173,17 @@ public final class StateMap {
         FALLBACK.put("cherry_log", "minecraft:log[variant=birch]");
         FALLBACK.put("cherry_leaves", "minecraft:leaves[variant=birch,check_decay=false,decayable=true]");
         FALLBACK.put("pink_petals", "minecraft:air");
+        // 1.21.4's pale garden (Tricky Trials Backport): its leaves without the decay check, as 1.12's tree
+        // generators place leaves; the creaking heart dormant (Tricky's 1.21.5 state for a heart by day).
+        v("pale_oak_leaves", "trickytrialsbackport:pale_oak_leaves[check_decay=false,decayable=true]");
+        v("creaking_heart", "trickytrialsbackport:creaking_heart[creaking_heart_state=dormant]");
+        FALLBACK.put("pale_oak_log", "minecraft:log2[variant=dark_oak]");
+        FALLBACK.put("pale_oak_leaves", "minecraft:leaves2[variant=dark_oak,check_decay=false,decayable=true]");
+        FALLBACK.put("creaking_heart", "minecraft:log2[variant=dark_oak]");
+        FALLBACK.put("pale_moss_block", "minecraft:dirt");
+        FALLBACK.put("pale_moss_carpet", "minecraft:air");
+        FALLBACK.put("pale_hanging_moss", "minecraft:air");
+        FALLBACK.put("closed_eyeblossom", "minecraft:air");
         for (String plant : new String[]{"kelp", "kelp_plant", "seagrass", "tall_seagrass", "sea_pickle"}) {
             FALLBACK.put(plant, "minecraft:water");
         }
@@ -283,6 +296,8 @@ public final class StateMap {
             f |= SPAWNER;
         } else if (name.equals("bee_nest") && b.hasTileEntity(state)) {
             f |= NEST;
+        } else if (name.equals("creaking_heart") && b.hasTileEntity(state)) {
+            f |= HEART;
         } else if (b.hasTileEntity(state)) {
             f |= TILE;
         }

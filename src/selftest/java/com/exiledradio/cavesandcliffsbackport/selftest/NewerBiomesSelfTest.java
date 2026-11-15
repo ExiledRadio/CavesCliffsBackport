@@ -36,7 +36,10 @@ final class NewerBiomesSelfTest {
         int e = generator.editions();
         boolean wild = registered("mud") && registered("mangrove_log") && registered("mangrove_propagule");
         boolean cherry = registered("cherry_log") && registered("pink_petals");
-        check.eq((wild ? Editions.WILD : 0) | (cherry ? Editions.CHERRY : 0), e,
+        boolean pale = net.minecraftforge.fml.common.Loader.isModLoaded("trickytrialsbackport")
+                && net.minecraftforge.fml.common.registry.ForgeRegistries.BIOMES.containsKey(PALE_GARDEN);
+        check.eq((wild ? Editions.WILD : 0) | (cherry ? Editions.CHERRY : 0) | (pale ? (com.exiledradio.cavesandcliffsbackport.ModConfig.height.paleGarden1214 ? Editions.PALE
+                : Editions.PALE | Editions.SPRING) : 0), e,
                 "the world's newer biomes are the ones the installed backports have blocks for (" + Editions.name(e) + ")");
         int rules = net.minecraftforge.fml.common.Loader.isModLoaded("trickytrialsbackport") ? Rules.V121
                 : net.minecraftforge.fml.common.Loader.isModLoaded("trailsandtalesbackport") ? Rules.V120
@@ -48,8 +51,13 @@ final class NewerBiomesSelfTest {
                 "the generator places trees_mangrove only with the 1.19 biomes");
         check.eq((e & Editions.CHERRY) != 0, DecorationSource.places(world, "trees_cherry"),
                 "the generator places trees_cherry only with the 1.20 biomes");
+        check.eq((e & Editions.PALE) != 0, DecorationSource.places(world, "pale_garden_vegetation"),
+                "the generator places pale_garden_vegetation only with the 1.21.4 biome");
         OverworldNoise noise = new OverworldNoise(world.getSeed(), e);
         BiomeSource source = new BiomeSource(noise, new ColumnCache(noise), new Climate(e));
+        if ((e & Editions.PALE) != 0) {
+            paleGarden(check, world, generator, noise, source, e);
+        }
         if ((e & Editions.WILD) != 0) {
             int[] c = find(source, Biomes.MANGROVE_SWAMP, 16);
             check.ok(c != null, "a mangrove swamp within 300 chunks");
@@ -139,6 +147,112 @@ final class NewerBiomesSelfTest {
                 check.eq(0, wrongBees, "every generated bee nest has 2 or 3 bees");
             }
         }
+    }
+
+    private static final ResourceLocation PALE_GARDEN = new ResourceLocation("trickytrialsbackport", "pale_garden");
+
+    /**
+     * 1.21.4's pale garden (Tricky Trials Backport): a dense one found on a coarse search, its biome in the world,
+     * its blocks, and a creaking heart the core grows (found by decorating the core's own chunks) in the world, its
+     * tile natural.
+     */
+    private static void paleGarden(Check check, WorldServer world, ModernGenerator generator, OverworldNoise noise,
+                                   BiomeSource source, int e) {
+        int[] c = null;
+        for (int r = 0; r < 300 && c == null; r++) {
+            for (int dx = -r; dx <= r && c == null; dx++) {
+                for (int dz = -r; dz <= r && c == null; dz++) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != r) {
+                        continue;
+                    }
+                    int cx = dx * 8;
+                    int cz = dz * 8;
+                    int n = 0;
+                    for (int i = -1; i <= 1; i++) {
+                        for (int j = -1; j <= 1; j++) {
+                            n += source.biome((cx + i) * 4 + 2, 18, (cz + j) * 4 + 2) == Biomes.PALE_GARDEN ? 1 : 0;
+                        }
+                    }
+                    if (n == 9) {
+                        c = new int[]{cx, cz};
+                    }
+                }
+            }
+        }
+        check.ok(c != null, "a pale garden within 2400 chunks");
+        if (c == null) {
+            return;
+        }
+        Map<String, Integer> n = census(world, c[0], c[1]);
+        BlockPos at = world.getHeight(new BlockPos(c[0] * 16 + 8, 0, c[1] * 16 + 8));
+        ok(check, PALE_GARDEN.equals(world.getBiome(at).getRegistryName()), "the pale garden at " + at
+                + " is Tricky Trials Backport's biome (" + world.getBiome(at).getRegistryName() + ")");
+        ok(check, n.getOrDefault("pale_oak_log", 0) > 20, "pale garden: pale oak logs (" + n.get("pale_oak_log") + ")");
+        ok(check, n.getOrDefault("pale_oak_leaves", 0) > 100, "pale garden: pale oak leaves (" + n.get("pale_oak_leaves") + ")");
+        ok(check, n.getOrDefault("pale_moss_block", 0) > 20, "pale garden: pale moss (" + n.get("pale_moss_block") + ")");
+        ok(check, n.getOrDefault("pale_moss_carpet", 0) > 5, "pale garden: pale moss carpets (" + n.get("pale_moss_carpet") + ")");
+        ok(check, n.getOrDefault("pale_hanging_moss", 0) > 10, "pale garden: hanging moss (" + n.get("pale_hanging_moss") + ")");
+        // A creaking heart: the core's own decoration of the chunks around, the first holding one.
+        com.exiledradio.cavesandcliffsbackport.terrain.core.Pipeline own =
+                new com.exiledradio.cavesandcliffsbackport.terrain.core.Pipeline(noise, new Climate(e), 0, 1024);
+        own.setBeards(generator.beards());
+        generator.sameDecoration(own);
+        int heart = com.exiledradio.cavesandcliffsbackport.terrain.core.BlockCodes.byState((e & Editions.SPRING) != 0
+                ? "creaking_heart[axis=y,creaking_heart_state=dormant,natural=true]" : "creaking_heart[active=true,axis=y,natural=true]");
+        BlockPos found = null;
+        for (int r = 0; r < 12 && found == null; r++) {
+            for (int dx = -r; dx <= r && found == null; dx++) {
+                for (int dz = -r; dz <= r && found == null; dz++) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != r) {
+                        continue;
+                    }
+                    char[] blocks = own.finish(c[0] + dx, c[1] + dz).blocks;
+                    for (int i = 0; i < blocks.length && found == null; i++) {
+                        if (blocks[i] == heart) {
+                            int col = i / com.exiledradio.cavesandcliffsbackport.terrain.core.Pipeline.HEIGHT;
+                            found = new BlockPos(((c[0] + dx) << 4) + (col >> 4),
+                                    com.exiledradio.cavesandcliffsbackport.terrain.core.Pipeline.MIN_Y
+                                            + i % com.exiledradio.cavesandcliffsbackport.terrain.core.Pipeline.HEIGHT,
+                                    ((c[1] + dz) << 4) + (col & 15));
+                        }
+                    }
+                }
+            }
+        }
+        own.shutdown();
+        check.ok(found != null, "the core grows a creaking heart within 12 chunks of the pale garden");
+        if (found == null) {
+            return;
+        }
+        // The world's own hearts near it (decoration crosses chunk borders, so the world, which decorated in another
+        // order, need not have that very tree): each a Tricky Trials heart, dormant, its tile natural.
+        int fx = found.getX() >> 4;
+        int fz = found.getZ() >> 4;
+        for (int dx = -4; dx <= 4; dx++) {
+            for (int dz = -4; dz <= 4; dz++) {
+                world.getChunkProvider().provideChunk(fx + dx, fz + dz);
+            }
+        }
+        int hearts = 0;
+        int natural = 0;
+        String first = null;
+        for (int dx = -3; dx <= 3; dx++) {
+            for (int dz = -3; dz <= 3; dz++) {
+                for (TileEntity te : world.getChunk(fx + dx, fz + dz).getTileEntityMap().values()) {
+                    IBlockState s = world.getBlockState(te.getPos());
+                    if (!"creaking_heart".equals(s.getBlock().getRegistryName().getPath())) {
+                        continue;
+                    }
+                    hearts++;
+                    natural += te.writeToNBT(new NBTTagCompound()).getBoolean("Natural") ? 1 : 0;
+                    if (first == null) {
+                        first = te.getPos() + " " + s;
+                    }
+                }
+            }
+        }
+        ok(check, hearts > 0, "the world has creaking hearts near the core's (" + hearts + " in 7 x 7 chunks; " + first + ")");
+        check.eq(hearts, natural, "every generated creaking heart's tile is natural");
     }
 
     private static boolean ok(Check check, boolean condition, String what) {

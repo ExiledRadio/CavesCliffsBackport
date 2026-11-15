@@ -132,7 +132,8 @@ public final class ModernTerrain {
     /**
      * The newer versions' additions the installed backports have the blocks for: 1.19's mangrove swamp and deep dark
      * with a mod registering mud and the mangrove wood (Wild Update Backport), 1.20's cherry grove with one registering
-     * the cherry wood and pink petals (Trails &amp; Tales Backport). Read when a world is made.
+     * the cherry wood and pink petals (Trails &amp; Tales Backport), 1.21.4's pale garden with Tricky Trials Backport
+     * and its pale garden biome registered (its paleGarden.generateBiome). Read when a world is made.
      */
     static int installedEditions() {
         int e = Editions.NONE;
@@ -142,6 +143,12 @@ public final class ModernTerrain {
             }
             if (blocks("cherry_log", "cherry_leaves", "pink_petals")) {
                 e |= Editions.CHERRY;
+            }
+            if (net.minecraftforge.fml.common.Loader.isModLoaded("trickytrialsbackport")
+                    && net.minecraftforge.fml.common.registry.ForgeRegistries.BIOMES.containsKey(
+                    new net.minecraft.util.ResourceLocation("trickytrialsbackport", "pale_garden"))) {
+                // 1.21.5's placement (Tricky Trials covers up to 1.21.11), or 1.21.4's when the setting asks.
+                e |= ModConfig.height.paleGarden1214 ? Editions.PALE : Editions.PALE | Editions.SPRING;
             }
         }
         return e;

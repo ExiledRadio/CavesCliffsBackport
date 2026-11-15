@@ -5,9 +5,10 @@ import java.util.Arrays;
 /**
  * Times the 1.12 generator's pipeline without a game: side x side chunks around 0,0 finished in a spiral from the
  * middle (the order a 1.12 server asks for spawn chunks), each finish followed by a prefetch as the generator does.
- * Arguments: seed side threads [prefetchRadius] [cap]. Prints ms/chunk, the split between fill and decoration, and a
- * checksum over every finished chunk, which must not depend on the thread count. With -Djournal=dir the timed
- * pipeline writes its decoration journal there, as a world's does (the directory is emptied first and after).
+ * Arguments: seed side threads [prefetchRadius] [cap]; -Deditions=N, -Dcenter=cx,cz. Prints ms/chunk, the split between
+ * fill and decoration, and a checksum over every finished chunk, which must not depend on the thread count. With
+ * -Djournal=dir the timed pipeline writes its decoration journal there, as a world's does (the directory is emptied
+ * first and after).
  */
 public final class PipelineBench {
     public static void main(String[] args) {
@@ -17,6 +18,16 @@ public final class PipelineBench {
         int prefetch = args.length > 3 ? Integer.parseInt(args[3]) : 6;
         int cap = args.length > 4 ? Integer.parseInt(args[4]) : 4096;
         int[][] order = spiral(side);
+        // -Dcenter=cx,cz: the square around that chunk instead of 0,0 (a pale garden, say).
+        String center = System.getProperty("center");
+        if (center != null) {
+            int ox = Integer.parseInt(center.split(",")[0].trim());
+            int oz = Integer.parseInt(center.split(",")[1].trim());
+            for (int[] c : order) {
+                c[0] += ox;
+                c[1] += oz;
+            }
+        }
         // Warm-up elsewhere, so class loading and the JIT are not in the timing.
         // -Deditions=N: a world with the newer biomes (Editions flags).
         int e = Integer.getInteger("editions", 0);

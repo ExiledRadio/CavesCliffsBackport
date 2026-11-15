@@ -107,7 +107,8 @@ public final class FeatureCheck {
                 seeds[i - 3] = Long.parseLong(args[i]);
             }
         }
-        // -Deditions: the newer biomes (Editions flags); -Drules: the newest version whose feature rules apply (118..121).
+        // -Deditions: the newer biomes (Editions flags; 7 is 1.21.4 with every newer biome); -Drules: the newest version
+        // whose feature rules apply (118..121).
         int editions = Integer.getInteger("editions", 0);
         int rules = Integer.getInteger("rules", 118);
         Climate climate = new Climate(editions);
@@ -132,6 +133,17 @@ public final class FeatureCheck {
             int[][] centers = {{0, 0}, {rnd.nextInt(20000) - 10000, rnd.nextInt(20000) - 10000}};
             // -Dcenters=x,z/x,z/... replaces the two areas (chunk coordinates of each area's center).
             String given = System.getProperty("centers");
+            if (given != null && given.contains(":")) {
+                // seed:x,z/x,z;seed:... (FeatureDump1214's form): this seed's areas, if listed.
+                String mine = null;
+                for (String part : given.split(";")) {
+                    String[] kv = part.split(":");
+                    if (kv.length == 2 && Long.parseLong(kv[0]) == seed) {
+                        mine = kv[1];
+                    }
+                }
+                given = mine;
+            }
             if (given != null) {
                 String[] parts = given.split("/");
                 centers = new int[parts.length][];

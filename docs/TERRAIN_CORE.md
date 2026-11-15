@@ -490,6 +490,41 @@ sh tools/terrain/oracle-newer/check-newer.sh both                             (e
 python tools/terrain/oracle-newer/dumpq.py <features_SEED.bin.gz> x,y,z+r     (a dump's blocks around a position)
 ```
 
+1.21.4's pale garden (`Editions.PALE`; `tools/terrain/oracle-newer/v1214`). `G:/MCDownloads/minecraft-1.21.4`: Mojang's
+client jar remapped with ForgeAutoRenamingTool 1.0.6 (`client-named.jar`; 0.1.25's ASM cannot read Java 21 classes),
+its libraries in `libs/`, Vineflower sources in `src/` (1.20.1's again with Vineflower in `minecraft-1.20.1/srcvf`
+for the diff, 1.21.11's in `minecraft-1.21.11/src`). Compile with JDK 21 into `oracle-classes` against
+`client-named.jar;libs/*` (and `build/terrain-tools` for FeatureDump1214, which reads the core):
+
+```
+java net.minecraft.world.level.biome.Oracle1214 G:/MCDownloads/minecraft-1.21.4/oracle1214.txt
+java -Dareas=42:1648,560;12345:1704,-1296;-7346534567:1384,-1288;8675309:848,336 net.minecraft.world.level.biome.Oracle1214 biomes G:/MCDownloads/minecraft-1.21.4/biomes 32 400
+java net.minecraft.world.level.biome.Oracle1214 spawn 42 12345 -7346534567 8675309 1 650 -4172144997902289642 123456789
+java net.minecraft.world.level.levelgen.FillDump1214 G:/MCDownloads/minecraft-1.21.4/fill 8 100
+java -Dfeatures=pale_garden_vegetation,pale_moss_patch,pale_garden_flowers,flower_pale_garden -Dcenters=42:0,0/1648,560;12345:0,0/1704,-1296;-7346534567:0,0/1384,-1288;8675309:0,0/848,336 net.minecraft.world.level.levelgen.FeatureDump1214 G:/MCDownloads/minecraft-1.21.4/feat-pale 16
+sh tools/terrain/run.sh NewerBiomeCheck <oracle119.txt> <biomes119> <oracle120.txt> <biomes120> G:/MCDownloads/minecraft-1.21.4/oracle1214.txt G:/MCDownloads/minecraft-1.21.4/biomes
+JAVA_OPTS=-Deditions=7 sh tools/terrain/run.sh TerrainCheck G:/MCDownloads/minecraft-1.21.4/fill
+JAVA_OPTS=-Deditions=7 sh tools/terrain/run.sh FluidMarkCheck G:/MCDownloads/minecraft-1.21.4/fill
+sh tools/terrain/run.sh SpawnSearchPrint 7 42 12345 ...   (against Oracle1214 spawn)
+JAVA_OPTS="-Deditions=7 -Dcenters=<as above>" sh tools/terrain/run.sh FeatureCheck G:/MCDownloads/minecraft-1.21.4/feat-pale 16 pale_garden_vegetation,pale_moss_patch,pale_garden_flowers,flower_pale_garden
+python tools/terrain/make_1214_feature_tables.py G:/MCDownloads/minecraft-1.21.4/oracle1214.txt
+python tools/terrain/structure_biome_tags.py <1.18.2 client.jar> <1.20.1 client.jar> <1.21.4 client.jar>
+sh tools/terrain/run.sh FindBiome 42 64 72 7 40   (a dense pale garden: 40 of 7 x 7 chunk centers)
+```
+
+1.21.5+ (`Editions.SPRING`, editions 15): the same tools in `oracle-newer/v12111` against `G:/MCDownloads/minecraft-1.21.11`
+(`client-named.jar` from `tt-1.21.11-decomp/named.jar`): `Oracle12111` (table, `biomes` with
+`-Dareas=42:1656,552;12345:-1720,1720;-7346534567:1432,-408;8675309:-1456,1328`, `spawn`), `FillDump12111`,
+`FeatureDump12111 -Deditions=15`; `NewerBiomeCheck ... <oracle12111.txt> <biomes12111>`, `TerrainCheck`/`FluidMarkCheck`
+with `-Deditions=15`, `SpawnSearchPrint 15`, `make_1214_feature_tables.py <oracle12111.txt> 1.21.11 FeatureTables12111`.
+1.21.5's leaves (`Oracle1214 -Dmcversion=1.21.5` on the 1.21.5 jar, remapped with `--strip-sigs`) are 1.21.11's.
+
+FeatureDump1214 is a hybrid: its chunks before decoration are the core's (fill, surface, carvers with editions 7,
+each checked against vanilla on its own; 1.21.4's noise, surface rules and carvers are 1.20.1's but for the aquifer's
+marks, which FluidMarkCheck checks), with vanilla 1.21.4's biomes, and every placed feature is vanilla's own
+`placeWithBiomeCheck` on a WorldGenRegion allocated without its constructor, the jar's block tags bound. State names
+as VanillaFeatureDump's, `short_grass` as the core's `grass` and leaves without `waterlogged=false`.
+
 The biome and surface oracle classes (`VanillaWorld`, `VanillaBiomeDump`, `VanillaSurfaceDump`,
 `VanillaSurfaceBench`, copies in `tools/terrain/oracle`) are compiled straight into the reference workspace with
 `javac @javac.args -d build/classes/java/main ...` (JDK 17; `javac.args` is `-cp` and vanilla.args' classpath

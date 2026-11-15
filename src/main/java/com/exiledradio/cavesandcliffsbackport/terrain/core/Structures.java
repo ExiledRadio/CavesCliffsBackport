@@ -109,6 +109,16 @@ public final class Structures {
             allowed[PILLAGER_OUTPOSTS][0][Biomes.CHERRY_GROVE] = true;
             allowed[RUINED_PORTALS][4][Biomes.CHERRY_GROVE] = true;
         }
+        if ((noise.editions & Editions.PALE) != 0) {
+            // 1.21.4: not woodland mansions (dark forest only), so mansions where the pale garden took the dark
+            // forest's place are gone; 1.21.5 adds the pale garden to their tag.
+            allowed[MINESHAFTS][0][Biomes.PALE_GARDEN] = true;
+            allowed[RUINED_PORTALS][0][Biomes.PALE_GARDEN] = true;
+            if ((noise.editions & Editions.SPRING) != 0) {
+                // 1.21.5: woodland mansions in the pale garden too.
+                allowed[WOODLAND_MANSIONS][0][Biomes.PALE_GARDEN] = true;
+            }
+        }
         poolEntries = new int[StructureTables.START_POOLS.length][];
         for (int p = 0; p < poolEntries.length; p++) {
             int[] runs = StructureTables.START_POOLS[p];

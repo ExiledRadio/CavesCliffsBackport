@@ -480,9 +480,15 @@ public final class ModConfig {
         @Config.RequiresWorldRestart
         @Config.Comment({"New Caves & Cliffs worlds with 1.18 terrain also get the newer versions' biomes the installed backports",
                 "have blocks for: 1.19's mangrove swamps and deep dark with Wild Update Backport, 1.20's cherry groves with",
-                "Trails & Tales Backport, placed where those versions place them. Worlds keep the biomes they were made with."})
+                "Trails & Tales Backport, 1.21.4's pale gardens with Tricky Trials Backport, placed where those versions place",
+                "them. Worlds keep the biomes they were made with."})
         @Config.LangKey("config.cavesandcliffsbackport.height.newerBiomes")
         public boolean newerBiomes = true;
+
+        @Config.Comment({"With Tricky Trials Backport, new worlds place pale gardens as 1.21.5 and later do (the default: the",
+                "newest version installed). On: as 1.21.4 does, for comparing seeds with 1.21.4. Read when a world is made."})
+        @Config.LangKey("config.cavesandcliffsbackport.height.paleGarden1214")
+        public boolean paleGarden1214 = false;
     }
 
     // ------------------------------------------------------------------------------------------

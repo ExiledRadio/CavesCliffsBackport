@@ -40,6 +40,7 @@ public final class Decorator {
     /** Per biome: every feature it has, any step (BiomeGenerationSettings.hasFeature), by Placed.id. */
     private final boolean[][] biomeHas;
     private Set<String> only;
+    private final PaleGarden pale;
     private TreeGate treeGate;
     private final int[] gateAnswers = new int[TreeGate.KINDS];
     private final byte[] stored = new byte[1536];
@@ -57,7 +58,27 @@ public final class Decorator {
 
     /** FeatureSorter's per-step order for the editions' biomes. */
     static String[][] steps(int editions) {
+        if ((editions & Editions.SPRING) != 0) {
+            switch (editions & ~Editions.SPRING) {
+                case Editions.PALE | Editions.WILD | Editions.CHERRY:
+                    return FeatureTables12111.STEPS_ALL;
+                case Editions.PALE | Editions.WILD:
+                    return FeatureTables12111.STEPS_WILD;
+                case Editions.PALE | Editions.CHERRY:
+                    return FeatureTables12111.STEPS_CHERRY;
+                default:
+                    return FeatureTables12111.STEPS_PALE;
+            }
+        }
         switch (editions) {
+            case Editions.PALE | Editions.WILD | Editions.CHERRY:
+                return FeatureTables1214.STEPS_ALL;
+            case Editions.PALE | Editions.WILD:
+                return FeatureTables1214.STEPS_WILD;
+            case Editions.PALE | Editions.CHERRY:
+                return FeatureTables1214.STEPS_CHERRY;
+            case Editions.PALE:
+                return FeatureTables1214.STEPS_PALE;
             case Editions.WILD:
                 return NewerFeatureTables.STEPS_WILD;
             case Editions.CHERRY:
@@ -69,8 +90,18 @@ public final class Decorator {
         }
     }
 
-    /** A biome's placed features per step (the deep dark's are 1.19.2's or, with the cherry grove, 1.20.1's). */
+    /**
+     * A biome's placed features per step (the deep dark's are 1.19.2's or, with the cherry grove, 1.20.1's; with the
+     * pale garden every biome's are 1.21.4's).
+     */
     static String[][] biomeFeatures(int biome, int editions) {
+        if ((editions & Editions.SPRING) != 0) {
+            return FeatureTables12111.BIOMES[biome];
+        }
+        if ((editions & Editions.PALE) != 0) {
+            // 1.21.4's lists for every biome.
+            return FeatureTables1214.BIOMES[biome];
+        }
         switch (biome) {
             case Biomes.MANGROVE_SWAMP:
                 return NewerFeatureTables.MANGROVE_SWAMP;
@@ -128,6 +159,11 @@ public final class Decorator {
             ported.put(p.name, p);
         }
         for (Placed p : Misc.placed()) {
+            ported.put(p.name, p);
+        }
+        // 1.21.4's pale garden (Editions.PALE): its features only appear in that edition's tables.
+        pale = new PaleGarden(noise);
+        for (Placed p : pale.placed()) {
             ported.put(p.name, p);
         }
         String[][] order = steps(noise.editions);
@@ -289,14 +325,16 @@ public final class Decorator {
         int oz = cz << 4;
         random.newRandom();
         long decorationSeed = random.setDecorationSeed(seed, ox, oz);
+        pale.begin(cx, cz);
         long mask = 0L;
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
                 mask |= storedBiomes(cx + dx, cz + dz);
             }
         }
-        for (int b = 0; b < 64; b++) {
-            present[b] = (mask >>> b & 1L) != 0L;
+        // Bit b & 63: the pale garden (64) shares the void's bit, and the void lists no overworld feature.
+        for (int b = 0; b < Biomes.COUNT; b++) {
+            present[b] = (mask >>> (b & 63) & 1L) != 0L;
         }
         // Per kind: 1 allowed, 0 denied, -1 not asked yet.
         int[] gate = this.gateAnswers;
@@ -330,7 +368,7 @@ public final class Decorator {
         this.region = null;
     }
 
-    // Per chunk, the set of biome ids it stores (all below 64 in the overworld), direct-mapped: each chunk is in
+    // Per chunk, the set of biome ids it stores (bit id & 63: 64, the pale garden, on the void's), direct-mapped: each chunk is in
     // nine decorations' 3x3 unions.
     private static final int CACHE = 64;
     private final long[] maskKeys = new long[CACHE * CACHE];
@@ -344,7 +382,7 @@ public final class Decorator {
             biomes.fillChunk(cx, cz, stored);
             long m = 0L;
             for (byte b : stored) {
-                m |= 1L << b;
+                m |= 1L << (b & 63);
             }
             masks[slot] = m;
             maskKeys[slot] = key;

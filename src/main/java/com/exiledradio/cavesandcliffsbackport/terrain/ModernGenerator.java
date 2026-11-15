@@ -404,8 +404,31 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
                 if (nest != null) {
                     out.tile(pos, nest);
                 }
+            } else if ((lastFlags & StateMap.HEART) != 0) {
+                net.minecraft.tileentity.TileEntity heart = naturalHeart(map.state(code));
+                if (heart != null) {
+                    out.tile(pos, heart);
+                }
             }
         }
+    }
+
+    /**
+     * A creaking heart a pale oak grew: its tile (Tricky Trials Backport's TileCreakingHeart, by name) marked
+     * natural, as 1.21.4's CreakingHeartDecorator places it, so breaking it gives experience.
+     */
+    @javax.annotation.Nullable
+    private net.minecraft.tileentity.TileEntity naturalHeart(net.minecraft.block.state.IBlockState state) {
+        net.minecraft.tileentity.TileEntity tile = state.getBlock().createTileEntity(this.world, state);
+        if (tile == null) {
+            return null;
+        }
+        try {
+            tile.getClass().getMethod("setNatural", boolean.class).invoke(tile, true);
+        } catch (ReflectiveOperationException e) {
+            // Another mod's heart without the method: an ordinary one.
+        }
+        return tile;
     }
 
     /**

@@ -79,7 +79,7 @@ public final class Climate {
         new Builder(list, editions).addBiomes();
         leaves = list.toArray(new Node[0]);
         // Climate.RTree.CHILDREN_PER_NODE: 10 in 1.18.2 and 1.19, 6 from 1.20 (which moves ties).
-        root = build(new ArrayList<>(list), (editions & Editions.CHERRY) != 0 ? 6 : 10);
+        root = build(new ArrayList<>(list), Editions.from120(editions) ? 6 : 10);
         List<Node> order = new ArrayList<>();
         rank(root, order);
         byRank = order.toArray(new Node[0]);
@@ -594,6 +594,13 @@ public final class Climate {
                 PLATEAU_BIOMES_VARIANT[1][0] = Biomes.CHERRY_GROVE;
                 PLATEAU_BIOMES_VARIANT[2][0] = Biomes.CHERRY_GROVE;
                 PLATEAU_BIOMES_VARIANT[2][1] = Biomes.CHERRY_GROVE;
+            }
+            if ((editions & Editions.SPRING) != 0) {
+                // 1.21.5 to 1.21.11: the temperate, most humid plateau biome itself, at both weirdness signs.
+                PLATEAU_BIOMES[2][4] = Biomes.PALE_GARDEN;
+            } else if ((editions & Editions.PALE) != 0) {
+                // 1.21.4: the temperate, most humid plateau variant (null before: the dark forest of PLATEAU_BIOMES).
+                PLATEAU_BIOMES_VARIANT[2][4] = Biomes.PALE_GARDEN;
             }
             this.out = out;
         }
