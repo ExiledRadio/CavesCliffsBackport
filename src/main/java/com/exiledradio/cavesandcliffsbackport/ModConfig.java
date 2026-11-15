@@ -479,7 +479,8 @@ public final class ModConfig {
         @Config.RequiresWorldRestart
         @Config.Comment({"New Caves & Cliffs worlds with 1.18 terrain also get the newer versions' biomes the installed backports",
                 "have blocks for: 1.19's mangrove swamps and deep dark with Wild Update Backport, 1.20's cherry groves with",
-                "Trails & Tales Backport, placed where those versions place them. Worlds keep the biomes they were made with."})
+                "Trails & Tales Backport, 1.21.4's pale gardens with Tricky Trials Backport, placed where those versions place",
+                "them. Worlds keep the biomes they were made with."})
         @Config.LangKey("config.cavesandcliffsbackport.height.newerBiomes")
         public boolean newerBiomes = true;
     }

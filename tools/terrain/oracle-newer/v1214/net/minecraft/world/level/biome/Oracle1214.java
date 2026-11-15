@@ -38,6 +38,23 @@ public final class Oracle1214 {
         NAMES = featureNames;
         List<Pair<Climate.ParameterPoint, ResourceKey<Biome>>> points = new ArrayList<>();
         new OverworldBiomeBuilder().addBiomes(points::add);
+        if (args[0].equals("point")) {
+            // point seed x y z: the biome at a block (its quart, a cold search), as the game's F3 and Chunkbase show it.
+            long seed = Long.parseLong(args[1]);
+            Climate.Sampler sampler = net.minecraft.world.level.levelgen.RandomState.create(lookup,
+                    net.minecraft.world.level.levelgen.NoiseGeneratorSettings.OVERWORLD, seed).sampler();
+            List<Pair<Climate.ParameterPoint, String>> named = new ArrayList<>();
+            for (Pair<Climate.ParameterPoint, ResourceKey<Biome>> p : points) {
+                named.add(Pair.of(p.getFirst(), p.getSecond().location().getPath()));
+            }
+            Climate.ParameterList<String> list = new Climate.ParameterList<>(named);
+            int x = Integer.parseInt(args[2]);
+            int y = Integer.parseInt(args[3]);
+            int z = Integer.parseInt(args[4]);
+            System.out.println("point " + seed + " " + x + " " + y + " " + z + " "
+                    + list.findValue(sampler.sample(x >> 2, y >> 2, z >> 2)));
+            return;
+        }
         if (args[0].equals("spawn")) {
             // Climate.Sampler.findSpawnPosition (MinecraftServer.setInitialSpawn's climate search) per seed.
             for (int i = 1; i < args.length; i++) {
