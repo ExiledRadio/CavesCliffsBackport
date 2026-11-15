@@ -25,6 +25,18 @@ import java.util.TreeMap;
  *       of A and B is the same as in the run that never stopped: the features crossing from A into B, decorated
  *       before the restart into chunks that were only held, came back from the store.</li>
  * </ol>
+ *
+ * <p>Then the same across a crash ({@code crash1}, {@code crash2}): the server is killed ({@code Runtime.halt}, no
+ * save, no shutdown) at a moment a crash can come at, and the next run must still decorate as the run that never
+ * stopped.
+ * <ol>
+ *   <li>{@code crash1}, fresh world: generates the west half of A; the world saves (chunks, then the held chunks);
+ *       generates the east half of A; 1.12 writes its chunks to disk as an autosave or unloading does, but the server
+ *       dies before the held chunks are saved; it first generates the two west columns of B, which never reach the
+ *       disk. Writes {@code restart-first.txt} and its report, then halts.</li>
+ *   <li>{@code crash2}, the same world: generates B (its two west columns again) and compares as {@code restart2}
+ *       does.</li>
+ * </ol>
  */
 public final class RestartSelfTest implements SelfTest {
 
@@ -57,8 +69,29 @@ public final class RestartSelfTest implements SelfTest {
             }
             hashes.put(key, h);
         };
+        File dir = world.getMinecraftServer().getFile(".");
+        if (phase.equals("crash1")) {
+            try {
+                area(world, X, X + SIDE / 2);
+                world.saveAllChunks(true, null);
+                waitForChunkWrites();
+                area(world, X + SIDE / 2, X + SIDE);
+                world.getChunkProvider().saveChunks(true);
+                waitForChunkWrites();
+                area(world, X + SIDE, X + SIDE + 2);
+            } finally {
+                ModernGenerator.onFinished = null;
+            }
+            check.eq(SIDE * SIDE, inArea(hashes, X), "area A generated (" + hashes.size() + " chunks in all)");
+            write(new File(dir, "restart-first.txt"), hashes);
+            check.report(world.getMinecraftServer().getFile("selftest-report.txt"));
+            // A crash: no world save, no shutdown hooks, nothing more written (Runtime.halt, through FML, which
+            // traps a mod's own call).
+            net.minecraftforge.fml.common.FMLCommonHandler.instance().exitJava(0, true);
+            return;
+        }
         try {
-            if (!phase.equals("restart2")) {
+            if (!phase.equals("restart2") && !phase.equals("crash2")) {
                 area(world, X);
             }
             if (!phase.equals("restart1")) {
@@ -67,7 +100,6 @@ public final class RestartSelfTest implements SelfTest {
         } finally {
             ModernGenerator.onFinished = null;
         }
-        File dir = world.getMinecraftServer().getFile(".");
         if (phase.equals("restart1")) {
             check.eq(SIDE * SIDE, inArea(hashes, X), "area A generated (" + hashes.size() + " chunks in all)");
             write(new File(dir, "restart-first.txt"), hashes);
@@ -121,11 +153,21 @@ public final class RestartSelfTest implements SelfTest {
      * generates a few chunks around too, the same in every run; those are compared as well).
      */
     private static void area(WorldServer world, int x0) {
-        for (int x = x0; x < x0 + SIDE; x++) {
+        area(world, x0, x0 + SIDE);
+    }
+
+    /** Columns x0 to x1 (exclusive) of the area's rows, as {@link #area(WorldServer, int)}. */
+    private static void area(WorldServer world, int x0, int x1) {
+        for (int x = x0; x < x1; x++) {
             for (int z = Z; z < Z + SIDE; z++) {
                 world.getChunkProvider().provideChunk(x, z);
             }
         }
+    }
+
+    /** Waits until 1.12's file thread has written every chunk handed to it (the chunks are then on disk). */
+    private static void waitForChunkWrites() throws InterruptedException {
+        net.minecraft.world.storage.ThreadedFileIOBase.getThreadedIOInstance().waitForFinish();
     }
 
     private static void write(File file, Map<Long, Long> hashes) throws Exception {

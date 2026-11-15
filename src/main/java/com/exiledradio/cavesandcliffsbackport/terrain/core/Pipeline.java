@@ -31,6 +31,15 @@ import java.util.concurrent.atomic.AtomicLong;
  * it is lost). {@link #saveHeld} writes every such chunk still held to the store, so a world stopped and started
  * again decorates the chunks beyond its explored area exactly as one that never stopped.
  *
+ * <p>A crash between two world saves: with a {@link Log}, every {@link #finish} that decorated or finished a chunk
+ * hands a record of it (each decoration's writes and marks, in order) to the journal before handing the chunk back,
+ * and the game writes no chunk before the journal has every record so far ({@link Journal#await}), so the game can
+ * never have a chunk on disk whose neighbors' share of its features is not on disk too. Each held chunk
+ * keeps the number of the last record that changed it ({@code lsn}, saved with it); {@link #replay} applies, after a
+ * crash, every record newer than a chunk's to the chunk as the store has it (or as the noise gives it), which puts
+ * back every held chunk as it was at the last record. The store forgets a chunk that settled only once the game has
+ * it on disk ({@link Store#released}).
+ *
  * <p>Structure terrain adaptation: a {@link BeardSource} gives each chunk's beardifier (the structure pieces near
  * it) when the chunk is first asked for, on the asking thread, before its fill is queued.
  *
@@ -69,6 +78,8 @@ public final class Pipeline {
         /** Bumped by every decoration that writes into this chunk; {@code saved} is its value at the last store write. */
         int changes;
         int saved;
+        /** The number of the last journal record that changed this chunk ({@link Log}); 0 for none. */
+        long lsn;
         /** The structure pieces' terrain adaptation for the fill, or null. */
         Beardifier beard;
         final Task task;
@@ -107,14 +118,29 @@ public final class Pipeline {
 
         void save(int cx, int cz, byte[] data);
 
-        /** The chunk settled after being saved here: its entry will never be read again. */
-        void forget(int cx, int cz);
+        /**
+         * The chunk settled and is dropped: nothing reads it again once the game has it on disk. hasEntry: this store
+         * holds an entry for it (to forget once the game has the chunk); unsaved: decoration changed it since that
+         * entry (or it has none), so until the game has the chunk on disk only the journal records since the last
+         * world save can give it back.
+         */
+        void released(int cx, int cz, boolean hasEntry, boolean unsaved);
 
         /**
          * Whether the world already holds this chunk as finished (a chunk the generator made in an earlier run): it
          * was decorated then, and is never decorated again.
          */
         boolean finished(int cx, int cz);
+    }
+
+    /**
+     * Where the journal records go ({@link Journal}). Called on the asking thread, inside {@link #finish}, before the
+     * chunk is handed back; the record may be written later, as long as nothing that depends on it (the game's
+     * write of the chunk, a store entry carrying its number) reaches the disk first.
+     */
+    public interface Log {
+        /** The record's first size ints; they may be changed once this returns. */
+        void append(int[] record, int size);
     }
 
     /** The fill of one Proto, queued on the pool or run by the asking thread if no worker has started it. */
@@ -214,6 +240,15 @@ public final class Pipeline {
     private long sequence;
     private BeardSource beards;
     private Store store;
+    private Log log;
+    /** The number of the last journal record written. */
+    private long lsn;
+    /** The record being built by {@link #finish}: ints, see {@link #journal}; the header first. */
+    private int[] record = new int[4096];
+    private int recordSize;
+    private int recordDecorations;
+    /** The chunks the record being built changes. */
+    private final List<Proto> touched = new ArrayList<>();
 
     /** Counters for the benchmark and the log. */
     public final AtomicLong fillNanos = new AtomicLong();
@@ -225,6 +260,9 @@ public final class Pipeline {
     public long beardNanos;
     public long restored;
     public long stored;
+    /** Time spent handing journal records over ({@link Log}) on the asking thread, and how many. */
+    public long journalNanos;
+    public long journaled;
 
     /**
      * @param seed the world seed
@@ -291,6 +329,20 @@ public final class Pipeline {
     /** Where dropped and saved chunks go (see the class comment). */
     public synchronized void setStore(Store store) {
         this.store = store;
+    }
+
+    /**
+     * Journal every finish from now on ({@link Log}), numbering records after {@code last} (the highest record
+     * number a held chunk in the store or a journal record may carry).
+     */
+    public synchronized void setLog(Log log, long last) {
+        this.log = log;
+        this.lsn = Math.max(this.lsn, last);
+    }
+
+    /** The number of the last journal record written or replayed. */
+    public synchronized long lsn() {
+        return lsn;
     }
 
     /** Stops the workers; queued fills are dropped. Call {@link #saveHeld} first to keep what decoration wrote. */
@@ -397,6 +449,9 @@ public final class Pipeline {
      */
     public synchronized Proto finish(int cx, int cz) {
         long base = (++sequence) << 16;
+        recordSize = Journal.HEADER;
+        recordDecorations = 0;
+        touched.clear();
         // Ask for the whole 7x7 first, nearest first, so the pool works on it while this thread decorates.
         for (int r = 0; r <= 3; r++) {
             for (int dx = -r; dx <= r; dx++) {
@@ -427,9 +482,14 @@ public final class Pipeline {
             // Asked again for a chunk that settled (a world that lost the chunk it had): fill it as it would be.
             c = filled(proto(cx, cz, base));
         }
-        if (!c.finished) {
+        boolean newly = !c.finished;
+        if (newly) {
             c.finished = true;
             c.changes++;
+            touched.add(c);
+        }
+        if (log != null && (newly || recordDecorations > 0)) {
+            journal(c, newly);
         }
         c.updates = updates(c);
         release(cx, cz);
@@ -491,10 +551,186 @@ public final class Pipeline {
         }
         long t = System.nanoTime();
         region.set(cx, cz, b25, w25, h25, m25);
+        region.recording = log != null;
+        region.opCount = 0;
         decorator.decorate(region);
         decorateNanos += System.nanoTime() - t;
         decorated++;
         center.decorated = true;
+        if (log != null) {
+            region.recording = false;
+            int n = region.opCount;
+            ensureRecord(3 + n);
+            record[recordSize++] = cx;
+            record[recordSize++] = cz;
+            record[recordSize++] = n;
+            System.arraycopy(region.ops, 0, record, recordSize, n);
+            recordSize += n;
+            recordDecorations++;
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    touched.add(held.get(key(cx + dx, cz + dz)));
+                }
+            }
+        }
+    }
+
+    private void ensureRecord(int more) {
+        if (recordSize + more > record.length) {
+            record = java.util.Arrays.copyOf(record, Math.max(recordSize + more, record.length * 2));
+        }
+    }
+
+    /**
+     * Hands the record of this finish to the journal ({@link Log}; {@link Journal} packs and writes it): its number
+     * (two ints), the chunk finished, 1 if this finish finished it, glow lichen's direction order after it (six 3-bit
+     * directions), the number of decorations, then each decoration's center x, z, op count and ops
+     * ({@link Region#ops}). The chunks it changed carry its number.
+     */
+    private void journal(Proto c, boolean newly) {
+        long t = System.nanoTime();
+        long n = ++lsn;
+        int[] order = lichenOrder();
+        int lichen = 0;
+        for (int i = 0; i < 6; i++) {
+            lichen |= order[i] << (3 * i);
+        }
+        record[0] = (int) (n >>> 32);
+        record[1] = (int) n;
+        record[2] = c.cx;
+        record[3] = c.cz;
+        record[4] = newly ? 1 : 0;
+        record[5] = lichen;
+        record[6] = recordDecorations;
+        log.append(record, recordSize);
+        for (Proto p : touched) {
+            p.lsn = n;
+        }
+        touched.clear();
+        journalNanos += System.nanoTime() - t;
+        journaled++;
+    }
+
+    /**
+     * After a crash: puts back the held chunks as the journal's records (oldest first, as {@link Journal#read}
+     * gives them) left them. Each record is applied to every chunk whose {@code lsn} (the store's entry, or 0 for a
+     * chunk the noise gives) is older, as {@link #finish} made it: its writes and marks in order through the same
+     * code, then the decorated and finished flags. Call before the first {@link #finish}; the chunks stay held (and
+     * changed) for the next {@link #saveHeld}.
+     *
+     * @return how many records changed at least one chunk
+     */
+    public synchronized int replay(List<byte[]> records) {
+        int applied = 0;
+        int ahead = 0;
+        java.util.ArrayDeque<int[]> unpacked = new java.util.ArrayDeque<>();
+        for (int r = 0; r < records.size(); r++) {
+            // Queue the fills of the next records' chunks, so the workers make them while this thread applies.
+            for (; ahead < records.size() && ahead < r + 16; ahead++) {
+                int[] q = Journal.unpack(records.get(ahead));
+                unpacked.add(q);
+                int at = 7;
+                for (int d = q[6]; d > 0; d--) {
+                    for (int dx = -1; dx <= 1; dx++) {
+                        for (int dz = -1; dz <= 1; dz++) {
+                            proto(q[at] + dx, q[at + 1] + dz, (++sequence) << 16);
+                        }
+                    }
+                    at += 3 + q[at + 2];
+                }
+            }
+            int[] q = unpacked.poll();
+            long n = (long) q[0] << 32 | (q[1] & 0xFFFFFFFFL);
+            long base = (++sequence) << 16;
+            touched.clear();
+            int at = 7;
+            for (int d = q[6]; d > 0; d--) {
+                int cx = q[at];
+                int cz = q[at + 1];
+                int ops = q[at + 2];
+                at += 3;
+                Proto[] chunks = new Proto[Region.CHUNKS];
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        chunks[(dx + Region.READ) * Region.SIDE + dz + Region.READ] = replayed(cx + dx, cz + dz, n, base);
+                    }
+                }
+                for (int i = 0; i < ops; i += 2) {
+                    int op = q[at + i];
+                    int k = Region.opChunk(op);
+                    Proto p = chunks[k];
+                    if (p == null) {
+                        // Only the 3x3 is written; should a write land further out, it goes where it went.
+                        p = chunks[k] = replayed(cx + k / Region.SIDE - Region.READ, cz + k % Region.SIDE - Region.READ,
+                                n, base);
+                    }
+                    if (p.lsn < n) {
+                        Region.apply(op, q[at + i + 1], p.blocks, p.heights, p.marks);
+                    }
+                }
+                at += ops;
+                Proto center = chunks[Region.READ * Region.SIDE + Region.READ];
+                if (center.lsn < n) {
+                    center.decorated = true;
+                }
+            }
+            if (q[4] != 0) {
+                Proto c = replayed(q[2], q[3], n, base);
+                if (c.lsn < n) {
+                    c.finished = true;
+                }
+            }
+            if (!touched.isEmpty()) {
+                applied++;
+            }
+            for (Proto p : touched) {
+                p.lsn = n;
+            }
+            touched.clear();
+            lsn = Math.max(lsn, n);
+            int lichen = q[5];
+            int[] order = new int[6];
+            for (int i = 0; i < 6; i++) {
+                order[i] = lichen >> (3 * i) & 7;
+            }
+            setLichenOrder(order);
+            trim();
+        }
+        return applied;
+    }
+
+    /** A chunk record n changes, filled; marked changed (and touched) if the record is newer than it. */
+    private Proto replayed(int cx, int cz, long n, long base) {
+        Proto p = filled(proto(cx, cz, base));
+        if (p.lsn < n && !touched.contains(p)) {
+            p.changes++;
+            touched.add(p);
+        }
+        return p;
+    }
+
+    /**
+     * Drops the held chunks that settled and that the game has on disk ({@code durable}): after a {@link #replay},
+     * the chunks the records brought back that nothing reads again.
+     *
+     * @return how many were dropped
+     */
+    public synchronized int dropSettled(java.util.function.BiPredicate<Integer, Integer> durable) {
+        List<Proto> drop = new ArrayList<>();
+        // A copy: settled() reads the held map, which is in access order.
+        for (Proto p : new ArrayList<>(held.values())) {
+            if (p.finished && p.task.state.get() == Task.DONE && settled(p.cx, p.cz) && durable.test(p.cx, p.cz)) {
+                drop.add(p);
+            }
+        }
+        for (Proto p : drop) {
+            held.remove(key(p.cx, p.cz));
+            gone.add(key(p.cx, p.cz));
+            if (store != null) {
+                store.released(p.cx, p.cz, p.saved != 0, false);
+            }
+        }
+        return drop.size();
     }
 
     /** Drops the held chunks around cx, cz that nothing can read again. */
@@ -512,8 +748,8 @@ public final class Pipeline {
         for (Long k : drop) {
             Proto p = held.remove(k);
             gone.add(k);
-            if (store != null && p.saved != 0) {
-                store.forget(p.cx, p.cz);
+            if (store != null) {
+                store.released(p.cx, p.cz, p.saved != 0, p.changes != p.saved);
             }
         }
     }
@@ -586,15 +822,19 @@ public final class Pipeline {
     // ---------------------------------------------------------------------------------------------
     // Saved chunks
 
-    /** 2: the decoration marks follow (a count, then the entries); 1 (without them) is still read. */
-    private static final int FORMAT = 2;
+    /**
+     * 3: the number of the last journal record that changed the chunk (a long) follows the flags; 2: the decoration
+     * marks follow (a count, then the entries); 1: without them. All three are read.
+     */
+    private static final int FORMAT = 3;
     private static final int FIXED = 4 * 4 + 1 + VOLUME * 2 + (512 + Region.HEIGHTMAPS * 256) * 4 + 256 + QUARTS;
 
     /** A held chunk as bytes, for a {@link Store}. */
     public static byte[] encode(Proto p) {
-        ByteBuffer b = ByteBuffer.allocate(FIXED + 4 + p.marks.size() * 4);
+        ByteBuffer b = ByteBuffer.allocate(FIXED + 8 + 4 + p.marks.size() * 4);
         b.putInt(FORMAT).putInt(p.cx).putInt(p.cz).putInt(Math.max(1, p.changes));
         b.put((byte) ((p.decorated ? 1 : 0) | (p.finished ? 2 : 0)));
+        b.putLong(p.lsn);
         b.asCharBuffer().put(p.blocks);
         b.position(b.position() + VOLUME * 2);
         b.asIntBuffer().put(p.worldgen).put(p.heights);
@@ -614,7 +854,8 @@ public final class Pipeline {
             return null;
         }
         int format = b.getInt();
-        if (!(format == 1 && data.length == FIXED || format == FORMAT && data.length >= FIXED + 4)) {
+        int extra = format == 3 ? 8 : 0;
+        if (!(format == 1 && data.length == FIXED || (format == 2 || format == 3) && data.length >= FIXED + extra + 4)) {
             return null;
         }
         Proto p = new Proto(b.getInt(), b.getInt(), this);
@@ -623,14 +864,17 @@ public final class Pipeline {
         int flags = b.get();
         p.decorated = (flags & 1) != 0;
         p.finished = (flags & 2) != 0;
+        if (format == 3) {
+            p.lsn = b.getLong();
+        }
         b.asCharBuffer().get(p.blocks);
         b.position(b.position() + VOLUME * 2);
         b.asIntBuffer().get(p.worldgen).get(p.heights);
         b.position(b.position() + (512 + Region.HEIGHTMAPS * 256) * 4);
         b.get(p.surfaceBiomes).get(p.quarts);
-        if (format == FORMAT) {
+        if (format >= 2) {
             int n = b.getInt();
-            if (n < 0 || data.length != FIXED + 4 + n * 4) {
+            if (n < 0 || data.length != FIXED + extra + 4 + n * 4) {
                 return null;
             }
             for (int i = 0; i < n; i++) {

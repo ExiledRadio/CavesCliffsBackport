@@ -21,6 +21,9 @@ feature the core has ported, block for block what the core computes, which is va
     animals; axolotls in 1.18's lush caves.
 *   **Stopping the server changes nothing.** The chunks the generator holds ahead of the explored area are saved with
     the world, so features crossing its edge are not cut after a restart.
+*   **Neither does a crash.** A crashed or killed server no longer leaves features cut off at the edge of the
+    explored area: what the generator held in memory is written to a journal ahead of the world's chunks and put
+    back on the next start.
 *   Generation is fast: the terrain is built on worker threads ahead of need (`height.terrainThreads`, 0 picks a
     number from the computer's cores).
 *   **Quark's world generation works in Caves & Cliffs worlds**: marble, limestone, jasper, slate and its granite,
@@ -78,6 +81,31 @@ again). The one piece of decoration state that is not a chunk's, the order glow 
 (vanilla's `MultifaceBlock.DIRECTIONS`, shuffled by every spread in the JVM), is saved beside them (`state.dat`).
 So a world stopped and started again decorates the chunks beyond its explored area exactly as one that never
 stopped (`RestartSelfTest`), and the cap no longer cuts features.
+
+**Crashes** (`core/Journal`). Between two world saves the held chunks that decoration wrote into live only in
+memory, while 1.12 writes finished chunks to disk whenever it unloads them. Vanilla 1.18 has no such gap: its
+features write only into a 3x3 of proto chunks that all exist and are saved with the world. The fix keeps the
+held chunks and makes them crash-safe with a write-ahead journal, so generation speed does not change. Every
+`finish` that decorated or finished a chunk becomes one journal record: each decoration's writes and marks, in
+order, as `Region` made them (`Region.ops`: `set`, `setRaw`, `mark`), the decorated and finished flags, and glow
+lichen's order. Records are packed (delta varints, about 22 KB per finished chunk against 87 KB as ints) and written
+unbuffered by a thread of their own (`<world>/cavesandcliffsbackport_terrain/journal/j.<n>.log`, length + CRC-32 +
+bytes per record). Every held chunk carries the number of the last record that changed it (held-chunk format 3).
+The ordering makes the journal hold everything disk depends on:
+- 1.12 writes a chunk only after every record so far (`ChunkDataEvent.Save` waits for the journal thread; it is
+  always far ahead, so in practice the wait never happens);
+- a held-chunk entry is written only after the record it carries;
+- a world save closes a segment. The segment is deleted once that save's entries are written and every chunk that
+  settled during it is in 1.12's region files (read from the region header, so pending writes do not count). A
+  settled chunk's store entry is forgotten only then too: until 1.12 has the chunk, only the store and the records
+  can give it back.
+
+After a crash, the first chunk generated (or the first world save) runs `Pipeline.replay`. Each record goes, in order,
+to every chunk whose number is older: the store's entry, or the noise's fill for a chunk without one. Writes go
+through the same code (`Region.apply`), so heightmaps and marks come out the same. The held chunks are then as the
+last whole record left them: finished chunks that 1.12 lost come back as they were, and decorated neighbors keep
+their share of the features. Then the chunks are written and the old segments deleted. A kill mid-write cuts at most
+the last record, and nothing on disk depends on it.
 
 **Fluid ticks and post-processing** (`core/Marks`, `core/FluidMarks`, `FluidUpdates`). What vanilla 1.18.2 does to a
 generated chunk after its blocks are placed, none of it a block change during generation:
@@ -364,6 +392,18 @@ had chunks when this generator first saw it).
     2000, 2000 and then the 12x12 east of them in one run, against the first area, a stop, and the second area after
     the restart: every finished chunk (305, with the few populating generates) identical. Without the store (the
     same test with `setStore` left out): 110 differ.
+*   Crashes, in the same script (`crash1`, `crash2`): a fresh world generates the west half of the first area, saves,
+    generates the east half, has 1.12 write its chunks (`saveChunks` and its file thread, no `WorldEvent.Save`),
+    generates two more columns, and dies (`FMLCommonHandler.exitJava(0, true)`: `Runtime.halt`, no save, no
+    shutdown). The next run generates the second area. Before the fix (main 660328e with only the test): 99 chunks
+    differ from the run that never stopped, starting at its west edge (2012, 2000). After: 0 differ. The second run
+    replays 727 of the 793 records (the spawn area's included) in 1.4 s; 639 of the chunks it brings back had settled
+    and are dropped. After a clean stop no journal is left (`restart2` replays nothing).
+*   `sh tools/terrain/run.sh JournalCheck <seed> 24 <threads> [cap] [lost]` (the core alone: 24x24 chunks in a
+    spiral, a world save a third of the way, a crash at two thirds with the last `lost` finished chunks not on
+    disk, replay, finish the rest): 0 of 576 chunks differ at seeds 42, 12345 and 8675309, with 8 and 0 workers, cap
+    4096 and 120 (everything evicted to the store), lost 1, 3, 6 and 20. With `-Dnojournal` (the old behavior)
+    171 and 181 differ.
 *   The whole suite, `./gradlew runServer -Pselftest=all` in a fresh Default world (seed 1718): 4481 pass, 0 fail; with the gaps closed 4482 pass, 0 fail (one earlier run of the same code failed the
     goat test's jump cooldown by one tick, 299 for at least 300; the next passed).
     (On seed 42 the lush test's moss check fails 3 times in a Default world: 1.12's population snows on its test
@@ -391,6 +431,17 @@ had chunks when this generator first saw it).
     without them: 212 pass, 0 fail. The whole suite (`runServer -Pselftest=all`, fresh Default world): 4482 pass, 0 fail.
 
 ## Speed
+
+**Crash journal (2026-11-15, cc-crash-safe).** The pipeline's asking thread records each decoration's writes
+(`Region.ops`, about 8,500 per decoration: 6,600 section writes of the ore and stone blobs, 1,900 block sets, 80
+marks) and hands the record over; packing (0.09 ms) and writing (0.05 ms) run on the journal's own thread.
+`PipelineBench 42 24 8` without and with `-Djournal`, interleaved, four rounds each: decoration 1.79-1.89 ms against
+1.89-2.14 ms, 0.03 ms per record handed over, 576 records in 12.6 MB (22 KB per finished chunk); total 2.77-3.01
+against 2.95-3.31 ms/chunk, same checksum (414ecaab7ba65062). That is about 0.1-0.15 ms per chunk, inside the
+machine's noise in a server. `genbench.py`, main 660328e and this branch interleaved, six rounds each on a machine
+shared with other sessions' builds: modern median 6.73 ms/chunk on main and 6.60 on the branch (vanilla 15.7 and 14.5
+in the same rounds); one main run on a quiet machine earlier gave 5.82. Replay after a crash: 1.4 s for 793 records
+on a dev server, 0.27-0.37 s for 384 in `JournalCheck` with 8 workers.
 
 **Newer biomes (2026-11-12, cc118-biomes).** One E-core, `PipelineBench 42 16 0` (`-Deditions`): 1.18.2 16.1 ms/chunk
 on main, 16.3 on this branch; with 1.20's biomes (editions 3) 15.6, with 1.19's (1) 15.7. `TerrainBench 42 12 5` 2.17
@@ -480,7 +531,6 @@ same with 8 workers (unpinned): 2.5 ms/chunk, same checksum. (Before trees and v
 *   **Spawn point**: dry land nearest 0, 0 by the noise, not 1.18's climate-based `findSpawnPosition`; no bonus chest.
 *   **Clients still hear cave music by the 1.17 regions** (`CaveRegions` on the client has the noise key, not the 3D
     biomes); the server side (spawning, axolotls) uses 1.18's biomes.
-*   **A crash** (not a stop) loses what decoration wrote since the last world save into chunks not yet generated.
 *   **Decoration runs on the server thread** (about 1.5 ms of the 5 in the dev bench, more in forests). It could run on one more thread ahead of need,
     in the same order; not needed for the targets.
 *   **Waterlogged blocks below 0 or above 255** need Backport Core's own store (stream C); until then they are dry.
