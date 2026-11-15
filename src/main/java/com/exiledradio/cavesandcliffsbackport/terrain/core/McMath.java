@@ -21,6 +21,26 @@ public final class McMath {
         return SIN[(int) (v * 10430.378F + 16384.0F) & 65535];
     }
 
+    /** 1.21.11's Mth.sin(double): the same table, indexed from the double with a double factor. */
+    public static float sin121(double v) {
+        return SIN[(int) ((long) (v * 10430.378350470453D) & 65535L)];
+    }
+
+    /** 1.21.11's Mth.cos(double). */
+    public static float cos121(double v) {
+        return SIN[(int) ((long) (v * 10430.378350470453D + 16384.0D) & 65535L)];
+    }
+
+    /** Mth.sin of a float by the feature rules: 1.21 has only Mth.sin(double), which a float widens to. */
+    static float sin(int rules, float v) {
+        return rules >= Rules.V121 ? sin121(v) : sin(v);
+    }
+
+    /** Mth.cos of a float by the feature rules. */
+    static float cos(int rules, float v) {
+        return rules >= Rules.V121 ? cos121(v) : cos(v);
+    }
+
     /** A hash of the table, to compare with vanilla's (the oracle writes the same hash of Mth.SIN). */
     public static long sinTableHash() {
         long h = 1L;

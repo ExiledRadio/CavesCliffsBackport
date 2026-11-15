@@ -186,6 +186,16 @@ public final class Decorator {
         only = names;
     }
 
+    private int rules = Rules.V118;
+
+    /**
+     * The newest installed version whose changes to 1.18.2's own features apply ({@link Rules}): with Wild Update
+     * Backport 1.19.2's, Trails &amp; Tales 1.20.1's, Tricky Trials 1.21.11's. 1.18.2's by default.
+     */
+    public void rules(int version) {
+        rules = version;
+    }
+
     /**
      * Asked at most once per decorated chunk and kind, when the chunk has a feature of that kind to place: false
      * leaves out that chunk's features of the kind ({@link #TREES}: every surface tree feature, huge mushrooms
@@ -272,6 +282,7 @@ public final class Decorator {
     /** Decorates the region's center chunk. */
     public void decorate(Region region) {
         this.region = region;
+        region.rules = rules;
         int cx = region.centerX;
         int cz = region.centerZ;
         int ox = cx << 4;
@@ -652,7 +663,7 @@ public final class Decorator {
                 double d1 = McMath.lerp((double) f, p4, p5);
                 double d2 = McMath.lerp((double) f, p2, p3);
                 double d3 = random.nextDouble() * (double) j / 16.0D;
-                double d4 = ((double) (McMath.sin((float) Math.PI * f) + 1.0F) * d3 + 1.0D) / 2.0D;
+                double d4 = ((double) (McMath.sin(level.rules, (float) Math.PI * f) + 1.0F) * d3 + 1.0D) / 2.0D;
                 adouble[k * 4] = d0;
                 adouble[k * 4 + 1] = d1;
                 adouble[k * 4 + 2] = d2;

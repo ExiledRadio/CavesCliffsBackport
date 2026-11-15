@@ -274,6 +274,11 @@ public final class Pipeline {
     }
 
     /** Which chunks get their surface trees ({@link Decorator.TreeGate}); asked on the thread that calls {@link #finish}. */
+    /** The feature rules' version ({@link Decorator#rules}); before the first chunk is asked for. */
+    public void rules(int version) {
+        decorator.rules(version);
+    }
+
     public void treeGate(Decorator.TreeGate gate) {
         decorator.treeGate(gate);
     }

@@ -8,6 +8,8 @@ import com.exiledradio.cavesandcliffsbackport.terrain.core.Climate;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.ColumnCache;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.Editions;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.OverworldNoise;
+import com.exiledradio.cavesandcliffsbackport.terrain.core.Rules;
+import com.exiledradio.backportcore.waterlog.Waterlogging;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.nbt.NBTTagCompound;
@@ -36,6 +38,10 @@ final class NewerBiomesSelfTest {
         boolean cherry = registered("cherry_log") && registered("pink_petals");
         check.eq((wild ? Editions.WILD : 0) | (cherry ? Editions.CHERRY : 0), e,
                 "the world's newer biomes are the ones the installed backports have blocks for (" + Editions.name(e) + ")");
+        int rules = net.minecraftforge.fml.common.Loader.isModLoaded("trickytrialsbackport") ? Rules.V121
+                : net.minecraftforge.fml.common.Loader.isModLoaded("trailsandtalesbackport") ? Rules.V120
+                : net.minecraftforge.fml.common.Loader.isModLoaded("wildupdatebackport") ? Rules.V119 : Rules.V118;
+        check.eq(rules, generator.rules(), "1.18.2's features run the newest installed backport's code (" + Rules.name(rules) + ")");
         check.ok(DecorationSource.places(world, "bee_nest"), "the generator says it places bee nests (1.12 nest hooks step aside)");
         check.ok(DecorationSource.places(world, "trees_plains"), "the generator says it places trees_plains");
         check.eq((e & Editions.WILD) != 0, DecorationSource.places(world, "trees_mangrove"),
@@ -55,6 +61,7 @@ final class NewerBiomesSelfTest {
                 ok(check, n.getOrDefault("mangrove_roots", 0) + n.getOrDefault("muddy_mangrove_roots", 0) > 10,
                         "mangrove swamp: roots (" + n.get("mangrove_roots") + " and " + n.get("muddy_mangrove_roots") + " muddy)");
                 ok(check, n.getOrDefault("mangrove_propagule", 0) > 0, "mangrove swamp: hanging propagules (" + n.get("mangrove_propagule") + ")");
+                wetLeaves(check, world, generator, noise, e, c[0], c[1]);
             }
             int[] d = find(source, Biomes.DEEP_DARK, -8);
             check.ok(d != null, "a deep dark within 300 chunks");
@@ -137,6 +144,49 @@ final class NewerBiomesSelfTest {
     private static boolean ok(Check check, boolean condition, String what) {
         com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.LOGGER.info("SELFTEST INFO {}", what);
         return check.ok(condition, what);
+    }
+
+    /**
+     * 1.19 waterlogs leaves that grow into water: the core's waterlogged mangrove leaves in the 3 x 3 chunks are the
+     * world's mangrove leaves holding water (Backport Core's waterlogging, with Fluidlogged API), and without
+     * Fluidlogged API none hold any.
+     */
+    private static void wetLeaves(Check check, WorldServer world, ModernGenerator generator, OverworldNoise noise, int e,
+                                  int cx, int cz) {
+        com.exiledradio.cavesandcliffsbackport.terrain.core.Pipeline own =
+                new com.exiledradio.cavesandcliffsbackport.terrain.core.Pipeline(noise, new Climate(e), 0, 1024);
+        own.setBeards(generator.beards());
+        generator.sameDecoration(own);
+        int core = 0;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                for (char code : own.finish(cx + dx, cz + dz).blocks) {
+                    String state = com.exiledradio.cavesandcliffsbackport.terrain.core.BlockCodes.state(code);
+                    if (state.startsWith("mangrove_leaves[") && state.contains("waterlogged=true")) {
+                        core++;
+                    }
+                }
+            }
+        }
+        own.shutdown();
+        int wet = 0;
+        BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
+        for (int x = (cx - 1) * 16; x < (cx + 2) * 16; x++) {
+            for (int z = (cz - 1) * 16; z < (cz + 2) * 16; z++) {
+                for (int y = -64; y < 320; y++) {
+                    p.setPos(x, y, z);
+                    ResourceLocation id = world.getBlockState(p).getBlock().getRegistryName();
+                    if (id != null && id.getPath().equals("mangrove_leaves") && Waterlogging.hasWater(world, p)) {
+                        wet++;
+                    }
+                }
+            }
+        }
+        if (Waterlogging.isAvailable()) {
+            ok(check, wet == core, "mangrove leaves grown into water hold it (world " + wet + ", core " + core + ")");
+        } else {
+            ok(check, wet == 0, "without Fluidlogged API no mangrove leaves hold water (core: " + core + " in water)");
+        }
     }
 
     private static boolean registered(String path) {

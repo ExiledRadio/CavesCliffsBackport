@@ -140,12 +140,20 @@ final class Misc {
                     if (dx * dx + dz * dz > r * r) {
                         continue;
                     }
+                    boolean run = false;
                     for (int yy = top; yy > bottom; --yy) {
                         if (sameBlock(level.get(x + dx, yy, z + dz), MUD)) {
                             int above = level.get(x + dx, yy + 1, z + dz);
                             boolean water = above == WATER || (flags(above) & F_WATER) != 0 && !name(above).equals("water");
                             level.set(x + dx, yy, z + dz, (flags(above) & F_SOLID) != 0 || water ? DIRT : GRASS_BLOCK);
+                            // DiskFeature marks the block above for post-processing (1.21: the top of each run only).
+                            if (!run || level.rules < Rules.V121) {
+                                level.markAbove(x + dx, yy, z + dz);
+                            }
                             placed = true;
+                            run = true;
+                        } else {
+                            run = false;
                         }
                     }
                 }
@@ -173,15 +181,24 @@ final class Misc {
 
         @Override
         public boolean place(Region level, XoroRandom random, int x, int y, int z) {
-            // getFluidState(origin).is(FluidTags.WATER): water, waterlogged blocks and water plants.
-            if ((flags(level.get(x, y, z)) & F_WATER) == 0) {
+            int origin = level.get(x, y, z);
+            if (level.rules >= Rules.V119) {
+                // 1.19: the placement's BlockPredicate.matchesFluids(Fluids.WATER), source water only.
+                if (!Vegetation.sourceWater(origin)) {
+                    return false;
+                }
+            } else if ((flags(origin) & F_WATER) == 0) {
+                // getFluidState(origin).is(FluidTags.WATER): water, waterlogged blocks and water plants.
                 return false;
             }
             return columns(level, random, x, y, z);
         }
 
-        /** BaseDiskFeature.place. */
+        /** BaseDiskFeature.place, or from 1.19 on DiskFeature.place. */
         boolean columns(Region level, XoroRandom random, int x, int y, int z) {
+            if (level.rules >= Rules.V119) {
+                return columns119(level, random, x, y, z);
+            }
             boolean flag = false;
             int j = y + halfHeight;
             int k = y - halfHeight - 1;
@@ -215,6 +232,45 @@ final class Misc {
                 }
             }
             return flag;
+        }
+
+        /**
+         * 1.19.2's DiskFeature: per column (BlockPos.betweenClosed, x fastest; the columns are independent), top down
+         * from halfHeight above to halfHeight below, each target block gets the RuleBasedBlockStateProvider's state:
+         * disk_sand is sandstone where the block below is air (the air block only), every other disk its block.
+         */
+        private boolean columns119(Region level, XoroRandom random, int x, int y, int z) {
+            boolean placed = false;
+            int top = y + halfHeight;
+            int bottom = y - halfHeight - 1;
+            int r = random.between(minRadius, maxRadius);
+            for (int dz = -r; dz <= r; ++dz) {
+                for (int dx = -r; dx <= r; ++dx) {
+                    if (dx * dx + dz * dz > r * r) {
+                        continue;
+                    }
+                    // 1.21 marks only the top of each run of placed blocks for post-processing.
+                    boolean above = false;
+                    for (int yy = top; yy > bottom; --yy) {
+                        int block = level.get(x + dx, yy, z + dz);
+                        boolean hit = false;
+                        for (int t : targets) {
+                            if (sameBlock(t, block)) {
+                                int s = state == SAND && level.get(x + dx, yy - 1, z + dz) == AIR ? SANDSTONE : state;
+                                level.set(x + dx, yy, z + dz, s);
+                                if (!above || level.rules < Rules.V121) {
+                                    level.markAbove(x + dx, yy, z + dz);
+                                }
+                                placed = true;
+                                hit = true;
+                                break;
+                            }
+                        }
+                        above = hit;
+                    }
+                }
+            }
+            return placed;
         }
     }
 
@@ -263,6 +319,11 @@ final class Misc {
         }
 
         private static boolean valid(Region level, int x, int y, int z) {
+            if (level.rules >= Rules.V121) {
+                // 1.21.11: below and the four sides must hide their face (a full occlusion face), not just be solid.
+                return !waterOrAir(level, x, y, z) && solidRender(level.get(x, y - 1, z)) && solidRender(level.get(x, y, z - 1))
+                    && solidRender(level.get(x + 1, y, z)) && solidRender(level.get(x, y, z + 1)) && solidRender(level.get(x - 1, y, z));
+            }
             if (waterOrAir(level, x, y, z) || waterOrAir(level, x, y - 1, z)) {
                 return false;
             }

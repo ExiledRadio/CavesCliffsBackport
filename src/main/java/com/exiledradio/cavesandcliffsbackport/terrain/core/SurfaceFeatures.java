@@ -28,7 +28,15 @@ final class SurfaceFeatures {
             new Placed("iceberg_blue", new Iceberg(BLUE_ICE), RARITY, 200, IN_SQUARE, BIOME),
             new Placed("forest_rock", new BlockBlob(MOSSY_COBBLESTONE), Decorator.COUNT, 2, IN_SQUARE, HEIGHTMAP, mb, BIOME),
             new Placed("ice_spike", new IceSpike(), Decorator.COUNT, 3, IN_SQUARE, HEIGHTMAP, mb, BIOME),
-            new Placed("ice_patch", new IcePatch(), Decorator.COUNT, 2, IN_SQUARE, HEIGHTMAP, mb, BIOME),
+            // 1.19 adds RandomOffsetPlacement.vertical(-1) and a snow block filter before the biome filter.
+            new Placed("ice_patch", new IcePatch(), Decorator.COUNT, 2, IN_SQUARE, HEIGHTMAP, mb, CUSTOM, 0, BIOME)
+                .mods((level, random, next, x, y, z) -> {
+                    if (level.rules < Rules.V119) {
+                        next.at(x, y, z);
+                    } else if (level.get(x, y - 1, z) == SNOW_BLOCK) {
+                        next.at(x, y - 1, z);
+                    }
+                }),
             new Placed("desert_well", new DesertWell(), RARITY, 1000, IN_SQUARE, HEIGHTMAP, mb, BIOME),
             new Placed("blue_ice", new BlueIce(), COUNT_UNIFORM, 0, 19, IN_SQUARE, HEIGHT_UNIFORM, 30, 61, BIOME));
     }
@@ -428,6 +436,10 @@ final class SurfaceFeatures {
 
         @Override
         public boolean place(Region level, XoroRandom random, int x, int y, int z) {
+            if (level.rules >= Rules.V119) {
+                // 1.19's DiskFeature, at the snow block the placement found.
+                return disk.columns(level, random, x, y, z);
+            }
             while (isAir(level.get(x, y, z)) && y > -64 + 2) {
                 --y;
             }

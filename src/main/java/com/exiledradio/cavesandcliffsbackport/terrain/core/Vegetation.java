@@ -209,7 +209,7 @@ final class Vegetation {
     }
 
     /** A water source fluid state (Fluids.WATER, not flowing): water level 0, waterlogged blocks, water plants. */
-    private static boolean sourceWater(int code) {
+    static boolean sourceWater(int code) {
         return code == WATER || (code != WATER && isWaterFluid(code) && !name(code).equals("water"));
     }
 

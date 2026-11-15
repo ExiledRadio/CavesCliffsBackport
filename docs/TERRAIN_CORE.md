@@ -471,6 +471,25 @@ python tools/terrain/structure_biome_tags.py <1.18.2 client.jar> <1.19.2 client.
 sh tools/terrain/run.sh NewerFeatureCensus 42 3 mangrove_swamp 8 4
 ```
 
+The newer versions' decoration (`Rules`, see `docs/streams/generator.md`): `FeatureDump119` and `FeatureDump120`
+(`tools/terrain/oracle-newer/v119|v120/.../levelgen`) are VanillaFeatureDump on 1.19.2 and 1.20.1 (`VanillaWorld119`,
+`VanillaWorld120`: the world through the vanilla generator's own fill, surface and carvers). They run on an unsigned
+copy of the named client jar (`unsign.py`; the jar's signature stops `MinecraftServer` from loading, which fossils
+need) and with one patched vanilla class ahead of the jar: `BeehiveDecorator`, which shuffles the nest's positions with
+the JVM's shared random (never the same twice; in a mangrove swamp a nest elsewhere changes the next trees), patched to
+the core's shuffle (`patch_beehive.py` writes it from the local decompiled sources into `build/oracle-src`; no Mojang
+code in the repository). `FeatureCheck` takes `-Deditions` and `-Drules`. Compile the dumps and the patched class with
+JDK 17 against `client-named.jar;libs/*` into `build/oracle119` / `build/oracle120`, then:
+
+```
+python tools/terrain/oracle-newer/patch_beehive.py .
+python tools/terrain/oracle-newer/unsign.py G:/MCDownloads/minecraft-1.19.2/client-named.jar G:/MCDownloads/minecraft-1.19.2/client-named-unsigned.jar   (and 1.20.1)
+sh tools/terrain/oracle-newer/subset.sh 119 1 119 42 default 16 ported        (version, editions, rules, seed, centers or default, side, features)
+sh tools/terrain/oracle-newer/subset.sh 120 3 120 42 -184,48 8 ported
+sh tools/terrain/oracle-newer/check-newer.sh both                             (every seed: default areas and the biome areas)
+python tools/terrain/oracle-newer/dumpq.py <features_SEED.bin.gz> x,y,z+r     (a dump's blocks around a position)
+```
+
 The biome and surface oracle classes (`VanillaWorld`, `VanillaBiomeDump`, `VanillaSurfaceDump`,
 `VanillaSurfaceBench`, copies in `tools/terrain/oracle`) are compiled straight into the reference workspace with
 `javac @javac.args -d build/classes/java/main ...` (JDK 17; `javac.args` is `-cp` and vanilla.args' classpath

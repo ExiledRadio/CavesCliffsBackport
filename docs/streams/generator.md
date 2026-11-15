@@ -38,6 +38,10 @@ feature the core has ported, block for block what the core computes, which is va
     swamps (mud, mangrove trees with their roots and hanging propagules) and the deep dark, where 1.19 puts them; with
     Trails & Tales Backport, 1.20's cherry groves (cherry trees, pink petals). Seeds match 1.19 and 1.20. A world keeps
     the biomes it was made with (`height.newerBiomes` turns this off).
+*   **The newer versions' changes to the old features.** With Wild Update, Trails & Tales or Tricky Trials installed,
+    1.18's trees, disks, ice patches, glow lichen, geodes, bee nests, huge mushrooms and ores generate as the newest of
+    them does (1.19.2, 1.20.1 or 1.21.11): leaves grown into water are waterlogged, sand disks only make sandstone over
+    air, leaf distances and lichen follow the newer code, mangrove swamps carve their mud.
 *   **Bee nests on 1.18's trees have their bees** with Buzzy Bees Backport, and the backport no longer adds a second
     nest in these worlds.
 *   **1.21.5's spring plants with Tricky Trials Backport**: bushes, firefly bushes, dry grass, wildflowers (meadows
@@ -311,6 +315,47 @@ regions, powder snow patches and the deepslate layer.
 land above the sea, found from the noise alone (1.12's search would generate chunks until it finds grass). 1.12's
 bonus chest is not placed then.
 
+**The newer versions' changes to 1.18.2's features** (`terrain/core/Rules`, `Decorator.rules`). The family's rule is
+that the newest installed backport's version wins, so 1.18.2's features run the newest installed version's code
+(`ModernTerrain.installedRules`, read when the generator is made: Tricky Trials 1.21.11, Trails & Tales 1.20.1, Wild
+Update 1.19.2, else 1.18.2). Which features a world has and their order stay its biomes' (`Editions`, saved); the rules
+only change how they place, so they are not saved: a change between two runs moves no terrain. Each feature reads them
+from its `Region`. Found by comparing Mojang's code release to release (decompiled with Mojang's names, normalized)
+and the worldgen data (1.18.2 and 1.19.2 dumped as the 1.20 jars' JSON through their codecs; 1.20.1 and 1.21.11 from
+the jars), then checked against vanilla 1.19.2 and 1.20.1 decoration dumps (Tested):
+- **1.19.2**: `DiskFeature` replaces DiskReplaceFeature and IcePatchFeature. The disks' water test moved to their
+  placement (`matching_fluids water`: source water only, where 1.18 took any FluidTags.WATER), and only disk_sand gets
+  sandstone, where the block below is the air block (1.18 did it for every falling-block disk, gravel too, over cave air
+  as well). ice_patch: the heightmap, one block down, a snow block filter, then the biome filter at that position (1.18
+  scanned down through air). TreeFeature.validTreePos takes seagrass (Material.REPLACEABLE_WATER_PLANT); every leaves
+  block got `waterlogged`, and FoliagePlacer sets it where the leaf takes a source water position (`Trees.LEAVES_WET`).
+  Glow lichen spreads in `Direction.allShuffled`, a fresh shuffle each time (1.18.2 shuffled MultifaceBlock.DIRECTIONS
+  in place, process-global). LeaveVineDecorator's `nextFloat() < 0.25` for `nextInt(4) == 0` draws the same bits of the
+  same long on WorldgenRandom over Xoroshiro, so it changes nothing. 1.19's #dirt holds mud, so the carvers carve it (a
+  terrain fix for the mangrove swamp, `Carvers.REPLACEABLE`), and a hanging propagule breaks when a later tree's log
+  replaces the leaf above it (`updateShapeAtEdge`).
+- **1.20.1**: TreeFeature.updateLeaves is rewritten: distances spread from the logs (and any log reached, distance 0)
+  only inside the tree's box, and a leaf queued at two levels before it is reached ends at the higher one, so the
+  result follows HashSet&lt;BlockPos&gt; order (`Trees.updateLeaves120`, over java.util.HashSet with BlockPos's hash).
+  Geodes use Mth.invSqrt (exact) for fastInvSqrt. #replaceable_by_trees replaces the materials and holds exactly the
+  blocks 1.19's validTreePos took; patch_melon gained `matching_fluids empty` (1.19.4) and rooted_azalea_tree's
+  predicate the tag, neither of which changes a block the core places.
+- **1.21.11** (no vanilla oracle yet, see Not done): bee nests shuffle with the tree's random (Util.shuffle) and skip
+  trees without logs; huge mushrooms replace only air and #replaceable_by_mushrooms (was: anything not a full
+  occluding cube); dark oak branches put their leaves over the branch (1.20 over the bent trunk); Mth.sin and cos of a
+  double (1.21 has no float overload, so ores, dripstone clusters, large dripstone's wind and mega jungle branches
+  index the table from the double); #replaceable_by_trees holds the small flowers and 1.21's new plants;
+  trees_mangrove lost its propagule survival filter (each tree still has it); underwater magma needs fully occluding
+  faces below and around; disks mark only the top of each run for post-processing; foliage skips persistent leaves
+  (none in generation).
+- Not changes for 1.18.2's features: the rest of the diff is the RandomSource rename, codec and registry plumbing,
+  `Material` removed with equal answers for the blocks the core places, and shuffles that keep Collections.shuffle's
+  algorithm (Util.shuffle, Direction.Plane.shuffledCopy).
+- Leaves in water: the core's waterlogged leaves get their water as every waterlogged block does (`StateMap`'s water
+  flag, then Backport Core's `Waterlogging.setWater` once the chunk is in the world). Wild Update's mangrove leaves are
+  `Waterloggable` (and its own 1.12 mangrove generator already places them with `placeKeepingWater`); vanilla 1.12's
+  leaves hold water only if Fluidlogged API's config lets them.
+
 **Other backports' newer placed features** (`ModernFeatures`; Tricky Trials' `docs/CORE_REQUESTS.md` #11). The
 family's rule is that the newest installed backport's version wins, so with Tricky Trials (1.21.x) installed its 1.21.5
 spring plants belong in these worlds; without it nothing below runs and decoration is 1.18.2's exactly (FeatureCheck,
@@ -439,6 +484,19 @@ had chunks when this generator first saw it).
     the generator says it places bee nests, and mangrove and cherry trees only with their biomes. `height,terrain`
     without them: 212 pass, 0 fail. The whole suite (`runServer -Pselftest=all`, fresh Default world): 4482 pass, 0 fail.
 
+*   **The newer versions' feature rules** (branch `cc-newer-features`, 2026-11-15; `tools/terrain/oracle-newer`,
+    `FeatureDump119` / `FeatureDump120` against `FeatureCheck -Deditions -Drules`, every ported feature, strict: no
+    `-DlooseBees`): `check-newer.sh both`, seeds 42, 12345, -7346534567 and 8675309, each the two default areas (16x16)
+    and 8x8 chunk areas in a mangrove swamp, a swamp, a jungle, ice spikes and (1.20) a cherry grove: 1.19.2 (editions
+    1, rules 119) 768 chunks per seed and 1.20.1 (editions 3, rules 120) 832 per seed, ALL IDENTICAL (6,400 chunks,
+    629 million blocks). Before the work the 1.19.2 mangrove area alone had 30,537 differences. The 1.18.2 check
+    (`fdef 16 all`, rules 118): ALL IDENTICAL. The 1.21.11 rules have no vanilla check (Not done).
+*   The suite (`./gradlew runServer -Pselftest=all`, fresh Default world, seed 1718; Backport Core 1.3.1's dev jar,
+    which main's FlatSelfTest needs: `-Pcore_version=1.3.1`): 4448 pass, 0 fail. `height,terrain` in a Caves & Cliffs
+    world with Buzzy Bees 1.0.1, Wild Update 0.1.0 and Trails & Tales 0.1.0 in `eclipse/mods` (Fluidlogged API on the
+    classpath): 271 pass, 0 fail; the generator runs 1.20.1's rules, and the mangrove leaves in water near the first
+    mangrove swamp hold water (10 in the world, 10 waterlogged in the core).
+
 ## Speed
 
 **Crash journal (2026-11-15, cc-crash-safe).** The pipeline's asking thread records each decoration's writes
@@ -451,6 +509,13 @@ machine's noise in a server. `genbench.py`, main 660328e and this branch interle
 shared with other sessions' builds: modern median 6.73 ms/chunk on main and 6.60 on the branch (vanilla 15.7 and 14.5
 in the same rounds); one main run on a quiet machine earlier gave 5.82. Replay after a crash: 1.4 s for 793 records
 on a dev server, 0.27-0.37 s for 384 in `JournalCheck` with 8 workers.
+
+**Feature rules (2026-11-15, cc-newer-features).** One E-core, two alternating rounds, main against the branch:
+`PipelineBench 42 16 0` 15.95 / 15.41 ms/chunk on main, 15.47 / 15.47 on the branch (rules 118); with 1.20's biomes
+(editions 3) main 15.47 / 15.79, the branch with 1.20.1's rules 14.38 / 14.52 and with 1.21.11's 14.63 / 15.77.
+`DecorationBench 42 12 5 0 0` 1.94 / 1.99 ms/chunk on main, 1.93 / 1.96 on the branch (rules 118), 2.05 / 1.99 with
+1.21.11's. Within noise. The checksums move with the same blocks (FeatureCheck identical): the waterlogged leaves
+register codes (rules 118 628033d72d65df32 to 0e914ca2d211d5ad), and the newer rules place differently.
 
 **Newer biomes (2026-11-12, cc118-biomes).** One E-core, `PipelineBench 42 16 0` (`-Deditions`): 1.18.2 16.1 ms/chunk
 on main, 16.3 on this branch; with 1.20's biomes (editions 3) 15.6, with 1.19's (1) 15.7. `TerrainBench 42 12 5` 2.17
@@ -521,14 +586,18 @@ same with 8 workers (unpinned): 2.5 ms/chunk, same checksum. (Before trees and v
 
 ## Not done
 
-*   **The newer versions' changes to 1.18.2's own features** are not ported: in a 1.19 or 1.20 world they decorate
-    as 1.18.2's (in 1.19's feature order). 1.19 changed DiskFeature (disk_sand gets sandstone over air, the water test
-    moved to the placement), LeaveVineDecorator (nextFloat against 0.25 for nextInt(4)), and TreeFeature.validTreePos
-    (seagrass is replaceable); a 1.19 decoration oracle would be the next step. The mangroves and cherries are ported
-    from 1.19.2 and 1.20.1 line by line but not yet checked against a vanilla decoration dump.
+*   **1.21's decoration has no vanilla check.** The 1.21.11 rules are ported from Mojang's code but not compared with a
+    vanilla dump: a 1.21.11 oracle needs the 1.21 world API ported (the fill, surface and carver steps, WorldGenRegion's
+    new constructor), and 1.21's feature order differs from the one the world keeps (1.20.6's ore_diamond_medium in
+    step 6, and the 1.21.5 spring features that `ModernFeatures` grows outside the core), so every feature's seed would
+    differ anyway. Making 1.21 exact means 1.21.11's FeatureSorter tables under the rules and the spring features in the
+    core.
+*   **The backports' own versions**: Wild Update covers 1.19 to 1.19.4 and Trails & Tales 1.20 to 1.20.6, the rules are
+    1.19.2's and 1.20.1's, like the biomes. Between them: patch_melon's fluid test (1.19.4; no change for the blocks the
+    core places) and 1.20.6's ore_diamond_medium (a new step 6 feature, which moves the seeds of the ores after it).
+*   **1.21's Mth.sin and cos** also change the carvers (terrain), which stay 1.18.2's here.
 *   **The deep dark has no sculk** (no backport has sculk blocks yet) and no ancient cities; trail ruins (1.20) and
     trial chambers (1.21) have no builder in the family yet, so no start rule is offered for them.
-*   **Leaves in water**: 1.19 waterlogs mangrove leaves that grow into water; here they are dry.
 
 *   **Plants and corals without a 1.12 block** stand in as listed under Block states when no family backport adds
     them: bamboo jungles have no bamboo, warm oceans terracotta reefs.

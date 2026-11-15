@@ -75,6 +75,13 @@ public final class PipelineBench {
     }
 
     static Pipeline pipeline(long seed, int editions, int threads, int cap) {
+        // -Drules=118..121: the feature rules (Decorator.rules).
+        Pipeline p = pipeline0(seed, editions, threads, cap);
+        p.rules(Integer.getInteger("rules", 118));
+        return p;
+    }
+
+    static Pipeline pipeline0(long seed, int editions, int threads, int cap) {
         return editions == 0 ? new Pipeline(seed, threads, cap) : new Pipeline(
             new com.exiledradio.cavesandcliffsbackport.terrain.core.OverworldNoise(seed, editions),
             new com.exiledradio.cavesandcliffsbackport.terrain.core.Climate(editions), threads, cap);

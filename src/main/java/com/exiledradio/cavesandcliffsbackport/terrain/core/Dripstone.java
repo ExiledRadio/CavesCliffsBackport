@@ -111,8 +111,8 @@ final class Dripstone {
         }
         float f1 = 6.0F / (float) radius;
         for (float f2 = 0.0F; f2 < (float) Math.PI * 2F; f2 += f1) {
-            int i = (int) (McMath.cos(f2) * (float) radius);
-            int j = (int) (McMath.sin(f2) * (float) radius);
+            int i = (int) (McMath.cos(level.rules, f2) * (float) radius);
+            int j = (int) (McMath.sin(level.rules, f2) * (float) radius);
             if (isEmptyOrWaterOrLava(level.get(x + i, y, z + j))) {
                 return false;
             }
@@ -214,7 +214,7 @@ final class Dripstone {
                 (double) random.between(0.4F, 2.0F));
             Wind wind;
             if (stalactite.suitableForWind() && stalagmite.suitableForWind()) {
-                wind = new Wind(y, random);
+                wind = new Wind(y, random, level.rules);
             } else {
                 wind = Wind.NONE;
             }
@@ -329,13 +329,13 @@ final class Dripstone {
             wz = 0.0D;
         }
 
-        Wind(int originY, XoroRandom random) {
+        Wind(int originY, XoroRandom random, int rules) {
             this.originY = originY;
             none = false;
             float f = random.between(0.0F, 0.3F);
             float f1 = random.between(0.0F, (float) Math.PI);
-            wx = (double) (McMath.cos(f1) * f);
-            wz = (double) (McMath.sin(f1) * f);
+            wx = (double) (McMath.cos(rules, f1) * f);
+            wz = (double) (McMath.sin(rules, f1) * f);
         }
 
         /** BlockPos.offset(vec.x, 0, vec.z) with vec = wind * (originY - y): new BlockPos floors each double. */
