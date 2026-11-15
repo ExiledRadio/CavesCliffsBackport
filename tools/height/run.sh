@@ -1,7 +1,8 @@
 #!/bin/sh
 # Compiles stream H's plain parts (the section layout, the coremod's patch classes) on their own and runs a tool class:
 #   tools/height/run.sh HeightLayoutTest | AlfheimKeyTest
-#   tools/height/run.sh PatchCheck mcp|srg <minecraft jar> [celeritas jar]
+#   tools/height/run.sh PatchCheck mcp|srg <minecraft jar> [celeritas, nothirium, vintagefix, alfheim, eaglemixins, phosphor jar]
+#   tools/height/run.sh DeobfJar <srg-mcp.srg> <release mod jar> <dev-named copy>
 # Needs a JDK 8+ (JAVA_HOME) and the ForgeGradle caches (ASM, launchwrapper, log4j, the Forge jars).
 set -e
 here="$(cd "$(dirname "$0")" && pwd)"

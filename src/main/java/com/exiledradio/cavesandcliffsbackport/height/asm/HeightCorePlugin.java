@@ -36,8 +36,6 @@ public final class HeightCorePlugin implements IFMLLoadingPlugin {
      * check works before any mod is loaded.
      */
     public static final String[][] CONFLICTS = {
-            {"Phosphor", "me/jellysquid/mods/phosphor/core/PhosphorFMLPlugin.class"},
-            {"Phosphor", "me/jellysquid/mods/phosphor/core/PhosphorFMLLoadingPlugin.class"},
             {"Cubic Chunks", "io/github/opencubicchunks/cubicchunks/core/asm/coremod/CubicChunksCoreMod.class"},
             {"Caves Not Cliffs", "net/celestiald/cavesnotcliffs/core/CavesNotCliffsCorePlugin.class"},
             {"Cave Biomes API (Caves Not Cliffs)", "net/celestiald/cavebiomes/core/CaveBiomesLoadingPlugin.class"},
@@ -103,6 +101,13 @@ public final class HeightCorePlugin implements IFMLLoadingPlugin {
                         + " exactly; its lighting code is patched site by site)";
             }
         }
+        if (why == null && Launch.classLoader != null) {
+            String phosphor = phosphorVersion();
+            if (phosphor != null && !PHOSPHOR_VERSIONS.contains(phosphor)) {
+                why = "Phosphor " + phosphor + " is installed (extended height is made for " + PHOSPHOR_NAMES
+                        + "; their lighting code is patched site by site)";
+            }
+        }
         refusal = why;
         active = why == null;
         if (active) {
@@ -138,6 +143,48 @@ public final class HeightCorePlugin implements IFMLLoadingPlugin {
             LOG.warn("Extended height: could not read Alfheim's version.", e);
         }
         return "unknown";
+    }
+
+    /**
+     * The Phosphor builds the {@code PhosphorPatches} are written for, by {@code PhosphorConstants.MOD_VERSION}:
+     * jellysquid's Phosphor 0.2.6 and 0.2.7, and its fork Hesperus 0.2.9.1-0.2.9.3 (all mod id
+     * {@code phosphor-lighting}; their height and lighting code is the same bytecode).
+     */
+    public static final java.util.Set<String> PHOSPHOR_VERSIONS = java.util.Collections.unmodifiableSet(
+            new java.util.HashSet<String>(java.util.Arrays.asList("1.12.2-0.2.6", "1.12.2-0.2.7", "1.12.2-0.2.9.1",
+                    "1.12.2-0.2.9.2", "1.12.2-0.2.9.3")));
+    public static final String PHOSPHOR_NAMES = "Phosphor 0.2.6 and 0.2.7 and Hesperus 0.2.9.1 to 0.2.9.3";
+
+    /**
+     * The installed Phosphor's (or Hesperus') version (its {@code PhosphorConstants.MOD_VERSION}, read from the class
+     * file), "unknown" when that cannot be read, or null when no Phosphor is installed.
+     */
+    @Nullable
+    public static String phosphorVersion() {
+        if (Launch.classLoader.getResource("me/jellysquid/mods/phosphor/mod/world/lighting/LightingEngine.class") == null) {
+            return null;
+        }
+        String v = constant("me/jellysquid/mods/phosphor/mod/PhosphorConstants.class", "MOD_VERSION");
+        return v != null ? v : "unknown";
+    }
+
+    /** A {@code String} constant of a class file, read without loading the class; null when there is none. */
+    @Nullable
+    private static String constant(String resource, String field) {
+        try (java.io.InputStream in = Launch.classLoader.getResourceAsStream(resource)) {
+            if (in != null) {
+                org.objectweb.asm.tree.ClassNode node = new org.objectweb.asm.tree.ClassNode();
+                new org.objectweb.asm.ClassReader(in).accept(node, org.objectweb.asm.ClassReader.SKIP_CODE);
+                for (org.objectweb.asm.tree.FieldNode f : node.fields) {
+                    if (field.equals(f.name) && f.value instanceof String) {
+                        return (String) f.value;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("Extended height: could not read {}.", resource, e);
+        }
+        return null;
     }
 
     /** The config file's {@code height { B:enabled=... }}, read as text (Forge's config is not loaded yet). */

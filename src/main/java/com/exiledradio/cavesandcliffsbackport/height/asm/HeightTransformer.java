@@ -43,6 +43,10 @@ public final class HeightTransformer implements IClassTransformer {
                 new AlfheimPatches.LightingEnginePatch(),
                 new AlfheimPatches.ChunkMixinPatch(),
                 new AlfheimPatches.ChunkCacheMixinPatch(client),
+                new PhosphorPatches.LightingEnginePatch(),
+                new PhosphorPatches.LightingHooksPatch(),
+                new PhosphorPatches.LightingEngineHelpersPatch(),
+                new PhosphorPatches.MixinChunkPatch(),
         };
         if (!client) {
             return common;
@@ -76,15 +80,17 @@ public final class HeightTransformer implements IClassTransformer {
         Map<String, Boolean> out = new LinkedHashMap<String, Boolean>();
         for (ClassPatch p : all(client)) {
             if (p.target.startsWith("org.embeddedt.vintagefix.") || p.target.startsWith("dev.redstudio.alfheim.mixin.")
-                    || p.target.startsWith("eaglemixins.mixin.")) {
+                    || p.target.startsWith("eaglemixins.mixin.")
+                    || p.target.startsWith("me.jellysquid.mods.phosphor.mixins.")) {
                 // A mixin class: Mixin reads it (through the transformers) when it applies it; loading it directly
                 // is an error.
                 continue;
             }
-            // Celeritas, Nothirium, VintageFix, OptiFine and Alfheim classes (and EagleMixins', skipped above) exist only with those mods installed.
+            // Celeritas, Nothirium, VintageFix, OptiFine, Alfheim and Phosphor classes (and EagleMixins', skipped above)
+            // exist only with those mods installed.
             out.put(p.target, !p.target.startsWith("org.taumc.") && !p.target.startsWith("meldexun.")
                     && !p.target.startsWith("org.embeddedt.vintagefix.") && !p.target.startsWith("net.optifine.")
-                    && !p.target.startsWith("dev.redstudio.alfheim."));
+                    && !p.target.startsWith("dev.redstudio.alfheim.") && !p.target.startsWith("me.jellysquid.mods.phosphor."));
         }
         return Collections.unmodifiableMap(out);
     }

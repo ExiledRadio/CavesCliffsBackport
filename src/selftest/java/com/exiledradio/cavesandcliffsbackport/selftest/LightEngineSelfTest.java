@@ -2,6 +2,7 @@ package com.exiledradio.cavesandcliffsbackport.selftest;
 
 import com.exiledradio.cavesandcliffsbackport.height.AlfheimHooks;
 import com.exiledradio.cavesandcliffsbackport.height.HeightContent;
+import com.exiledradio.cavesandcliffsbackport.height.PhosphorHooks;
 import com.exiledradio.cavesandcliffsbackport.height.Heights;
 import com.exiledradio.cavesandcliffsbackport.height.asm.PatchReport;
 import net.minecraft.init.Blocks;
@@ -18,32 +19,42 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 /**
- * Extended height with Alfheim 1.6 (plan {@code docs/streams/optifine-alfheim.md}, section 2, test 3), on a dedicated
- * server with Alfheim installed and a Caves &amp; Cliffs world:
+ * Extended height with a replaced lighting engine, on a dedicated server with that mod installed and a Caves &amp;
+ * Cliffs world: Alfheim 1.6 (phases {@code alfheim*}; plan {@code docs/streams/optifine-alfheim.md}, section 2, test 3)
+ * or Phosphor/Hesperus (phases {@code phosphor*}; {@code docs/streams/height.md}, "Phosphor"). Both engines share the
+ * structures checked here (Alfheim is a Phosphor descendant):
  *
  * <ol>
- *   <li>{@code alfheimlight1}, fresh world: Alfheim's classes patched and the wide key in use; a torch at y -30 by a
- *       chunk border lights across it; a shaft dug from the surface to -60 gets sky light (and a corridor off its
+ *   <li>{@code alfheimlight1} / {@code phosphorlight1}, fresh world: the engine's classes patched and the wide key in use; a torch at y -30 by a
+ *       chunk border lights across it, torches at y -60 and y 300 light their surroundings; a shaft dug from the surface to -60 gets sky light (and a corridor off its
  *       bottom), loses it when capped and gets it back when opened; sky light under a roof at y 310 (sections that
  *       were empty); no chunk's boundary flags use a bit above 11. Writes what it built and the light it expects to
- *       {@code alfheim-light.txt}; the server then stops and saves.</li>
- *   <li>{@code alfheimlight2}, the same world on a new server: every light of the file read back the same, then the
+ *       {@code alfheim-light.txt} / {@code phosphor-light.txt}; the server then stops and saves.</li>
+ *   <li>{@code alfheimlight2} / {@code phosphorlight2}, the same world on a new server: every light of the file read back the same, then the
  *       open shaft capped and the capped one opened, relit from the saved state; the flags read from the save.</li>
  * </ol>
  *
- * {@code alfheimdump} (any world) writes a hash of the sky and block light of a fixed 9x9 chunks around 0, 0 to
- * {@code alfheim-dump.txt}: the same Default world with and without extended height on must give the same file.
+ * {@code alfheimdump} / {@code phosphordump} (any world) writes a hash of the sky and block light of a fixed 9x9 chunks
+ * around 0, 0 to {@code alfheim-dump.txt} / {@code phosphor-dump.txt}: the same Default world with and without extended
+ * height on must give the same file.
  */
-public final class AlfheimLightSelfTest implements SelfTest {
+public final class LightEngineSelfTest implements SelfTest {
 
     /** A chunk border (x 44000 is chunk 2750's first block), far from every other test. */
     private static final int BX = 44000;
     private static final int Z0 = 40008;
 
     private final String phase;
+    /** "alfheim" or "phosphor": the phase's prefix and its files' names. */
+    private final String engine;
 
-    AlfheimLightSelfTest(String phase) {
+    LightEngineSelfTest(String phase) {
         this.phase = phase;
+        this.engine = phase.startsWith("phosphor") ? "phosphor" : "alfheim";
+    }
+
+    private boolean phosphor() {
+        return "phosphor".equals(this.engine);
     }
 
     @Override
@@ -54,27 +65,31 @@ public final class AlfheimLightSelfTest implements SelfTest {
     @Override
     public void run(Check check) throws Exception {
         WorldServer world = check.world;
-        if ("alfheimdump".equals(this.phase)) {
-            dump(check, world);
+        if (this.phase.endsWith("dump")) {
+            dump(check, world, this.engine + "-dump.txt");
             return;
         }
-        if (!check.ok(Loader.isModLoaded("alfheim"), this.phase + " runs with Alfheim installed")
+        String mod = phosphor() ? "phosphor-lighting" : "alfheim";
+        if (!check.ok(Loader.isModLoaded(mod), this.phase + " runs with " + mod + " installed")
                 || !check.ok(Heights.isExtended(world), this.phase + " runs in an extended world (refusal: "
                 + HeightContent.refusal() + ")")) {
             return;
         }
-        check.ok(AlfheimHooks.wide(), "Alfheim's engine uses the wide position key");
-        for (String label : new String[] {"AlfheimLightingEngine", "AlfheimChunkMixin", "AlfheimChunkCacheMixin"}) {
+        check.ok(phosphor() ? PhosphorHooks.wide() : AlfheimHooks.wide(), this.engine + "'s engine uses the wide position key");
+        String[] labels = phosphor()
+                ? new String[] {"PhosphorLightingEngine", "PhosphorLightingHooks", "PhosphorLightingEngineHelpers", "PhosphorMixinChunk"}
+                : new String[] {"AlfheimLightingEngine", "AlfheimChunkMixin", "AlfheimChunkCacheMixin"};
+        for (String label : labels) {
             check.ok(PatchReport.classPatched(label), label + " patched");
         }
         prepare(world, BX, Z0, 3);
-        File file = world.getMinecraftServer().getFile("alfheim-light.txt");
-        if ("alfheimlight1".equals(this.phase)) {
+        File file = world.getMinecraftServer().getFile(this.engine + "-light.txt");
+        if (this.phase.endsWith("light1")) {
             build(check, world, file);
         } else {
             reread(check, world, file);
         }
-        flags(check, world);
+        flags(check, world, phosphor() ? "getNeighborLightChecks" : "alfheim$getNeighborLightChecks");
     }
 
     private static void build(Check check, WorldServer world, File file) throws Exception {
@@ -101,6 +116,35 @@ public final class AlfheimLightSelfTest implements SelfTest {
         check.eq(8, block(world, torch.east(6)), "block light 6 blocks into the next chunk at y -30");
         check.eq(10, block(world, torch.west(3).up()), "block light 3 back and 1 up at y -29");
         expect.append(line("block", torch.east(), 13)).append(line("block", torch.east(6), 8));
+
+        // A torch at y -60, four above the world's bottom, in a sealed tunnel; and one at y 300 in open air (sections
+        // above 255, empty until the torch makes one).
+        for (int x = BX - 4; x <= BX + 4; x++) {
+            for (int y = -61; y <= -58; y++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    world.setBlockState(new BlockPos(x, y, Z0 - 10 + dz), Blocks.STONE.getDefaultState(), 2);
+                }
+            }
+        }
+        for (int x = BX - 3; x <= BX + 3; x++) {
+            world.setBlockState(new BlockPos(x, -60, Z0 - 10), Blocks.AIR.getDefaultState(), 3);
+        }
+        BlockPos deep = new BlockPos(BX - 3, -60, Z0 - 10);
+        world.setBlockState(deep, Blocks.TORCH.getDefaultState(), 3);
+        check.eq(14, block(world, deep), "block light at a torch at y -60");
+        check.eq(13, block(world, deep.east()), "block light 1 from a torch at y -60");
+        check.eq(8, block(world, deep.east(6)), "block light 6 along the tunnel at y -60 (across the chunk border)");
+        check.eq(0, block(world, deep.down()), "no block light in the stone under the torch at y -61");
+        BlockPos high = new BlockPos(BX - 2, 300, Z0 - 10);
+        world.setBlockState(high.down(), Blocks.STONE.getDefaultState(), 3);
+        world.setBlockState(high, Blocks.TORCH.getDefaultState(), 3);
+        check.eq(14, block(world, high), "block light at a torch at y 300");
+        check.eq(13, block(world, high.up()), "block light above a torch at y 300");
+        check.eq(9, block(world, high.up(5)), "block light 5 above a torch at y 300");
+        check.eq(10, block(world, high.east(4)), "block light 4 east of a torch at y 300 (across the chunk border)");
+        check.eq(15, sky(world, high.up(3)), "sky light beside a torch at y 303");
+        expect.append(line("block", deep.east(), 13)).append(line("block", deep.east(6), 8))
+                .append(line("block", high.up(5), 9)).append(line("block", high.east(4), 10));
 
         // Shafts from the surface to -60, a corridor east off the bottom of each.
         BlockPos open = shaft(world, BX - 8, Z0 + 20);
@@ -139,7 +183,7 @@ public final class AlfheimLightSelfTest implements SelfTest {
     }
 
     private static void reread(Check check, WorldServer world, File file) throws Exception {
-        if (!check.ok(file.isFile(), "alfheim-light.txt from alfheimlight1")) {
+        if (!check.ok(file.isFile(), file.getName() + " from the first phase")) {
             return;
         }
         BlockPos openLid = null;
@@ -176,14 +220,14 @@ public final class AlfheimLightSelfTest implements SelfTest {
     }
 
     /** No boundary flag of a loaded chunk uses a bit an extended world's 12 do not have. */
-    private static void flags(Check check, WorldServer world) throws Exception {
+    private static void flags(Check check, WorldServer world, String getter) throws Exception {
         Method get = null;
         int chunks = 0;
         int set = 0;
         int high = 0;
         for (Chunk chunk : world.getChunkProvider().getLoadedChunks()) {
             if (get == null) {
-                get = chunk.getClass().getMethod("alfheim$getNeighborLightChecks");
+                get = chunk.getClass().getMethod(getter);
             }
             short[] flags = (short[]) get.invoke(chunk);
             chunks++;
@@ -246,7 +290,7 @@ public final class AlfheimLightSelfTest implements SelfTest {
     }
 
     /** A hash per chunk of sky and block light at every block of 9x9 chunks around 0, 0. */
-    private static void dump(Check check, WorldServer world) throws Exception {
+    private static void dump(Check check, WorldServer world, String name) throws Exception {
         prepare(world, 0, 0, 5);
         StringBuilder out = new StringBuilder();
         long all = 1;
@@ -268,7 +312,7 @@ public final class AlfheimLightSelfTest implements SelfTest {
             }
         }
         out.append("all ").append(Long.toHexString(all)).append('\n');
-        Files.write(world.getMinecraftServer().getFile("alfheim-dump.txt").toPath(),
+        Files.write(world.getMinecraftServer().getFile(name).toPath(),
                 out.toString().getBytes(StandardCharsets.UTF_8));
         check.ok(true, "light dump written (" + Long.toHexString(all) + ")");
     }

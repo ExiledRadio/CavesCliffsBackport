@@ -63,7 +63,7 @@ Every feature can be turned off in Backport Core's settings screen, under Mod Op
 
 With Update Aquatic Backport, axolotls hunt its fish and drowned drop copper. With Buzzy Bees Backport, honeycomb waxes copper and makes candles. With Wild Update Backport or Trails & Tales Backport installed when a world is created, it also gets mangrove swamps and the deep dark, or cherry groves, where 1.19 and 1.20 put them.
 
-1.18 terrain works with OptiFine (shaders included), Alfheim 1.6, Celeritas, Nothirium and VintageFix. It turns itself off with Phosphor and Cubic Chunks and says so in the log; the 1.17 content still works with them.
+1.18 terrain works with OptiFine (shaders included), Alfheim 1.6, Phosphor 0.2.6 and 0.2.7, Hesperus, Celeritas, Nothirium and VintageFix. It turns itself off with Cubic Chunks and says so in the log; the 1.17 content still works with it.
 
 ## Requirements
 

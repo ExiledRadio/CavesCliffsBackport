@@ -192,3 +192,14 @@ if (project.hasProperty('noFluidlogged')) {
         }
     }
 }
+
+// -PrunJars=<jar>[;<jar>...]: extra jars on the runClient/runServer class path, for a dev run that needs a coremod
+// loaded before eclipse/mods is read (MixinBooter for Hesperus: tools/height/phosphor-selftest.sh). FG2's GradleStart
+// finds coremods on the class path by their manifests.
+if (project.hasProperty('runJars')) {
+    afterEvaluate {
+        [runClient, runServer].each { task ->
+            task.classpath += files(project.property('runJars').toString().split(';'))
+        }
+    }
+}

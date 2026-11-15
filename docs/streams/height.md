@@ -25,7 +25,8 @@ target class. No mixins, no MixinBooter.
     name it falls back to does not match. It was there before this stream.
 4.  `PLAN.md`'s "Build and test" still says "No mixins, no coremod, no ASM"; that is now true of every stream but
     this one.
-5.  **Modpacks (RLCraft Revamped / Dregora):** Alfheim 1.6 stays (branch `cc-alfheim`, "Alfheim" below); a pack must set StellarCore's
+5.  **Modpacks (RLCraft Revamped / Dregora):** Alfheim 1.6 stays (branch `cc-alfheim`, "Alfheim" below), and so does
+    Phosphor 0.2.6/0.2.7 or Hesperus 0.2.9.x (branch `cc-phosphor`, "Phosphor" below); a pack must set StellarCore's
     `B:WorldBlockPosJudgement=false` (`config/stellar_core.cfg`). That option `@Overwrite`s
     `World.isOutsideBuildHeight` with vanilla's 0-255 check after our patch ran; the world then stays 0-255 and the
     log says which option to change (see "Overrides" below). VintageFix and Nothirium need nothing: both are handled.
@@ -43,7 +44,10 @@ target class. No mixins, no MixinBooter.
     is gone, and the bottom of the world is then open at y 0.
 *   **With Alfheim 1.6**: its faster lighting works at every height. Its lighting then covers x and z within
     16,777,216 blocks of 0 (the world border is at 29,999,984; Alfheim alone covers 33,554,432).
-*   **Not with**: Phosphor, Cubic Chunks, Caves Not Cliffs, Farmer's Future Delight, or an Alfheim other than 1.6.
+*   **With Phosphor** (0.2.6, 0.2.7) **or Hesperus** (0.2.9.1 to 0.2.9.3): the same, its lighting at every height,
+    covering x and z within 16,777,216 blocks of 0 (Phosphor alone: 33,554,432).
+*   **Not with**: Cubic Chunks, Caves Not Cliffs, Farmer's Future Delight, an Alfheim other than 1.6, or another
+    Phosphor build.
     With any of them installed, the world type is not offered (and the log says why); everything else in the mod
     works.
 *   **Works with OptiFine** (HD U G5), shaders and their shadows included. In a Caves & Cliffs world OptiFine's
@@ -67,9 +71,10 @@ so a vanilla chunk treats every other height as outside, exactly as before. Out 
 
 **When it is on.** All of these, checked in pre-init (`HeightContent`): the config switch; the coremod ran (it reads
 the switch from the config file itself, and checks for the conflicting mods' coremod classes, before Forge's config
-exists); no conflicting mod id (`phosphor-lighting`, `cubicchunks`, `cavesnotcliffs`, `cavebiomesapi`,
-`farmers_future_delight`); Alfheim, if installed, exactly 1.6 (the coremod reads `ProjectConstants.VERSION` from its
-class file, pre-init the mod's version) with its three classes reported patched; and every patch site found. To know the last before any world exists, pre-init loads every
+exists); no conflicting mod id (`cubicchunks`, `cavesnotcliffs`, `cavebiomesapi`, `farmers_future_delight`); Alfheim, if
+installed, exactly 1.6 (the coremod reads `ProjectConstants.VERSION` from its class file, pre-init the mod's version)
+with its three classes reported patched; Phosphor (mod id `phosphor-lighting`, Hesperus too), if installed, one of the
+five builds below (`PhosphorConstants.MOD_VERSION`, read by both) with its four classes reported patched; and every patch site found. To know the last before any world exists, pre-init loads every
 patched class (which is when the transformer patches it) and reads the drift report. Off, the world type is not
 registered and no world is extended; every patched site then computes what vanilla's did.
 
@@ -180,6 +185,32 @@ the client-only `ChunkCache` overwrite, on a client its body must read no height
 *   **Boundary flags** stay a `short` per boundary and the save format stays Alfheim's: in an extended world a bit
     covers two sections (12 bits for 24), so a flagged pair rechecks 32 blocks of height instead of 16.
 *   **Our lost sites back** in its `relightBlock` overwrite: the `& 255` height mask and the `> 0` bottom.
+
+**Phosphor** (`height/asm/PhosphorPatches`, `height/PhosphorHooks`). Alfheim is a Phosphor descendant and kept its
+engine: the same position key, the same `y >> 4` section reads, the same per-section boundary flags in a `short`,
+the same `relightBlock` overwrite. So Phosphor gets the same design, and `PhosphorHooks` uses `AlfheimKey`'s
+arithmetic (its narrow layout is Phosphor's own, constants included). Builds: jellysquid's Phosphor
+`1.12.2-0.2.6` (RLCraft, Dregora Java 8, with or without PhosphorCrashFix) and `1.12.2-0.2.7` (E2E, Project Ozone 3),
+and Hesperus `1.12.2-0.2.9.1` to `-0.2.9.3` (the maintained fork, on MixinBooter). Their height and lighting code is the
+same bytecode in all five; any other version refuses. Phosphor Legacy is a Legacy Fabric port, not a Forge mod. Most of
+Phosphor's code is in plain classes, patched as they load; `MixinChunk` is patched as Mixin reads it. 28 recorded sites:
+*   **`LightingEngine`** (reported `PhosphorLightingEngine.*`): encode (`encodeWorldCoord(long, long, long)`, which the
+    `BlockPos` overload calls) and decode become head redirects to `PhosphorHooks`, the neighbor shifts in `<clinit>`
+    and the two inlined `mChunk` masks follow the layout, the `yCheck` carry test becomes a compare with the world's
+    height, the neighbor section is read by slot, and the queue's first pass skips a position outside the world's
+    height (Phosphor's `World.checkLightFor` is a head inject that enqueues any position). The layout is fixed once,
+    the first time the engine is used; `HeightContent` refuses extended height if it was fixed narrow.
+*   **`LightingHooks`** (`PhosphorLightingHooks.*`): `relightSkylightColumn` reads sections by slot and stops at the
+    world's bottom; the boundary flags (`relightSkylightColumn`, `flagSecBoundaryForUpdate`,
+    `scheduleRelightChecksForBoundary`) cover two sections per bit in an extended world, as Alfheim's do (same save
+    format, `NeighborLightChecks`); `initChunkLighting`'s section base is `slotBase`; `initSkylightForSection` is a
+    check (it already compares with the section's own base).
+*   **`LightingEngineHelpers.posToState(BlockPos, Chunk)`** (`PhosphorLightingEngineHelpers.*`): the section by slot.
+*   **`MixinChunk`** (`PhosphorMixinChunk.*`): `getCachedLightFor` (every light read: the `getLightFor` overwrite calls
+    it) and the `generateSkylightMap` redirect read sections by slot; the `relightBlock` overwrite gets the `& 255` mask
+    and the `> 0` bottom back. Its `checkLight()` and `recheckGaps` overwrites work in real heights and need nothing.
+    Phosphor's `@Redirect`/`@ModifyVariable`s in `Chunk.setBlockState` find their targets after our patches (as
+    Alfheim's identical ones do); PhosphorCrashFix only rewrites those annotations in `MixinChunk$Vanilla`.
 
 ## Tested
 
@@ -292,6 +323,34 @@ the client-only `ChunkCache` overwrite, on a client its body must read no height
         client): **Fast 17/0** (131 sites), **Celeritas 24/0** (127 sites) with Demonica moved aside: with the
         current Core, Demonica 0.6.0's Iris mixin crashes the Celeritas instance at start-up whatever this mod does
         (see "Not tested"). Both copies were put back as they were.
+*   **Phosphor** (branch `cc-phosphor`, 2026-11-15; jars from CurseForge in `G:\VBPTest\cc-packs\study\phosphor\jars`,
+    disassemblies in `study\phosphor\javap`):
+    *   **Offline drift**: `PatchCheck` with each of the five jars as the sixth jar, SRG and MCP names: the 28 Phosphor
+        sites found on each side for every build, ASM's verifier and the frame check clean. The five builds' height and
+        lighting code is identical bytecode (javap diffs: Hesperus adds only dynamic-lights calls, a `RenderGlobal`
+        no-op and two null checks in `recheckGaps`).
+    *   **Dev server** (`sh tools/height/phosphor-selftest.sh <dev jar>`; the dev run needs a copy with MCP names,
+        `tools/height/run.sh DeobfJar`): Phosphor 0.2.6 and 0.2.7 each: `height,phosphorlight1` on a fresh Caves &
+        Cliffs world 196/0 (113 sites), `phosphorlight2` after the restart 26/0, and `phosphordump` in a fresh Default
+        world the same file with extended height on and with `height.enabled=false`. `selftest/LightEngineSelfTest`
+        (the Alfheim test, now for both engines): a torch at y -30 lights 13 across a chunk border and 8 six blocks into
+        the next chunk; a torch at y -60 (4 above bedrock) gives 13, and 8 six blocks along across a chunk border, 0 in
+        the stone under it; a torch at y 300 gives 13 above, 9 five above, 10 four east across a chunk border, sky 15
+        beside it; a shaft from the surface to -60 has sky light 15 at its bottom and 12 three blocks into a corridor, 0
+        when capped at y -1, 15 again when opened; a roof at y 310 leaves 12 under its middle; no boundary flag uses a
+        bit above 11; after the restart every value read back the same and the shafts relight when capped and opened.
+    *   **Real dedicated server** (`G:\VBPTest\cc_phosphor_srv`: Forge 2860, Backport Core 1.3.1, Fluidlogged API 3.3.3,
+        the `-Pselftest` reobf jar, the release Phosphor jars with SRG names; `suite.sh`; port 25893, E-cores): the same
+        four phases, all passing (196/0, 26/0, dumps identical) for Phosphor 0.2.6; Phosphor 0.2.6 with PhosphorCrashFix
+        1.0.0 and MixinBooter 11.18 (Dregora Java 8's set); Phosphor 0.2.7; Hesperus 0.2.9.1, 0.2.9.2 and 0.2.9.3 with
+        MixinBooter 11.18. The Alfheim phases on the same server with Alfheim 1.6 (the test's new torch checks): 195/0,
+        25/0.
+    *   **Client** (`runClient -Pclienttest=height`, Hesperus 0.2.9.3 dev copy in `eclipse/mods`, MixinBooter on the
+        class path with the new `-PrunJars`): 23/0 (137 sites): render chunks at -64 and 304 built, client block light at
+        -59 and -60, 119 fps at spawn; the screenshots show the cave at y -50 lit by lava with smooth light.
+    *   **Without Phosphor**: the full `runServer -Pselftest=all` 4448/0; `HeightLayoutTest` 3519/3519,
+        `AlfheimKeyTest` 1,881,621/1,881,621.
+
 *   **Speed** (EXTENDED_HEIGHT section 4, `python tools/height/bench.py`, E-cores): an extended world generates in
     1.11x vanilla's time per chunk (13.30 vs 11.96 ms), 1.15x with saving; a Default world with the coremod on, 1.04x.
 
@@ -330,3 +389,12 @@ the client-only `ChunkCache` overwrite, on a client its body must read no height
     below 0 are rare; the bit mapping is unit-tested and no flag bit above 11 was seen, but a relight that depends on a
     flag set while the neighbor was unloaded was not staged.
 *   Alfheim in the Shaders copies (with section 1, OptiFine).
+*   **Phosphor 0.2.6 and 0.2.7 on a client**: the dev client test crashes in Phosphor's own `recheckGaps`
+    (`recheckGapsGetLowestHeight`: a neighbor chunk the client has not loaded is null), with extended height off and in
+    a Default world too: Phosphor's bug, not this branch's (Hesperus added the null checks). The client test passed with
+    Hesperus only. Packs that ship 0.2.6 (RLCraft, Dregora Java 8) were not run as clients with it.
+*   Phosphor in the packs themselves (RLCraft, Dregora Java 8, E2E, PO3): only the minimal servers above.
+*   Phosphor pregen speed with extended height (Alfheim's was measured; Phosphor's code paths are the same).
+*   Phosphor's boundary flags across an unloaded neighbor, as for Alfheim.
+*   Phosphor with its own config switch off: extended height then refuses (MixinChunk is never read, so it is not
+    reported patched), though vanilla lighting would work.
