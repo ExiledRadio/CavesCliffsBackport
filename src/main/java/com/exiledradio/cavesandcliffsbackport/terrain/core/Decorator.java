@@ -133,6 +133,9 @@ public final class Decorator {
             ported.put(p.name, p);
         }
         for (Placed p : SurfaceFeatures.placed(this)) {
+            if ("forest_rock".equals(p.name)) {
+                p.kind = TreeGate.PLANTS;
+            }
             ported.put(p.name, p);
         }
         for (Placed p : LushCaves.placed()) {
@@ -155,6 +158,9 @@ public final class Decorator {
         for (Placed p : Vegetation.placed()) {
             if (p.name.startsWith("patch_cactus")) {
                 p.kind = TreeGate.CACTUS;
+            } else if (!p.name.startsWith("seagrass") && !p.name.startsWith("kelp") && !"sea_pickle".equals(p.name)
+                    && !"warm_ocean_vegetation".equals(p.name)) {
+                p.kind = TreeGate.PLANTS;
             }
             ported.put(p.name, p);
         }
@@ -238,7 +244,9 @@ public final class Decorator {
      * included, not the azalea tree; {@link #CACTUS}: the cactus patches). Every feature keeps its own seed, so the
      * rest of the chunk is exactly as without a gate. The game answers it for a mod that grows its own trees
      * instead (Dynamic Trees), or its own granite, diorite and andesite ({@link #GRANITE}, {@link #DIORITE},
-     * {@link #ANDESITE}: the two ore features of each, for Quark's stone revamp). Null: everything, as vanilla.
+     * {@link #ANDESITE}: the two ore features of each, for Quark's stone revamp), or where another mod's biome decorates
+     * the chunk ({@link #PLANTS}: the surface plants, flowers, grass, berries, bamboo, vines, lily pads, mossy
+     * boulders; not the sea's). Null: everything, as vanilla.
      */
     public interface TreeGate {
         int TREES = 1;
@@ -246,7 +254,8 @@ public final class Decorator {
         int GRANITE = 3;
         int DIORITE = 4;
         int ANDESITE = 5;
-        int KINDS = 6;
+        int PLANTS = 6;
+        int KINDS = 7;
 
         boolean allows(int cx, int cz, int kind);
     }

@@ -489,6 +489,46 @@ public final class ModConfig {
                 "newest version installed). On: as 1.21.4 does, for comparing seeds with 1.21.4. Read when a world is made."})
         @Config.LangKey("config.cavesandcliffsbackport.height.paleGarden1214")
         public boolean paleGarden1214 = false;
+
+        @Config.RequiresWorldRestart
+        @Setting.NewChunks
+        @Setting.Vanilla("false")
+        @Config.Comment({"Other mods' overworld biomes (Biomes O' Plenty, Defiled Lands, Traverse, any in Forge's BiomeManager)",
+                "generate in Caves & Cliffs worlds with 1.18 terrain: each takes the place of the 1.18 biome closest to it,",
+                "in some regions, with its own top blocks, plants, trees and mobs. The log lists which takes whose place.",
+                "Off, or with no such mod installed, the terrain is exactly 1.18's."})
+        @Config.LangKey("config.cavesandcliffsbackport.height.moddedBiomes")
+        public boolean moddedBiomes = true;
+
+        @Config.RequiresWorldRestart
+        @Setting.NewChunks
+        @Setting.ListOf(Setting.Kind.ANY)
+        @Config.Comment("Biomes (modid:name) or whole mods (modid) left out of the 1.18 terrain.")
+        @Config.LangKey("config.cavesandcliffsbackport.height.moddedBiomesExcluded")
+        public String[] moddedBiomesExcluded = {};
+
+        @Config.RequiresWorldRestart
+        @Setting.NewChunks
+        @Setting.ListOf(Setting.Kind.BIOME)
+        @Config.Comment({"The 1.18 biome a modded biome takes the place of, where the automatic choice is wrong:",
+                "modid:name=1.18 name, for example biomesoplenty:grove=forest."})
+        @Config.LangKey("config.cavesandcliffsbackport.height.moddedBiomeHosts")
+        public String[] moddedBiomeHosts = {};
+
+        @Config.RequiresWorldRestart
+        @Setting.NewChunks
+        @Config.Comment({"At most this percent of a 1.18 biome's regions go to the modded biomes that may take its place. Fewer when",
+                "their BiomeManager weights are low against a vanilla biome's 10 (a rare modded biome stays rare)."})
+        @Config.LangKey("config.cavesandcliffsbackport.height.moddedBiomesMaxShare")
+        @Config.RangeInt(min = 0, max = 100)
+        public int moddedBiomesMaxShare = 50;
+
+        @Config.RequiresWorldRestart
+        @Setting.NewChunks
+        @Config.Comment("The size in blocks of the regions that each decide whether a 1.18 biome there is itself or a modded one.")
+        @Config.LangKey("config.cavesandcliffsbackport.height.moddedBiomeRegionSize")
+        @Config.RangeInt(min = 64, max = 8192)
+        public int moddedBiomeRegionSize = 512;
     }
 
     // ------------------------------------------------------------------------------------------

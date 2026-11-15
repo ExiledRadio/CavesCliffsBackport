@@ -49,6 +49,7 @@ public final class ModernTerrain {
         this.noise = new OverworldNoise(seed, editions);
         this.climate = new Climate(editions);
         this.map = new BiomeMap();
+        this.map.modded(ModdedBiomes.create(seed));
     }
 
     /** The shared terrain objects of a server world that gets 1.18 terrain, or null. */

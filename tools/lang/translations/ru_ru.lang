@@ -173,4 +173,14 @@ config.cavesandcliffsbackport.height.newerBiomes=Новые биомы
 config.cavesandcliffsbackport.height.newerBiomes.tooltip=Новые миры «Caves & Cliffs» с рельефом 1.18 получают и биомы более новых версий, для которых установленные бэкпорты добавляют блоки: мангровые болота и глубокую тьму из 1.19 с Wild Update Backport, вишнёвые рощи из 1.20 с Trails & Tales Backport, бледные сады из 1.21.4 с Tricky Trials Backport, размещённые там же, где их размещают эти версии. Миры сохраняют биомы, с которыми были созданы.
 config.cavesandcliffsbackport.height.paleGarden1214=Бледный сад (1.21.4)
 config.cavesandcliffsbackport.height.paleGarden1214.tooltip=С Tricky Trials Backport новые миры размещают бледные сады как 1.21.5 и новее (по умолчанию: новейшая установленная версия). Вкл.: как 1.21.4, чтобы сравнивать ключи генерации с 1.21.4. Читается при создании мира.
+config.cavesandcliffsbackport.height.moddedBiomes=Биомы других модов
+config.cavesandcliffsbackport.height.moddedBiomes.tooltip=Наземные биомы других модов (Biomes O' Plenty, Defiled Lands, Traverse, любые из BiomeManager Forge) генерируются в мирах «Caves & Cliffs» с рельефом 1.18: каждый в некоторых областях занимает место самого похожего биома 1.18, со своими блоками поверхности, растениями, деревьями и существами. В журнале указано, кто чьё место занимает. Выключено, или без таких модов, рельеф в точности как в 1.18.
+config.cavesandcliffsbackport.height.moddedBiomesExcluded=Исключённые биомы модов
+config.cavesandcliffsbackport.height.moddedBiomesExcluded.tooltip=Биомы (modid:имя) или целые моды (modid), исключённые из рельефа 1.18.
+config.cavesandcliffsbackport.height.moddedBiomeHosts=Места биомов модов
+config.cavesandcliffsbackport.height.moddedBiomeHosts.tooltip=Биом 1.18, место которого занимает биом мода, если автоматический выбор неверен: modid:имя=имя в 1.18, например biomesoplenty:grove=forest.
+config.cavesandcliffsbackport.height.moddedBiomesMaxShare=Доля биомов модов
+config.cavesandcliffsbackport.height.moddedBiomesMaxShare.tooltip=Не больше этого процента областей биома 1.18 отходит биомам модов, которые могут занять его место. Меньше, если их веса BiomeManager низки по сравнению с 10 у ванильного биома (редкий биом мода остаётся редким).
+config.cavesandcliffsbackport.height.moddedBiomeRegionSize=Размер областей биомов модов
+config.cavesandcliffsbackport.height.moddedBiomeRegionSize.tooltip=Размер в блоках областей, каждая из которых решает, остаётся ли там биом 1.18 собой или становится биомом мода.
 config.cavesandcliffsbackport.height.defaultWorldType.tooltip=«Создать новый мир» начинается с типа мира Caves & Cliffs, и новый сервер без level-type в server.properties создаёт свой мир с ним. «Обычный» остаётся в списке как ландшафт 1.12.

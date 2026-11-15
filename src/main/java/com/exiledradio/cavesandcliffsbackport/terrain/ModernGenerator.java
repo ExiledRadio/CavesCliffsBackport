@@ -139,6 +139,11 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
                     + "({} tree selectors{}).", this.modern.selectors.size() - skipped.size(),
                     skipped.isEmpty() ? "" : ", not matched: " + skipped);
         }
+        // Other mods' biomes: the 1.18 trees and plants step aside where one decorates the chunk instead.
+        ModdedBiomes moddedBiomes = terrain.map.modded();
+        if (moddedBiomes != null) {
+            gate = ModDecoration.gate(gate, moddedBiomes.gate(new ModernBiomeProvider(terrain.noise, terrain.climate, terrain.map)));
+        }
         this.pipeline.treeGate(gate);
         ColumnCache columns = new ColumnCache(terrain.noise);
         this.heights = new ChunkFiller(terrain.noise, columns);
@@ -284,6 +289,7 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
                 this.water.put(ChunkPos.asLong(chunk.x, chunk.z), java.util.Arrays.copyOf(wet[0], wetCount[0]));
             }
         }
+        moddedSurface(chunk, p);
         chunk.generateSkylightMap();
         writeNanos += System.nanoTime() - t;
         chunks++;
@@ -344,7 +350,7 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         BiomeMap map = terrain.map;
         for (int c = 0; c < 256; c++) {
             // Pipeline columns are x * 16 + z; 1.12's biome array is z << 4 | x.
-            biomes[(c & 15) << 4 | c >> 4] = map.id(p.surfaceBiomes[c]);
+            biomes[(c & 15) << 4 | c >> 4] = map.id(p.surfaceBiomes[c], (x << 4) + (c >> 4), (z << 4) + (c & 15));
         }
         if (this.features) {
             this.mineshaft.generate(this.world, x, z, null);
@@ -353,6 +359,114 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
             this.temple.generate(this.world, x, z, null);
             this.monument.generate(this.world, x, z, null);
             this.mansion.generate(this.world, x, z, null);
+        }
+    }
+
+    /**
+     * Other mods' biomes ({@link ModdedBiomes}): in a column whose 1.18 biome a modded one replaces, the soil the 1.18
+     * surface rule laid (grass, dirt, sand, snow and what lies under them, down to the stone) becomes the modded
+     * biome's top and filler blocks, as its 1.12 surface would be; under water only a sea floor the biome names
+     * (Biomes O' Plenty's) replaces it. Rock, ice and terracotta stay 1.18's. Not in a Cubic Chunks world (its cubes
+     * take the block codes).
+     */
+    private void moddedSurface(Chunk chunk, Pipeline.Proto p) {
+        ModdedBiomes modded = terrain.map.modded();
+        if (modded == null) {
+            return;
+        }
+        ExtendedBlockStorage[] sections = chunk.getBlockStorageArray();
+        char[] blocks = p.blocks;
+        int x0 = chunk.x << 4;
+        int z0 = chunk.z << 4;
+        for (int c = 0; c < 256; c++) {
+            int host = p.surfaceBiomes[c];
+            if (!modded.hosts(host)) {
+                continue;
+            }
+            ModdedBiomes.Entry e = modded.at(x0 + (c >> 4), z0 + (c & 15), host);
+            if (e == null) {
+                continue;
+            }
+            int base = c * Pipeline.HEIGHT;
+            boolean wet = false;
+            int i = Pipeline.HEIGHT - 1;
+            for (; i >= 0; i--) {
+                int code = blocks[base + i];
+                if (code == BlockCodes.AIR) {
+                    continue;
+                }
+                if (code == BlockCodes.WATER || code == BlockCodes.ICE) {
+                    wet = true;
+                    continue;
+                }
+                net.minecraft.block.material.Material m = this.states.state(code).getMaterial();
+                if (m == net.minecraft.block.material.Material.WATER) {
+                    wet = true;
+                    continue;
+                }
+                if (!m.isSolid() || m == net.minecraft.block.material.Material.LEAVES || m == net.minecraft.block.material.Material.WOOD
+                        || m == net.minecraft.block.material.Material.GOURD || m == net.minecraft.block.material.Material.CACTUS
+                        || m == net.minecraft.block.material.Material.PLANTS) {
+                    continue;
+                }
+                break;
+            }
+            if (i < 0 || !topSoil(blocks[base + i])) {
+                continue;
+            }
+            net.minecraft.block.state.IBlockState top = wet ? e.seaFloor : e.top;
+            net.minecraft.block.state.IBlockState under = wet ? e.seaFloor : e.filler;
+            int depth = wet ? 2 : 8;
+            for (int k = 0; k < depth && i - k >= 0; k++) {
+                int code = blocks[base + i - k];
+                if (k == 0 ? !topSoil(code) : !fillerSoil(code)) {
+                    break;
+                }
+                net.minecraft.block.state.IBlockState state = k == 0 ? top : under;
+                if (state == null) {
+                    continue;
+                }
+                int y = Pipeline.MIN_Y + i - k;
+                ExtendedBlockStorage section = sections[HeightLayout.slot(y)];
+                if (section != null) {
+                    section.set(c >> 4, y & 15, c & 15, state);
+                }
+            }
+        }
+    }
+
+    private static boolean topSoil(int code) {
+        switch (code) {
+            case BlockCodes.GRASS_BLOCK:
+            case BlockCodes.DIRT:
+            case BlockCodes.PODZOL:
+            case BlockCodes.COARSE_DIRT:
+            case BlockCodes.MYCELIUM:
+            case BlockCodes.SAND:
+            case BlockCodes.RED_SAND:
+            case BlockCodes.GRAVEL:
+            case BlockCodes.SNOW_BLOCK:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static boolean fillerSoil(int code) {
+        switch (code) {
+            case BlockCodes.GRASS_BLOCK:
+            case BlockCodes.DIRT:
+            case BlockCodes.PODZOL:
+            case BlockCodes.COARSE_DIRT:
+            case BlockCodes.SAND:
+            case BlockCodes.RED_SAND:
+            case BlockCodes.SANDSTONE:
+            case BlockCodes.RED_SANDSTONE:
+            case BlockCodes.GRAVEL:
+            case BlockCodes.SNOW_BLOCK:
+                return true;
+            default:
+                return false;
         }
     }
 
@@ -474,7 +588,7 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
             this.mansion.generateStructure(this.world, this.rand, chunkpos);
         }
         // Other mods' generation in 1.12's dungeon and ore events (Quark's stones and underground biomes).
-        ModDecoration.populate(this, this.world, x, z, village, this.modern);
+        ModDecoration.populate(this, this.world, x, z, village, this.modern, terrain.map.modded());
         if (TerrainGen.populate(this, this.world, this.rand, x, z, village, PopulateChunkEvent.Populate.EventType.ANIMALS)) {
             WorldEntitySpawner.performWorldGenSpawning(this.world, biome, i + 8, j + 8, 16, 16, this.rand);
         }

@@ -172,5 +172,15 @@ config.cavesandcliffsbackport.height.newerBiomes=新しいバージョンのバ�
 config.cavesandcliffsbackport.height.newerBiomes.tooltip=1.18 の地形を使う新しい「Caves & Cliffs」ワールドに、導入済みのバックポートがブロックを提供している新しいバージョンのバイオームも追加されます：Wild Update Backport があれば 1.19 のマングローブの沼地とディープダーク、Trails & Tales Backport があれば 1.20 のサクラの林、Tricky Trials Backport があれば 1.21.4 のペールガーデンが、それぞれのバージョンと同じ場所に配置されます。ワールドは作成時のバイオームを保持します。
 config.cavesandcliffsbackport.height.paleGarden1214=ペールガーデン（1.21.4）
 config.cavesandcliffsbackport.height.paleGarden1214.tooltip=Tricky Trials Backport がある場合、新しいワールドは 1.21.5 以降と同じようにペールガーデンを配置します（デフォルト：導入済みの最新バージョン）。オン：1.21.4 と同じ配置で、1.21.4 とシード値を比較するためのものです。ワールド作成時に読み込まれます。
+config.cavesandcliffsbackport.height.moddedBiomes=他の Mod のバイオーム
+config.cavesandcliffsbackport.height.moddedBiomes.tooltip=他の Mod の地上バイオーム（Biomes O' Plenty、Defiled Lands、Traverse、Forge の BiomeManager にあるもの）が、1.18 地形の「Caves & Cliffs」ワールドに生成されます。それぞれ一部の地域で最も近い 1.18 バイオームの代わりになり、独自の地表ブロック、植物、木、モブを持ちます。どれがどれの代わりになるかはログに出ます。オフ、またはそのような Mod がない場合、地形は 1.18 そのままです。
+config.cavesandcliffsbackport.height.moddedBiomesExcluded=除外する Mod バイオーム
+config.cavesandcliffsbackport.height.moddedBiomesExcluded.tooltip=1.18 地形から除外するバイオーム（modid:名前）または Mod 全体（modid）。
+config.cavesandcliffsbackport.height.moddedBiomeHosts=Mod バイオームの置き換え先
+config.cavesandcliffsbackport.height.moddedBiomeHosts.tooltip=自動の選択が合わない場合に、Mod バイオームが代わりになる 1.18 バイオーム：modid:名前=1.18 の名前。例：biomesoplenty:grove=forest。
+config.cavesandcliffsbackport.height.moddedBiomesMaxShare=Mod バイオームの割合
+config.cavesandcliffsbackport.height.moddedBiomesMaxShare.tooltip=1.18 バイオームの地域のうち、その代わりになりうる Mod バイオームに渡る割合の上限（パーセント）。BiomeManager の重みがバニラのバイオームの 10 に比べて低い場合は少なくなります（珍しい Mod バイオームは珍しいままです）。
+config.cavesandcliffsbackport.height.moddedBiomeRegionSize=Mod バイオームの地域サイズ
+config.cavesandcliffsbackport.height.moddedBiomeRegionSize.tooltip=そこにある 1.18 バイオームがそのままか Mod バイオームになるかをそれぞれ決める地域の大きさ（ブロック単位）。
 config.cavesandcliffsbackport.height.defaultWorldType.tooltip=「ワールド新規作成」は Caves & Cliffs ワールドタイプで始まり、server.properties に level-type のない新しいサーバーもこれでワールドを作ります。「デフォルト」は 1.12 の地形として一覧に残ります。
 generator.cavesandcliffs=Caves & Cliffs

@@ -439,4 +439,14 @@ config.cavesandcliffsbackport.height.newerBiomes=Daha Yeni Biyomlar
 config.cavesandcliffsbackport.height.newerBiomes.tooltip=1.18 arazili yeni Caves & Cliffs dünyaları, yüklü backport'ların bloklarını sağladığı daha yeni sürümlerin biyomlarını da alır: Wild Update Backport ile 1.19'un Mangrov Bataklığı ve Karanlık Derinlikler biyomları, Trails & Tales Backport ile 1.20'nin Kiraz Ağacı Korusu, Tricky Trials Backport ile 1.21.4'ün Solgun Bahçe biyomu; bu sürümlerin yerleştirdiği yerlere yerleştirilir. Dünyalar oluşturuldukları biyomları korur.
 config.cavesandcliffsbackport.height.paleGarden1214=Solgun Bahçe (1.21.4)
 config.cavesandcliffsbackport.height.paleGarden1214.tooltip=Tricky Trials Backport ile yeni dünyalar Solgun Bahçeleri 1.21.5 ve sonrası gibi yerleştirir (varsayılan: yüklü en yeni sürüm). Açık: tohumları 1.21.4 ile karşılaştırmak için 1.21.4 gibi. Dünya oluşturulurken okunur.
+config.cavesandcliffsbackport.height.moddedBiomes=Diğer modların biyomları
+config.cavesandcliffsbackport.height.moddedBiomes.tooltip=Diğer modların yüzey biyomları (Biomes O' Plenty, Defiled Lands, Traverse, Forge BiomeManager'daki herhangi biri) 1.18 araziye sahip "Caves & Cliffs" dünyalarında oluşur: her biri bazı bölgelerde en benzer 1.18 biyomunun yerini alır; kendi yüzey blokları, bitkileri, ağaçları ve yaratıklarıyla. Hangisinin kimin yerini aldığı günlükte yazar. Kapalıyken veya böyle bir mod yoksa arazi tam olarak 1.18'inkidir.
+config.cavesandcliffsbackport.height.moddedBiomesExcluded=Dışarıda bırakılan mod biyomları
+config.cavesandcliffsbackport.height.moddedBiomesExcluded.tooltip=1.18 araziden dışarıda bırakılan biyomlar (modid:ad) ya da tüm modlar (modid).
+config.cavesandcliffsbackport.height.moddedBiomeHosts=Mod biyomlarının yerleri
+config.cavesandcliffsbackport.height.moddedBiomeHosts.tooltip=Otomatik seçim yanlış olduğunda bir mod biyomunun yerini aldığı 1.18 biyomu: modid:ad=1.18 adı, örneğin biomesoplenty:grove=forest.
+config.cavesandcliffsbackport.height.moddedBiomesMaxShare=Mod biyomu payı
+config.cavesandcliffsbackport.height.moddedBiomesMaxShare.tooltip=Bir 1.18 biyomunun bölgelerinin en fazla bu yüzdesi, yerini alabilecek mod biyomlarına gider. BiomeManager ağırlıkları vanilla biyomunun 10'una göre düşükse daha az (nadir bir mod biyomu nadir kalır).
+config.cavesandcliffsbackport.height.moddedBiomeRegionSize=Mod biyomu bölge boyutu
+config.cavesandcliffsbackport.height.moddedBiomeRegionSize.tooltip=Her biri oradaki 1.18 biyomunun kendisi mi yoksa bir mod biyomu mu olacağına karar veren bölgelerin blok cinsinden boyutu.
 config.cavesandcliffsbackport.height.defaultWorldType.tooltip="Yeni Dünya Oluştur" Caves & Cliffs dünya türüyle başlar ve server.properties içinde level-type olmayan yeni bir sunucu dünyasını onunla oluşturur. Varsayılan, 1.12 arazisi olarak listede kalır.

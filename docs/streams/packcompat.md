@@ -46,7 +46,7 @@ mod (Dregora without it still has Core, which V&P needs).
     and creepers below y 0 as well as above, 20 Lycanites species, Infernal Mobs' modifiers (11 tagged), Ice and Fire
     trolls, hippogryphs and a fire dragon, Quark stonelings below 0, axolotls and glow squid, a village with
     villagers. Ice and Fire roosts, Recurrent Complex/Ruins/Battle Towers/Roguelike structures, chests and spawners
-    (some below y 0) generate in the new terrain. Biomes map to Traverse's meadow where Traverse is installed.
+    (some below y 0) generate in the new terrain. Traverse's biomes join it as other mods' biomes (item 7).
     RLCraft's client (Prism copy, Phosphor removed): the height client test 18/0 (blocks and built render chunks at
     -64 and 304) with RenderLib, Entity Culling, Better Foliage, ChunkAnimator, FBP and the rest.
 *   **Dregora: works mechanically, Phosphor (Java 8) or Alfheim (Cleanroom) removed, but it is not Dregora.** The
@@ -106,6 +106,46 @@ mod (Dregora without it still has Core, which V&P needs).
     worlds: the 21x21-chunk census before and after this change is identical but for 1-9 blocks of dirt, leaves and logs (run to
     run noise), Quark's blocks exactly. No exception in any log.
 
+7.  **Other mods' biomes did not generate in `cavesandcliffs` worlds** (branch `cc-modded-biomes`): Biomes O' Plenty,
+    Defiled Lands and Traverse appeared only where a 1.18 biome had a modded biome's name, and wrongly so (Biomes O'
+    Plenty's temperate grove stood in for 1.18's snowy grove, its meadow for 1.18's meadow), with no decoration.
+    `terrain/ModdedBiomes` now places them as TerraBlender does in 1.18: each overworld biome in Forge's
+    `BiomeManager` lists or in Biomes O' Plenty's own (its climate weights, capped at 10) takes the place of the 1.18
+    biomes closest to it (same kind: land, mountain, river, beach, ocean, mushroom; then BiomeDictionary kind tags,
+    temperature, rainfall), in regions of 512 blocks (Voronoi cells with noise-warped borders). Each region's rank
+    picks, per 1.18 biome, a modded one by weight or the 1.18 biome; the modded share is the weights against a vanilla
+    biome's 10, at most 50%. Name matching now takes only the family's biomes. In a column a modded biome holds:
+    *   the chunk's biome array, the biome provider, mob spawning, grass and water colors, weather: the modded biome;
+    *   surface: the soil the 1.18 surface rule laid (grass, dirt, sand, gravel, snow, down to the stone) becomes its
+        top and filler blocks; under water only a sea floor block other than dirt (Biomes O' Plenty's) replaces it;
+    *   decoration: populate runs the modded biome's own `decorate` (its decorator and every decoration event, which
+        Biomes O' Plenty's generators run in) instead of firing `ModDecoration`'s events; 1.12's ores, springs and
+        sand, gravel and clay patches are denied there, and the 1.18 trees, cacti and surface plants step aside in
+        chunks whose center it holds (`Decorator.TreeGate.PLANTS`, beside Dynamic Trees' gate).
+    Settings (`height` category, read when a world loads): `moddedBiomes`, `moddedBiomesExcluded`,
+    `moddedBiomeHosts` (`modid:name=1.18 name`), `moddedBiomesMaxShare`, `moddedBiomeRegionSize`. The log lists
+    which modded biome takes whose place. Not in Cubic Chunks worlds' surface (the cubes take block codes).
+
+    Rig `G:\VBPTest\cc-moddedbiomes` (Forge 2860 server, Java 8 on the E-cores, `run.sh`: fresh world, Chunk
+    Pregenerator square, stop; `tools/packs/chunkdiff.py` compares two worlds' blocks and biomes chunk by chunk):
+    *   **Vanilla-only (C&C and Core alone), seed 2026, 32x32 chunks:** this build against the 1.0.0 release jar it
+        branches from is within the run-to-run spread (above, "Not fixed"): 53-70 of 835 inner chunks differ, against
+        83 for the release jar against itself, in the same fluid, glow lichen and dripstone blocks; biomes identical
+        in every chunk. Without a modded biome mod nothing new runs: no overlay, no gate, the old populate.
+    *   **Biomes O' Plenty 7.0.1.2445 and Defiled Lands 1.4.3 (with Baubles), 80x80 chunks, seed 2026:** the log
+        places 59 biomes (52 BoP, 7 Defiled) against 25 hosts; 42.5% of the columns hold one of 20 BoP biomes
+        (boreal forest 15.8%, woodland 5.6%, cherry blossom grove, orchard, maple woods, highland, steppe, alps, ...).
+        Per chunk: BoP grass 19.9 and dirt 50.9 (its surface), BoP leaves 56, logs 3.9, plants 9.4, gem ore 3.6 (its
+        generators); vanilla coal 142, iron 57, diamond 0.42 against 127, 53 and 0.46 in the vanilla-only world
+        (1.12's ores stay out). 74-81 chunks/s pregen.
+    *   **Defiled Lands alone** (`moddedBiomesExcluded=biomesoplenty`, which the log confirms: 7 biomes), seed 42:
+        20.8% of the columns are Defiled (vilespine forest, defiled swamp, plains, tenebra forest, hills). Per chunk:
+        defiled grass 40.3 and dirt 186 (surface), corrupted stone 2611 and gravel 49.5 (its decoration's
+        corruption), vilespine 5.9, tenebra logs 1.4 and leaves 0.8, scuronotte 0.75; 24 conjuring altars.
+    *   Seed 171 has no modded biome within 640 blocks of spawn: its 14 regions there all drew a rank above 0.52, the
+        only such 1280-block square of 1024 tried (`RankWin`, a probe over the compiled classes).
+    *   No exception in any log.
+
 ## OptiFine (branch `cc-optifine`)
 
 **Extended height works with OptiFine HD U G5** (Dregora's Shaders instances), shaders and their shadow pass
@@ -145,8 +185,18 @@ see it. A larger `-XX:MaxDirectMemorySize` than the heap would be the workaround
 
 *   Overlaps, not clashes: Quark's candles and ours, crystal caves and geodes, speleothems and dripstone,
     underground biomes and lush caves.
-*   **Biomes O' Plenty's decoration** (trees and plants in its biomes) does not run in `cavesandcliffs` worlds for the
-    same reason; its biomes appear only where the 1.18 map names one (meadow).
+*   **Falling blocks after modded decoration**: Defiled Lands' corruption turns 1.18's underground gravel and sand
+    blobs into its own falling blocks, and Biomes O' Plenty's waterside generators lay gravel on river floors; where
+    a 1.18 cave is under them they fall on their first tick (0.1-0.5 per chunk with BoP, 0.5 with Defiled, 0 in
+    vanilla-only worlds; they land and settle). Their handlers run whatever the event result. Making scheduled ticks
+    immediate while they decorate would make water flow recursively mid-generation, so it is left.
+*   **Modded biomes are read when a world loads**, not saved with it: adding or removing such a mod, or changing the
+    settings, changes new chunks only, with a seam at the explored edge. Tricky Trials' 1.21.5 spring plants
+    (`ModernFeatures`) still grow in modded biomes' chunks. A Cubic Chunks world gets the modded biomes and their
+    decoration but keeps the 1.18 surface blocks.
+*   **The 1.18 terrain is not fully deterministic run to run** (found while testing item 7): the same jar, seed and
+    pregen twice gives 70-100 of 835 chunks that differ, in fluids (flowing water and lava, the stone and obsidian
+    they make), glow lichen faces, pointed dripstone tips and, once, one tree. Biomes and everything else match.
 *   **Backport Core's 1.13+ overworld rules apply to Default worlds once this mod is installed** (it registers 1.18,
     so Core's hills seeding, 1.15 biome zoom and 1.16 layer rules switch on). New chunks of an existing RLCraft world
     get a slightly different biome layout (grass, sand and snow within 1-4% at spawn, but different), so a seam can

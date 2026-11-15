@@ -173,4 +173,14 @@ config.cavesandcliffsbackport.height.newerBiomes=Nieuwere biomen
 config.cavesandcliffsbackport.height.newerBiomes.tooltip=Nieuwe Caves & Cliffs-werelden met 1.18-terrein krijgen ook de biomen uit nieuwere versies waarvoor de geïnstalleerde backports blokken hebben: de mangrovemoerassen en het diep duister uit 1.19 met Wild Update Backport, de kersenboomgaarden uit 1.20 met Trails & Tales Backport, de bleke tuinen uit 1.21.4 met Tricky Trials Backport, geplaatst waar die versies ze plaatsen. Werelden houden de biomen waarmee ze zijn gemaakt.
 config.cavesandcliffsbackport.height.paleGarden1214=Bleke tuin (1.21.4)
 config.cavesandcliffsbackport.height.paleGarden1214.tooltip=Met Tricky Trials Backport plaatsen nieuwe werelden bleke tuinen zoals 1.21.5 en later (standaard: de nieuwste geïnstalleerde versie). Aan: zoals 1.21.4, om seeds met 1.21.4 te vergelijken. Gelezen wanneer een wereld wordt gemaakt.
+config.cavesandcliffsbackport.height.moddedBiomes=Biomen van andere mods
+config.cavesandcliffsbackport.height.moddedBiomes.tooltip=Bovengrondse biomen van andere mods (Biomes O' Plenty, Defiled Lands, Traverse, alle in Forges BiomeManager) ontstaan in 'Caves & Cliffs'-werelden met 1.18-terrein: elk neemt in sommige regio's de plaats in van het 1.18-bioom dat er het meest op lijkt, met eigen oppervlakteblokken, planten, bomen en wezens. Het logboek vermeldt welk bioom wiens plaats inneemt. Uit, of zonder zo'n mod, is het terrein precies dat van 1.18.
+config.cavesandcliffsbackport.height.moddedBiomesExcluded=Weggelaten modbiomen
+config.cavesandcliffsbackport.height.moddedBiomesExcluded.tooltip=Biomen (modid:naam) of hele mods (modid) die uit het 1.18-terrein worden weggelaten.
+config.cavesandcliffsbackport.height.moddedBiomeHosts=Plaatsen van modbiomen
+config.cavesandcliffsbackport.height.moddedBiomeHosts.tooltip=Het 1.18-bioom waarvan een modbioom de plaats inneemt, waar de automatische keuze verkeerd is: modid:naam=1.18-naam, bijvoorbeeld biomesoplenty:grove=forest.
+config.cavesandcliffsbackport.height.moddedBiomesMaxShare=Aandeel van modbiomen
+config.cavesandcliffsbackport.height.moddedBiomesMaxShare.tooltip=Hoogstens dit percentage van de regio's van een 1.18-bioom gaat naar de modbiomen die zijn plaats kunnen innemen. Minder wanneer hun BiomeManager-gewichten laag zijn tegenover de 10 van een vanillabioom (een zeldzaam modbioom blijft zeldzaam).
+config.cavesandcliffsbackport.height.moddedBiomeRegionSize=Regiogrootte van modbiomen
+config.cavesandcliffsbackport.height.moddedBiomeRegionSize.tooltip=De grootte in blokken van de regio's die elk bepalen of een 1.18-bioom daar zichzelf blijft of een modbioom wordt.
 config.cavesandcliffsbackport.height.defaultWorldType.tooltip='Nieuwe wereld maken' begint met het wereldtype Caves & Cliffs, en een nieuwe server zonder level-type in server.properties maakt zijn wereld daarmee. Standaard blijft in de lijst als het terrein van 1.12.

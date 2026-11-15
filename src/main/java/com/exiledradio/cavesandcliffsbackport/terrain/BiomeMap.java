@@ -11,9 +11,11 @@ import java.util.Map;
  * 1.18's biomes as 1.12 biomes: what a column's biome array holds (mob spawning, grass and water colors, rain and snow)
  * and what the biome provider answers before a chunk exists (1.12 structures, the spawn point).
  *
- * <p>A biome some installed mod registers under the 1.18 name (the family's backports register 1.13+ biomes under
- * their modern names, any namespace) is taken first; otherwise the closest 1.12 biome below. The 1.18 mountain biomes
- * map to 1.12's mountains (goats spawn there), the warm oceans to the ocean.
+ * <p>A biome one of the family's backports registers under the 1.18 name (they register 1.13+ biomes under their
+ * modern names) is taken first; otherwise the closest 1.12 biome below. The 1.18 mountain biomes map to 1.12's
+ * mountains (goats spawn there), the warm oceans to the ocean. Other mods' biomes are not matched by name (Biomes O'
+ * Plenty's grove is a temperate forest, not 1.18's snowy grove): {@link ModdedBiomes} places them by climate, and
+ * {@link #biome(int, int, int)} answers with them where they take a 1.18 biome's place.
  */
 public final class BiomeMap {
 
@@ -108,13 +110,14 @@ public final class BiomeMap {
         }
     }
 
-    /** A biome another mod registered under this 1.18 name, if any (never vanilla 1.12's own, whose names differ). */
+    /** A biome a family backport registered under this 1.18 name, if any (never vanilla 1.12's own, whose names differ). */
     private static Biome modern(String name) {
         Biome best = null;
         String bestId = null;
         for (Map.Entry<ResourceLocation, Biome> e : ForgeRegistries.BIOMES.getEntries()) {
             ResourceLocation id = e.getKey();
-            if (id.getPath().equals(name) && !id.getNamespace().equals("minecraft")) {
+            if (id.getPath().equals(name) && !id.getNamespace().equals("minecraft")
+                    && ModdedBiomes.FAMILY.contains(id.getNamespace())) {
                 if (bestId == null || id.toString().compareTo(bestId) < 0) {
                     best = e.getValue();
                     bestId = id.toString();
@@ -137,5 +140,32 @@ public final class BiomeMap {
     /** Its numeric 1.12 id, as a chunk's biome array holds it. */
     public byte id(int modern) {
         return ids[modern];
+    }
+
+    /** Other mods' biomes in the 1.18 terrain, or null for none (the world is 1.18's). */
+    @javax.annotation.Nullable
+    private ModdedBiomes modded;
+
+    void modded(@javax.annotation.Nullable ModdedBiomes modded) {
+        this.modded = modded;
+    }
+
+    @javax.annotation.Nullable
+    ModdedBiomes modded() {
+        return modded;
+    }
+
+    /** The 1.12 biome of 1.18 biome {@code modern} at block x, z: a modded biome where one takes its place. */
+    public Biome biome(int modern, int x, int z) {
+        ModdedBiomes m = modded;
+        ModdedBiomes.Entry e = m == null ? null : m.at(x, z, modern);
+        return e != null ? e.biome : biomes[modern];
+    }
+
+    /** {@link #biome(int, int, int)}'s numeric id. */
+    public byte id(int modern, int x, int z) {
+        ModdedBiomes m = modded;
+        ModdedBiomes.Entry e = m == null ? null : m.at(x, z, modern);
+        return e != null ? e.numericId : ids[modern];
     }
 }

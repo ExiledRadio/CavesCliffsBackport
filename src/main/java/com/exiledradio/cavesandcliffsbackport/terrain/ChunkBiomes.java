@@ -138,7 +138,7 @@ final class ChunkBiomes implements BiomeZoom.Quarts {
             List<Biome.SpawnListEntry> list = caves.get(b == Biomes.LUSH_CAVES ? 1 : 0).get(type);
             return list != null ? list : Collections.<Biome.SpawnListEntry>emptyList();
         }
-        return map.biome(b).getSpawnableList(type);
+        return map.biome(b, x, z).getSpawnableList(type);
     }
 
     // ---- 1.18.2's spawn settings of the cave biomes

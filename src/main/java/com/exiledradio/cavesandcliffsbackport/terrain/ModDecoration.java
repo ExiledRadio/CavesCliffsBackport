@@ -41,6 +41,9 @@ import java.util.Random;
  * {@link DynamicTreesGate}). The events get a random of their own, seeded from the chunk, so the animals that follow
  * are the same with or without the mods that draw from it.
  *
+ * <p>In a chunk another mod's biome holds ({@link ModdedBiomes}), the biome's own {@code decorate} runs instead of these
+ * events ({@link #decorateModded}).
+ *
  * <p>Quark's stone revamp denies 1.12's granite, diorite and andesite in a Default world and places its own clusters
  * instead; {@link #quarkStones} asks it the same question, and the 1.18 granite, diorite and andesite blobs step
  * aside where it says, so they do not generate twice.
@@ -49,17 +52,26 @@ final class ModDecoration {
 
     private static final WorldGenMinable DIRT = new WorldGenMinable(Blocks.DIRT.getDefaultState(), 33);
 
+    /** Set while a modded biome decorates a chunk: 1.12's ores and springs are denied ({@link Deny}). */
+    private static int decorating;
+    private static boolean registered;
+    private static boolean warned;
+
     private ModDecoration() {
     }
 
     /** The events of 1.12's population for chunk x, z (see the class comment). */
     static void populate(IChunkGenerator generator, World world, int x, int z, boolean village,
-                         @Nullable ModernFeatures modern) {
+                         @Nullable ModernFeatures modern, @Nullable ModdedBiomes modded) {
         Random rand = new Random(world.getSeed() ^ ((long) x * 341873128712L + (long) z * 132897987541L) ^ 0x5DEECE66DL);
         TerrainGen.populate(generator, world, rand, x, z, village, PopulateChunkEvent.Populate.EventType.DUNGEON);
         BlockPos pos = new BlockPos(x << 4, 0, z << 4);
         ChunkPos chunk = new ChunkPos(x, z);
         Biome biome = world.getBiome(pos.add(16, 0, 16));
+        if (modded != null && modded.entry(biome) != null && biome.decorator != null) {
+            decorateModded(world, rand, pos, biome);
+            return;
+        }
         net.minecraft.world.biome.BiomeDecorator decorator = biome.decorator;
         BlockPos before = decorator == null ? null : decorator.chunkPos;
         // BiomeDecorator.decorate sets it before its events; some handlers read it.
@@ -81,6 +93,58 @@ final class ModDecoration {
         } finally {
             if (decorator != null) {
                 decorator.chunkPos = before;
+            }
+        }
+    }
+
+    /**
+     * Another mod's biome ({@link ModdedBiomes}) decorates the chunk as in a Default world: its own {@code decorate}
+     * (its decorator, with every decoration event, which Biomes O' Plenty generates in), while the 1.18 trees and
+     * plants step aside there. 1.12's ores, water and lava springs and sand, gravel and clay patches are denied: the 1.18
+     * terrain has its own.
+     */
+    private static void decorateModded(World world, Random rand, BlockPos pos, Biome biome) {
+        if (!registered) {
+            registered = true;
+            Deny deny = new Deny();
+            MinecraftForge.ORE_GEN_BUS.register(deny);
+            MinecraftForge.TERRAIN_GEN_BUS.register(deny);
+        }
+        decorating++;
+        try {
+            biome.decorate(world, rand, pos);
+        } catch (RuntimeException e) {
+            // "Already decorating": a neighbor's population reached the same biome's decorator, as can happen in 1.12.
+            if (!warned) {
+                warned = true;
+                CavesAndCliffsBackport.LOGGER.warn("{} could not decorate chunk {}, {} in the 1.18 terrain.",
+                        biome.getRegistryName(), pos.getX() >> 4, pos.getZ() >> 4, e);
+            }
+        } finally {
+            decorating--;
+        }
+    }
+
+    /**
+     * Denies 1.12's ores, springs and sand, gravel and clay patches while a modded biome decorates (last, after every
+     * other listener, which still run): the 1.18 features placed their own, and 1.12's patches on a 1.18 river floor
+     * over a cave fell as hundreds of falling blocks per run.
+     */
+    public static final class Deny {
+        @net.minecraftforge.fml.common.eventhandler.SubscribeEvent(priority = net.minecraftforge.fml.common.eventhandler.EventPriority.LOWEST)
+        public void ore(OreGenEvent.GenerateMinable event) {
+            if (decorating > 0 && event.getType() != OreGenEvent.GenerateMinable.EventType.CUSTOM) {
+                event.setResult(net.minecraftforge.fml.common.eventhandler.Event.Result.DENY);
+            }
+        }
+
+        @net.minecraftforge.fml.common.eventhandler.SubscribeEvent(priority = net.minecraftforge.fml.common.eventhandler.EventPriority.LOWEST)
+        public void decorate(DecorateBiomeEvent.Decorate event) {
+            DecorateBiomeEvent.Decorate.EventType t = event.getType();
+            if (decorating > 0 && (t == DecorateBiomeEvent.Decorate.EventType.LAKE_WATER
+                    || t == DecorateBiomeEvent.Decorate.EventType.LAKE_LAVA || t == DecorateBiomeEvent.Decorate.EventType.SAND
+                    || t == DecorateBiomeEvent.Decorate.EventType.SAND_PASS2 || t == DecorateBiomeEvent.Decorate.EventType.CLAY)) {
+                event.setResult(net.minecraftforge.fml.common.eventhandler.Event.Result.DENY);
             }
         }
     }

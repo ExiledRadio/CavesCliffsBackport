@@ -172,5 +172,15 @@ config.cavesandcliffsbackport.height.newerBiomes=Biomas mais novos
 config.cavesandcliffsbackport.height.newerBiomes.tooltip=Mundos novos "Caves & Cliffs" com terreno da 1.18 também recebem os biomas das versões mais novas para os quais os backports instalados têm blocos: os manguezais e a escuridão profunda da 1.19 com Wild Update Backport, os bosques de cerejeiras da 1.20 com Trails & Tales Backport e os jardins pálidos da 1.21.4 com Tricky Trials Backport, posicionados onde essas versões os posicionam. Os mundos mantêm os biomas com que foram criados.
 config.cavesandcliffsbackport.height.paleGarden1214=Jardim pálido (1.21.4)
 config.cavesandcliffsbackport.height.paleGarden1214.tooltip=Com Tricky Trials Backport, mundos novos posicionam os jardins pálidos como a 1.21.5 e posteriores (padrão: a versão mais nova instalada). Ligado: como a 1.21.4, para comparar sementes com a 1.21.4. Lido quando um mundo é criado.
+config.cavesandcliffsbackport.height.moddedBiomes=Biomas de outros mods
+config.cavesandcliffsbackport.height.moddedBiomes.tooltip=Biomas da superfície de outros mods (Biomes O' Plenty, Defiled Lands, Traverse, qualquer um do BiomeManager do Forge) são gerados em mundos "Caves & Cliffs" com terreno da 1.18: cada um ocupa, em algumas regiões, o lugar do bioma da 1.18 mais parecido, com seus próprios blocos de superfície, plantas, árvores e criaturas. O registro mostra qual ocupa o lugar de qual. Desativado, ou sem um mod assim, o terreno é exatamente o da 1.18.
+config.cavesandcliffsbackport.height.moddedBiomesExcluded=Biomas de mods excluídos
+config.cavesandcliffsbackport.height.moddedBiomesExcluded.tooltip=Biomas (modid:nome) ou mods inteiros (modid) excluídos do terreno da 1.18.
+config.cavesandcliffsbackport.height.moddedBiomeHosts=Lugares dos biomas de mods
+config.cavesandcliffsbackport.height.moddedBiomeHosts.tooltip=O bioma da 1.18 cujo lugar um bioma de mod ocupa, onde a escolha automática está errada: modid:nome=nome da 1.18, por exemplo biomesoplenty:grove=forest.
+config.cavesandcliffsbackport.height.moddedBiomesMaxShare=Parcela dos biomas de mods
+config.cavesandcliffsbackport.height.moddedBiomesMaxShare.tooltip=No máximo esta porcentagem das regiões de um bioma da 1.18 vai para os biomas de mods que podem ocupar seu lugar. Menos quando seus pesos do BiomeManager são baixos diante do 10 de um bioma vanilla (um bioma de mod raro continua raro).
+config.cavesandcliffsbackport.height.moddedBiomeRegionSize=Tamanho da região dos biomas de mods
+config.cavesandcliffsbackport.height.moddedBiomeRegionSize.tooltip=O tamanho em blocos das regiões que decidem, cada uma, se um bioma da 1.18 continua ele mesmo ou vira um de mod.
 config.cavesandcliffsbackport.height.defaultWorldType.tooltip="Criar novo mundo" começa no tipo de mundo Caves & Cliffs, e um servidor novo sem level-type no server.properties cria seu mundo com ele. Padrão continua na lista como o terreno da 1.12.
 generator.cavesandcliffs=Caves & Cliffs

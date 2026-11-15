@@ -56,7 +56,7 @@ public final class ModernBiomeProvider extends BiomeProvider {
     }
 
     private Biome at(int x, int z) {
-        return map.biome(kits.get().modern(x, z));
+        return map.biome(kits.get().modern(x, z), x, z);
     }
 
     @Override
@@ -82,7 +82,9 @@ public final class ModernBiomeProvider extends BiomeProvider {
         Kit k = kits.get();
         for (int dz = 0; dz < height; dz++) {
             for (int dx = 0; dx < width; dx++) {
-                biomes[dz * width + dx] = map.biome(k.modern((x + dx) << 2, (z + dz) << 2));
+                int bx = (x + dx) << 2;
+                int bz = (z + dz) << 2;
+                biomes[dz * width + dx] = map.biome(k.modern(bx, bz), bx, bz);
             }
         }
         return biomes;
@@ -101,7 +103,7 @@ public final class ModernBiomeProvider extends BiomeProvider {
         Kit k = kits.get();
         for (int dz = 0; dz < length; dz++) {
             for (int dx = 0; dx < width; dx++) {
-                list[dz * width + dx] = map.biome(k.modern(x + dx, z + dz));
+                list[dz * width + dx] = map.biome(k.modern(x + dx, z + dz), x + dx, z + dz);
             }
         }
         return list;
@@ -116,7 +118,7 @@ public final class ModernBiomeProvider extends BiomeProvider {
         int z1 = z + radius >> 2;
         for (int qx = x0; qx <= x1; qx++) {
             for (int qz = z0; qz <= z1; qz++) {
-                if (!allowed.contains(map.biome(k.modern(qx << 2, qz << 2)))) {
+                if (!allowed.contains(map.biome(k.modern(qx << 2, qz << 2), qx << 2, qz << 2))) {
                     return false;
                 }
             }
@@ -139,7 +141,7 @@ public final class ModernBiomeProvider extends BiomeProvider {
         for (int i = 0; i < n; i++) {
             int qx = x0 + i % w;
             int qz = z0 + i / w;
-            if (biomes.contains(map.biome(k.modern(qx << 2, qz << 2))) && (found == null || random.nextInt(count + 1) == 0)) {
+            if (biomes.contains(map.biome(k.modern(qx << 2, qz << 2), qx << 2, qz << 2)) && (found == null || random.nextInt(count + 1) == 0)) {
                 found = new BlockPos(qx << 2, 0, qz << 2);
                 count++;
             }

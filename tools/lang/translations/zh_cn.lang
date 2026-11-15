@@ -172,5 +172,15 @@ config.cavesandcliffsbackport.height.newerBiomes=更新版本的生物群系
 config.cavesandcliffsbackport.height.newerBiomes.tooltip=使用 1.18 地形的新“Caves & Cliffs”世界还会获得更新版本中、已安装的向后移植模组提供了方块的生物群系：安装 Wild Update Backport 时为 1.19 的红树林沼泽和深暗之域，安装 Trails & Tales Backport 时为 1.20 的樱花树林，安装 Tricky Trials Backport 时为 1.21.4 的苍白之园，并放置在这些版本放置它们的位置。世界会保留其创建时的生物群系。
 config.cavesandcliffsbackport.height.paleGarden1214=苍白之园（1.21.4）
 config.cavesandcliffsbackport.height.paleGarden1214.tooltip=安装 Tricky Trials Backport 时，新世界按 1.21.5 及以后版本的方式放置苍白之园（默认：已安装的最新版本）。开启：按 1.21.4 的方式放置，用于与 1.21.4 对比种子。创建世界时读取。
+config.cavesandcliffsbackport.height.moddedBiomes=其他模组的生物群系
+config.cavesandcliffsbackport.height.moddedBiomes.tooltip=其他模组的地表生物群系（Biomes O' Plenty、Defiled Lands、Traverse，以及 Forge BiomeManager 中的任何生物群系）会生成在使用 1.18 地形的“Caves & Cliffs”世界中：每个都会在部分区域取代最接近的 1.18 生物群系，带有自己的地表方块、植物、树木和生物。日志会列出谁取代了谁。关闭时，或没有此类模组时，地形与 1.18 完全相同。
+config.cavesandcliffsbackport.height.moddedBiomesExcluded=排除的模组生物群系
+config.cavesandcliffsbackport.height.moddedBiomesExcluded.tooltip=从 1.18 地形中排除的生物群系（modid:名称）或整个模组（modid）。
+config.cavesandcliffsbackport.height.moddedBiomeHosts=模组生物群系的位置
+config.cavesandcliffsbackport.height.moddedBiomeHosts.tooltip=自动选择不合适时，模组生物群系所取代的 1.18 生物群系：modid:名称=1.18 名称，例如 biomesoplenty:grove=forest。
+config.cavesandcliffsbackport.height.moddedBiomesMaxShare=模组生物群系占比
+config.cavesandcliffsbackport.height.moddedBiomesMaxShare.tooltip=1.18 生物群系的区域中，最多有此百分比交给可能取代它的模组生物群系。若它们的 BiomeManager 权重低于原版生物群系的 10，则更少（稀有的模组生物群系仍然稀有）。
+config.cavesandcliffsbackport.height.moddedBiomeRegionSize=模组生物群系区域大小
+config.cavesandcliffsbackport.height.moddedBiomeRegionSize.tooltip=区域的大小（以方块计），每个区域决定其中的 1.18 生物群系保持原样还是变为模组生物群系。
 config.cavesandcliffsbackport.height.defaultWorldType.tooltip=“创建新的世界”默认选中 Caves & Cliffs 世界类型，server.properties 中没有 level-type 的新服务器也用它创建世界。“默认”作为 1.12 的地形仍留在列表中。
 generator.cavesandcliffs=Caves & Cliffs
