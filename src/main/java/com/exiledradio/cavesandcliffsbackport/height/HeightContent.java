@@ -24,12 +24,14 @@ public final class HeightContent {
 
     /** Mod ids of the mods extended height refuses to run with (see {@code HeightCorePlugin.CONFLICTS}). */
     private static final String[][] CONFLICT_MODS = {
-            {"phosphor-lighting", "Phosphor"},
             {"cubicchunks", "Cubic Chunks"},
             {"cavesnotcliffs", "Caves Not Cliffs"},
             {"cavebiomesapi", "Cave Biomes API (Caves Not Cliffs)"},
             {"farmers_future_delight", "Farmer's Future Delight"},
     };
+
+    /** Phosphor's and its fork Hesperus' mod id. */
+    private static final String PHOSPHOR = "phosphor-lighting";
 
     private static volatile boolean allowed;
     @Nullable
@@ -85,6 +87,17 @@ public final class HeightContent {
             CavesAndCliffsBackport.LOGGER.warn("Extended height (y -64 to 319) is OFF: {}.", refusal);
             return;
         }
+        if (Loader.isModLoaded(PHOSPHOR) && !PhosphorHooks.wide()) {
+            // The same for Phosphor's engine.
+            allowed = false;
+            refusal = "Phosphor's lighting engine started before pre-init, with its own position key";
+            CavesAndCliffsBackport.LOGGER.warn("Extended height (y -64 to 319) is OFF: {}.", refusal);
+            return;
+        }
+        if (Loader.isModLoaded(PHOSPHOR)) {
+            CavesAndCliffsBackport.LOGGER.info("Extended height with Phosphor {}: its lighting covers x and z within "
+                    + "16,777,216 of 0 (Phosphor alone: 33,554,432).", HeightCorePlugin.phosphorVersion());
+        }
         if (Loader.isModLoaded("alfheim")) {
             CavesAndCliffsBackport.LOGGER.info("Extended height with Alfheim {}: its lighting covers x and z within "
                     + "16,777,216 of 0 (Alfheim alone: 33,554,432).", HeightCorePlugin.ALFHEIM_VERSION);
@@ -116,6 +129,14 @@ public final class HeightContent {
                         + HeightCorePlugin.ALFHEIM_VERSION + " exactly)";
             }
         }
+        boolean phosphor = Loader.isModLoaded(PHOSPHOR);
+        if (phosphor) {
+            String version = HeightCorePlugin.phosphorVersion();
+            if (!HeightCorePlugin.PHOSPHOR_VERSIONS.contains(version)) {
+                return "Phosphor " + version + " is installed (extended height is made for "
+                        + HeightCorePlugin.PHOSPHOR_NAMES + ")";
+            }
+        }
         // A Backport Core without its terrain API (before 1.3.0; Forge's version check normally stops that first)
         // would crash with NoClassDefFoundError when a Caves & Cliffs world is made.
         if (HeightContent.class.getClassLoader().getResource("com/exiledradio/backportcore/terrain/TerrainSource.class") == null) {
@@ -144,6 +165,18 @@ public final class HeightContent {
                 if (!PatchReport.classPatched(label)) {
                     return "Alfheim is installed but its " + label.substring("Alfheim".length())
                             + " was not patched (not read through the transformers)";
+                }
+            }
+        }
+        if (phosphor) {
+            // Its engine classes load above; MixinChunk is read when Chunk loads (above, at the latest). Every one
+            // must have been patched, or its code would undo ours. (With Phosphor's own config switch off, Mixin never
+            // reads MixinChunk, and this refuses too.)
+            for (String label : new String[] {"PhosphorLightingEngine", "PhosphorLightingHooks",
+                    "PhosphorLightingEngineHelpers", "PhosphorMixinChunk"}) {
+                if (!PatchReport.classPatched(label)) {
+                    return "Phosphor is installed but its " + label.substring("Phosphor".length())
+                            + " was not patched (not read through the transformers, or Phosphor is switched off in its config)";
                 }
             }
         }

@@ -18,6 +18,6 @@ Needs Backport Core 1.3.0 or newer.
 
 Known limits in this beta:
 
-*   The Caves & Cliffs world type turns itself off with Phosphor or Cubic Chunks installed, and says so in the log. The 1.17 content still works with them.
+*   The Caves & Cliffs world type turns itself off with Cubic Chunks installed, and says so in the log. The 1.17 content still works with it.
 
 Back up worlds before trying it. Report bugs on the Discord.

@@ -82,9 +82,9 @@ read slots 20-23 as y 320-383: wrong, but only for blocks below y 0. Known users
 
 Sky light enters at the top of the world (320) and goes down to its bottom; the heightmap holds real heights
 (negative ones too). Block light needs only the range checks above. **Alfheim and Phosphor replace vanilla's
-lighting engine**, and RLCraft Revamped uses Alfheim: their engines carry their own 0-255 assumptions. Alfheim 1.6 has
-a compat path (section 3: a wider position key, sections by slot, boundary flags two sections to a bit); Phosphor is
-refused.
+lighting engine**, and RLCraft Revamped uses Alfheim: their engines carry their own 0-255 assumptions. Alfheim 1.6 and
+Phosphor (0.2.6, 0.2.7, Hesperus 0.2.9.1-0.2.9.3) have a compat path each (section 3: a wider position key, sections by
+slot, boundary flags two sections to a bit).
 
 ### 1.5 The save format, and removing the mod
 
@@ -147,7 +147,7 @@ Rules for the transformer:
 | **Nothirium** | Its own chunk renderer, camera-centred in y, with three 0-16 section limits. | **Done (stream H):** the limits and its section lookup are patched; tested in the Fast instance. |
 | **StellarCore** | `WorldBlockPosJudgement` overwrites `World.isOutsideBuildHeight` with 0-255. | A pack sets `B:WorldBlockPosJudgement=false`; with it on, a probe at world load keeps the world 0-255 and says so. |
 | **Alfheim 1.6** | Replaces the lighting engine (1.4) with mixins: packs y in 8 bits of its queue key, reads sections by `y >> 4`, keeps one boundary flag bit per section in a `short`, and `@Overwrite`s `Chunk.relightBlock` and `getLightFor`. | **Done (branch `cc-alfheim`):** its `LightingEngine` and mixin classes are patched as Mixin reads them (26 sites): with extended height on, a key with 9 bits of y (x and z within 16,777,216), sections by slot, flags two sections to a bit (same save format), our `relightBlock` sites back in its overwrite. Exactly 1.6: any other version refuses, with the reason. Tested on a dedicated server (light across chunk borders and down shafts below 0, across a restart; Default-world light unchanged) and in the Dregora Cleanroom copies (`height.md`). |
-| **Phosphor** | Replaces the lighting engine (1.4), with Alfheim's 8-bit y. | **Incompatible** (the user, 2026-11-11): extended height refuses to turn on with it installed. |
+| **Phosphor** (and its fork Hesperus) | Replaces the lighting engine (1.4), with Alfheim's 8-bit y (Alfheim descends from it). | **Done (branch `cc-phosphor`):** the Alfheim design, in Phosphor's own classes (`LightingEngine`, `LightingHooks`, `LightingEngineHelpers`, `MixinChunk`; 28 sites). Phosphor 0.2.6 and 0.2.7 and Hesperus 0.2.9.1-0.2.9.3 (the same bytecode where it matters); any other version refuses, with the reason. Tested on the dev server (`height.md`). |
 | **Cubic Chunks, the other extended-height mods** | Same job, different layouts. | Detected at startup; extended height refuses to turn on, with a message. |
 
 ## 4. Speed

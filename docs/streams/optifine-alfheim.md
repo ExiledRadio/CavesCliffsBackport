@@ -2,7 +2,8 @@
 
 Status: built (2026-11-14). Section 1 (OptiFine) on branch `cc-optifine`, section 2 (Alfheim) on branch
 `cc-alfheim`; results in `docs/streams/height.md` "Tested" and `docs/streams/packcompat.md`. Scope: the `cavesandcliffs` world type (y -64..319) working
-with OptiFine 1.12.2 HD U G5 (including shaders and the shadow pass) and with Alfheim 1.6. Phosphor stays refused.
+with OptiFine 1.12.2 HD U G5 (including shaders and the shadow pass) and with Alfheim 1.6. Phosphor followed later
+with the same design (branch `cc-phosphor`; `height.md`, "Phosphor").
 
 Same rules as stream H (`docs/streams/height.md`): our own ASM in `height/asm`, no mixins, no MixinBooter; every site
 an exact pattern with an exact match count; every patched site calls `Heights`/`HeightLayout`/`HeightHooks`; any miss

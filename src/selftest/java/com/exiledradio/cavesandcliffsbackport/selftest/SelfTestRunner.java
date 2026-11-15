@@ -69,9 +69,12 @@ public final class SelfTestRunner {
             new RestartSelfTest("restart2"),
             new RestartSelfTest("crash1"),
             new RestartSelfTest("crash2"),
-            new AlfheimLightSelfTest("alfheimlight1"),
-            new AlfheimLightSelfTest("alfheimlight2"),
-            new AlfheimLightSelfTest("alfheimdump"),
+            new LightEngineSelfTest("alfheimlight1"),
+            new LightEngineSelfTest("alfheimlight2"),
+            new LightEngineSelfTest("alfheimdump"),
+            new LightEngineSelfTest("phosphorlight1"),
+            new LightEngineSelfTest("phosphorlight2"),
+            new LightEngineSelfTest("phosphordump"),
             new HeightBenchSelfTest(),
             new GenScanSelfTest(),
             new ModernFeaturesSelfTest(),
@@ -109,9 +112,10 @@ public final class SelfTestRunner {
             check.fail("dump: " + e);
         }
         for (SelfTest test : TESTS) {
-            // The restart and Alfheim phases need a server of their own each (tools/terrain/restart.sh, Alfheim installed),
+            // The restart and light-engine phases need a server of their own each (tools/terrain/restart.sh, Alfheim or
+            // Phosphor installed),
             // and the flat test a superflat world (tools/flat/selftest.sh): never part of "all".
-            boolean all = this.wanted.contains("all") && !(test instanceof RestartSelfTest) && !(test instanceof AlfheimLightSelfTest)
+            boolean all = this.wanted.contains("all") && !(test instanceof RestartSelfTest) && !(test instanceof LightEngineSelfTest)
                     && !(test instanceof FlatSelfTest);
             if (all || this.wanted.contains(test.name())) {
                 check.section(test.name());

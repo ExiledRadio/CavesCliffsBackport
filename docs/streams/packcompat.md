@@ -12,8 +12,8 @@ The spawn probe is `selftest/PackProbe` (a test build with `-Dcavesandcliffsback
 
 | Pack | Add | Remove for extended height | Config |
 | --- | --- | --- | --- |
-| RLCraft 2.9.3 (CurseForge, Forge 2860) | `CavesAndCliffsBackport`, `BackportCore-1.2.0` | `phosphor-1.12.2-0.2.6` (client and server) | none |
-| RLCraft Dregora, Java 8 (CurseForge) | the same (Core 1.2.0 is already there for V&P) | `phosphor`, `PhosphorCrashFix` | none |
+| RLCraft 2.9.3 (CurseForge, Forge 2860) | `CavesAndCliffsBackport`, `BackportCore-1.2.0` | nothing: Phosphor 0.2.6 stays (branch `cc-phosphor`; before it, `phosphor-1.12.2-0.2.6`, client and server) | none |
+| RLCraft Dregora, Java 8 (CurseForge) | the same (Core 1.2.0 is already there for V&P) | nothing: Phosphor 0.2.6 and PhosphorCrashFix stay (branch `cc-phosphor`; before it, both) | none |
 | RLCraft Dregora, Cleanroom (Prism) | the same; Fluidlogged API 3.3.3 (the Fast instance has 3.3.2) | nothing: Alfheim 1.6 stays (branch `cc-alfheim`; before it, `Alfheim`) | StellarCore `B:WorldBlockPosJudgement=false` |
 
 Without removing anything, every 1.17 part works in the packs' own worlds and extended height turns itself off with a
@@ -157,11 +157,11 @@ see it. A larger `-XX:MaxDirectMemorySize` than the heap would be the workaround
     chunks/s). In `cavesandcliffs` worlds without Phosphor the same pregen took 30-40 s (58-77 chunks/s): the 1.18
     generator places its features before a chunk is in the world, so they cause no light updates; the extended world
     is no slower than RLCraft's Default world with Phosphor.
-*   **Phosphor** stays incompatible: it packs y into 8 bits of a 64-bit position (z 26, x 26, y 8, light 4; a
-    y-overflow bit), keeps per-section flags in 16-bit masks, and `@Overwrite`s the chunk light methods this coremod
-    patches. **Alfheim 1.6**, its descendant with the same layout, now works (branch `cc-alfheim`, `height.md`
-    "Alfheim 1.6"): its key, section lookups and flags are patched in its own classes. The same could be done for
-    Phosphor 0.2.6 if a pack needs it; the Java 8 packs that ship it can drop it, as above.
+*   **Phosphor** packs y into 8 bits of a 64-bit position (z 26, x 26, y 8, light 4; a y-overflow bit), keeps
+    per-section flags in 16-bit masks, and `@Overwrite`s the chunk light methods this coremod patches. **Alfheim 1.6**,
+    its descendant with the same layout, works (branch `cc-alfheim`, `height.md` "Alfheim 1.6"), and Phosphor itself
+    now does too, with the same design (branch `cc-phosphor`, `height.md` "Phosphor"): 0.2.6, 0.2.7 and Hesperus
+    0.2.9.1-0.2.9.3. The runs above were made with Phosphor removed; the packs no longer need to remove it.
 *   Dregora's CurseForge mod set does not start as a dedicated server as is: `!mixinbooter-11.13.jar` makes FML load
     RenderLib's tweaker as a coremod and it fails (`AsyncKeyboardTransformer`); `RLCraftThreadFix` needs MixinBooter.
     Both are client-side, so the test server left them out. Not this mod's.
