@@ -9,8 +9,9 @@ public final class FindBiome {
         long seed = Long.parseLong(args[0]);
         int biome = Integer.parseInt(args[1]);
         int y = Integer.parseInt(args[2]);
-        OverworldNoise noise = new OverworldNoise(seed);
-        BiomeSource biomes = new BiomeSource(noise, new ColumnCache(noise), new Climate());
+        int editions = Integer.getInteger("editions", 0);
+        OverworldNoise noise = new OverworldNoise(seed, editions);
+        BiomeSource biomes = new BiomeSource(noise, new ColumnCache(noise), new Climate(editions));
         for (int r = 0; r < 600; r++) {
             for (int dx = -r; dx <= r; dx++) {
                 for (int dz = -r; dz <= r; dz++) {

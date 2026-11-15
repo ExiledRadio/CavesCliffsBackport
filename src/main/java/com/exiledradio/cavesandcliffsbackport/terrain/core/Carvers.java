@@ -45,9 +45,12 @@ public final class Carvers {
     /** UniformHeight maxInclusive: absolute(180), absolute(47); both from aboveBottom(8). */
     private static final int[] CAVE_MAX_Y = {180, 47};
 
-    private static final boolean[] REPLACEABLE = new boolean[256];
+    /** 1.19's mud, in 1.19's #dirt and so carved (only 1.19's mangrove swamp has it). */
+    private static final int MUD = BlockCodes.register("mud");
+    private static final boolean[] REPLACEABLE = new boolean[Math.max(256, MUD + 1)];
 
     static {
+        REPLACEABLE[MUD] = true;
         int[] codes = {WATER, STONE, GRANITE, DIRT, COARSE_DIRT, PODZOL, GRASS_BLOCK, TERRACOTTA, WHITE_TERRACOTTA,
             ORANGE_TERRACOTTA, YELLOW_TERRACOTTA, LIGHT_GRAY_TERRACOTTA, BROWN_TERRACOTTA, RED_TERRACOTTA, SANDSTONE,
             RED_SANDSTONE, MYCELIUM, PACKED_ICE, DEEPSLATE, CALCITE, SAND, RED_SAND, GRAVEL, TUFF, DEEPSLATE_IRON_ORE,
@@ -426,7 +429,7 @@ public final class Carvers {
         if (state == GRASS_BLOCK || state == MYCELIUM) {
             grass = true;
         }
-        if (!REPLACEABLE[state]) {
+        if (state >= REPLACEABLE.length || !REPLACEABLE[state]) {
             return grass;
         }
         int carved = y <= LAVA_LEVEL ? LAVA : aquifer.computeSubstance(x, y, z, 0.0D);

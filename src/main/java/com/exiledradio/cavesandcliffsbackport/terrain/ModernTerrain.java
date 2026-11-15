@@ -130,6 +130,25 @@ public final class ModernTerrain {
         return e;
     }
 
+    /**
+     * Whose code 1.18.2's own features run (terrain.core.Rules): the newest installed family backport's version, as
+     * the family's rule has it (Tricky Trials 1.21.11, Trails &amp; Tales 1.20.1, Wild Update 1.19.2), else 1.18.2's.
+     * Read when the generator is made, not saved: the features and their order stay the world's biomes', and a
+     * change between two runs moves no terrain.
+     */
+    static int installedRules() {
+        if (net.minecraftforge.fml.common.Loader.isModLoaded("trickytrialsbackport")) {
+            return com.exiledradio.cavesandcliffsbackport.terrain.core.Rules.V121;
+        }
+        if (net.minecraftforge.fml.common.Loader.isModLoaded("trailsandtalesbackport")) {
+            return com.exiledradio.cavesandcliffsbackport.terrain.core.Rules.V120;
+        }
+        if (net.minecraftforge.fml.common.Loader.isModLoaded("wildupdatebackport")) {
+            return com.exiledradio.cavesandcliffsbackport.terrain.core.Rules.V119;
+        }
+        return com.exiledradio.cavesandcliffsbackport.terrain.core.Rules.V118;
+    }
+
     private static boolean blocks(String... names) {
         java.util.Set<String> want = new java.util.HashSet<>(java.util.Arrays.asList(names));
         for (net.minecraft.util.ResourceLocation id : net.minecraftforge.fml.common.registry.ForgeRegistries.BLOCKS.getKeys()) {

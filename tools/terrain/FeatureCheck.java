@@ -107,14 +107,17 @@ public final class FeatureCheck {
                 seeds[i - 3] = Long.parseLong(args[i]);
             }
         }
-        Climate climate = new Climate();
+        // -Deditions: the newer biomes (Editions flags); -Drules: the newest version whose feature rules apply (118..121).
+        int editions = Integer.getInteger("editions", 0);
+        int rules = Integer.getInteger("rules", 118);
+        Climate climate = new Climate(editions);
         long differences = 0L;
         long checked = 0L;
         long decoratedTotal = 0L;
         long nanos = 0L;
         Map<String, Long> seen = new TreeMap<>();
         for (long seed : seeds) {
-            OverworldNoise noise = new OverworldNoise(seed);
+            OverworldNoise noise = new OverworldNoise(seed, editions);
             ColumnCache columns = new ColumnCache(noise);
             ChunkFiller filler = new ChunkFiller(noise, columns);
             BiomeSource biomes = new BiomeSource(noise, columns, climate);
@@ -122,6 +125,7 @@ public final class FeatureCheck {
             Carvers carvers = new Carvers(noise, columns, surface);
             Decorator decorator = new Decorator(noise, biomes);
             decorator.only(only);
+            decorator.rules(rules);
             String tc = System.getProperty("tracechunk");
             Map<Long, Chunk> chunks = new HashMap<>();
             Random rnd = new Random(seed * 31L + 5L);
@@ -194,6 +198,10 @@ public final class FeatureCheck {
                 for (int i = 0; i < n; i++) {
                     names[i] = in.readUTF();
                     codes[i] = BlockCodes.byState(names[i]);
+                    if (codes[i] < 0 && names[i].contains("waterlogged=false")) {
+                        // 1.19+ gave every leaves block a waterlogged property: dry ones are the core's 1.18 codes.
+                        codes[i] = BlockCodes.byState(names[i].replace(",waterlogged=false", "").replace("[waterlogged=false]", ""));
+                    }
                     if (codes[i] < 0) {
                         System.out.println("seed " + seed + ": no code for vanilla state " + names[i]);
                     }

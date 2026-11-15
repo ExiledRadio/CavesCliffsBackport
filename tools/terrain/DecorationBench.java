@@ -64,6 +64,7 @@ public final class DecorationBench {
             }
             Decorator decorator = new Decorator(noise, new BiomeSource(noise, columns, climate));
             decorator.only(only.equals("all") ? null : new HashSet<>(Arrays.asList(only.split(","))));
+            decorator.rules(Integer.getInteger("rules", 118));
             long t = System.nanoTime();
             for (int a = r; a < r + side; a++) {
                 for (int b = r; b < r + side; b++) {

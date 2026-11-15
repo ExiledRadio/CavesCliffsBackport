@@ -39,6 +39,11 @@ final class Geodes {
             RARITY, 24, IN_SQUARE, HEIGHT_UNIFORM, -58, 30, BIOME));
     }
 
+    /** 1.20's Mth.invSqrt(double) (exact) or 1.18.2's Mth.fastInvSqrt. */
+    static double invSqrt(boolean exact, double x) {
+        return exact ? 1.0D / Math.sqrt(x) : fastInvSqrt(x);
+    }
+
     /** Mth.fastInvSqrt(double). */
     static double fastInvSqrt(double x) {
         double d0 = 0.5D * x;
@@ -132,13 +137,15 @@ final class Geodes {
                 cracks = 3;
             }
             int placements = 0;
+            // 1.20: Mth.invSqrt (org.joml.Math.invsqrt, exact) for 1.18.2's Mth.fastInvSqrt.
+            boolean exact = level.rules >= Rules.V120;
             for (int bz = z - 16; bz <= z + 16; bz++) {
                 for (int by = y - 16; by <= y + 16; by++) {
                     for (int bx = x - 16; bx <= x + 16; bx++) {
                         // Without the noise, d6 is the sum of the inverse roots; each term carries one d8.
                         double base = 0.0D;
                         for (int p = 0; p < k; p++) {
-                            base += fastInvSqrt(distSqr(bx, by, bz, px[p], py[p], pz[p]) + (double) po[p]);
+                            base += invSqrt(exact, distSqr(bx, by, bz, px[p], py[p], pz[p]) + (double) po[p]);
                         }
                         if (base + k * noiseBound < d4) {
                             continue;
@@ -147,10 +154,10 @@ final class Geodes {
                         double d6 = 0.0D;
                         double d7 = 0.0D;
                         for (int p = 0; p < k; p++) {
-                            d6 += fastInvSqrt(distSqr(bx, by, bz, px[p], py[p], pz[p]) + (double) po[p]) + d8;
+                            d6 += invSqrt(exact, distSqr(bx, by, bz, px[p], py[p], pz[p]) + (double) po[p]) + d8;
                         }
                         for (int c = 0; c < cracks; c++) {
-                            d7 += fastInvSqrt(distSqr(bx, by, bz, cx[c], cy[c], cz[c]) + (double) CRACK_OFFSET) + d8;
+                            d7 += invSqrt(exact, distSqr(bx, by, bz, cx[c], cy[c], cz[c]) + (double) CRACK_OFFSET) + d8;
                         }
                         if (!(d6 < d4)) {
                             if (flag && d7 >= d5 && d6 < d1) {

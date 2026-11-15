@@ -105,6 +105,8 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
     /** Time spent writing finished chunks into 1.12 chunks, for the benchmark. */
     public long writeNanos;
     public long chunks;
+    /** Whose code 1.18.2's own features run (terrain.core.Rules). */
+    private final int rules;
 
     ModernGenerator(World world, ModernTerrain terrain) {
         this.world = world;
@@ -112,6 +114,12 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         this.features = world.getWorldInfo().isMapFeaturesEnabled();
         this.sky = world.provider.hasSkyLight();
         this.pipeline = new Pipeline(terrain.noise, terrain.climate, ModernTerrain.threads(), ModernTerrain.cap());
+        this.rules = ModernTerrain.installedRules();
+        this.pipeline.rules(this.rules);
+        if (this.rules != com.exiledradio.cavesandcliffsbackport.terrain.core.Rules.V118) {
+            CavesAndCliffsBackport.LOGGER.info("1.18 terrain: 1.18.2's features run {}'s code (the newest backport installed).",
+                    com.exiledradio.cavesandcliffsbackport.terrain.core.Rules.name(this.rules));
+        }
         this.states.resolveAll();
         // Dynamic Trees grows its own trees where it cancels vanilla's; the 1.18 trees step aside there. Asked on the
         // server thread, which finishes chunks.
@@ -174,14 +182,20 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
     }
 
     /**
-     * Gives a second pipeline (the self-test's) this world's decoration in the core: the newer tree selectors, and the
-     * cactus patches left to the backport. Nothing without one.
+     * Gives a second pipeline (the self-test's) this world's decoration in the core: the feature rules, and with other
+     * backports' newer features the newer tree selectors and the cactus patches left to the backport.
      */
     public void sameDecoration(Pipeline other) {
+        other.rules(rules);
         if (modern != null) {
             other.modernTrees(modern.selectors);
             other.treeGate(modern.cactusGate());
         }
+    }
+
+    /** Whose code 1.18.2's features run ({@code terrain.core.Rules}): the newest installed backport's. */
+    public int rules() {
+        return rules;
     }
 
     /** The newer versions' biomes this world has ({@code terrain.core.Editions} flags). */

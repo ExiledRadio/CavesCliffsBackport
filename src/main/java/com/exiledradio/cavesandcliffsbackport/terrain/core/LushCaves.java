@@ -722,9 +722,14 @@ final class LushCaves {
     }
 
     static boolean spreadFromFaceTowardRandomDirection(Region level, int state, int x, int y, int z, int face, XoroRandom random) {
-        shuffle(DIRECTIONS, 6, random);
+        int[] order = DIRECTIONS;
+        if (level.rules >= Rules.V119) {
+            // 1.19's MultifaceSpreader: Direction.allShuffled, a fresh copy of Direction.values() each time.
+            order = new int[]{0, 1, 2, 3, 4, 5};
+        }
+        shuffle(order, 6, random);
         for (int i = 0; i < 6; i++) {
-            if (spreadFromFaceTowardDirection(level, state, x, y, z, face, DIRECTIONS[i])) {
+            if (spreadFromFaceTowardDirection(level, state, x, y, z, face, order[i])) {
                 return true;
             }
         }

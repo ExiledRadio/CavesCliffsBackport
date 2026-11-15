@@ -53,6 +53,8 @@ final class Trees {
     static final int MANGROVE_LEAVES = 9;
     /** leaves[type][distance 1..7] (persistent=false). */
     static final int[][] LEAVES = new int[LEAF_TYPES.length][8];
+    /** 1.19's waterlogged leaves[type][distance 1..7] (every leaves block got the property in 1.19). */
+    static final int[][] LEAVES_WET = new int[LEAF_TYPES.length][8];
     static final int BEE_NEST = register("bee_nest[facing=south,honey_level=0]");
     /** 1.19's mangrove roots (dry, waterlogged), muddy mangrove roots, hanging propagules by age. */
     static final int MANGROVE_ROOTS = register("mangrove_roots[waterlogged=false]");
@@ -76,6 +78,7 @@ final class Trees {
     /** Per code: the leaf distance (1..7) or 0; and the code with another distance. */
     private static int[] leafDistance;
     private static int[] leafWood;
+    private static boolean[] leafWet;
 
     private static String faces(int m) {
         return "down=" + (m & 1) + ",east=" + (m >> 5 & 1) + ",north=" + (m >> 2 & 1) + ",south=" + (m >> 3 & 1) + ",up="
@@ -92,6 +95,7 @@ final class Trees {
         for (int w = 0; w < LEAF_TYPES.length; w++) {
             for (int d = 1; d <= 7; d++) {
                 LEAVES[w][d] = register(LEAF_TYPES[w] + "_leaves[distance=" + d + ",persistent=false]");
+                LEAVES_WET[w][d] = register(LEAF_TYPES[w] + "_leaves[distance=" + d + ",persistent=false,waterlogged=true]");
             }
         }
         String[] facings = {null, null, "north", "south", "west", "east"};
@@ -113,10 +117,14 @@ final class Trees {
         MUSHROOM_STEM = register("mushroom_stem[down=false,east=true,north=true,south=true,up=false,west=true]");
         leafDistance = new int[count()];
         leafWood = new int[count()];
+        leafWet = new boolean[count()];
         for (int w = 0; w < LEAF_TYPES.length; w++) {
             for (int d = 1; d <= 7; d++) {
                 leafDistance[LEAVES[w][d]] = d;
                 leafWood[LEAVES[w][d]] = w;
+                leafDistance[LEAVES_WET[w][d]] = d;
+                leafWood[LEAVES_WET[w][d]] = w;
+                leafWet[LEAVES_WET[w][d]] = true;
             }
         }
     }
@@ -225,7 +233,8 @@ final class Trees {
             new Placed("trees_mangrove", new Selector(new float[]{0.85F}, new Feature[]{new PropaguleChecked(mangrove(true))},
                 new PropaguleChecked(mangrove(false))), COUNT, 25, IN_SQUARE, WATER_DEPTH, 5, HEIGHTMAP, of, BIOME, CUSTOM, 0)
                 .mods((level, random, next, x, y, z) -> {
-                    if (propaguleSurvives(level, x, y, z)) {
+                    // 1.21 dropped this filter (mangrove_checked still asks).
+                    if (level.rules >= Rules.V121 || propaguleSurvives(level, x, y, z)) {
                         next.at(x, y, z);
                     }
                 }),
@@ -245,7 +254,7 @@ final class Trees {
     private static Tree mangrove(boolean tall) {
         Tree t = new Tree(LOG[MANGROVE][1], LEAVES[MANGROVE_LEAVES][7], true, 0.01F, UPWARDS_BRANCHING, tall ? 4 : 2, 1,
             tall ? 9 : 4, RANDOM_SPREAD_FOLIAGE, c(3), c(0), 0, c(2), tall ? 3 : 2, 0, 2);
-        t.v119 = true;
+        t.minRules = Rules.V119;
         t.spreadAttempts = 70;
         t.branchSteps = tall ? u(1, 6) : u(1, 4);
         t.branchChance = 0.5F;
@@ -282,8 +291,10 @@ final class Trees {
      * TwoLayersFeatureSize(1, 0, 2), ignoring vines; with a BeehiveDecorator of {@code bees} (negative: none).
      */
     private static Tree cherry(float bees) {
-        return new Tree(LOG[CHERRY][1], LEAVES[CHERRY_LEAVES][7], true, bees, CHERRY_TRUNK, 7, 1, 0, CHERRY_FOLIAGE, c(4), c(0), 0,
+        Tree t = new Tree(LOG[CHERRY][1], LEAVES[CHERRY_LEAVES][7], true, bees, CHERRY_TRUNK, 7, 1, 0, CHERRY_FOLIAGE, c(4), c(0), 0,
             c(5), 1, 0, 2);
+        t.minRules = Rules.V120;
+        return t;
     }
 
     private static Tree oakBees(float bees) {
@@ -544,11 +555,35 @@ final class Trees {
 
     /** TreeFeature.isFree: validTreePos or BlockTags.LOGS. */
     static boolean isFree(int code) {
-        if (validTreePos(code)) {
+        return validTreePos(code) || isLog(code);
+    }
+
+    /** BlockTags.LOGS (the nether stems, not the huge mushroom's). */
+    static boolean isLog(int code) {
+        String n = name(code);
+        return n.endsWith("_log") || n.endsWith("_wood") || n.endsWith("_stem") && !n.equals("mushroom_stem")
+            || n.endsWith("_hyphae");
+    }
+
+    /**
+     * 1.21.11's validTreePos: air or #replaceable_by_trees, which since 1.21.5 also holds the small flowers and
+     * 1.21's new plants. (1.20.1's tag holds exactly 1.19.2's REPLACEABLE_PLANT blocks, water, seagrass and leaves:
+     * {@link #validTreePos119}.)
+     */
+    static boolean validTreePos121(int code) {
+        if (validTreePos119(code)) {
             return true;
         }
-        String n = name(code);
-        return n.endsWith("_log") || n.endsWith("_wood") || n.endsWith("_stem") || n.endsWith("_hyphae");
+        switch (name(code)) {
+            case "dandelion": case "open_eyeblossom": case "poppy": case "blue_orchid": case "allium": case "azure_bluet":
+            case "red_tulip": case "orange_tulip": case "white_tulip": case "pink_tulip": case "oxeye_daisy": case "cornflower":
+            case "lily_of_the_valley": case "wither_rose": case "torchflower": case "closed_eyeblossom":
+            case "pale_moss_carpet": case "bush": case "firefly_bush": case "leaf_litter": case "short_dry_grass":
+            case "tall_dry_grass":
+                return true;
+            default:
+                return false;
+        }
     }
 
     /** TrunkPlacer.isDirt: the dirt tag but not grass or mycelium. */
@@ -649,8 +684,10 @@ final class Trees {
         boolean forceDirt;
         /** azalea_tree's leaves: WeightedStateProvider(azalea leaves 3, flowering azalea leaves 1). */
         boolean azaleaLeaves;
-        /** 1.19's TreeFeature (validTreePos with water plants, roots), for the 1.19 trees. */
-        boolean v119;
+        /** The oldest version whose TreeFeature this tree runs (Rules): the mangroves 1.19's, the cherries 1.20's. */
+        int minRules = Rules.V118;
+        /** While placing: the rules it runs, the newer of the world's and its own. */
+        private int r;
         /** RandomSpreadFoliagePlacer's leaf placement attempts. */
         int spreadAttempts = 50;
         /** UpwardsBranchingTrunkPlacer: extra branch steps, branch per log chance, extra branch length. */
@@ -735,6 +772,34 @@ final class Trees {
             level.set(x, y, z, state);
         }
 
+        /** TreeFeature.validTreePos by the rules the tree runs. */
+        private boolean valid(int code) {
+            return r >= Rules.V121 ? validTreePos121(code) : r >= Rules.V119 ? validTreePos119(code) : validTreePos(code);
+        }
+
+        /** TrunkPlacer.isFree (1.18.2's TreeFeature.isFree): validTreePos or BlockTags.LOGS. */
+        private boolean free(int code) {
+            return valid(code) || isLog(code);
+        }
+
+        /**
+         * FoliagePlacer.tryPlaceLeaf: at a valid position the foliage provider's state; from 1.19 on waterlogged where
+         * the position holds source water (every leaves block has the property since 1.19). 1.21 also leaves
+         * persistent leaves alone; the generator never has any.
+         */
+        private boolean leaf(XoroRandom random, int x, int y, int z) {
+            int s = level.get(x, y, z);
+            if (!valid(s)) {
+                return false;
+            }
+            int state = leafState(random);
+            if (r >= Rules.V119 && Vegetation.sourceWater(s)) {
+                state = wetLeaves(state);
+            }
+            foliage(x, y, z, state);
+            return true;
+        }
+
         private void foliage(int x, int y, int z, int state) {
             foliage.add(new LushCaves.Pos(x, y, z));
             level.set(x, y, z, state);
@@ -748,6 +813,7 @@ final class Trees {
         @Override
         public boolean place(Region level, XoroRandom random, int x, int y, int z) {
             this.level = level;
+            this.r = Math.max(level.rules, minRules);
             trunk = new HashSet<>();
             foliage = new HashSet<>();
             decorations = new HashSet<>();
@@ -803,7 +869,7 @@ final class Trees {
                     filled = new HashSet<>(decorations);
                     filled.addAll(roots);
                 }
-                Shape shape = updateLeaves(level, box, trunk, filled);
+                Shape shape = r >= Rules.V120 ? updateLeaves120(level, box, trunk, filled) : updateLeaves(level, box, trunk, filled);
                 shape.updateShapeAtEdge(level);
                 this.level = null;
                 return true;
@@ -930,7 +996,7 @@ final class Trees {
                     for (int l = -j; l <= j; ++l) {
                         int s = level.get(x + k, y + i, z + l);
                         boolean free = trunkType == UPWARDS_BRANCHING
-                            ? validTreePos119(s) || mangroveLogsGrowThrough(s) || isFree(s) : isFree(s);
+                            ? free(s) || mangroveLogsGrowThrough(s) : free(s);
                         if (!free || !ignoreVines && name(s).equals("vine")) {
                             return i - 2;
                         }
@@ -983,7 +1049,8 @@ final class Trees {
                         for (int k2 = 0; k2 < j3; ++k2) {
                             placeLogAt(x + l2, l1 - k2 - 1, z + i3);
                         }
-                        list.add(new int[]{j1 + l2, l1, k1 + i3, 0, 0});
+                        // 1.21 puts the branch's leaves on the branch (x + l2); before, on the bent trunk's top.
+                        list.add(r >= Rules.V121 ? new int[]{x + l2, l1, z + i3, 0, 0} : new int[]{j1 + l2, l1, k1 + i3, 0, 0});
                     }
                 }
             }
@@ -1009,7 +1076,7 @@ final class Trees {
         }
 
         private void placeLogIfFree(int x, int y, int z) {
-            if (isFree(level.get(x, y, z))) {
+            if (free(level.get(x, y, z))) {
                 placeLogAt(x, y, z);
             }
         }
@@ -1021,8 +1088,8 @@ final class Trees {
                 int j = 0;
                 int k = 0;
                 for (int l = 0; l < 5; ++l) {
-                    j = (int) (1.5F + McMath.cos(f) * (float) l);
-                    k = (int) (1.5F + McMath.sin(f) * (float) l);
+                    j = (int) (1.5F + McMath.cos(r, f) * (float) l);
+                    k = (int) (1.5F + McMath.sin(r, f) * (float) l);
                     placeLogAt(x + j, y + i - 3 + l / 2, z + k);
                 }
                 list.add(new int[]{x + j, y + i, z + k, -2, 0});
@@ -1034,7 +1101,7 @@ final class Trees {
 
         private boolean placeUpwardsLog(int x, int y, int z) {
             int s = level.get(x, y, z);
-            if (validTreePos119(s) || mangroveLogsGrowThrough(s)) {
+            if (valid(s) || mangroveLogsGrowThrough(s)) {
                 trunk(x, y, z, log);
                 return true;
             }
@@ -1084,7 +1151,7 @@ final class Trees {
 
         /** MangroveRootPlacer.canPlaceRoot: TreeFeature.validTreePos or mangrove_roots_can_grow_through. */
         private boolean canPlaceRoot(int code) {
-            return validTreePos119(code) || mangroveRootsGrowThrough(code);
+            return valid(code) || mangroveRootsGrowThrough(code);
         }
 
         /** MangroveRootPlacer.placeRoots, from the feature's position x, y, z to the trunk origin y oy. */
@@ -1287,7 +1354,7 @@ final class Trees {
         }
 
         private void placeLog(int x, int y, int z, int state) {
-            if (validTreePos(level.get(x, y, z))) {
+            if (valid(level.get(x, y, z))) {
                 trunk(x, y, z, state);
             }
         }
@@ -1305,7 +1372,7 @@ final class Trees {
                     mx += HX[direction];
                     mz += HZ[direction];
                 }
-                if (validTreePos(level.get(mx, my, mz))) {
+                if (valid(level.get(mx, my, mz))) {
                     placeLogAt(mx, my, mz);
                 }
                 if (j >= 3) {
@@ -1315,7 +1382,7 @@ final class Trees {
             }
             int l = random.nextInt(2) + 1;
             for (int k = 0; k <= l; ++k) {
-                if (validTreePos(level.get(mx, my, mz))) {
+                if (valid(level.get(mx, my, mz))) {
                     placeLogAt(mx, my, mz);
                 }
                 list.add(new int[]{mx, my, mz, 0, 0});
@@ -1326,7 +1393,7 @@ final class Trees {
         }
 
         private void placeLog(int x, int y, int z) {
-            if (validTreePos(level.get(x, y, z))) {
+            if (valid(level.get(x, y, z))) {
                 trunk(x, y, z, log);
             }
         }
@@ -1387,7 +1454,7 @@ final class Trees {
         }
 
         private boolean placeLogAt(int x, int y, int z) {
-            if (validTreePos(level.get(x, y, z))) {
+            if (valid(level.get(x, y, z))) {
                 trunk(x, y, z, log);
                 return true;
             }
@@ -1461,7 +1528,7 @@ final class Trees {
                 int y = McMath.floor((double) sy + (double) (0.5F + (float) j * f1));
                 int z = McMath.floor((double) sz + (double) (0.5F + (float) j * f2));
                 if (place) {
-                    if (validTreePos(level.get(x, y, z))) {
+                    if (valid(level.get(x, y, z))) {
                         // getLogAxis(start, this block)
                         int ax = Math.abs(x - sx);
                         int az = Math.abs(z - sz);
@@ -1469,7 +1536,7 @@ final class Trees {
                         int axis = m > 0 ? (ax == m ? 0 : 2) : 1;
                         trunk(x, y, z, LOG_BY_STATE.get(log)[axis]);
                     }
-                } else if (!isFree(level.get(x, y, z))) {
+                } else if (!free(level.get(x, y, z))) {
                     return false;
                 }
             }
@@ -1586,9 +1653,7 @@ final class Trees {
                         int x = ax + random.nextInt(foliageRadius) - random.nextInt(foliageRadius);
                         int y = ay + random.nextInt(foliageHeight) - random.nextInt(foliageHeight);
                         int z = az + random.nextInt(foliageRadius) - random.nextInt(foliageRadius);
-                        if (v119 ? validTreePos119(level.get(x, y, z)) : validTreePos(level.get(x, y, z))) {
-                            foliage(x, y, z, leafState(random));
-                        }
+                        leaf(random, x, y, z);
                     }
                     return;
                 case CHERRY_FOLIAGE: {
@@ -1701,11 +1766,7 @@ final class Trees {
             if (random.nextFloat() > chance) {
                 return false;
             }
-            if (!validTreePos(level.get(x, y, z))) {
-                return false;
-            }
-            foliage(x, y, z, leafState(random));
-            return true;
+            return leaf(random, x, y, z);
         }
 
         private void leavesRow(XoroRandom random, int ax, int ay, int az, int r, int dy, boolean doubleTrunk) {
@@ -1729,9 +1790,7 @@ final class Trees {
                         int x = ax + j;
                         int y = ay + dy;
                         int z = az + k;
-                        if (validTreePos(level.get(x, y, z))) {
-                            foliage(x, y, z, leafState(random));
-                        }
+                        leaf(random, x, y, z);
                     }
                 }
             }
@@ -1741,6 +1800,9 @@ final class Trees {
 
         /** BeehiveDecorator: worldgen facing south, spawn directions east, south, west. */
         private void beehive(XoroRandom random, List<LushCaves.Pos> logs, List<LushCaves.Pos> leafList) {
+            if (r >= Rules.V121 && logs.isEmpty()) {
+                return;
+            }
             if (random.nextFloat() >= beehive) {
                 return;
             }
@@ -1757,9 +1819,18 @@ final class Trees {
             if (list.isEmpty()) {
                 return;
             }
-            // Vanilla: Collections.shuffle(list) on the JVM's shared random (not reproducible).
-            LushCaves.Pos first = list.get(0);
-            Collections.shuffle(list, new java.util.Random((long) first.x * 3129871L ^ (long) first.z * 116129781L ^ (long) first.y));
+            if (r >= Rules.V121) {
+                // 1.21: Util.shuffle with the tree's random.
+                for (int n = list.size(); n > 1; n--) {
+                    int m = random.nextInt(n);
+                    list.set(n - 1, list.set(m, list.get(n - 1)));
+                }
+            } else {
+                // Before 1.21: Collections.shuffle(list) on the JVM's shared random (not reproducible); the oracles patch
+                // theirs to this one.
+                LushCaves.Pos first = list.get(0);
+                Collections.shuffle(list, new java.util.Random((long) first.x * 3129871L ^ (long) first.z * 116129781L ^ (long) first.y));
+            }
             for (LushCaves.Pos p : list) {
                 if (isAir(level.get(p.x, p.y, p.z)) && isAir(level.get(p.x, p.y, p.z + 1))) {
                     decoration(p.x, p.y, p.z, BEE_NEST);
@@ -1940,11 +2011,31 @@ final class Trees {
                 brownCap(level, x, y, z, h);
             }
             for (int i = 0; i < h; ++i) {
-                if (!solidRender(level.get(x, y + i, z))) {
+                if (mushroomReplaces(level, level.get(x, y + i, z))) {
                     level.set(x, y + i, z, MUSHROOM_STEM);
                 }
             }
             return true;
+        }
+
+        /**
+         * Where a huge mushroom puts a block: 1.21.11's AbstractHugeMushroomFeature.placeMushroomBlock, air or
+         * #replaceable_by_mushrooms; before, anything that is not a full occluding cube.
+         */
+        private static boolean mushroomReplaces(Region level, int code) {
+            if (level.rules < Rules.V121) {
+                return !solidRender(code);
+            }
+            // The tag is #replaceable_by_trees' blocks and the mushrooms and their blocks (not the stem).
+            if (validTreePos121(code)) {
+                return true;
+            }
+            switch (name(code)) {
+                case "brown_mushroom": case "red_mushroom": case "brown_mushroom_block": case "red_mushroom_block":
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private static int mask(boolean up, boolean west, boolean east, boolean north, boolean south) {
@@ -1960,7 +2051,7 @@ final class Trees {
                         boolean flag4 = l == -j || l == j;
                         boolean flag5 = i1 == -j || i1 == j;
                         if (i >= h || flag4 != flag5) {
-                            if (!solidRender(level.get(x + l, y + i, z + i1))) {
+                            if (mushroomReplaces(level, level.get(x + l, y + i, z + i1))) {
                                 level.set(x + l, y + i, z + i1,
                                     RED_MUSHROOM_BLOCK[mask(i >= h - 1, l < -k, l > k, i1 < -k, i1 > k)]);
                             }
@@ -1981,7 +2072,7 @@ final class Trees {
                     boolean flag4 = flag || flag1;
                     boolean flag5 = flag2 || flag3;
                     if (!flag4 || !flag5) {
-                        if (!solidRender(level.get(x + j, y + h, z + k))) {
+                        if (mushroomReplaces(level, level.get(x + j, y + h, z + k))) {
                             boolean flag6 = flag || flag5 && j == 1 - i;
                             boolean flag7 = flag1 || flag5 && j == i - 1;
                             boolean flag8 = flag2 || flag4 && k == 1 - i;
@@ -2215,7 +2306,24 @@ final class Trees {
         if (state == HANGING_ROOTS) {
             return dir == 1 && !sturdyFace(level.get(x, y + 1, z), 0) ? AIR : state;
         }
+        if (dir == 1 && isHangingPropagule(state)) {
+            // MangrovePropaguleBlock: a hanging propagule needs mangrove leaves above (a later tree's log breaks it).
+            return isMangroveLeaves(neighbor) ? state : AIR;
+        }
         return Vegetation.updateShape(level, state, dir, neighbor, x, y, z);
+    }
+
+    static boolean isHangingPropagule(int code) {
+        for (int c : HANGING_PROPAGULE) {
+            if (c == code) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static boolean isMangroveLeaves(int code) {
+        return code < leafWood.length && leafDistance[code] != 0 && leafWood[code] == MANGROVE_LEAVES;
     }
 
     private static int[] vineMasks;
@@ -2296,7 +2404,69 @@ final class Trees {
     }
 
     private static int withDistance(int code, int d) {
-        return LEAVES[leafWood[code]][d];
+        return (leafWet[code] ? LEAVES_WET : LEAVES)[leafWood[code]][d];
+    }
+
+    /** A leaves code (any distance) waterlogged. */
+    static int wetLeaves(int code) {
+        return LEAVES_WET[leafWood[code]][leafDistance[code]];
+    }
+
+    /**
+     * 1.20's TreeFeature.updateLeaves: from the logs (level 0) outwards, only inside the box, every leaves block or
+     * log it reaches queued at min(its distance, level + 1) (LeavesBlock.getOptionalDistanceAt: logs 0). A leaves
+     * block can be queued at two levels before it is reached (by a neighbor of its own level met first); it then
+     * takes the higher one, the last it is popped at. So the result follows HashSet&lt;BlockPos&gt;'s iteration
+     * order, which java.util.HashSet over Pos (BlockPos's hash) reproduces.
+     */
+    static Shape updateLeaves120(Region level, int[] box, HashSet<LushCaves.Pos> logs, HashSet<LushCaves.Pos> decorations) {
+        Shape shape = new Shape(box);
+        List<HashSet<LushCaves.Pos>> sets = new ArrayList<>();
+        for (int j = 0; j < 7; ++j) {
+            sets.add(new HashSet<>());
+        }
+        for (LushCaves.Pos p : decorations) {
+            if (shape.inside(p.x, p.y, p.z)) {
+                shape.fill(p.x, p.y, p.z);
+            }
+        }
+        int k = 0;
+        sets.get(0).addAll(logs);
+        while (true) {
+            while (k >= 7 || !sets.get(k).isEmpty()) {
+                if (k >= 7) {
+                    return shape;
+                }
+                java.util.Iterator<LushCaves.Pos> it = sets.get(k).iterator();
+                LushCaves.Pos p = it.next();
+                it.remove();
+                if (!shape.inside(p.x, p.y, p.z)) {
+                    continue;
+                }
+                if (k != 0) {
+                    level.set(p.x, p.y, p.z, withDistance(level.get(p.x, p.y, p.z), k));
+                }
+                shape.fill(p.x, p.y, p.z);
+                for (int d = 0; d < 6; d++) {
+                    int nx = p.x + LushCaves.DX[d];
+                    int ny = p.y + LushCaves.DY[d];
+                    int nz = p.z + LushCaves.DZ[d];
+                    if (!shape.inside(nx, ny, nz) || shape.isFull(nx - shape.minX, ny - shape.minY, nz - shape.minZ)) {
+                        continue;
+                    }
+                    int s = level.get(nx, ny, nz);
+                    int dist = isLog(s) ? 0 : hasDistance(s) ? leafDistance[s] : -1;
+                    if (dist >= 0) {
+                        int m = Math.min(dist, k + 1);
+                        if (m < 7) {
+                            sets.get(m).add(new LushCaves.Pos(nx, ny, nz));
+                            k = Math.min(k, m);
+                        }
+                    }
+                }
+            }
+            ++k;
+        }
     }
 
     /** TreeFeature.updateLeaves. */

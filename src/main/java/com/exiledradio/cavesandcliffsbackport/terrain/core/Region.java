@@ -44,6 +44,11 @@ public final class Region {
     private final Marks[] marks = new Marks[CHUNKS];
     int centerX;
     int centerZ;
+    /**
+     * The newest version whose changes to 1.18.2's own features apply ({@link Decorator#rules}): 118, 119, 120 or
+     * 121. Set by the decorator for each chunk; the features read it.
+     */
+    int rules = Rules.V118;
     private int minX;
     private int minZ;
 
