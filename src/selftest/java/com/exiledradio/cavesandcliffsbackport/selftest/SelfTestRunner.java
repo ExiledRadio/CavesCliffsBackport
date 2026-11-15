@@ -79,6 +79,10 @@ public final class SelfTestRunner {
             new GenScanSelfTest(),
             new ModernFeaturesSelfTest(),
             new FlatSelfTest(),
+            new CubicSelfTest("cubic"),
+            new CubicSelfTest("cubicreload"),
+            new CubicSelfTest("cubicref"),
+            new CubicSelfTest("cubicbench"),
     };
 
     private final List<String> wanted;

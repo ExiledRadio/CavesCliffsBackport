@@ -74,6 +74,13 @@ public final class HeightContent {
         refusal = why;
         if (why != null) {
             allowed = false;
+            if (ModConfig.height.enabled && com.exiledradio.cavesandcliffsbackport.cubic.CubicSupport.PRESENT) {
+                // Cubic Chunks holds any height itself: the world type is its cubic one, and the coremod stays off.
+                worldType = com.exiledradio.cavesandcliffsbackport.cubic.CubicSupport.preInit();
+                if (worldType != null) {
+                    return;
+                }
+            }
             CavesAndCliffsBackport.LOGGER.warn("Extended height (y -64 to 319) is OFF: {}. The Caves & Cliffs world type is "
                     + "not offered and every world keeps y 0-255.", why);
             return;

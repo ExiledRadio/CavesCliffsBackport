@@ -51,6 +51,13 @@ dependencies {
     // API lets our Waterloggable blocks hold water; without it they place dry. Compiled against, never bundled;
     // -PnoFluidlogged (below) runs without it.
     deobfCompile 'curse.maven:fluidlogged-api-485654:8445863'
+    // Cubic Chunks 1.12.2-0.0.1301 (CurseForge 292243, file 9027901): optional. Package `cubic` compiles against its
+    // API and is only loaded with it installed; never bundled. -Pcubicchunks puts it on the run tasks' classpath.
+    if (project.hasProperty('cubicchunks')) {
+        deobfCompile 'curse.maven:cubicchunks-292243:9027901'
+    } else {
+        deobfProvided 'curse.maven:cubicchunks-292243:9027901'
+    }
 }
 
 // Headless self-tests live in src/selftest/java and are compiled in only for a test run:
@@ -87,8 +94,18 @@ jar {
     }
 }
 
+// -Pcubicchunks: Cubic Chunks is a Mixin coremod. In the dev run its coremod is named like ours, its MixinTweaker
+// is added, and its refmap (SRG names) is remapped to the dev environment's MCP names.
+def cubic = project.hasProperty('cubicchunks')
+def srgMcp = "${gradle.gradleUserHomeDir}/caches/minecraft/de/oceanlabs/mcp/mcp_stable/39/1.12.2/srgs/srg-mcp.srg"
 [runServer, runClient].each { task ->
-    task.systemProperty 'fml.coreMods.load', coremod
+    task.systemProperty 'fml.coreMods.load', cubic
+            ? coremod + ',io.github.opencubicchunks.cubicchunks.core.asm.coremod.CubicChunksCoreMod' : coremod
+    if (cubic) {
+        task.systemProperty 'mixin.env.remapRefMap', 'true'
+        task.systemProperty 'mixin.env.refMapRemappingFile', srgMcp
+        task.args '--tweakClass', 'org.spongepowered.asm.launch.MixinTweaker'
+    }
     task.outputs.upToDateWhen { false }
     if (selftest) {
         task.systemProperty 'cavesandcliffsbackport.selftest', selftest

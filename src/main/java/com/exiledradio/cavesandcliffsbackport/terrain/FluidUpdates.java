@@ -164,13 +164,25 @@ public final class FluidUpdates {
         nanos += System.nanoTime() - t;
     }
 
+    /**
+     * Whether a column's population ran, where vanilla's flag does not say (a Cubic Chunks world populates cubes:
+     * {@code cubic.CubicWorlds}); null answers leave it to the flag. Null without Cubic Chunks.
+     */
+    public static volatile java.util.function.BiFunction<WorldServer, Chunk, Boolean> populated;
+
+    private static boolean populated(WorldServer world, Chunk c) {
+        java.util.function.BiFunction<WorldServer, Chunk, Boolean> f = populated;
+        Boolean answer = f == null ? null : f.apply(world, c);
+        return answer != null ? answer : c.isTerrainPopulated();
+    }
+
     /** The 3x3 around is loaded and the populations that write into the chunk ran. */
     private static boolean ready(WorldServer world, Chunk c) {
         ChunkProviderServer provider = world.getChunkProvider();
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
                 Chunk n = provider.getLoadedChunk(c.x + dx, c.z + dz);
-                if (n == null || dx <= 0 && dz <= 0 && !n.isTerrainPopulated()) {
+                if (n == null || dx <= 0 && dz <= 0 && !populated(world, n)) {
                     return false;
                 }
             }

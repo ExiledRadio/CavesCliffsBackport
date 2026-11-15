@@ -25,14 +25,34 @@ public final class Heights {
     private Heights() {
     }
 
-    /** The lowest block y of the world: -64 in an extended world, else 0. */
+    /**
+     * Whether Cubic Chunks is installed (its API on the class path). The coremod refuses to run with it, so then no
+     * world is patched, and a Caves &amp; Cliffs world is a cubic one ({@code cubic.CubicSupport}) whose range is Cubic
+     * Chunks' own.
+     */
+    private static final boolean CUBIC = !WORLD_PATCHED && Heights.class.getClassLoader()
+            .getResource("io/github/opencubicchunks/cubicchunks/api/world/ICubicWorld.class") != null;
+
+    /** The lowest block y of the world: -64 in an extended world (or a cubic Caves &amp; Cliffs one), else 0. */
     public static int minY(World world) {
-        return WORLD_PATCHED && world != null ? ((HeightWorld) world).cavesandcliffsbackport$minY() : 0;
+        if (world == null) {
+            return 0;
+        }
+        if (WORLD_PATCHED) {
+            return ((HeightWorld) world).cavesandcliffsbackport$minY();
+        }
+        return CUBIC ? com.exiledradio.cavesandcliffsbackport.cubic.CubicSupport.minY(world) : 0;
     }
 
-    /** One above the highest block y: 320 in an extended world, else 256. */
+    /** One above the highest block y: 320 in an extended world (or a cubic Caves &amp; Cliffs one), else 256. */
     public static int maxY(World world) {
-        return WORLD_PATCHED && world != null ? ((HeightWorld) world).cavesandcliffsbackport$maxY() : 256;
+        if (world == null) {
+            return 256;
+        }
+        if (WORLD_PATCHED) {
+            return ((HeightWorld) world).cavesandcliffsbackport$maxY();
+        }
+        return CUBIC ? com.exiledradio.cavesandcliffsbackport.cubic.CubicSupport.maxY(world) : 256;
     }
 
     /** The highest block y. */
@@ -40,7 +60,17 @@ public final class Heights {
         return maxY(world) - 1;
     }
 
+    /**
+     * Whether the world's chunks are the coremod's extended ones (24 sections, {@link HeightLayout}): the patched
+     * sites, the section slots and Backport Core's waterlogging store go by this. False in a cubic world, whose
+     * columns keep vanilla's 16 slots and whose blocks live in Cubic Chunks' cubes.
+     */
     public static boolean isExtended(World world) {
+        return WORLD_PATCHED && world != null && (minY(world) != 0 || maxY(world) != 256);
+    }
+
+    /** Whether the world builds outside 0-255: an extended world, or a cubic Caves &amp; Cliffs one (-64 to 319). */
+    public static boolean isTall(World world) {
         return minY(world) != 0 || maxY(world) != 256;
     }
 

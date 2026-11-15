@@ -7,7 +7,6 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
 
 import java.util.Random;
 
@@ -26,14 +25,16 @@ final class Nests {
     private Nests() {
     }
 
-    static void fill(World world, Chunk chunk, BlockPos pos, IBlockState state) {
+    /** The nest's tile entity with its bees, or null when the block has none. */
+    @javax.annotation.Nullable
+    static TileEntity create(World world, BlockPos pos, IBlockState state) {
         ResourceLocation block = state.getBlock().getRegistryName();
         if (block == null) {
-            return;
+            return null;
         }
         TileEntity te = state.getBlock().createTileEntity(world, state);
         if (te == null) {
-            return;
+            return null;
         }
         Random random = new Random(world.getSeed() ^ pos.toLong() * 0x9E3779B97F4A7C15L);
         String bee = new ResourceLocation(block.getNamespace(), "bee").toString();
@@ -54,6 +55,6 @@ final class Nests {
         tag.setInteger("z", pos.getZ());
         tag.setTag("Bees", bees);
         te.readFromNBT(tag);
-        chunk.addTileEntity(pos, te);
+        return te;
     }
 }

@@ -159,7 +159,7 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
                 world.getWorldInfo().getWorldName(), ModernTerrain.threads(), ModernTerrain.cap());
     }
 
-    Pipeline pipeline() {
+    public Pipeline pipeline() {
         return pipeline;
     }
 
@@ -240,14 +240,85 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         }
         Pipeline.Proto p = pipeline.finish(x, z);
         long t = System.nanoTime();
+        final Chunk chunk = new Chunk(this.world, x, z);
+        writeSections(chunk, p);
+        final long[][] wet = {null};
+        final int[] wetCount = {0};
+        column(chunk, p, new Specials() {
+            @Override
+            public void tile(BlockPos pos, net.minecraft.tileentity.TileEntity te) {
+                chunk.addTileEntity(pos, te);
+            }
+
+            @Override
+            public void water(long pos) {
+                if (wet[0] == null) {
+                    wet[0] = new long[16];
+                } else if (wetCount[0] == wet[0].length) {
+                    wet[0] = java.util.Arrays.copyOf(wet[0], wetCount[0] * 2);
+                }
+                wet[0][wetCount[0]++] = pos;
+            }
+        });
+        if (wet[0] != null) {
+            synchronized (this.water) {
+                this.water.put(ChunkPos.asLong(chunk.x, chunk.z), java.util.Arrays.copyOf(wet[0], wetCount[0]));
+            }
+        }
+        chunk.generateSkylightMap();
+        writeNanos += System.nanoTime() - t;
+        chunks++;
+        pipeline.prefetch(x, z, PREFETCH);
+        return chunk;
+    }
+
+    /**
+     * Where a finished chunk's blocks that need more than their state go: a tile entity (a chest's loot, a spawner's
+     * mob, a nest's bees) and water kept in a block. A Cubic Chunks world hands them to the cube that holds them.
+     */
+    public interface Specials {
+        void tile(BlockPos pos, net.minecraft.tileentity.TileEntity te);
+
+        void water(long pos);
+    }
+
+    /**
+     * A column of a Cubic Chunks world ({@code cubic.CubicGenerator}): everything {@link #generateChunk} does but
+     * writing the blocks, which the cubes take from the returned chunk's codes ({@link Pipeline.Proto#blocks}, final
+     * once finished).
+     */
+    public Pipeline.Proto generateColumn(Chunk column, Specials specials) {
+        int x = column.x;
+        int z = column.z;
+        Pipeline.Proto p = pipeline.finish(x, z);
+        long t = System.nanoTime();
+        column(column, p, specials);
+        writeNanos += System.nanoTime() - t;
+        chunks++;
+        pipeline.prefetch(x, z, PREFETCH);
+        return p;
+    }
+
+    /** The 1.12 state of every block code ({@link StateMap}), for the cubes. */
+    public net.minecraft.block.state.IBlockState[] states() {
+        net.minecraft.block.state.IBlockState[] out = new net.minecraft.block.state.IBlockState[BlockCodes.count()];
+        for (int c = 0; c < out.length; c++) {
+            out[c] = this.states.state(c);
+        }
+        return out;
+    }
+
+    /** The steps of a finished chunk after its blocks: the 3D biomes, its specials, updates, column biomes, starts. */
+    private void column(Chunk chunk, Pipeline.Proto p, Specials specials) {
+        int x = chunk.x;
+        int z = chunk.z;
         biomes3d.put(x, z, p.quarts.clone());
         java.util.function.BiConsumer<Long, char[]> hook = onFinished;
         if (hook != null) {
             hook.accept(ChunkPos.asLong(x, z), p.blocks);
         }
-        Chunk chunk = new Chunk(this.world, x, z);
         this.rand.setSeed((long) x * 341873128712L + (long) z * 132897987541L);
-        write(chunk, p);
+        specials(x, z, p.blocks, specials);
         // 1.18's fluid ticks and post-processing, run once the chunk's neighbors are in the world.
         FluidUpdates.put(chunk, this.modern == null ? p.updates : ModernFeatures.withVegetation(p.updates));
         byte[] biomes = chunk.getBiomeArray();
@@ -264,15 +335,10 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
             this.monument.generate(this.world, x, z, null);
             this.mansion.generate(this.world, x, z, null);
         }
-        chunk.generateSkylightMap();
-        writeNanos += System.nanoTime() - t;
-        chunks++;
-        pipeline.prefetch(x, z, PREFETCH);
-        return chunk;
     }
 
-    /** The finished blocks into the chunk's sections; chests and spawners get their tile entities. */
-    private void write(Chunk chunk, Pipeline.Proto p) {
+    /** The finished blocks into the chunk's sections. */
+    private void writeSections(Chunk chunk, Pipeline.Proto p) {
         ExtendedBlockStorage[] sections = chunk.getBlockStorageArray();
         char[] blocks = p.blocks;
         for (int slot = 0; slot < sections.length; slot++) {
@@ -282,10 +348,11 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
                 sections[slot] = this.sections.write(blocks, base, this.sky);
             }
         }
-        // Blocks that need more than their state: water kept in them, a chest's loot, a spawner's mob.
+    }
+
+    /** Blocks that need more than their state: water kept in them, a chest's loot, a spawner's mob, a nest's bees. */
+    private void specials(int cx, int cz, char[] blocks, Specials out) {
         StateMap map = this.states;
-        long[] wet = null;
-        int wetCount = 0;
         int last = -1;
         int lastFlags = 0;
         for (int i = 0; i < blocks.length; i++) {
@@ -301,30 +368,23 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
                 continue;
             }
             int c = i / Pipeline.HEIGHT;
-            BlockPos pos = new BlockPos((chunk.x << 4) + (c >> 4), Pipeline.MIN_Y + i % Pipeline.HEIGHT, (chunk.z << 4) + (c & 15));
+            BlockPos pos = new BlockPos((cx << 4) + (c >> 4), Pipeline.MIN_Y + i % Pipeline.HEIGHT, (cz << 4) + (c & 15));
             if ((lastFlags & StateMap.WATER) != 0) {
-                if (wet == null) {
-                    wet = new long[16];
-                } else if (wetCount == wet.length) {
-                    wet = java.util.Arrays.copyOf(wet, wetCount * 2);
-                }
-                wet[wetCount++] = pos.toLong();
+                out.water(pos.toLong());
             }
             if ((lastFlags & StateMap.CHEST) != 0) {
                 TileEntityChest chest = new TileEntityChest();
                 chest.setLootTable(LootTableList.CHESTS_SIMPLE_DUNGEON, this.rand.nextLong());
-                chunk.addTileEntity(pos, chest);
+                out.tile(pos, chest);
             } else if ((lastFlags & StateMap.SPAWNER) != 0) {
                 TileEntityMobSpawner spawner = new TileEntityMobSpawner();
                 spawner.getSpawnerBaseLogic().setEntityId(DungeonHooks.getRandomDungeonMob(this.rand));
-                chunk.addTileEntity(pos, spawner);
+                out.tile(pos, spawner);
             } else if ((lastFlags & StateMap.NEST) != 0) {
-                Nests.fill(this.world, chunk, pos, map.state(code));
-            }
-        }
-        if (wet != null) {
-            synchronized (this.water) {
-                this.water.put(ChunkPos.asLong(chunk.x, chunk.z), java.util.Arrays.copyOf(wet, wetCount));
+                net.minecraft.tileentity.TileEntity nest = Nests.create(this.world, pos, map.state(code));
+                if (nest != null) {
+                    out.tile(pos, nest);
+                }
             }
         }
     }
