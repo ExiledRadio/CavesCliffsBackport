@@ -148,7 +148,8 @@ Rules for the transformer:
 | **StellarCore** | `WorldBlockPosJudgement` overwrites `World.isOutsideBuildHeight` with 0-255. | A pack sets `B:WorldBlockPosJudgement=false`; with it on, a probe at world load keeps the world 0-255 and says so. |
 | **Alfheim 1.6** | Replaces the lighting engine (1.4) with mixins: packs y in 8 bits of its queue key, reads sections by `y >> 4`, keeps one boundary flag bit per section in a `short`, and `@Overwrite`s `Chunk.relightBlock` and `getLightFor`. | **Done (branch `cc-alfheim`):** its `LightingEngine` and mixin classes are patched as Mixin reads them (26 sites): with extended height on, a key with 9 bits of y (x and z within 16,777,216), sections by slot, flags two sections to a bit (same save format), our `relightBlock` sites back in its overwrite. Exactly 1.6: any other version refuses, with the reason. Tested on a dedicated server (light across chunk borders and down shafts below 0, across a restart; Default-world light unchanged) and in the Dregora Cleanroom copies (`height.md`). |
 | **Phosphor** | Replaces the lighting engine (1.4), with Alfheim's 8-bit y. | **Incompatible** (the user, 2026-11-11): extended height refuses to turn on with it installed. |
-| **Cubic Chunks, the other extended-height mods** | Same job, different layouts. | Detected at startup; extended height refuses to turn on, with a message. |
+| **Cubic Chunks** | Stores any height in 16x16x16 cubes. | The coremod refuses to turn on; the Caves & Cliffs world type is a Cubic Chunks one instead (y -64 to 319, the same 1.18 terrain in cubes; `docs/streams/cubicchunks.md`). |
+| **The other extended-height mods** (Caves Not Cliffs, Farmer's Future Delight) | Same job, different layouts. | Detected at startup; extended height refuses to turn on, with a message. |
 
 ## 4. Speed
 

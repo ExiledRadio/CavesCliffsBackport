@@ -53,7 +53,8 @@ public final class ModernTerrain {
     /** The shared terrain objects of a server world that gets 1.18 terrain, or null. */
     @Nullable
     public static synchronized ModernTerrain of(World world) {
-        if (world.isRemote || world.provider.getDimension() != 0 || !Heights.isExtended(world)) {
+        if (world.isRemote || world.provider.getDimension() != 0
+                || !(Heights.isTall(world) || com.exiledradio.cavesandcliffsbackport.cubic.CubicSupport.willBeCubic(world))) {
             return null;
         }
         ModernTerrain t = WORLDS.get(world);
@@ -68,11 +69,26 @@ public final class ModernTerrain {
         return t;
     }
 
-    /** The 1.18 chunk generator for a world type's getChunkGenerator, or null for 1.12's. */
+    private static final Map<World, ModernGenerator> GENERATORS = new WeakHashMap<>();
+
+    /**
+     * The 1.18 chunk generator for a world type's getChunkGenerator, or null for 1.12's. One per world: a Cubic Chunks
+     * world asks for it twice (its cube generator, and the chunk provider it puts in place of the world's), and both
+     * must be the same pipeline.
+     */
     @Nullable
-    public static IChunkGenerator generator(World world) {
+    public static synchronized ModernGenerator generator(World world) {
+        ModernGenerator g = GENERATORS.get(world);
+        if (g != null) {
+            return g;
+        }
         ModernTerrain t = of(world);
-        return t == null ? null : new ModernGenerator(world, t);
+        if (t == null) {
+            return null;
+        }
+        g = new ModernGenerator(world, t);
+        GENERATORS.put(world, g);
+        return g;
     }
 
     /** The 1.18 biome provider for a world type's getBiomeProvider, or null for 1.12's. */
@@ -257,6 +273,7 @@ public final class ModernTerrain {
         }
         synchronized (ModernTerrain.class) {
             WORLDS.remove(world);
+            GENERATORS.remove(world);
         }
     }
 }

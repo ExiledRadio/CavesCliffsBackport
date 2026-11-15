@@ -13,7 +13,7 @@ Back up your worlds before adding it to one you play in.
 
 ## Works with
 
-OptiFine HD U G5 (shaders included), Alfheim 1.6, Celeritas, Nothirium and VintageFix. The world type turns itself off with Phosphor or Cubic Chunks; the 1.17 content still works with them.
+OptiFine HD U G5 (shaders included), Alfheim 1.6, Celeritas, Nothirium and VintageFix. With Cubic Chunks the world type is a cubic one, with the same terrain; it turns itself off with Phosphor, and the 1.17 content still works there.
 
 ## Building
 

@@ -15,12 +15,15 @@ import net.minecraft.world.gen.IChunkGenerator;
  * <p>The terrain is 1.18.2's ({@code terrain.ModernGenerator}). A Caves & Cliffs world created before the 1.18
  * terrain existed keeps the terrain it was made with: vanilla 1.12's (same seed, same biomes, same structures as the
  * Default type) with solid stone from y -1 down to bedrock at y -64 ({@link Generator}).
+ *
+ * <p>With Cubic Chunks installed the coremod is off, and {@code cubic.CubicWorldType} (this type made cubic) is
+ * registered in its place: the same terrain, in Cubic Chunks' cubes.
  */
-public final class WorldTypeCavesAndCliffs extends WorldType {
+public class WorldTypeCavesAndCliffs extends WorldType {
 
     public static final String NAME = "cavesandcliffs";
 
-    WorldTypeCavesAndCliffs() {
+    protected WorldTypeCavesAndCliffs() {
         super(NAME);
     }
 
