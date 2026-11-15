@@ -16,15 +16,18 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 /**
- * The newer biome tables ({@link Editions}) against vanilla 1.19.2 and 1.20.1 (tools/terrain/oracle-newer):
+ * The newer biome tables ({@link Editions}) against vanilla 1.19.2, 1.20.1 and 1.21.4 (tools/terrain/oracle-newer):
  * <ul>
  *   <li>OverworldBiomeBuilder's parameter points, every one in order, against the oracle's "leaf" lines: WILD
  *       against 1.19.2's, WILD | CHERRY against 1.20.1's; CHERRY alone against 1.20.1's with the deep dark left out
- *       and each swamp / mangrove swamp pair joined back into 1.18.2's one swamp line;</li>
+ *       and each swamp / mangrove swamp pair joined back into 1.18.2's one swamp line; WILD | CHERRY | PALE against
+ *       1.21.4's, and PALE with either or neither of the others against 1.21.4's with theirs taken out the same way
+ *       (the cherry grove's leaves back to meadow);</li>
  *   <li>the biome of every quart of the oracles' biome maps (Oracle1xx biomes, a cold search like vanilla's
  *       BiomeCheck dump), through BiomeSource.fillChunk.</li>
  * </ul>
  * Usage: NewerBiomeCheck &lt;oracle119.txt&gt; &lt;biomes119 dir&gt; &lt;oracle120.txt&gt; &lt;biomes120 dir&gt;
+ * [&lt;oracle1214.txt&gt; &lt;biomes1214 dir&gt;]
  */
 public final class NewerBiomeCheck {
     static long differences;
@@ -37,6 +40,15 @@ public final class NewerBiomeCheck {
         leaves("1.20.1 without Wild (CHERRY)", new Climate(Editions.CHERRY), withoutWild(l120));
         maps("1.19.2", Editions.WILD, new File(args[1]));
         maps("1.20.1", Editions.WILD | Editions.CHERRY, new File(args[3]));
+        if (args.length > 5) {
+            List<String> l1214 = leaves(args[4]);
+            int pale = Editions.PALE;
+            leaves("1.21.4 (WILD | CHERRY | PALE)", new Climate(Editions.WILD | Editions.CHERRY | pale), l1214);
+            leaves("1.21.4 without Trails (WILD | PALE)", new Climate(Editions.WILD | pale), cherryToMeadow(l1214));
+            leaves("1.21.4 without Wild (CHERRY | PALE)", new Climate(Editions.CHERRY | pale), withoutWild(l1214));
+            leaves("1.21.4 alone (PALE)", new Climate(pale), cherryToMeadow(withoutWild(l1214)));
+            maps("1.21.4", Editions.WILD | Editions.CHERRY | pale, new File(args[5]));
+        }
         System.out.println(differences == 0 ? "ALL IDENTICAL" : differences + " DIFFERENCES");
     }
 
@@ -70,6 +82,15 @@ public final class NewerBiomeCheck {
                 continue;
             }
             out.add(in.get(i));
+        }
+        return out;
+    }
+
+    /** The cherry grove's leaves as meadow (PLATEAU_BIOMES_VARIANT's slots before it: null, the plateau meadow). */
+    static List<String> cherryToMeadow(List<String> in) {
+        List<String> out = new ArrayList<>();
+        for (String s : in) {
+            out.add(s.startsWith("cherry_grove ") ? "meadow" + s.substring("cherry_grove".length()) : s);
         }
         return out;
     }
@@ -168,7 +189,7 @@ public final class NewerBiomeCheck {
             differences += bad;
         }
         System.out.println(what + ": mangrove_swamp=" + counts[Biomes.MANGROVE_SWAMP] + " deep_dark="
-                + counts[Biomes.DEEP_DARK] + " cherry_grove=" + counts[Biomes.CHERRY_GROVE] + " swamp="
+                + counts[Biomes.DEEP_DARK] + " cherry_grove=" + counts[Biomes.CHERRY_GROVE] + " pale_garden=" + counts[Biomes.PALE_GARDEN] + " swamp="
                 + counts[Biomes.SWAMP] + " meadow=" + counts[Biomes.MEADOW]);
     }
 }

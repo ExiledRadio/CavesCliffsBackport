@@ -14,6 +14,9 @@ package com.exiledradio.cavesandcliffsbackport.terrain.core;
  * spreads down and to the sides). A source whose side and lower neighbors are its own fluid or block motion does
  * nothing, so only exposed fluids are looked at: the flag is computed for those few (the marks vanilla leaves on
  * the rest change nothing).
+ *
+ * <p>1.21.4 ({@link Editions#PALE}) marks less: only where near aquifer centers hold different fluid statuses
+ * (ChunkFiller.Aquifer#flagged1214), still a function of the position alone.
  */
 public final class FluidMarks {
     private static final int MIN_Y = OverworldNoise.MIN_Y;
@@ -21,9 +24,13 @@ public final class FluidMarks {
     private static final int LAVA_LEVEL = -54;
 
     private final OverworldNoise noise;
+    /** 1.21.4's rule ({@link Editions#PALE}): an aquifer per thread, for the fluid statuses it compares. */
+    private final ThreadLocal<ChunkFiller.Aquifer> aquifer1214;
 
     public FluidMarks(OverworldNoise noise) {
         this.noise = noise;
+        this.aquifer1214 = (noise.editions & Editions.PALE) == 0 ? null
+            : ThreadLocal.withInitial(() -> new ChunkFiller.Aquifer(noise, new ColumnCache(noise)));
     }
 
     /**
@@ -88,6 +95,10 @@ public final class FluidMarks {
     public void scan(char[] blocks, char[] north, char[] south, char[] west, char[] east, int cx, int cz, Marks out) {
         int bx = cx << 4;
         int bz = cz << 4;
+        ChunkFiller.Aquifer a1214 = aquifer1214 == null ? null : aquifer1214.get();
+        if (a1214 != null) {
+            a1214.begin(cx, cz);
+        }
         for (int lx = 0; lx < 16; lx++) {
             for (int lz = 0; lz < 16; lz++) {
                 int col = (lx * 16 + lz) * HEIGHT;
@@ -98,7 +109,8 @@ public final class FluidMarks {
                         continue;
                     }
                     if (exposed(blocks, north, south, west, east, lx, lz, i, code == BlockCodes.LAVA)
-                            && flagged(bx + lx, MIN_Y + i, bz + lz)) {
+                            && (a1214 != null ? MIN_Y + i >= LAVA_LEVEL && a1214.flagged1214(bx + lx, MIN_Y + i, bz + lz)
+                                : flagged(bx + lx, MIN_Y + i, bz + lz))) {
                         out.add(Marks.pack(lx, MIN_Y + i, lz, Marks.POST));
                     }
                 }

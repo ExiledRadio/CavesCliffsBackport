@@ -5,6 +5,9 @@ package com.exiledradio.cavesandcliffsbackport.terrain.core;
  * starts from): the block x, z nearest 0, 0 whose climate best fits {@code OverworldBiomeBuilder.spawnTarget}, inland
  * and away from the rivers' weirdness band. The world spawn is then the first spawnable block of the chunk holding
  * it, or of the chunks spiralling out from it (done on the real chunks, by the caller).
+ *
+ * <p>With {@link Editions#PALE} the fitness is 1.21.4's: the climate's fit times 2048 squared plus the squared
+ * distance (1.18.2 adds a distance penalty that grows with the fourth power).
  */
 public final class SpawnSearch {
 
@@ -68,9 +71,14 @@ public final class SpawnSearch {
 
     /** getSpawnPositionAndFitness: the distance penalty plus the best target's fitness, sampled at quart y 0. */
     long fitness(int x, int z) {
-        double d0 = 2500.0D * 2500.0D;
-        long distance = (long) ((double) (10000.0F * 10000.0F)
-            * Math.pow((double) ((long) x * (long) x + (long) z * (long) z) / d0, 2.0D));
+        long squared = (long) x * (long) x + (long) z * (long) z;
+        long distance;
+        if ((noise.editions & Editions.PALE) != 0) {
+            distance = squared;
+        } else {
+            double d0 = 2500.0D * 2500.0D;
+            distance = (long) ((double) (10000.0F * 10000.0F) * Math.pow((double) squared / d0, 2.0D));
+        }
         // Climate.Sampler.sample(quart x, 0, quart z): the density functions at the quart's block corner.
         int bx = (x >> 2) << 2;
         int bz = (z >> 2) << 2;
@@ -96,6 +104,6 @@ public final class SpawnSearch {
             }
             best = Math.min(best, sum);
         }
-        return distance + best;
+        return (noise.editions & Editions.PALE) != 0 ? best * 2048L * 2048L + distance : distance + best;
     }
 }
