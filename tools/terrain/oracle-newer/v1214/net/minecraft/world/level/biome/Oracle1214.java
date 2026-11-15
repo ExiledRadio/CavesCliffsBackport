@@ -38,6 +38,16 @@ public final class Oracle1214 {
         NAMES = featureNames;
         List<Pair<Climate.ParameterPoint, ResourceKey<Biome>>> points = new ArrayList<>();
         new OverworldBiomeBuilder().addBiomes(points::add);
+        if (args[0].equals("spawn")) {
+            // Climate.Sampler.findSpawnPosition (MinecraftServer.setInitialSpawn's climate search) per seed.
+            for (int i = 1; i < args.length; i++) {
+                long seed = Long.parseLong(args[i]);
+                net.minecraft.core.BlockPos p = net.minecraft.world.level.levelgen.RandomState.create(lookup,
+                        net.minecraft.world.level.levelgen.NoiseGeneratorSettings.OVERWORLD, seed).sampler().findSpawnPosition();
+                System.out.println("spawn " + seed + " " + p.getX() + " " + p.getZ());
+            }
+            return;
+        }
         if (args[0].equals("biomes")) {
             SAMPLER = seed -> net.minecraft.world.level.levelgen.RandomState.create(lookup,
                     net.minecraft.world.level.levelgen.NoiseGeneratorSettings.OVERWORLD, seed).sampler();

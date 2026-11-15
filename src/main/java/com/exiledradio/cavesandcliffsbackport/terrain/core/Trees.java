@@ -2181,6 +2181,10 @@ final class Trees {
 
     /** Block.updateShape(state, direction, neighbor) for the blocks trees can border (others keep their state). */
     static int updateShape(Region level, int state, int dir, int neighbor, int x, int y, int z) {
+        int pale = PaleGarden.updateShape(level, state, dir, neighbor, x, y, z);
+        if (pale >= 0) {
+            return pale;
+        }
         if (dir == 1) {
             // SnowyDirtBlock: snowy follows the block above.
             boolean snow = sameBlock(neighbor, SurfaceFeatures.SNOW) || neighbor == SNOW_BLOCK || neighbor == POWDER_SNOW;

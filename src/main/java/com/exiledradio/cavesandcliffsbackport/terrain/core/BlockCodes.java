@@ -170,7 +170,8 @@ public final class BlockCodes {
     static {
         material("plant", "dandelion", "poppy", "blue_orchid", "allium", "azure_bluet", "red_tulip", "orange_tulip",
             "white_tulip", "pink_tulip", "oxeye_daisy", "cornflower", "lily_of_the_valley", "wither_rose", "mangrove_propagule",
-            "pink_petals", "cherry_sapling",
+            "pink_petals", "cherry_sapling", "pale_moss_carpet", "pale_hanging_moss", "closed_eyeblossom",
+            "open_eyeblossom", "pale_oak_sapling",
             "brown_mushroom", "red_mushroom", "sugar_cane", "sweet_berry_bush", "oak_sapling", "spruce_sapling",
             "birch_sapling", "jungle_sapling", "acacia_sapling", "dark_oak_sapling", "cave_vines", "cave_vines_plant",
             "spore_blossom", "big_dripleaf", "big_dripleaf_stem", "small_dripleaf", "moss_carpet", "azalea",
@@ -258,7 +259,8 @@ public final class BlockCodes {
         if (name.equals("azalea") || name.equals("flowering_azalea")) {
             f |= F_TOP_FULL;
         }
-        if (name.endsWith("_carpet")) {
+        if (name.endsWith("_carpet") && !state.contains("bottom=false")) {
+            // A pale moss carpet's topper (bottom=false) has no collision.
             f |= F_BOTTOM_FULL;
         }
         if (name.equals("brown_mushroom") || name.equals("red_mushroom") || name.equals("magma_block")) {

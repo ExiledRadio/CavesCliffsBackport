@@ -40,6 +40,7 @@ public final class Decorator {
     /** Per biome: every feature it has, any step (BiomeGenerationSettings.hasFeature), by Placed.id. */
     private final boolean[][] biomeHas;
     private Set<String> only;
+    private final PaleGarden pale;
     private TreeGate treeGate;
     private final int[] gateAnswers = new int[TreeGate.KINDS];
     private final byte[] stored = new byte[1536];
@@ -143,6 +144,11 @@ public final class Decorator {
             ported.put(p.name, p);
         }
         for (Placed p : Misc.placed()) {
+            ported.put(p.name, p);
+        }
+        // 1.21.4's pale garden (Editions.PALE): its features only appear in that edition's tables.
+        pale = new PaleGarden(noise);
+        for (Placed p : pale.placed()) {
             ported.put(p.name, p);
         }
         String[][] order = steps(noise.editions);
@@ -293,6 +299,7 @@ public final class Decorator {
         int oz = cz << 4;
         random.newRandom();
         long decorationSeed = random.setDecorationSeed(seed, ox, oz);
+        pale.begin(cx, cz);
         long mask = 0L;
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {

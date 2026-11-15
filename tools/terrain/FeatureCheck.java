@@ -107,14 +107,16 @@ public final class FeatureCheck {
                 seeds[i - 3] = Long.parseLong(args[i]);
             }
         }
-        Climate climate = new Climate();
+        // -Deditions=7: the newer editions' world (Editions flags; 7 is 1.21.4 with every newer biome).
+        int editions = Integer.getInteger("editions", 0);
+        Climate climate = new Climate(editions);
         long differences = 0L;
         long checked = 0L;
         long decoratedTotal = 0L;
         long nanos = 0L;
         Map<String, Long> seen = new TreeMap<>();
         for (long seed : seeds) {
-            OverworldNoise noise = new OverworldNoise(seed);
+            OverworldNoise noise = new OverworldNoise(seed, editions);
             ColumnCache columns = new ColumnCache(noise);
             ChunkFiller filler = new ChunkFiller(noise, columns);
             BiomeSource biomes = new BiomeSource(noise, columns, climate);
@@ -128,6 +130,17 @@ public final class FeatureCheck {
             int[][] centers = {{0, 0}, {rnd.nextInt(20000) - 10000, rnd.nextInt(20000) - 10000}};
             // -Dcenters=x,z/x,z/... replaces the two areas (chunk coordinates of each area's center).
             String given = System.getProperty("centers");
+            if (given != null && given.contains(":")) {
+                // seed:x,z/x,z;seed:... (FeatureDump1214's form): this seed's areas, if listed.
+                String mine = null;
+                for (String part : given.split(";")) {
+                    String[] kv = part.split(":");
+                    if (kv.length == 2 && Long.parseLong(kv[0]) == seed) {
+                        mine = kv[1];
+                    }
+                }
+                given = mine;
+            }
             if (given != null) {
                 String[] parts = given.split("/");
                 centers = new int[parts.length][];

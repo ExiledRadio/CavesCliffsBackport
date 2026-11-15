@@ -307,6 +307,8 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
                 chunk.addTileEntity(pos, spawner);
             } else if ((lastFlags & StateMap.NEST) != 0) {
                 Nests.fill(this.world, chunk, pos, map.state(code));
+            } else if ((lastFlags & StateMap.HEART) != 0) {
+                naturalHeart(chunk, pos, map.state(code));
             }
         }
         if (wet != null) {
@@ -314,6 +316,23 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
                 this.water.put(ChunkPos.asLong(chunk.x, chunk.z), java.util.Arrays.copyOf(wet, wetCount));
             }
         }
+    }
+
+    /**
+     * A creaking heart a pale oak grew: its tile (Tricky Trials Backport's TileCreakingHeart, by name) marked
+     * natural, as 1.21.4's CreakingHeartDecorator places it, so breaking it gives experience.
+     */
+    private void naturalHeart(Chunk chunk, BlockPos pos, net.minecraft.block.state.IBlockState state) {
+        net.minecraft.tileentity.TileEntity tile = state.getBlock().createTileEntity(this.world, state);
+        if (tile == null) {
+            return;
+        }
+        try {
+            tile.getClass().getMethod("setNatural", boolean.class).invoke(tile, true);
+        } catch (ReflectiveOperationException e) {
+            // Another mod's heart without the method: an ordinary one.
+        }
+        chunk.addTileEntity(pos, tile);
     }
 
     /**

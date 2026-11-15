@@ -135,6 +135,19 @@ public final class FluidMarks {
         return (f & BlockCodes.F_WATER) == 0;
     }
 
+    /**
+     * The aquifer's mark for a fluid in chunk cx, cz at x, y, z, by the world's rule (1.21.4's with
+     * {@link Editions#PALE}): what scan tests, for the oracle (tools/terrain/FluidMarkCheck).
+     */
+    public boolean flaggedAt(int cx, int cz, int x, int y, int z) {
+        if (aquifer1214 == null) {
+            return flagged(x, y, z);
+        }
+        ChunkFiller.Aquifer a = aquifer1214.get();
+        a.begin(cx, cz);
+        return y >= LAVA_LEVEL && a.flagged1214(x, y, z);
+    }
+
     /** NoiseBasedAquifer's shouldScheduleFluidUpdate for a fluid it answers at x, y, z (y at least -54). */
     public boolean flagged(int x, int y, int z) {
         if (y < LAVA_LEVEL) {
