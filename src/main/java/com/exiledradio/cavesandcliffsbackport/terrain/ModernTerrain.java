@@ -130,7 +130,8 @@ public final class ModernTerrain {
             if (net.minecraftforge.fml.common.Loader.isModLoaded("trickytrialsbackport")
                     && net.minecraftforge.fml.common.registry.ForgeRegistries.BIOMES.containsKey(
                     new net.minecraft.util.ResourceLocation("trickytrialsbackport", "pale_garden"))) {
-                e |= Editions.PALE;
+                // 1.21.5's placement (Tricky Trials covers up to 1.21.11), or 1.21.4's when the setting asks.
+                e |= ModConfig.height.paleGarden1214 ? Editions.PALE : Editions.PALE | Editions.SPRING;
             }
         }
         return e;

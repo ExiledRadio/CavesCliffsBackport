@@ -595,7 +595,10 @@ public final class Climate {
                 PLATEAU_BIOMES_VARIANT[2][0] = Biomes.CHERRY_GROVE;
                 PLATEAU_BIOMES_VARIANT[2][1] = Biomes.CHERRY_GROVE;
             }
-            if ((editions & Editions.PALE) != 0) {
+            if ((editions & Editions.SPRING) != 0) {
+                // 1.21.5 to 1.21.11: the temperate, most humid plateau biome itself, at both weirdness signs.
+                PLATEAU_BIOMES[2][4] = Biomes.PALE_GARDEN;
+            } else if ((editions & Editions.PALE) != 0) {
                 // 1.21.4: the temperate, most humid plateau variant (null before: the dark forest of PLATEAU_BIOMES).
                 PLATEAU_BIOMES_VARIANT[2][4] = Biomes.PALE_GARDEN;
             }

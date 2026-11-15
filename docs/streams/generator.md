@@ -152,7 +152,8 @@ other mods): 1.18's biome at the column's preliminary surface level, as 1.18's s
 **Newer biomes** (`terrain/core/Editions`). The terrain is 1.18.2's; a world made while a backport with the blocks is
 installed gets that version's additions, saved with the world (`Biomes` in `data/cavesandcliffsbackport_terrain.dat`:
 "1.18", "1.19", "1.20", "1.20-cherry"; with the pale garden "1.21.4", "1.21.4-wild-pale", "1.21.4-cherry-pale",
-"1.21.4-pale"), so adding or removing a backport later puts no seam through it:
+"1.21.4-pale"; with 1.21.5's placement "1.21.11" and the same suffixes), so adding or removing a backport later puts
+no seam through it:
 - **WILD** (Wild Update Backport's mud and mangrove wood registered): 1.19.2's mangrove swamp and deep dark. The biome
   builder's 1.19 lines (the swamp line split at the warm temperatures, the deep dark as a bottom biome at depth 1.1),
   1.19's swap of badlands and eroded badlands in `pickBadlandsBiome`, 1.19's terrain numerics (ridges_folded and the
@@ -179,6 +180,14 @@ installed gets that version's additions, saved with the world (`Biomes` in `data
   `ore_diamond_medium` everywhere; that feature is not ported here, so it is skipped with its index kept). Structure
   tags: mineshafts and standard ruined portals in the pale garden, woodland mansions not (dark forest only), so the
   mansions where the pale garden took the dark forest's slot are gone, as in 1.21.4.
+- **SPRING** (always with PALE; the default with Tricky Trials, which covers up to 1.21.11, so the newest installed
+  version's rules win): 1.21.5 to 1.21.11 put the pale garden in `PLATEAU_BIOMES[2][4]`, so it takes the dark forest's
+  slot at both weirdness signs (1.21.5's builder is 1.21.11's, leaf for leaf). Tables 1.21.11's (`FeatureTables12111`:
+  the spring features are placed outside the core, `ModernFeatures`, so they are skipped with their indexes kept);
+  woodland mansions in the pale garden (1.21.5's tag); the creaking heart as `creaking_heart_state=dormant`; and
+  MossyCarpetBlock.placeAt updates the carpet again after its topper (a side under a topper's side is tall). 1.21.11's
+  noise fill, aquifer marks and spawn search come out as 1.21.4's (checked). The setting `height.paleGarden1214` (off;
+  read when a world is made) gives 1.21.4's edition instead, for comparing seeds with Chunkbase at 1.21.4.
 - Features ported for them, from Mojang's code: `trees_mangrove` (UpwardsBranchingTrunkPlacer, MangroveRootPlacer with
   muddy roots and moss carpets, 70-try random spread leaves, 1.19's leave vines, AttachedToLeavesDecorator's hanging
   propagules, the beehive last), `disk_grass` (1.19's DiskFeature on mud), `trees_cherry` (CherryTrunkPlacer,
@@ -437,11 +446,20 @@ had chunks when this generator first saw it).
     Unchanged: `FeatureCheck` fdef all features, 2,048 chunks; TerrainCheck 1.18.2 and 1.20.1.
     Spot check against Chunkbase (Java 1.21.4, seed 42): x 3592, z -1912 is Pale Garden there and here (y 72); it was
     dark forest with 1.20's tables.
+*   **1.21.5+ (SPRING)** against vanilla 1.21.11 (`oracle-newer/v12111`; 1.21.5's leaves are 1.21.11's): leaves for
+    the four combinations identical; biome maps of 4 seeds around dense SPRING pale gardens (15.0 million quarts,
+    1,025,232 pale garden): ALL IDENTICAL. `FillDump12111`: TerrainCheck and FluidMarkCheck with editions 15 ALL
+    IDENTICAL (1.21.11's aquifer rewrite and preliminary surface level give the same blocks and marks). Spawn, 8
+    seeds: identical. `FeatureDump12111` (pale garden features, grass, sugar cane, pumpkins; 2,048 chunks: 84,960 pale
+    oak logs, 75 creaking hearts): only 47 sugar cane blocks differ (1.21.11's sugar cane patch, one of the changes to
+    1.18.2's own features); the pale garden's own blocks are identical. The 1.21.4 check is unchanged.
 *   `NewerBiomesSelfTest` with Tricky Trials Backport's dev jar in `eclipse/mods` (Caves & Cliffs world,
-    `height,terrain`): the world gets "1.21.4-pale"; a pale garden at -3704, -6264 is Tricky's biome, with pale oak
+    `height,terrain`): the world gets "1.21.4-pale" (with `paleGarden1214`; "1.21.11-pale", the default, likewise: 262
+pass, 4 natural hearts, `creaking_heart_state=dormant`); a pale garden at -3704, -6264 is Tricky's biome, with pale oak
     logs (1,297 in 3x3 chunks), leaves, pale moss, carpets and hanging moss; the world's creaking hearts near the
     core's are Tricky's, dormant, their tiles natural; 262 pass, 0 fail. Without it: 252 pass, 0 fail. The whole
-    suite (`runServer -Pselftest=all`, fresh Default world): 4451 pass, 0 fail.
+    suite (`runServer -Pselftest=all`, fresh Default world): 4451 pass, 0 fail; with SPRING 4448 pass, 0 fail (one run before
+it failed the goat test's jump aim by 0.004 blocks, the known flaky goat test).
 
 ## Speed
 
@@ -449,7 +467,8 @@ had chunks when this generator first saw it).
 (the same in both): 1.18.2 14.9 ms/chunk on main and on the branch, checksum 628033d72d65df32 on both; editions 3
 15.2 / 15.1-15.4, checksum bb743f03407c7f38 on both; editions 7 at 0,0 15.3 (465c297758a8e01d). In a pale garden
 (`-Dcenter=1648,560`): editions 7 17.6 ms/chunk, decoration 7.0 ms, against 14.2 and 4.3 for the same chunks as 1.20's
-dark forest (editions 3); a dark forest at 0,0 decorates in 6.0 ms. The 1.21.4 aquifer marks cost nothing measurable.
+dark forest (editions 3); a dark forest at 0,0 decorates in 6.0 ms. The 1.21.4 aquifer marks cost nothing measurable. SPRING (editions 15) in its
+dense pale garden at 1656,552: 19.4 ms/chunk, decoration 6.9 ms (fill 5.3 ms there: more terrain to fill).
 
 **Newer biomes (2026-11-12, cc118-biomes).** One E-core, `PipelineBench 42 16 0` (`-Deditions`): 1.18.2 16.1 ms/chunk
 on main, 16.3 on this branch; with 1.20's biomes (editions 3) 15.6, with 1.19's (1) 15.7. `TerrainBench 42 12 5` 2.17
@@ -520,10 +539,10 @@ same with 8 workers (unpinned): 2.5 ms/chunk, same checksum. (Before trees and v
 
 ## Not done
 
-*   **1.21.5 and later.** 1.21.5 to 1.21.11 move the pale garden to `PLATEAU_BIOMES[2][4]` (both weirdness signs,
-    the dark forest gone from that slot); 1.21.11 also changes the noise router (preliminary surface level), the cave
-    carvers' trigonometry (`Mth.sin(double)`), the aquifer and the beardifier. The PALE edition is 1.21.4's; a later
-    edition would add those.
+*   **1.21.11's carvers**: the cave and canyon carvers call `Mth.sin(double)` / `cos(double)` (the index taken in
+    double precision; 1.18.2 multiplies in float), which can pick the neighboring table entry now and then, so a
+    1.21.11 cave differs from 1.18.2's here and there. Not ported (no 1.21.11 carver oracle yet); SPRING worlds carve
+    as 1.18.2. The beardifier's ENCAPSULATE (trial chambers) is not used by this generator.
 *   **The newer versions' changes to 1.18.2's own features** are not ported: in a 1.19 or 1.20 world they decorate
     as 1.18.2's (in 1.19's feature order). 1.19 changed DiskFeature (disk_sand gets sandstone over air, the water test
     moved to the placement), LeaveVineDecorator (nextFloat against 0.25 for nextInt(4)), and TreeFeature.validTreePos

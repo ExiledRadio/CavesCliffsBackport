@@ -58,6 +58,18 @@ public final class Decorator {
 
     /** FeatureSorter's per-step order for the editions' biomes. */
     static String[][] steps(int editions) {
+        if ((editions & Editions.SPRING) != 0) {
+            switch (editions & ~Editions.SPRING) {
+                case Editions.PALE | Editions.WILD | Editions.CHERRY:
+                    return FeatureTables12111.STEPS_ALL;
+                case Editions.PALE | Editions.WILD:
+                    return FeatureTables12111.STEPS_WILD;
+                case Editions.PALE | Editions.CHERRY:
+                    return FeatureTables12111.STEPS_CHERRY;
+                default:
+                    return FeatureTables12111.STEPS_PALE;
+            }
+        }
         switch (editions) {
             case Editions.PALE | Editions.WILD | Editions.CHERRY:
                 return FeatureTables1214.STEPS_ALL;
@@ -83,6 +95,9 @@ public final class Decorator {
      * pale garden every biome's are 1.21.4's).
      */
     static String[][] biomeFeatures(int biome, int editions) {
+        if ((editions & Editions.SPRING) != 0) {
+            return FeatureTables12111.BIOMES[biome];
+        }
         if ((editions & Editions.PALE) != 0) {
             // 1.21.4's lists for every biome.
             return FeatureTables1214.BIOMES[biome];

@@ -483,6 +483,11 @@ public final class ModConfig {
                 "them. Worlds keep the biomes they were made with."})
         @Config.LangKey("config.cavesandcliffsbackport.height.newerBiomes")
         public boolean newerBiomes = true;
+
+        @Config.Comment({"With Tricky Trials Backport, new worlds place pale gardens as 1.21.5 and later do (the default: the",
+                "newest version installed). On: as 1.21.4 does, for comparing seeds with 1.21.4. Read when a world is made."})
+        @Config.LangKey("config.cavesandcliffsbackport.height.paleGarden1214")
+        public boolean paleGarden1214 = false;
     }
 
     // ------------------------------------------------------------------------------------------

@@ -27,7 +27,7 @@ import java.util.zip.GZIPInputStream;
  *       BiomeCheck dump), through BiomeSource.fillChunk.</li>
  * </ul>
  * Usage: NewerBiomeCheck &lt;oracle119.txt&gt; &lt;biomes119 dir&gt; &lt;oracle120.txt&gt; &lt;biomes120 dir&gt;
- * [&lt;oracle1214.txt&gt; &lt;biomes1214 dir&gt;]
+ * [&lt;oracle1214.txt&gt; &lt;biomes1214 dir&gt; [&lt;oracle12111.txt&gt; &lt;biomes12111 dir&gt;]]
  */
 public final class NewerBiomeCheck {
     static long differences;
@@ -48,6 +48,16 @@ public final class NewerBiomeCheck {
             leaves("1.21.4 without Wild (CHERRY | PALE)", new Climate(Editions.CHERRY | pale), withoutWild(l1214));
             leaves("1.21.4 alone (PALE)", new Climate(pale), cherryToMeadow(withoutWild(l1214)));
             maps("1.21.4", Editions.WILD | Editions.CHERRY | pale, new File(args[5]));
+        }
+        if (args.length > 7) {
+            // 1.21.11 (SPRING; 1.21.5's builder is the same): the pale garden at both weirdness signs.
+            List<String> l = leaves(args[6]);
+            int sp = Editions.PALE | Editions.SPRING;
+            leaves("1.21.11 (WILD | CHERRY | PALE | SPRING)", new Climate(Editions.WILD | Editions.CHERRY | sp), l);
+            leaves("1.21.11 without Trails (WILD | PALE | SPRING)", new Climate(Editions.WILD | sp), cherryToMeadow(l));
+            leaves("1.21.11 without Wild (CHERRY | PALE | SPRING)", new Climate(Editions.CHERRY | sp), withoutWild(l));
+            leaves("1.21.11 alone (PALE | SPRING)", new Climate(sp), cherryToMeadow(withoutWild(l)));
+            maps("1.21.11", Editions.WILD | Editions.CHERRY | sp, new File(args[7]));
         }
         System.out.println(differences == 0 ? "ALL IDENTICAL" : differences + " DIFFERENCES");
     }

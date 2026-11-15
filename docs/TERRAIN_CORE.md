@@ -493,6 +493,13 @@ python tools/terrain/structure_biome_tags.py <1.18.2 client.jar> <1.20.1 client.
 sh tools/terrain/run.sh FindBiome 42 64 72 7 40   (a dense pale garden: 40 of 7 x 7 chunk centers)
 ```
 
+1.21.5+ (`Editions.SPRING`, editions 15): the same tools in `oracle-newer/v12111` against `G:/MCDownloads/minecraft-1.21.11`
+(`client-named.jar` from `tt-1.21.11-decomp/named.jar`): `Oracle12111` (table, `biomes` with
+`-Dareas=42:1656,552;12345:-1720,1720;-7346534567:1432,-408;8675309:-1456,1328`, `spawn`), `FillDump12111`,
+`FeatureDump12111 -Deditions=15`; `NewerBiomeCheck ... <oracle12111.txt> <biomes12111>`, `TerrainCheck`/`FluidMarkCheck`
+with `-Deditions=15`, `SpawnSearchPrint 15`, `make_1214_feature_tables.py <oracle12111.txt> 1.21.11 FeatureTables12111`.
+1.21.5's leaves (`Oracle1214 -Dmcversion=1.21.5` on the 1.21.5 jar, remapped with `--strip-sigs`) are 1.21.11's.
+
 FeatureDump1214 is a hybrid: its chunks before decoration are the core's (fill, surface, carvers with editions 7,
 each checked against vanilla on its own; 1.21.4's noise, surface rules and carvers are 1.20.1's but for the aquifer's
 marks, which FluidMarkCheck checks), with vanilla 1.21.4's biomes, and every placed feature is vanilla's own

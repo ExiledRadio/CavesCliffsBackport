@@ -36,7 +36,8 @@ final class NewerBiomesSelfTest {
         boolean cherry = registered("cherry_log") && registered("pink_petals");
         boolean pale = net.minecraftforge.fml.common.Loader.isModLoaded("trickytrialsbackport")
                 && net.minecraftforge.fml.common.registry.ForgeRegistries.BIOMES.containsKey(PALE_GARDEN);
-        check.eq((wild ? Editions.WILD : 0) | (cherry ? Editions.CHERRY : 0) | (pale ? Editions.PALE : 0), e,
+        check.eq((wild ? Editions.WILD : 0) | (cherry ? Editions.CHERRY : 0) | (pale ? (com.exiledradio.cavesandcliffsbackport.ModConfig.height.paleGarden1214 ? Editions.PALE
+                : Editions.PALE | Editions.SPRING) : 0), e,
                 "the world's newer biomes are the ones the installed backports have blocks for (" + Editions.name(e) + ")");
         check.ok(DecorationSource.places(world, "bee_nest"), "the generator says it places bee nests (1.12 nest hooks step aside)");
         check.ok(DecorationSource.places(world, "trees_plains"), "the generator says it places trees_plains");
@@ -189,8 +190,8 @@ final class NewerBiomesSelfTest {
                 new com.exiledradio.cavesandcliffsbackport.terrain.core.Pipeline(noise, new Climate(e), 0, 1024);
         own.setBeards(generator.beards());
         generator.sameDecoration(own);
-        int heart = com.exiledradio.cavesandcliffsbackport.terrain.core.BlockCodes.byState(
-                "creaking_heart[active=true,axis=y,natural=true]");
+        int heart = com.exiledradio.cavesandcliffsbackport.terrain.core.BlockCodes.byState((e & Editions.SPRING) != 0
+                ? "creaking_heart[axis=y,creaking_heart_state=dormant,natural=true]" : "creaking_heart[active=true,axis=y,natural=true]");
         BlockPos found = null;
         for (int r = 0; r < 12 && found == null; r++) {
             for (int dx = -r; dx <= r && found == null; dx++) {

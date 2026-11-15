@@ -37,6 +37,8 @@ final class PaleGarden {
     static final int HANGING_MOSS_TIP = register("pale_hanging_moss[tip=true]");
     static final int CLOSED_EYEBLOSSOM = register("closed_eyeblossom");
     static final int CREAKING_HEART = register("creaking_heart[active=true,axis=y,natural=true]");
+    /** 1.21.5's state names (SPRING): dormant. */
+    static final int CREAKING_HEART_DORMANT = register("creaking_heart[axis=y,creaking_heart_state=dormant,natural=true]");
     /** Wall sides of MossyCarpetBlock. */
     static final int NONE = 0;
     static final int LOW = 1;
@@ -144,8 +146,14 @@ final class PaleGarden {
 
     private final Xoroshiro.Positional regionRandoms;
     private Xoroshiro regionRandom;
+    /** The heart a creaking tree grows: 1.21.4's state, or 1.21.5's with SPRING. */
+    private final int heart;
+    /** 1.21.5 and later (Editions.SPRING). */
+    private final boolean spring;
 
     PaleGarden(OverworldNoise noise) {
+        spring = (noise.editions & Editions.SPRING) != 0;
+        heart = spring ? CREAKING_HEART_DORMANT : CREAKING_HEART;
         // RandomState.getOrCreateRandomFactory(minecraft:worldgen_region_random).
         regionRandoms = noise.positional.fromHashOf("minecraft:worldgen_region_random").forkPositional();
     }
@@ -479,7 +487,7 @@ final class PaleGarden {
                     all = log(level.get(p.x + DX[d], p.y + DY[d], p.z + DZ[d]));
                 }
                 if (all) {
-                    decoration(p.x, p.y, p.z, CREAKING_HEART);
+                    decoration(p.x, p.y, p.z, heart);
                     return;
                 }
             }
@@ -660,9 +668,13 @@ final class PaleGarden {
         return true;
     }
 
-    /** MossyCarpetBlock.placeAt(level, pos, level.getRandom(), 2). */
+    /**
+     * MossyCarpetBlock.placeAt(level, pos, level.getRandom(), 2). 1.21.5 and later (SPRING) update the carpet again
+     * once its topper is in, so a side under a topper's side is tall.
+     */
     private void placeCarpet(Region level, int x, int y, int z) {
-        level.set(x, y, z, updatedState(level, CARPET_BASE, x, y, z, true));
+        int carpet = updatedState(level, CARPET_BASE, x, y, z, true);
+        level.set(x, y, z, carpet);
         int above = level.get(x, y + 1, z);
         boolean carpetAbove = isCarpet(above);
         if ((!carpetAbove || !bottom(above)) && (carpetAbove || replaceable(above))) {
@@ -674,6 +686,9 @@ final class PaleGarden {
             }
             if (hasFaces(t) && t != above) {
                 level.set(x, y + 1, z, t);
+                if (spring) {
+                    level.set(x, y, z, updatedState(level, carpet, x, y, z, true));
+                }
             }
         }
     }
