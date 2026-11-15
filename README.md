@@ -9,7 +9,7 @@ All of 1.17 and 1.18 Caves & Cliffs on Minecraft 1.12.2: the Caves & Cliffs worl
 3. Put all three in your `mods` folder (Forge 1.12.2, 14.23.5.2847 or newer). Client and server both need them.
 4. Pick the Caves & Cliffs world type when you create a world.
 
-Back up your worlds before trying a beta.
+Back up your worlds before adding it to one you play in.
 
 ## Works with
 
