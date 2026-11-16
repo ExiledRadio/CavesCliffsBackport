@@ -37,7 +37,7 @@ public final class ModConfig {
     @Config.LangKey("config.cavesandcliffsbackport.amethyst")
     @Config.Comment("Amethyst, budding amethyst and its buds, tinted glass, the spyglass and geodes.")
     public static final Amethyst amethyst = new Amethyst();
-    @Setting.Feature(icon = "minecraft:cauldron")
+    @Setting.Feature(icon = "cavesandcliffsbackport:pointed_dripstone")
     @Config.LangKey("config.cavesandcliffsbackport.dripstone")
     @Config.Comment("Dripstone, pointed dripstone, the lava cauldron and dripstone caves.")
     public static final Dripstone dripstone = new Dripstone();
@@ -45,19 +45,19 @@ public final class ModConfig {
     @Config.LangKey("config.cavesandcliffsbackport.lush")
     @Config.Comment("Moss, azalea, cave vines and glow berries, dripleaf, spore blossoms, glow lichen, rooted dirt, hanging roots and lush caves.")
     public static final Lush lush = new Lush();
-    @Setting.Feature(icon = "minecraft:snow")
+    @Setting.Feature(icon = "cavesandcliffsbackport:powder_snow_bucket")
     @Config.LangKey("config.cavesandcliffsbackport.powderSnow")
     @Config.Comment("Powder snow, freezing, the powder snow bucket and cauldron.")
     public static final PowderSnow powderSnow = new PowderSnow();
-    @Setting.Feature(icon = "minecraft:cake")
+    @Setting.Feature(icon = "cavesandcliffsbackport:candle")
     @Config.LangKey("config.cavesandcliffsbackport.candles")
     @Config.Comment("Candles and candle cakes.")
     public static final Candles candles = new Candles();
-    @Setting.Feature(icon = "minecraft:item_frame")
+    @Setting.Feature(icon = "cavesandcliffsbackport:glow_ink_sac")
     @Config.LangKey("config.cavesandcliffsbackport.glowSquid")
     @Config.Comment("Glow squid, glow ink sacs and glow item frames.")
     public static final GlowSquid glowSquid = new GlowSquid();
-    @Setting.Feature(icon = "minecraft:water_bucket")
+    @Setting.Feature(icon = "cavesandcliffsbackport:axolotl_bucket")
     @Config.LangKey("config.cavesandcliffsbackport.axolotls")
     @Config.Comment("Axolotls and the bucket of axolotl.")
     public static final Axolotls axolotls = new Axolotls();
@@ -65,15 +65,15 @@ public final class ModConfig {
     @Config.LangKey("config.cavesandcliffsbackport.goats")
     @Config.Comment("Goats and screaming goats.")
     public static final Goats goats = new Goats();
-    @Setting.Feature(icon = "minecraft:glowstone")
+    @Setting.Feature(icon = "cavesandcliffsbackport:calcite")
     @Config.LangKey("config.cavesandcliffsbackport.blocks")
     @Config.Comment("The light block, the Caves & Cliffs advancement and small 1.17 changes to shovels, shulkers, mob drops, pufferfish, llamas and infested blocks.")
     public static final Blocks blocks = new Blocks();
-    @Setting.Feature(icon = "minecraft:jukebox")
+    @Setting.Feature(icon = "cavesandcliffsbackport:music_disc_otherside")
     @Config.LangKey("config.cavesandcliffsbackport.music")
     @Config.Comment("1.18's music and the Otherside music disc.")
     public static final Music music = new Music();
-    @Setting.Feature(icon = "minecraft:vine")
+    @Setting.Feature(icon = "cavesandcliffsbackport:glow_berries")
     @Config.LangKey("config.cavesandcliffsbackport.caves")
     @Config.Comment("Where lush and dripstone caves are: the regions the cave streams decorate.")
     public static final Caves caves = new Caves();
