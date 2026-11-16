@@ -78,6 +78,7 @@ public final class SelfTestRunner {
             new LightEngineSelfTest("phosphordump"),
             new HeightBenchSelfTest(),
             new GenScanSelfTest(),
+            new StructSnowSelfTest(),
             new ModernFeaturesSelfTest(),
             new FlatSelfTest(),
             new CubicSelfTest("cubic"),
