@@ -30,7 +30,7 @@ import org.apache.logging.log4j.Logger;
         version = CavesAndCliffsBackport.VERSION,
         acceptedMinecraftVersions = "[1.12.2]",
         // Loads before the later updates of the family, so this mod's ownership declarations come first.
-        dependencies = "required-after:backportcore@[1.3.0,);before:wildupdatebackport;before:trailsandtalesbackport;before:trickytrialsbackport"
+        dependencies = "required-after:backportcore@[1.4.0,);before:wildupdatebackport;before:trailsandtalesbackport;before:trickytrialsbackport"
 )
 public final class CavesAndCliffsBackport {
 

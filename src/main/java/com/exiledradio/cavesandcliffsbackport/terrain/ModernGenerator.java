@@ -1,5 +1,6 @@
 package com.exiledradio.cavesandcliffsbackport.terrain;
 
+import com.exiledradio.backportcore.structure.FreezeTopLayer;
 import com.exiledradio.backportcore.structure.ScatteredPlacement;
 import com.exiledradio.backportcore.structure.StartRule;
 import com.exiledradio.backportcore.structure.StructureGenerators;
@@ -60,7 +61,8 @@ import java.util.Random;
  *       ({@link ModernTerrain#owns}).</li>
  * </ul>
  */
-public final class ModernGenerator implements IChunkGenerator, TerrainSource, StructureSource, FeatureSource, ModernGeneration, DecorationSource {
+public final class ModernGenerator implements IChunkGenerator, TerrainSource, StructureSource, FeatureSource, ModernGeneration, DecorationSource,
+        FreezeTopLayer.Climate {
 
     /** How far around each asked-for chunk the workers fill ahead, in chunks. */
     static final int PREFETCH = 4;
@@ -582,10 +584,27 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         if (this.features) {
             this.mineshaft.generateStructure(this.world, this.rand, chunkpos);
             village = this.villages.generateStructure(this.world, this.rand, chunkpos);
-            this.stronghold.generateStructure(this.world, this.rand, chunkpos);
-            this.temple.generateStructure(this.world, this.rand, chunkpos);
-            this.monument.generateStructure(this.world, this.rand, chunkpos);
-            this.mansion.generateStructure(this.world, this.rand, chunkpos);
+            boolean stronghold = this.stronghold.generateStructure(this.world, this.rand, chunkpos);
+            boolean temple = this.temple.generateStructure(this.world, this.rand, chunkpos);
+            boolean monument = this.monument.generateStructure(this.world, this.rand, chunkpos);
+            boolean mansion = this.mansion.generateStructure(this.world, this.rand, chunkpos);
+            // 1.18's freeze_top_layer runs after the structures; the pipeline ran it with the chunk's features, before
+            // these were built, so it snows again over the columns they cover (igloos, villages, mansions).
+            if (village) {
+                FreezeTopLayer.afterBuilding(this.world, this.villages, x, z);
+            }
+            if (stronghold) {
+                FreezeTopLayer.afterBuilding(this.world, this.stronghold, x, z);
+            }
+            if (temple) {
+                FreezeTopLayer.afterBuilding(this.world, this.temple, x, z);
+            }
+            if (monument) {
+                FreezeTopLayer.afterBuilding(this.world, this.monument, x, z);
+            }
+            if (mansion) {
+                FreezeTopLayer.afterBuilding(this.world, this.mansion, x, z);
+            }
         }
         // Other mods' generation in 1.12's dungeon and ore events (Quark's stones and underground biomes).
         ModDecoration.populate(this, this.world, x, z, village, this.modern, terrain.map.modded());
@@ -635,6 +654,18 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
     /** 1.18's biome id at a block (three dimensions: the cave biomes under the surface ones). Server thread. */
     public int biome3d(int x, int y, int z) {
         return biomes3d.biome(x, y, z);
+    }
+
+    /**
+     * Backport Core's {@link FreezeTopLayer.Climate}: snow over the family's structures, built after the pipeline's
+     * freeze_top_layer, by 1.18's temperatures (Biome.coldEnoughToSnow at the zoomed 3D biome), as that feature.
+     */
+    @Override
+    public boolean coldEnoughToSnow(World world, BlockPos pos) {
+        int x = pos.getX();
+        int y = pos.getY();
+        int z = pos.getZ();
+        return com.exiledradio.cavesandcliffsbackport.terrain.core.Biomes.coldEnoughToSnow(biome3d(x, y, z), x, y, z);
     }
 
     // ---------------------------------------------------------------------------------------------
