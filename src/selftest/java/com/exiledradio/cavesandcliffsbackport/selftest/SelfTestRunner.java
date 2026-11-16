@@ -120,9 +120,10 @@ public final class SelfTestRunner {
         for (SelfTest test : TESTS) {
             // The restart and light-engine phases need a server of their own each (tools/terrain/restart.sh, Alfheim or
             // Phosphor installed),
-            // and the flat test a superflat world (tools/flat/selftest.sh): never part of "all".
+            // the flat test a superflat world (tools/flat/selftest.sh), and the structure snow test a new Caves & Cliffs
+            // world (tools/height/selftest.sh structsnow): never part of "all".
             boolean all = this.wanted.contains("all") && !(test instanceof RestartSelfTest) && !(test instanceof LightEngineSelfTest)
-                    && !(test instanceof FlatSelfTest);
+                    && !(test instanceof FlatSelfTest) && !(test instanceof StructSnowSelfTest);
             if (all || this.wanted.contains(test.name())) {
                 check.section(test.name());
                 clearEntities(world);
