@@ -61,7 +61,7 @@ public final class ModConfig {
     @Config.LangKey("config.cavesandcliffsbackport.axolotls")
     @Config.Comment("Axolotls and the bucket of axolotl.")
     public static final Axolotls axolotls = new Axolotls();
-    @Setting.Feature(icon = "minecraft:wheat")
+    @Setting.Feature(icon = "wildupdatebackport:goat_horn|minecraft:wheat")
     @Config.LangKey("config.cavesandcliffsbackport.goats")
     @Config.Comment("Goats and screaming goats.")
     public static final Goats goats = new Goats();
