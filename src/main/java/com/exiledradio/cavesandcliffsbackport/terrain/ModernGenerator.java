@@ -520,6 +520,11 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
                 if (nest != null) {
                     out.tile(pos, nest);
                 }
+            } else if ((lastFlags & StateMap.SUSPICIOUS) != 0) {
+                net.minecraft.tileentity.TileEntity sand = suspicious(map.state(code), pos);
+                if (sand != null) {
+                    out.tile(pos, sand);
+                }
             } else if ((lastFlags & StateMap.HEART) != 0) {
                 net.minecraft.tileentity.TileEntity heart = naturalHeart(map.state(code));
                 if (heart != null) {
@@ -527,6 +532,24 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
                 }
             }
         }
+    }
+
+    /**
+     * 1.20.1's DesertWellFeature.placeSusSand: the tile of Trails &amp; Tales' suspicious sand (by name) with the desert
+     * well table, and the position's 1.20 BlockPos.asLong as its seed.
+     */
+    @javax.annotation.Nullable
+    private net.minecraft.tileentity.TileEntity suspicious(net.minecraft.block.state.IBlockState state, BlockPos pos) {
+        net.minecraft.tileentity.TileEntity tile = state.getBlock().createTileEntity(this.world, state);
+        if (tile == null) {
+            return null;
+        }
+        net.minecraft.nbt.NBTTagCompound tag = tile.writeToNBT(new net.minecraft.nbt.NBTTagCompound());
+        tag.setString("LootTable", "trailsandtalesbackport:archaeology/desert_well");
+        long seed = ((long) pos.getX() & 0x3FFFFFFL) << 38 | ((long) pos.getY() & 0xFFFL) | ((long) pos.getZ() & 0x3FFFFFFL) << 12;
+        tag.setLong("LootTableSeed", seed);
+        tile.readFromNBT(tag);
+        return tile;
     }
 
     /**

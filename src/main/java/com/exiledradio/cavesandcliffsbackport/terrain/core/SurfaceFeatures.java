@@ -499,9 +499,15 @@ final class SurfaceFeatures {
 
     // ---- DesertWellFeature ----
 
+    /** Trails &amp; Tales Backport's suspicious sand (1.20), the desert well's archaeology; plain sand without it. */
+    static final int SUSPICIOUS_SAND = register("suspicious_sand[dusted=0]");
+
     static final class DesertWell implements Feature {
         @Override
         public boolean place(Region level, XoroRandom random, int x, int y, int z) {
+            if (level.rules >= Rules.V120) {
+                return place120(level, random, x, y, z);
+            }
             for (y = y + 1; isAir(level.get(x, y, z)) && y > -64 + 2; --y) {
             }
             if (level.get(x, y, z) != SAND) {
@@ -549,6 +555,73 @@ final class SurfaceFeatures {
                 level.set(x + 1, y + k1, z - 1, SANDSTONE);
                 level.set(x + 1, y + k1, z + 1, SANDSTONE);
             }
+            return true;
+        }
+
+        /**
+         * 1.20.1's DesertWellFeature: the basin a block deeper, sand under the water cross, and two suspicious sand
+         * with the desert well table (one under a random block of the cross, one under that): two Util.getRandom draws
+         * of the feature random. The table and seed go on in ModernGenerator.specials.
+         */
+        private boolean place120(Region level, XoroRandom random, int x, int y, int z) {
+            for (y = y + 1; isAir(level.get(x, y, z)) && y > -64 + 2; --y) {
+            }
+            if (level.get(x, y, z) != SAND) {
+                return false;
+            }
+            for (int i = -2; i <= 2; ++i) {
+                for (int j = -2; j <= 2; ++j) {
+                    if (isAir(level.get(x + i, y - 1, z + j)) && isAir(level.get(x + i, y - 2, z + j))) {
+                        return false;
+                    }
+                }
+            }
+            for (int l = -2; l <= 0; ++l) {
+                for (int l1 = -2; l1 <= 2; ++l1) {
+                    for (int k = -2; k <= 2; ++k) {
+                        level.set(x + l1, y + l, z + k, SANDSTONE);
+                    }
+                }
+            }
+            level.set(x, y, z, WATER);
+            // Direction.Plane.HORIZONTAL: north, east, south, west.
+            level.set(x, y, z - 1, WATER);
+            level.set(x + 1, y, z, WATER);
+            level.set(x, y, z + 1, WATER);
+            level.set(x - 1, y, z, WATER);
+            level.set(x, y - 1, z, SAND);
+            level.set(x, y - 1, z - 1, SAND);
+            level.set(x + 1, y - 1, z, SAND);
+            level.set(x, y - 1, z + 1, SAND);
+            level.set(x - 1, y - 1, z, SAND);
+            for (int i1 = -2; i1 <= 2; ++i1) {
+                for (int i2 = -2; i2 <= 2; ++i2) {
+                    if (i1 == -2 || i1 == 2 || i2 == -2 || i2 == 2) {
+                        level.set(x + i1, y + 1, z + i2, SANDSTONE);
+                    }
+                }
+            }
+            level.set(x + 2, y + 1, z, SANDSTONE_SLAB);
+            level.set(x - 2, y + 1, z, SANDSTONE_SLAB);
+            level.set(x, y + 1, z + 2, SANDSTONE_SLAB);
+            level.set(x, y + 1, z - 2, SANDSTONE_SLAB);
+            for (int j1 = -1; j1 <= 1; ++j1) {
+                for (int j2 = -1; j2 <= 1; ++j2) {
+                    level.set(x + j1, y + 4, z + j2, j1 == 0 && j2 == 0 ? SANDSTONE : SANDSTONE_SLAB);
+                }
+            }
+            for (int k1 = 1; k1 <= 3; ++k1) {
+                level.set(x - 1, y + k1, z - 1, SANDSTONE);
+                level.set(x - 1, y + k1, z + 1, SANDSTONE);
+                level.set(x + 1, y + k1, z - 1, SANDSTONE);
+                level.set(x + 1, y + k1, z + 1, SANDSTONE);
+            }
+            // List.of(origin, east, south, west, north), Util.getRandom twice.
+            int[][] cross = {{0, 0}, {1, 0}, {0, 1}, {-1, 0}, {0, -1}};
+            int[] a = cross[random.nextInt(cross.length)];
+            level.set(x + a[0], y - 1, z + a[1], SUSPICIOUS_SAND);
+            int[] b = cross[random.nextInt(cross.length)];
+            level.set(x + b[0], y - 2, z + b[1], SUSPICIOUS_SAND);
             return true;
         }
     }

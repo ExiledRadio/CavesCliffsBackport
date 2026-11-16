@@ -44,6 +44,8 @@ public final class StateMap {
     public static final int NEST = 16;
     /** Flag: a creaking heart a pale oak grew (1.21.4), whose tile is marked natural (Tricky Trials Backport's). */
     public static final int HEART = 32;
+    /** Trails &amp; Tales' suspicious sand: its tile gets the desert well table (the only feature that places it). */
+    public static final int SUSPICIOUS = 64;
 
     private IBlockState[] states = new IBlockState[0];
     /** The states that resolved to nothing (air or water instead), for the self-test. */
@@ -173,6 +175,9 @@ public final class StateMap {
         FALLBACK.put("cherry_log", "minecraft:log[variant=birch]");
         FALLBACK.put("cherry_leaves", "minecraft:leaves[variant=birch,check_decay=false,decayable=true]");
         FALLBACK.put("pink_petals", "minecraft:air");
+        // 1.20's desert well archaeology (Trails & Tales Backport's block); plain sand without it.
+        v("suspicious_sand", "trailsandtalesbackport:suspicious_sand[dusted=0]");
+        FALLBACK.put("suspicious_sand", "minecraft:sand");
         // 1.21.4's pale garden (Tricky Trials Backport): its leaves without the decay check, as 1.12's tree
         // generators place leaves; the creaking heart dormant (Tricky's 1.21.5 state for a heart by day).
         v("pale_oak_leaves", "trickytrialsbackport:pale_oak_leaves[check_decay=false,decayable=true]");
@@ -298,6 +303,8 @@ public final class StateMap {
             f |= NEST;
         } else if (name.equals("creaking_heart") && b.hasTileEntity(state)) {
             f |= HEART;
+        } else if (name.equals("suspicious_sand") && b.hasTileEntity(state)) {
+            f |= SUSPICIOUS;
         } else if (b.hasTileEntity(state)) {
             f |= TILE;
         }
