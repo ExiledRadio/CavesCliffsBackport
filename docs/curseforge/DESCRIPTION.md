@@ -12,8 +12,8 @@ The new biomes are meadows, groves, snowy slopes, jagged, frozen and stony peaks
 
 | | |
 | --- | --- |
-| ![Jagged peaks with goats](PENDING:cc-jagged-peaks) | ![A meadow below the mountains](PENDING:cc-meadow) |
-| ![A lush cave with axolotls](PENDING:cc-lush-caves) | ![A dripstone cave](PENDING:cc-dripstone-caves) |
+| ![Jagged peaks with goats](https://media.forgecdn.net/attachments/2205/647/cc-jagged-peaks-jpg.jpg) | ![A meadow below the mountains](https://media.forgecdn.net/attachments/2205/649/cc-meadow-jpg.jpg) |
+| ![A lush cave with axolotls](https://media.forgecdn.net/attachments/2205/648/cc-lush-caves-jpg.jpg) | ![A dripstone cave](https://media.forgecdn.net/attachments/2205/644/cc-dripstone-caves-lifted-jpg.jpg) |
 
 Underground there are cheese, spaghetti and noodle caves, aquifers with their own water and lava levels, ore veins, and deepslate below y 0. The ground is shaped around villages and outposts as in 1.18.
 
@@ -21,7 +21,7 @@ Generation runs on worker threads, ahead of where you're going. It is faster tha
 
 Default is still under World Type, for 1.12's terrain, and a server keeps the type it names in server.properties. A config option turns the new default off. Existing worlds keep their 0-255 height. They still get the 1.17 blocks, ores, geodes and cave biomes in new chunks.
 
-![A huge cave above a lava aquifer](PENDING:cc-deep-caves)
+![A huge cave above a lava aquifer](https://media.forgecdn.net/attachments/2205/642/cc-deep-caves-jpg.jpg)
 
 ## Mobs
 
@@ -31,21 +31,21 @@ Glow squid glow in deep, dark water. Their glow ink sacs make glow item frames a
 
 Goats live on the mountains, jump up to five blocks and ram anything that stands still. One in fifty is a screaming goat.
 
-![Axolotls in a lush cave pool](PENDING:cc-axolotls)
+![Axolotls in a lush cave pool](https://media.forgecdn.net/attachments/2205/640/cc-axolotls-jpg.jpg)
 
-![Glow squid in a flooded cave](PENDING:cc-glow-squid)
+![Glow squid in a flooded cave](https://media.forgecdn.net/attachments/2205/646/cc-glow-squid-jpg.jpg)
 
 ## Amethyst
 
 Amethyst geodes are deep underground. Budding amethyst grows clusters you can mine for shards. Shards make tinted glass and the spyglass.
 
-![Inside an amethyst geode](PENDING:cc-amethyst-geode)
+![Inside an amethyst geode](https://media.forgecdn.net/attachments/2205/639/cc-amethyst-geode-jpg.jpg)
 
 ## Copper
 
 Copper ore drops raw copper. Copper blocks age from orange to green. Wax them with honeycomb to keep the color, or scrape them back with an axe. Lightning rods catch lightning, and a strike cleans the copper around it.
 
-![Copper blocks in every stage of aging](PENDING:cc-copper)
+![Copper blocks in every stage of aging](https://media.forgecdn.net/attachments/2205/641/cc-copper-jpg.jpg)
 
 ## Blocks
 
@@ -57,17 +57,31 @@ You also get freezing in powder snow, 1.18's music and its own tracks in lush an
 
 Every feature can be turned off in Backport Core's settings screen, under Mod Options.
 
-![Caves & Cliffs Backport's settings](PENDING:cc-settings)
+![Caves & Cliffs Backport's settings](https://media.forgecdn.net/attachments/2205/650/cc-settings-jpg.jpg)
 
-## Works with
+## Compatibility
 
-With Update Aquatic Backport, axolotls hunt its fish and drowned drop copper. With Buzzy Bees Backport, honeycomb waxes copper and makes candles. With Wild Update Backport or Trails & Tales Backport installed when a world is created, it also gets mangrove swamps and the deep dark, or cherry groves, where 1.19 and 1.20 put them.
+**Biomes O' Plenty, Defiled Lands, Traverse** and any mod with biomes in Forge's BiomeManager: in Caves & Cliffs worlds their biomes replace the closest 1.18 biome in some regions, as TerraBlender does in 1.18. They keep their own top blocks, trees, plants, ores and mobs. The `height` settings set how much of the world they take (at most half), the region size, and which mods take part. Without such a mod, the terrain is exactly 1.18's.
 
-1.18 terrain works with OptiFine (shaders included), Alfheim 1.6, Phosphor 0.2.6 and 0.2.7, Hesperus, Celeritas, Nothirium and VintageFix. It turns itself off with Cubic Chunks and says so in the log; the 1.17 content still works with it.
+**OptiFine**: 1.18 terrain works with OptiFine HD U G5, with shaders (shadow pass included) and with Render Regions on or off.
+
+**Quark**: its marble, limestone, jasper and slate, its underground biomes and its varied dungeons all generate in Caves & Cliffs worlds. 1.18's granite, diorite and andesite blobs step aside where Quark places its own. Quark's candles, speleothems and crystals live beside ours.
+
+**Dynamic Trees**: its trees replace the 1.18 trees, so they don't grow twice.
+
+**Cubic Chunks**: the Caves & Cliffs world type becomes a cubic world with the same 1.18 terrain, block for block, from y -64 to 319.
+
+**Lighting and rendering**: Alfheim 1.6, Phosphor 0.2.6 and 0.2.7, Hesperus 0.2.9.1 to 0.2.9.3, Celeritas, Nothirium, VintageFix, Entity Culling and RenderLib all light and draw y -64 to 319. With Nothirium and shaders together, flying fast can run Nothirium out of direct memory; a larger `-XX:MaxDirectMemorySize` helps.
+
+**RLCraft and RLCraft Dregora**: tested in both. On Dregora's Cleanroom instances, use Fluidlogged API 3.3.3 and set StellarCore's `B:WorldBlockPosJudgement=false`. A Caves & Cliffs world replaces Open Terrain Generator's terrain, so Dregora's own biomes and structures are only in Default worlds. Default worlds still get the 1.17 blocks, ores, geodes and cave biomes in new chunks.
+
+**Fluidlogged API** (optional): candles, pointed dripstone, glow lichen, dripleaf, hanging roots, amethyst buds, lightning rods, light blocks, and the deepslate and copper stairs and slabs hold water. Without it they stay dry and everything else works.
+
+**The other backports**: with Update Aquatic Backport, axolotls hunt its fish and drowned drop copper. With Buzzy Bees Backport, honeycomb waxes copper and makes candles. With Wild Update Backport or Trails & Tales Backport installed when a world is created, it also gets mangrove swamps and the deep dark, or cherry groves, where 1.19 and 1.20 put them. Bamboo comes from Village & Pillage Backport and coral from Update Aquatic Backport.
 
 ## Requirements
 
-Minecraft 1.12.2 with Forge 14.23.5.2847 or newer, and [Backport Core](https://www.curseforge.com/minecraft/mc-mods/backport-core) 1.3.0 or newer. The CurseForge app installs Backport Core and Fluidlogged API with it.
+Minecraft 1.12.2 with Forge 14.23.5.2847 or newer, and [Backport Core](https://www.curseforge.com/minecraft/mc-mods/backport-core) 1.3.0 or newer. The CurseForge app installs Backport Core with it. [Fluidlogged API](https://www.curseforge.com/minecraft/mc-mods/fluidlogged-api) 3.3.3 or newer is optional, for waterlogged blocks.
 
 Removing this mod from a Caves & Cliffs world keeps everything from y 0 to 255. Everything below and above is lost, and the bottom of the world is open.
 
