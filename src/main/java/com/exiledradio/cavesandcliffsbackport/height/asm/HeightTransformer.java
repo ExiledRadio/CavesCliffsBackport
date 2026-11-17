@@ -18,6 +18,26 @@ public final class HeightTransformer implements IClassTransformer {
         for (ClassPatch p : all(client)) {
             this.patches.put(p.target, p);
         }
+        for (ClassPatch p : modCompat()) {
+            this.patches.put(p.target, p);
+        }
+    }
+
+    /**
+     * The patches of other mods' own code that assumes y 0-255 (plan {@code docs/streams/moddedores.md}, O3; hooks in
+     * {@code height.compat}). Apart from {@link #all}: those classes exist only with their mod installed (so neither
+     * the start-up load check nor the offline drift check knows them), and a miss leaves that class as its mod wrote
+     * it without turning extended height off. Both sides.
+     */
+    public static ClassPatch[] modCompat() {
+        return new ClassPatch[] {
+                new ModCompatPatches.QuarryPatch(),
+                new ModCompatPatches.SpringPopulatePatch(),
+                new ModCompatPatches.InjectorPatch(),
+                new ModCompatPatches.InjectorResultPatch(),
+                new ModCompatPatches.MeteorRubyTickPatch(),
+                new ModCompatPatches.MeteorRubyCommandPatch(),
+        };
     }
 
     /** Every patch for one side; the self-test and the offline drift check use the same list. */

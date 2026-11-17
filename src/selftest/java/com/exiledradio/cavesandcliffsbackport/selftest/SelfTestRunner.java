@@ -85,6 +85,7 @@ public final class SelfTestRunner {
             new OreHeightsSelfTest(),
             new ModernFeaturesSelfTest(),
             new FlatSelfTest(),
+            new ModCompatSelfTest(),
             new CubicSelfTest("cubic"),
             new CubicSelfTest("cubicreload"),
             new CubicSelfTest("cubicref"),
