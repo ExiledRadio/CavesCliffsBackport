@@ -72,6 +72,9 @@ public final class ModdedOresSelfTest implements SelfTest {
         // Confirmed against the ore dictionary.
         c.ok(copper.confirmed() && quartz.confirmed() && aqua.confirmed(), "the stand-in ores are confirmed");
         c.ok(!display.confirmed(), "a candidate in no ore* name is not confirmed");
+        ModdedOres.Form sand = form(c, StandInOres.sandOre, 0), clathrate = form(c, StandInOres.clathrateOre, 0);
+        c.ok(sand != null && !sand.confirmed(), "an ore dug with a shovel (oil sand) is not confirmed");
+        c.ok(clathrate != null && !clathrate.confirmed(), "an ore under a Nether or End ore name (oreClathrateEnder) is not confirmed");
         c.eq(0, display.item().getCreativeTabs().length, "an unconfirmed candidate has no creative tab (so JEI leaves it out)");
         c.ok(copper.item().getCreativeTabs().length == 1, "a confirmed form is in a creative tab");
 
@@ -193,7 +196,7 @@ public final class ModdedOresSelfTest implements SelfTest {
     }
 
     /** The same drops, with the original ore itself standing for its form. */
-    private static boolean sameDrops(ModdedOres.Form f, List<ItemStack> theirs, List<ItemStack> ours) {
+    static boolean sameDrops(ModdedOres.Form f, List<ItemStack> theirs, List<ItemStack> ours) {
         if (theirs.size() != ours.size()) {
             return false;
         }

@@ -83,6 +83,12 @@ public final class ModdedOres {
     private static final Pattern NETHER_END = Pattern.compile("nether|hell|(^|[_./-])end($|[_./-])|endstone|end_stone|theend|"
             + "(^|[_./-])ender_?ore|^oreend|^oreender");
 
+    /**
+     * Nether and End ores by ore dictionary name or translation key, where words run together (oreClathrateEnder,
+     * oreNetherCopper): their hosts, and glowstone, which only the Nether has.
+     */
+    private static final Pattern NETHER_END_NAME = Pattern.compile("nether|hell|ender|endstone|end_stone|glowstone|soulsand|soul_sand");
+
     /** A candidate: one metadata of another mod's stone ore, and its deepslate form. */
     public static final class Form {
         public final ResourceLocation originalName;
@@ -95,6 +101,8 @@ public final class ModdedOres {
         volatile boolean confirmed;
         /** Listed under a Nether or End ore name: never confirmed. */
         boolean netherOrEnd;
+        /** Mined with something other than a pickaxe: a sand or gravel host (oil sand), which deepslate is not. */
+        boolean notStone;
         final Set<String> oreNames = new TreeSet<String>();
         private final Set<String> registeredNames = new HashSet<String>();
         boolean smelting;
@@ -376,17 +384,22 @@ public final class ModdedOres {
         }
         boolean wild = stack.getMetadata() == OreDictionary.WILDCARD_VALUE;
         int meta = wild ? -1 : stack.getItem().getMetadata(stack.getMetadata());
-        boolean netherEnd = netherOrEnd(name);
+        boolean netherEnd = netherOrEnd(name) || NETHER_END_NAME.matcher(name.toLowerCase(Locale.ROOT)).find();
         for (Form f : forms) {
             if (!wild && f.meta != meta) {
                 continue;
             }
-            if (netherEnd) {
+            if (netherEnd || netherOrEndKey(f)) {
                 f.netherOrEnd = true;
                 f.confirmed = false;
                 continue;
             }
             if (f.netherOrEnd) {
+                continue;
+            }
+            if (!stoneHost(f)) {
+                f.notStone = true;
+                f.confirmed = false;
                 continue;
             }
             f.confirmed = true;
@@ -397,12 +410,39 @@ public final class ModdedOres {
         }
     }
 
+    /** The original is mined with a pickaxe (or with no tool at all), as an ore in stone is. */
+    private static boolean stoneHost(Form f) {
+        try {
+            String tool = f.original.getBlock().getHarvestTool(f.original);
+            return tool == null || "pickaxe".equals(tool);
+        } catch (RuntimeException e) {
+            return true;
+        }
+    }
+
+    private static boolean netherOrEndKey(Form f) {
+        try {
+            ItemStack o = f.originalStack();
+            String key = o.isEmpty() ? f.original.getBlock().getTranslationKey() : o.getTranslationKey();
+            return NETHER_END_NAME.matcher(key.toLowerCase(Locale.ROOT)).find();
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
     /** From post-init and load-complete: every late ore dictionary name, and the smelting results. */
     public static void postInit() {
         if (FORMS.isEmpty()) {
             return;
         }
         sweepOreDictionary();
+        // A harvest tool set in init or later.
+        for (Form f : FORMS) {
+            if (f.confirmed && !stoneHost(f)) {
+                f.notStone = true;
+                f.confirmed = false;
+            }
+        }
         FurnaceRecipes furnace = FurnaceRecipes.instance();
         for (Form f : FORMS) {
             if (f.smelting || !f.confirmed) {
@@ -451,10 +491,11 @@ public final class ModdedOres {
                 }
             }
             out.println();
-            out.println("# Candidates that are not ores (no ore* ore dictionary name, or a Nether or End one): never generated, hidden.");
+            out.println("# Candidates that are not ores (no ore* ore dictionary name, a Nether or End one, or not mined with a pickaxe): never generated, hidden.");
             for (Form f : FORMS) {
                 if (!f.confirmed) {
-                    out.println(f + "\t-> " + f.block.getRegistryName() + (f.netherOrEnd ? "\tNether or End ore" : "\tnot in the ore dictionary"));
+                    out.println(f + "\t-> " + f.block.getRegistryName() + (f.netherOrEnd ? "\tNether or End ore"
+                            : f.notStone ? "\tnot mined with a pickaxe (a sand or gravel ore)" : "\tnot in the ore dictionary"));
                 }
             }
             out.println();

@@ -45,7 +45,6 @@ public final class SelfTestRunner {
     private static final SelfTest[] TESTS = {
             new ScaffoldSelfTest(),
             new DeepslateSelfTest(),
-            new ModdedOresSelfTest(),
             new CopperSelfTest(),
             new AmethystSelfTest(),
             new DripstoneSelfTest(),
@@ -89,6 +88,8 @@ public final class SelfTestRunner {
             new CubicSelfTest("cubicreload"),
             new CubicSelfTest("cubicref"),
             new CubicSelfTest("cubicbench"),
+            // Last, so the earlier streams' test areas stay where they were.
+            new ModdedOresSelfTest(),
     };
 
     private final List<String> wanted;

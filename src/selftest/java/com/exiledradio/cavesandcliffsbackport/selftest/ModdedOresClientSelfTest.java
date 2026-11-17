@@ -135,38 +135,84 @@ public final class ModdedOresClientSelfTest {
                     when + ": " + f + "'s state has a model");
             eq("retextured", ModdedOreClient.baked().get(f.block()), when + ": " + f + " is drawn from its ore's model");
             TextureAtlasSprite particle = m.getParticleTexture();
-            ok(particle != null && particle.getIconName().startsWith(CavesAndCliffsBackport.MOD_ID + ":block/deepslate_ores/"),
+            ok(!f.confirmed() || particle != null && particle.getIconName().startsWith(CavesAndCliffsBackport.MOD_ID + ":block/deepslate_ores/"),
                     when + ": " + f + "'s particle is a redrawn texture: " + (particle == null ? null : particle.getIconName()));
         }
         for (String vanilla : new String[] {"minecraft:blocks/iron_ore", "minecraft:blocks/diamond_ore", "minecraft:blocks/emerald_ore", "minecraft:blocks/redstone_ore"}) {
             ok(ModdedOreClient.redrawn().containsKey(vanilla), when + ": " + vanilla + " was redrawn on deepslate");
         }
-        eq(0, ModdedOreClient.kept().size(), when + ": textures kept as they are: " + ModdedOreClient.kept());
+        // Textures with no stone under them (a Nether or sand ore's) are kept; a confirmed form must not use one.
+        CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST {}: textures kept as they are: {}", when, ModdedOreClient.kept());
     }
 
-    /** Originals on top, forms below, from x+2 eastward, facing the player. */
+    /** Pairs in rows of eight: each original over its form, vanilla's iron ore over 1.18's deepslate iron ore first. */
     private void buildWall(Minecraft mc) {
         final List<IBlockState[]> pairs = new ArrayList<IBlockState[]>();
         pairs.add(new IBlockState[] {Blocks.IRON_ORE.getDefaultState(), DeepslateContent.BLOCKS.get("deepslate_iron_ore").getDefaultState()});
         for (ModdedOres.Form f : ModdedOres.forms()) {
             pairs.add(new IBlockState[] {f.original, f.block().getDefaultState()});
         }
+        final int perRow = 8, rows = (pairs.size() + perRow - 1) / perRow;
         final BlockPos p = new BlockPos(mc.player);
         IntegratedServer server = mc.getIntegratedServer();
         server.addScheduledTask(() -> {
             WorldServer w = server.getWorld(0);
             for (int i = 0; i < pairs.size(); i++) {
-                BlockPos col = p.add(-pairs.size() + 1 + 2 * i, 0, 4);
-                w.setBlockState(col.up(2), pairs.get(i)[0]);
-                w.setBlockState(col.up(1), pairs.get(i)[1]);
+                int row = i / perRow, col = i % perRow;
+                // The player looks south (+z), so east (+x) is on the left: start from the left.
+                BlockPos at = p.add(perRow - 1 - 2 * col, 1 + 3 * (rows - 1 - row), 12);
+                w.setBlockState(at.up(), pairs.get(i)[0]);
+                w.setBlockState(at, pairs.get(i)[1]);
             }
             w.setWorldTime(6000);
+            // Moved by the server, which would otherwise set a client-side move back.
+            net.minecraft.entity.player.EntityPlayerMP sp = server.getPlayerList().getPlayers().get(0);
+            sp.capabilities.isFlying = true;
+            sp.sendPlayerAbilities();
+            sp.connection.setPlayerLocation(p.getX() + 0.5, p.getY() + 1.5 * rows, p.getZ() + 0.5, 0, 0);
+            drops(w, p.add(0, 40, 0));
         });
-        mc.player.setPositionAndRotation(p.getX() + 0.5, p.getY(), p.getZ() + 0.5 - 3, 0, 0);
-        mc.player.rotationYaw = 0;
-        mc.player.rotationPitch = 0;
         mc.player.capabilities.isFlying = true;
         mc.gameSettings.hideGUI = true;
+    }
+
+    /**
+     * On the server thread: every confirmed form drops what its ore drops, with the same experience, for Fortune 0 to 3
+     * and the same random numbers; the names are logged.
+     */
+    private void drops(WorldServer w, BlockPos at) {
+        for (ModdedOres.Form f : ModdedOres.forms()) {
+            if (!f.confirmed()) {
+                ok(f.item().getCreativeTabs().length == 0, f + " (not an ore) has no creative tab");
+                continue;
+            }
+            int diffs = 0, exp = 0, dropped = 0;
+            for (int fortune = 0; fortune <= 3; fortune++) {
+                for (long seed = 1; seed <= 20; seed++) {
+                    w.rand.setSeed(seed);
+                    net.minecraft.util.NonNullList<net.minecraft.item.ItemStack> theirs = net.minecraft.util.NonNullList.create();
+                    f.original.getBlock().getDrops(theirs, w, at, f.original, fortune);
+                    int theirExp = f.original.getBlock().getExpDrop(f.original, w, at, fortune);
+                    w.rand.setSeed(seed);
+                    net.minecraft.util.NonNullList<net.minecraft.item.ItemStack> ours = net.minecraft.util.NonNullList.create();
+                    f.block().getDrops(ours, w, at, f.block().getDefaultState(), fortune);
+                    int ourExp = f.block().getExpDrop(f.block().getDefaultState(), w, at, fortune);
+                    diffs += ModdedOresSelfTest.sameDrops(f, theirs, ours) ? 0 : 1;
+                    exp += theirExp == ourExp ? 0 : 1;
+                    dropped += ours.size();
+                }
+            }
+            eq(0, diffs, f + ": drops differ from the original's");
+            eq(0, exp, f + ": experience differs from the original's");
+            ok(dropped > 0, f + " drops something");
+            net.minecraft.util.NonNullList<net.minecraft.item.ItemStack> one = net.minecraft.util.NonNullList.create();
+            f.block().getDrops(one, w, at, f.block().getDefaultState(), 0);
+            float h = f.block().getDefaultState().getBlockHardness(w, at);
+            CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST form {} = \"{}\" hardness {} (ore {}) tool {} {} drops {} ores {}", f,
+                    f.item().getItemStackDisplayName(new net.minecraft.item.ItemStack(f.item())), h, f.originalHardness,
+                    f.block().getHarvestTool(f.block().getDefaultState()), f.block().getHarvestLevel(f.block().getDefaultState()), one, f.oreNames());
+            ok(h == Math.max(4.5F, f.originalHardness * 1.5F), f + ": hardness " + h);
+        }
     }
 
     private void ok(boolean condition, String what) {

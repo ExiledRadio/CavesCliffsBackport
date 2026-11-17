@@ -48,7 +48,7 @@ public final class StandInOres {
 
     public static final String NS = "ccstandin";
 
-    public static Block copperOre, gemOre, netherOre, excludedOre;
+    public static Block copperOre, gemOre, netherOre, excludedOre, sandOre, clathrateOre;
     public static final List<Item> ITEMS = new ArrayList<Item>();
 
     private StandInOres() {
@@ -140,12 +140,16 @@ public final class StandInOres {
         gemOre = name(new GemOre(), "ore");
         netherOre = name(plain(3.0F, 1), "nether_copper_ore");
         excludedOre = name(plain(3.0F, 1), "excluded_ore");
-        event.getRegistry().registerAll(copperOre, gemOre, netherOre, excludedOre);
+        // An oil-sand-like ore (rock, but dug with a shovel) and a Thermal-like clathrate in end stone.
+        sandOre = name(plain(3.0F, 1), "sand_ore");
+        sandOre.setHarvestLevel("shovel", 1);
+        clathrateOre = name(plain(3.0F, 1), "ore_fluid");
+        event.getRegistry().registerAll(copperOre, gemOre, netherOre, excludedOre, sandOre, clathrateOre);
     }
 
     @SubscribeEvent
     public static void items(RegistryEvent.Register<Item> event) {
-        for (Block b : new Block[] {copperOre, netherOre, excludedOre}) {
+        for (Block b : new Block[] {copperOre, netherOre, excludedOre, sandOre, clathrateOre}) {
             ITEMS.add(new ItemBlock(b).setRegistryName(b.getRegistryName()));
         }
         ItemBlock gem = new ItemBlock(gemOre) {
@@ -171,6 +175,8 @@ public final class StandInOres {
         OreDictionary.registerOre("blockStandinDisplay", new ItemStack(gemOre, 1, 2));
         OreDictionary.registerOre("oreNetherCopper", netherOre);
         OreDictionary.registerOre("oreExcluded", excludedOre);
+        OreDictionary.registerOre("oreSandStandin", sandOre);
+        OreDictionary.registerOre("oreClathrateEnder", clathrateOre);
     }
 
     /** After every item: a late ore dictionary name (reaches the form through the registration event) and smelting. */
