@@ -25,6 +25,10 @@ final class WorldPatch extends ClassPatch {
     private static final String POS = "(Lnet/minecraft/util/math/BlockPos;)";
     private static final String SKY_POS = "(Lnet/minecraft/world/EnumSkyBlock;Lnet/minecraft/util/math/BlockPos;)I";
 
+    static final String ORE_HEIGHTS = "com/exiledradio/cavesandcliffsbackport/ores/OreHeights";
+    private static final String BLOCK_POS = "Lnet/minecraft/util/math/BlockPos;";
+    private static final String STATE = "Lnet/minecraft/block/state/IBlockState;";
+
     private final boolean client;
 
     WorldPatch(boolean client) {
@@ -85,6 +89,23 @@ final class WorldPatch extends ClassPatch {
         // getHeight(x, z) (and getHeight(BlockPos), which calls it): a column whose highest block is below 0 (a 1.18
         // pit) answers 0, 1.12's "nothing here", never a negative height: 1.12 mods draw random heights from it
         // (Future MC's flowers: nextInt(height + 32)), which throws for a height of -32 or less.
+        // Stream O2 (ores.OreHeights): while another mod's world generator runs in a Caves & Cliffs world, an ore it
+        // sets at y 0-63 is set at 2y - 64. First thing: pos = setBlockPos(this, pos, state); state =
+        // placedState(this, pos, state). No jump, so no frame; outside such a run both return their argument at once.
+        m = method(node, "setBlockState", "func_180501_a", "(Lnet/minecraft/util/math/BlockPos;"
+                + "Lnet/minecraft/block/state/IBlockState;I)Z");
+        if (site("setBlockState.oreHeights", m != null)) {
+            m.instructions.insert(list(
+                    new VarInsnNode(Opcodes.ALOAD, 0), new VarInsnNode(Opcodes.ALOAD, 1), new VarInsnNode(Opcodes.ALOAD, 2),
+                    new org.objectweb.asm.tree.MethodInsnNode(Opcodes.INVOKESTATIC, ORE_HEIGHTS, "setBlockPos",
+                            "(" + WORLD_DESC + BLOCK_POS + STATE + ")" + BLOCK_POS, false),
+                    new VarInsnNode(Opcodes.ASTORE, 1),
+                    new VarInsnNode(Opcodes.ALOAD, 0), new VarInsnNode(Opcodes.ALOAD, 1), new VarInsnNode(Opcodes.ALOAD, 2),
+                    new org.objectweb.asm.tree.MethodInsnNode(Opcodes.INVOKESTATIC, ORE_HEIGHTS, "placedState",
+                            "(" + WORLD_DESC + BLOCK_POS + STATE + ")" + STATE, false),
+                    new VarInsnNode(Opcodes.ASTORE, 2)));
+        }
+
         m = method(node, "getHeight", "func_189649_b", "(II)I");
         for (AbstractInsnNode ret : expect("getHeight.return", m, 1, op(Opcodes.IRETURN))) {
             m.instructions.insertBefore(ret, list(hooks("surfaceHeight", "(I)I")));

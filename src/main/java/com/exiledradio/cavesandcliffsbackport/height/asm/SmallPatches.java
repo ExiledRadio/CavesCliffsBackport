@@ -22,6 +22,38 @@ final class SmallPatches {
         return selfField(ENTITY, n("world", "field_70170_p"), WORLD_DESC);
     }
 
+    /**
+     * Stream O2: Forge's {@code Block.isReplaceableOreGen} (the stone check of {@code WorldGenMinable} and most mods'
+     * vein code; body {@code return target.apply(state);}) becomes {@code return OreHeights.isReplaceableOreGen(state,
+     * world, pos, target);}, which answers the same outside a remapped run. Blocks that override it are unchanged.
+     */
+    static final class BlockOreGenPatch extends ClassPatch {
+        private static final String DESC = "(Lnet/minecraft/block/state/IBlockState;Lnet/minecraft/world/IBlockAccess;"
+                + "Lnet/minecraft/util/math/BlockPos;Lcom/google/common/base/Predicate;)Z";
+
+        BlockOreGenPatch() {
+            super("net.minecraft.block.Block");
+        }
+
+        @Override
+        protected void apply(ClassNode node) {
+            MethodNode m = method(node, "isReplaceableOreGen", "isReplaceableOreGen", DESC);
+            // Exactly vanilla's body: the state, the predicate's apply, return.
+            if (!site("isReplaceableOreGen.body", m != null && find(m, aload(4), aload(1),
+                    x -> x.getOpcode() == Opcodes.INVOKEINTERFACE, op(Opcodes.IRETURN)).size() == 1)) {
+                return;
+            }
+            m.instructions.clear();
+            m.tryCatchBlocks.clear();
+            m.localVariables = null;
+            m.instructions.add(list(new VarInsnNode(Opcodes.ALOAD, 1), new VarInsnNode(Opcodes.ALOAD, 2),
+                    new VarInsnNode(Opcodes.ALOAD, 3), new VarInsnNode(Opcodes.ALOAD, 4),
+                    new org.objectweb.asm.tree.MethodInsnNode(Opcodes.INVOKESTATIC, WorldPatch.ORE_HEIGHTS,
+                            "isReplaceableOreGen", DESC, false),
+                    insn(Opcodes.IRETURN)));
+        }
+    }
+
     /** {@code Entity.onEntityUpdate}: {@code posY < -64} (the void) becomes 64 below the world's bottom. */
     static final class EntityPatch extends ClassPatch {
         EntityPatch() {

@@ -82,6 +82,7 @@ public final class SelfTestRunner {
             new StructSnowSelfTest(),
             new SpawnLightSelfTest(),
             new ChangesSelfTest(),
+            new OreHeightsSelfTest(),
             new ModernFeaturesSelfTest(),
             new FlatSelfTest(),
             new CubicSelfTest("cubic"),

@@ -52,6 +52,79 @@ centered on 16, lapis on 0. Other mods' ores should move the same way. Decided 2
     mod put them.
 *   Vein counts double for ores the stretch moves, so the density in each block of rock stays the mod's own (the band is twice as tall): the generator runs a second time for that chunk with its own random, and from that run only the remapped low ores are kept.
 
+#### Built (2026-11-17, branch `claude/cc-moddedores-o2`)
+
+Setting `height.moddedOreHeights`, on by default, 18 languages. Code in `ores/` (`OreHeights`, `ModdedOres`), three
+sites in the height coremod:
+
+*   **`Chunk.populate`** calls `OreHeights.generateWorld` instead of Forge's `GameRegistry.generateWorld` (the one
+    static call's owner swapped, same descriptor). Outside a Caves & Cliffs overworld with 1.18 terrain (`ModernGenerator`,
+    dimension 0, min y -64, setting on) it calls Forge's method. Inside, it runs Forge's sorted generator list (read by
+    reflection) with Forge's exact seeds and order, and marks each run of a generator that is not the family's own
+    (`com.exiledradio.*`, the self-test's stand-ins excepted).
+*   **`World.setBlockState(pos, state, flags)`**, first thing: `pos = OreHeights.setBlockPos(this, pos, state)`, then
+    `state = OreHeights.placedState(this, pos, state)`. No jump, no frame. Outside a marked run both return their
+    argument after one static field compare. In a run, an ore (below) set at y 0-63 inside the four chunks population may
+    write (the chunk and its +x, +z neighbors: vanilla's +8 rule, so nothing reaches an ungenerated chunk) goes to
+    `2y - 64`, if the target takes it; otherwise it is not placed. A position far below the world stands for "drop":
+    vanilla's own range check then returns false. `placedState` → `OreHeights.placed(ore, replaced)` is the one place
+    that picks the block; it returns the ore for now, O1 will return the deepslate form there.
+*   **`Block.isReplaceableOreGen`** (Forge's stone check, which `WorldGenMinable`, CoFH World and Immersive Engineering
+    call) has its body `return target.apply(state)` replaced by `OreHeights.isReplaceableOreGen`. In a run, at y 0-63,
+    it also asks the generator's own predicate at the target, where our deepslate and tuff count as stone when the
+    predicate takes stone, and answers yes if either does; it remembers both answers for that position. The next
+    `setBlockState` there uses them: an ore needs the target to have passed; a non-ore needs its own position to have
+    passed (so non-ores behave exactly as before). An ore set without a check is tested at the target with vanilla's
+    stone (any variant), deepslate or tuff. Blocks that override `isReplaceableOreGen` keep their own answer.
+*   **The doubling:** after every generator ran, each generator that has placed a moved ore (learned per generator, kept
+    for the session) runs again for the chunk with `chunkSeed + salt`. In that run only moved ores are placed; every
+    other block is dropped and every entity it spawns is cancelled (`EntityJoinWorldEvent`, HIGHEST). A generator that
+    throws in that run is logged once and never run twice again; the first run is Forge's own and throws as before.
+*   **Which blocks are ores (`ModdedOres`):** every block state under an `ore*` ore dictionary name, built on first use
+    (after post-init) and rebuilt when a name is added later. Nether and End ores are left out: `oreNether*` / `oreEnd*`
+    names, vanilla quartz ore, registry names with nether or end in them. Vanilla ores count too (a mod's extra iron
+    veins move), but the 1.18 terrain's own ores are not placed by an `IWorldGenerator`, so they never move.
+*   **Not covered:** worlds in Cubic Chunks (the coremod is off there), retrogen (CoFH's retrogen runs outside
+    `Chunk.populate`), blocks set through `Chunk.setBlockState` directly, and generators that seed their own random from
+    the chunk instead of the random Forge hands them (their second run repeats the first, so their veins are not
+    doubled; nothing is placed twice).
+*   **Tool fix:** `tools/height/run.sh` (PatchCheck) did not compile since `StellarCoreMixinPlugin`; it now adds Mixin
+    and Gson to its class path and compiles with `-proc:none`. PatchCheck: OK on MCP and SRG names, both new sites
+    verify.
+
+**Self-test** `oreheights` (`OreHeightsSelfTest`, in `all` and in `tools/height/selftest.sh oreheights`): stand-in ores
+(purpur, purpur pillar under `oreSelftestium*`, red nether brick under `oreNether*` and an overworld name), an end brick
+non-ore, two stand-in generators. In a Caves & Cliffs world: ore at y 10 lands at -44 in deepslate with air at 10 (the
+check answered at the target); 40 at 16; 100 stays; a non-ore and the Nether ore at 20 stay, nothing at -24; an ore
+whose target is air is placed nowhere; an ore set without a check lands in tuff. Veins: 64 chunks, 4 per chunk, the
+first run lands 185 of 256 (rock share at the targets 0.72), the second run 173, 358 in the world, all at even y in
+-64..62, 0 above 63. In a Default world nothing moves and nothing doubles (223 of 256 veins in 0-63, none below).
+Suite: `runServer -Pselftest=all` from a fresh `eclipse/world` 4582/0; `tools/height/selftest.sh
+height,terrain,oreheights` 282/0. Release jar (`build --rerun-tasks`): 0 `/selftest/` entries, SRG names.
+
+**Census** (`G:\VBPTest\cc-moddedores`, `run.sh`; Thermal Foundation 2.6.7.1 + CoFH Core/World + Immersive Engineering
+0.12-98, seed 2026, square pregen r 48 = 9,216 chunks, counted by `tools/packs/orecensus.py` within r 47; the Default
+world r 24). Blocks per chunk, y bands -64..-33 / -32..-1 / 0-15 / 16-31 / 32-63 / 64-127:
+
+| Ore | Default (1.12 terrain) | C&C, setting off | C&C, setting on |
+| --- | --- | --- | --- |
+| TF copper (`ore:0`, 40-75) | 0 / 0 / 0 / 0 / 43.6 / 11.2 | 0 / 0 / 0 / 0.4 / 36.5 / 13.6 | 0 / 0.8 / 3.7 / 19.9 / 54.2 / 13.6 |
+| TF tin (`ore:1`) | 0 / 0 / 0 / 13.7 / 22.6 / 0 | 0 / 0 / 0 / 12.8 / 20.1 / 0 | 0 / 25.7 / 15.0 / 14.8 / 10.4 / 0 |
+| TF silver (`ore:2`) | 0 / 0 / 8.7 / 9.5 / 0.1 / 0 | 0 / 0 / 7.4 / 8.7 / 0.1 / 0 | 17.4 / 17.6 / 0.2 / 0 / 0 / 0 |
+| TF lead (`ore:3`) | 0 / 0 / 7.6 / 13.8 / 1.1 / 0 | 0 / 0 / 6.8 / 12.7 / 1.1 / 0 | 14.8 / 25.6 / 2.0 / 0 / 0 / 0 |
+| TF nickel (`ore:5`) | 0 / 0 / 3.4 / 0.7 / 0 / 0 | 0 / 0 / 2.9 / 0.6 / 0 / 0 | 6.9 / 1.3 / 0 / 0 / 0 / 0 |
+| IE copper (`ore:0`) | 0 / 0 / 0 / 0 / 31.1 / 4.3 | 0 / 0 / 0 / 0 / 26.6 / 3.9 | 0 / 0 / 3.5 / 18.4 / 34.3 / 3.8 |
+| IE lead (`ore:2`) | 0 / 0 / 4.9 / 8.0 / 1.3 / 0 | 0 / 0 / 4.4 / 7.6 / 1.2 / 0 | 9.6 / 15.3 / 2.3 / 0 / 0 / 0 |
+| IE silver (`ore:3`) | 0 / 0 / 4.7 / 8.0 / 3.2 / 0 | 0 / 0 / 4.2 / 7.5 / 3.2 / 0 | 9.3 / 15.1 / 6.0 / 0 / 0 / 0 |
+| IE nickel (`ore:4`) | 0 / 0 / 4.2 / 2.9 / 0 / 0 | 0 / 0 / 3.8 / 2.7 / 0 / 0 | 8.3 / 5.5 / 0 / 0 / 0 / 0 |
+| IE uranium (`ore:5`) | 0 / 0 / 1.3 / 0.9 / 0 / 0 | 0 / 0 / 1.1 / 0.8 / 0 / 0 | 2.5 / 1.6 / 0 / 0 / 0 / 0 |
+
+Below y 64 the totals per chunk go from 16.2 to 35.2 (TF silver), 20.6 to 42.4 (TF lead), 13.2 to 27.2 (IE lead): a bit
+over 2x, because the off world loses the veins aimed at deepslate (y 0-7) and the on world does not. Ores above 63 and
+every vanilla ore (the 1.18 terrain's own) are the same in both. Generation: the r 48 pregen (9,216 chunks, E-cores)
+took 89 and 91 s off, 94 and 94 s on: 102.5 to 98.0 chunks/s, 4.4% slower with two ore mods; the cost is the second run
+of each ore generator, so it grows with the number of ore mods.
+
 ### O3. Mods that assume y 0 to 255 (per-mod patches, extended worlds only)
 
 Each patch asks `Heights.minY(world)` / `maxY(world)`, so in a normal world nothing changes.

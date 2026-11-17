@@ -30,6 +30,7 @@ final class ChunkPatch extends ClassPatch {
     /** Forge's own static field (not obfuscated): the chunk being populated, else null. */
     private static final String POPULATING = "populating";
     private static final String POS_DESC = "Lnet/minecraft/util/math/ChunkPos;";
+    private static final String GAME_REGISTRY = "net/minecraftforge/fml/common/registry/GameRegistry";
 
     private final boolean client;
 
@@ -148,6 +149,7 @@ final class ChunkPatch extends ClassPatch {
                             "(" + POS_DESC + "L" + CHUNK + ";Lnet/minecraft/util/math/BlockPos;"
                                     + "Lnet/minecraft/block/state/IBlockState;)V", false)));
         }
+        oreHeights(node);
         slots(method(node, "getLightFor", "func_177413_a", "(Lnet/minecraft/world/EnumSkyBlock;"
                 + "Lnet/minecraft/util/math/BlockPos;)I"), "getLightFor", 1);
         slots(method(node, "setLightFor", "func_177431_a", "(Lnet/minecraft/world/EnumSkyBlock;"
@@ -222,6 +224,26 @@ final class ChunkPatch extends ClassPatch {
 
     private static P floor() {
         return invoke(Opcodes.INVOKESTATIC, "floor", "func_76128_c", "(D)I");
+    }
+
+    /**
+     * Stream O2: {@code Chunk.populate} runs other mods' world generators through {@code ores.OreHeights.generateWorld}
+     * (same arguments), which calls Forge's own {@code GameRegistry.generateWorld} outside a Caves &amp; Cliffs world.
+     */
+    private void oreHeights(ClassNode node) {
+        int found = 0;
+        for (MethodNode m : node.methods) {
+            for (AbstractInsnNode n = m.instructions.getFirst(); n != null; n = n.getNext()) {
+                if (n.getOpcode() == Opcodes.INVOKESTATIC && n instanceof org.objectweb.asm.tree.MethodInsnNode) {
+                    org.objectweb.asm.tree.MethodInsnNode call = (org.objectweb.asm.tree.MethodInsnNode) n;
+                    if (GAME_REGISTRY.equals(call.owner) && "generateWorld".equals(call.name)) {
+                        call.owner = WorldPatch.ORE_HEIGHTS;
+                        found++;
+                    }
+                }
+            }
+        }
+        site("populate.generateWorld", found == 1);
     }
 
     private static InsnList minSection() {

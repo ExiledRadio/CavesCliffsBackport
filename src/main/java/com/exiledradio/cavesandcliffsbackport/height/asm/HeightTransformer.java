@@ -30,6 +30,7 @@ public final class HeightTransformer implements IClassTransformer {
                 new AnvilChunkLoaderPatch(),
                 new SPacketChunkDataPatch(),
                 new PlayerChunkMapEntryPatch(),
+                new SmallPatches.BlockOreGenPatch(),
                 new SmallPatches.EntityPatch(),
                 new SmallPatches.FallingBlockPatch(),
                 new SmallPatches.NetHandlerPlayServerPatch(),

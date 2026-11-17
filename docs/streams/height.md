@@ -102,6 +102,7 @@ the transformer receives it, to read what another mod left when a site is not fo
 | `Entity` | the void at the world's bottom - 64 |
 | `EntityFallingBlock` | the 1-and-256 limits for dropping a falling block |
 | `BlockPortal`, `BlockPortal$Size`, `Teleporter` | Nether portals as in 1.18 (`PortalPatches`): lighting a frame from above its bottom row walks down to the world's bottom (was `y > 0`: a frame below 0 lit only from its bottom row); zombie pigmen come out of a portal below 0; an arrival's search for a portal (`placeInExistingPortal`) and the column search for where to build one (`makePortal`, both passes, its floor walk too) run down to the world's bottom instead of 0. Their tops are `getActualHeight()` (already 320); the fallback height stays clamped to 70 and up, as 1.18's `max(minY + 1, 70)` |
+| `Block`, and `World.setBlockState` / `Chunk.populate` (stream O2, `docs/streams/moddedores.md`) | `isReplaceableOreGen`'s body, the head of `setBlockState`, the `GameRegistry.generateWorld` call: other mods' ores at y 0-63 go to `2y - 64` in Caves & Cliffs worlds |
 | `NetHandlerPlayServer` | the build limit (placing, breaking) is the world's top |
 | `WorldEntitySpawner` | spawn attempts draw y from the world's bottom (one random draw either way) |
 | `NetHandlerPlayClient`, `WorldClient` (client) | chunk receive and unload re-render the whole height |
