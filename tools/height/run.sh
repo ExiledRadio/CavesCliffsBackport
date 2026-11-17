@@ -19,9 +19,11 @@ sep=":"; case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) sep=";";; esac
 cp="$(find_jar org.ow2.asm/asm-debug-all asm-debug-all-5.2.jar)$sep$(find_jar net.minecraft/launchwrapper launchwrapper-1.12.jar)"
 cp="$cp$sep$(find_jar org.apache.logging.log4j/log4j-api log4j-api-2.8.1.jar)$sep$(find_jar org.apache.logging.log4j/log4j-core log4j-core-2.8.1.jar)"
 cp="$cp$sep$(find_jar com.google.code.findbugs/jsr305 jsr305-3.0.1.jar)$sep$(win "$forge/forgeSrc-1.12.2-14.23.5.2847.jar")"
+# StellarCoreMixinPlugin (the asm package) implements Mixin's config plugin interface.
+cp="$cp$sep$(find_jar org.spongepowered/mixin mixin-0.8.5.jar)$sep$(find_jar com.google.code.gson/gson gson-2.8.0.jar)"
 mkdir -p "$out"
 src="$root/src/main/java/com/exiledradio/cavesandcliffsbackport/height"
-"$javac" -nowarn -encoding UTF-8 -cp "$cp" -d "$out" "$src"/HeightLayout.java "$src"/AlfheimKey.java "$src"/asm/*.java "$here"/*.java
+"$javac" -proc:none -nowarn -encoding UTF-8 -cp "$cp" -d "$out" "$src"/HeightLayout.java "$src"/AlfheimKey.java "$src"/asm/*.java "$here"/*.java
 main="$1"
 shift
 "$java" $JAVA_OPTS -cp "$(win "$out")$sep$cp" "$main" "$@"

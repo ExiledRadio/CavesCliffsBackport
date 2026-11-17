@@ -528,6 +528,15 @@ public final class ModConfig {
         @Config.LangKey("config.cavesandcliffsbackport.height.moddedBiomeRegionSize")
         @Config.RangeInt(min = 64, max = 8192)
         public int moddedBiomeRegionSize = 512;
+
+        @Setting.NewChunks
+        @Config.Comment({"Other mods' overworld ores move down in Caves & Cliffs worlds with 1.18 terrain, as 1.18 moved vanilla's:",
+                "an ore another mod generates at y 0 to 63 is placed at twice that minus 64 (y 10 at -44, y 40 at 16), in",
+                "stone, deepslate or tuff, and those mods' veins below y 64 are doubled so each block of rock keeps the mod's",
+                "own share of ore. Ores above y 63, Nether and End ores, and everything that is not an ore stay where the mod",
+                "puts them."})
+        @Config.LangKey("config.cavesandcliffsbackport.height.moddedOreHeights")
+        public boolean moddedOreHeights = true;
     }
 
     public static final class Changes {

@@ -8,6 +8,7 @@ Behavior changes from 1.17 and 1.18 to things 1.12.2 already has, and fixes. Eac
 *   **Experience orbs merge** in large numbers, as in 1.17, and stop following players who have died.
 *   **Rabbits and wolves spawn on snow**, as in 1.18.
 *   **Works with StellarCore** with any settings: its `WorldBlockPosJudgement` option no longer keeps Caves & Cliffs worlds at y 0-255.
+*   **Other mods' ores move down in Caves & Cliffs worlds**, as 1.18 moved vanilla's: an ore another mod generates at y 0 to 63 is placed at twice that minus 64 (y 10 at -44, y 40 at 16), in stone, deepslate or tuff, and those veins are doubled so each block of rock keeps the mod's own amount of ore. Ores above y 63, Nether and End ores and everything else a mod generates stay where they were. Setting `height.moddedOreHeights` turns it off.
 *   **Glow lichen in Default worlds is as common as in 1.18**: it was about four times as dense on cave walls, and grew on floors and dirt. It now generates as 1.18.2's feature does, on ceilings and walls of stone, deepslate, tuff, calcite and dripstone. The `lush.lichenTries` setting is gone.
 
 Needs Backport Core 1.4.0 or newer.
