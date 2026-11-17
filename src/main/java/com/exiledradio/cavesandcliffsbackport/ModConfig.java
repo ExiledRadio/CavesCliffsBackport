@@ -83,7 +83,7 @@ public final class ModConfig {
     public static final Height height = new Height();
     @Setting.Feature(icon = "minecraft:torch")
     @Config.LangKey("config.cavesandcliffsbackport.changes")
-    @Config.Comment("1.17 and 1.18's changes to how existing mobs, experience orbs and mineshafts behave.")
+    @Config.Comment("1.17 and 1.18's changes to how existing blocks, items, mobs, experience orbs and structures behave.")
     public static final Changes changes = new Changes();
 
     // ------------------------------------------------------------------------------------------
@@ -571,6 +571,49 @@ public final class ModConfig {
         @Config.Comment("Rabbits spawn on grass blocks, snow, snow blocks and sand, wolves on grass blocks, snow and snow blocks (1.18).")
         @Config.LangKey("config.cavesandcliffsbackport.changes.snowSpawns")
         public boolean snowSpawns = true;
+
+        @Setting.NewChunks
+        @Config.Comment("Strongholds under the ocean are buried in the seabed instead of standing open in the water (1.17), in Default worlds. Caves & Cliffs worlds always bury them.")
+        @Config.LangKey("config.cavesandcliffsbackport.changes.strongholdBurial")
+        public boolean strongholdBurial = true;
+
+        @Config.Comment("Minecarts in water go half as fast, sink slowly and slow down (1.17).")
+        @Config.LangKey("config.cavesandcliffsbackport.changes.minecartsInWater")
+        public boolean minecartsInWater = true;
+
+        @Config.Comment("A shulker box item destroyed by lava, fire, cactus or an explosion drops its contents (1.17).")
+        @Config.LangKey("config.cavesandcliffsbackport.changes.shulkerBoxContents")
+        public boolean shulkerBoxContents = true;
+
+        @Config.Comment("Flowers, saplings, grass, ferns, dead bushes and sugar cane can be planted on mycelium, and pumpkins and melons grow onto it (1.17).")
+        @Config.LangKey("config.cavesandcliffsbackport.changes.myceliumPlants")
+        public boolean myceliumPlants = true;
+
+        @Config.Comment("Names typed in an anvil can be 50 characters long instead of 35 (1.17).")
+        @Config.LangKey("config.cavesandcliffsbackport.changes.anvilNames")
+        public boolean anvilNames = true;
+
+        @Setting.Client
+        @Config.Comment("Absorption hearts show the withered heart under Wither and stay golden under Poison, instead of going blank (1.17).")
+        @Config.LangKey("config.cavesandcliffsbackport.changes.absorptionHearts")
+        public boolean absorptionHearts = true;
+
+        @Config.Comment("Sleeping through the night clears the weather only when it is raining or snowing; on a clear night the weather keeps its timer (1.18).")
+        @Config.LangKey("config.cavesandcliffsbackport.changes.sleepWeather")
+        public boolean sleepWeather = true;
+
+        @Config.Comment("Horses, donkeys and mules follow players holding a golden carrot, golden apple or enchanted golden apple, and llamas players holding a hay bale (1.18).")
+        @Config.LangKey("config.cavesandcliffsbackport.changes.horseTempting")
+        public boolean horseTempting = true;
+
+        @Config.Comment("Enchanting tables give off light level 7 (1.18).")
+        @Config.LangKey("config.cavesandcliffsbackport.changes.enchantingTableLight")
+        public boolean enchantingTableLight = true;
+
+        @Setting.Client
+        @Config.Comment("Brushing past a wall at a shallow angle no longer stops sprinting (1.18).")
+        @Config.LangKey("config.cavesandcliffsbackport.changes.sprintCollisions")
+        public boolean sprintCollisions = true;
     }
 
     // ------------------------------------------------------------------------------------------

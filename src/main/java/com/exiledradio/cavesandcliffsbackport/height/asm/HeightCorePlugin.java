@@ -60,7 +60,7 @@ public final class HeightCorePlugin implements IFMLLoadingPlugin {
 
     @Override
     public String[] getASMTransformerClass() {
-        return new String[] {HeightTransformer.class.getName()};
+        return new String[] {HeightTransformer.class.getName(), ChangesTransformer.class.getName()};
     }
 
     @Nullable
