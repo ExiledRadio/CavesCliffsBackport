@@ -115,9 +115,16 @@ public final class GlowSquidSelfTest implements SelfTest {
             c.world.checkLight(p);
         }
         c.ok(squidAt(c, deep).getCanSpawnHere(), "spawns in lightless water at y=18");
-        Biome.SpawnListEntry offered = c.world.getSpawnListEntryForTypeAt(GlowSquidContent.spawnGroup(), deep);
-        c.ok(offered != null && offered.entityClass == EntityGlowSquid.class && c.world.canCreatureTypeSpawnHere(GlowSquidContent.spawnGroup(), offered, deep),
-                "the world offers glow squid there");
+        // The spawn list as such: 1.18's per-player cap (changes.localMobCap) offers nothing with no player near.
+        boolean localCap = ModConfig.changes.localMobCap;
+        ModConfig.changes.localMobCap = false;
+        try {
+            Biome.SpawnListEntry offered = c.world.getSpawnListEntryForTypeAt(GlowSquidContent.spawnGroup(), deep);
+            c.ok(offered != null && offered.entityClass == EntityGlowSquid.class && c.world.canCreatureTypeSpawnHere(GlowSquidContent.spawnGroup(), offered, deep),
+                    "the world offers glow squid there");
+        } finally {
+            ModConfig.changes.localMobCap = localCap;
+        }
         c.world.setBlockState(low.add(2, 4, 4), Blocks.GLOWSTONE.getDefaultState(), 3);
         c.ok(!squidAt(c, deep).getCanSpawnHere(), "not where a light reaches");
         c.world.setBlockState(low.add(2, 4, 4), Blocks.WATER.getDefaultState(), 3);
