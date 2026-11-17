@@ -81,6 +81,10 @@ public final class ModConfig {
     @Config.LangKey("config.cavesandcliffsbackport.height")
     @Config.Comment("1.18's world height, y -64 to 319, for new worlds of the Caves & Cliffs world type.")
     public static final Height height = new Height();
+    @Setting.Feature(icon = "minecraft:torch")
+    @Config.LangKey("config.cavesandcliffsbackport.changes")
+    @Config.Comment("1.18's changes to how existing mobs behave.")
+    public static final Changes changes = new Changes();
 
     // ------------------------------------------------------------------------------------------
     // Categories. Each stream owns exactly one; caves is common's.
@@ -529,6 +533,12 @@ public final class ModConfig {
         @Config.LangKey("config.cavesandcliffsbackport.height.moddedBiomeRegionSize")
         @Config.RangeInt(min = 64, max = 8192)
         public int moddedBiomeRegionSize = 512;
+    }
+
+    public static final class Changes {
+        @Config.Comment("Monsters spawn only where block light is 0 (1.18), from spawners too.")
+        @Config.LangKey("config.cavesandcliffsbackport.changes.monsterSpawnLight")
+        public boolean monsterSpawnLight = true;
     }
 
     // ------------------------------------------------------------------------------------------

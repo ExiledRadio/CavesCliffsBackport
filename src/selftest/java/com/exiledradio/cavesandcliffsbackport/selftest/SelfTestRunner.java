@@ -79,6 +79,7 @@ public final class SelfTestRunner {
             new HeightBenchSelfTest(),
             new GenScanSelfTest(),
             new StructSnowSelfTest(),
+            new SpawnLightSelfTest(),
             new ModernFeaturesSelfTest(),
             new FlatSelfTest(),
             new CubicSelfTest("cubic"),
