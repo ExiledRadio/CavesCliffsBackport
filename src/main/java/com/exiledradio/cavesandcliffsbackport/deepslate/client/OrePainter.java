@@ -12,6 +12,10 @@ final class OrePainter {
 
     /** How far (per channel) a pixel may be from the stone under it and still count as stone. */
     static final int TOLERANCE = 14;
+    /** How far (per channel) a pixel anywhere may be from one of the stone's own shades and still count as stone. */
+    static final int SHADE = 3;
+    /** A stone with more shades than this (a detailed resource pack's) is matched by place only. */
+    static final int MAX_SHADES = 256;
     /** An ore texture matches a base when at least this share of its pixels are the base's. */
     static final double MATCH = 0.25;
     /** A texture with at least this share of see-through pixels is an overlay layer, used as it is. */
@@ -54,11 +58,12 @@ final class OrePainter {
     }
 
     static boolean close(int a, int b) {
-        if ((b >>> 24) < 128) {
-            return false;
-        }
+        return (b >>> 24) >= 128 && near(a, b, TOLERANCE);
+    }
+
+    static boolean near(int a, int b, int tolerance) {
         for (int shift = 0; shift <= 16; shift += 8) {
-            if (Math.abs(((a >> shift) & 255) - ((b >> shift) & 255)) > TOLERANCE) {
+            if (Math.abs(((a >> shift) & 255) - ((b >> shift) & 255)) > tolerance) {
                 return false;
             }
         }
@@ -126,6 +131,15 @@ final class OrePainter {
     static BufferedImage paint(BufferedImage ore, List<int[]> bases, BufferedImage deepslate) {
         int w = ore.getWidth(), h = ore.getHeight(), f = frame(ore);
         int[] ds = scaled(deepslate, w, f);
+        // The stone's own shades: an ore drawn on a moved or older copy of the stone keeps them, off their places.
+        java.util.Set<Integer> shades = new java.util.HashSet<Integer>();
+        for (int[] b : bases) {
+            for (int c : b) {
+                if ((c >>> 24) >= 128) {
+                    shades.add(c & 0xFFFFFF);
+                }
+            }
+        }
         BufferedImage out = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
@@ -134,6 +148,14 @@ final class OrePainter {
                 boolean stone = (p >>> 24) < 128;
                 for (int[] b : bases) {
                     stone |= close(p, b[local]);
+                }
+                if (!stone && shades.size() <= MAX_SHADES) {
+                    for (int s : shades) {
+                        if (near(p, s, SHADE)) {
+                            stone = true;
+                            break;
+                        }
+                    }
                 }
                 out.setRGB(x, y, stone ? ds[local] | 0xFF000000 : p | 0xFF000000);
             }

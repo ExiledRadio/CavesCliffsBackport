@@ -35,6 +35,8 @@ public final class StandInOresClient {
         ModelLoader.setCustomStateMapper(StandInOres.excludedOre, asIron);
         ModelLoader.setCustomStateMapper(StandInOres.sandOre, asIron);
         ModelLoader.setCustomStateMapper(StandInOres.clathrateOre, asIron);
+        ModelLoader.setCustomStateMapper(StandInOres.deepslateOre, asIron);
+        ModelLoader.setCustomStateMapper(StandInOres.enderKeyOre, asIron);
         ModelLoader.setCustomStateMapper(StandInOres.gemOre, new StateMapperBase() {
             @Override
             protected ModelResourceLocation getModelResourceLocation(IBlockState state) {

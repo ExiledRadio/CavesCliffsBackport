@@ -78,6 +78,29 @@ O2 first (user's choice), then O1, then O3.
     shovel) and its netherrack and end stone clathrates are found but are not ores: hidden and never placed.
 *   Not done: a Default-world generation census with real mods (the swap is tested with stand-ins).
 
+**Fixed after a Dregora test (2026-11-17, branch `claude/o1-ore-textures`):**
+
+*   NuclearCraft's forms kept vanilla stone: its ore models name only the overlay and take the stone base from a
+    parent model, and Forge's vanilla model wrapper lists only a model's own textures. Each form's textures now come
+    from the model and all its parents (`getDependencies`).
+*   Defiled Lands' scarlite had dark specks (read as coal): its ores are on its own defiled stone, and the
+    consensus of three ores left the shading around scarlite's bits. A mod's own stone is now first looked for among
+    its stone blocks' textures (rock, full cube, not an ore; up to 256 blocks), with the consensus as the fallback.
+*   Mottled forms (Biomes O' Plenty, Ice and Fire, Defiled Lands' hephaestite): ores drawn on a moved or older copy of
+    stone kept half its pixels. A pixel that is one of the stone's own shades (within 3) anywhere now counts as stone;
+    a stone with over 256 shades (detailed resource packs) is matched by place only.
+*   No forms of Nether or End ores at all: besides the registry path, a mod whose name says Nether (BetterNether's
+    cincinnasite), the block's translation key or a state's property value (Thermal's `type=glowstone` and
+    `type=ender` clathrates), and Biomes O' Plenty's amethyst and Quark's biotite (End ores by name only) are left out
+    with no block. Ores found Nether/End only by an ore dictionary name later still get a hidden, never-placed form.
+*   Ores that already are deepslate ores (a pack's ContentTweaker `deepslate_*_ore`) are left out.
+*   One background for every form: a redrawn layer that is deepslate alone (a stone base layer) is never tinted, even
+    when the original tints it; tints stay on the ore's own specks. The client test adds a wall of every confirmed
+    form face on and touching, after 1.18's own deepslate ores (`cc_moddedores_forms.png`), to hold them against each
+    other.
+*   Real mods (Forge 2860 for NuclearCraft 2.19a): NuclearCraft, Defiled Lands (with Baubles), Biomes O' Plenty,
+    BetterNether, Ice and Fire 2.0.9 (with LLibrary), with Thermal and IE as before.
+
 ### O2. Modded ore heights in Caves & Cliffs worlds
 
 1.18 moved vanilla's ores down as the world grew: diamond from y 0-16 to -64-16, gold from 0-32 to -64-32, iron

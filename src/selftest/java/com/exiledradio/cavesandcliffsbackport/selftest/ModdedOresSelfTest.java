@@ -68,6 +68,10 @@ public final class ModdedOresSelfTest implements SelfTest {
         }
         c.ok(ModdedOres.leftOut("ccstandin:nether_copper_ore") != null, "the Nether ore is listed as left out");
         c.ok(ModdedOres.leftOut("ccstandin:excluded_ore") != null, "the excluded ore is listed as left out");
+        c.ok(ModdedOres.leftOut("ccstandin:deepslate_tin_ore") != null && ModdedOres.form(StandInOres.deepslateOre) == null
+                && forBlock(StandInOres.deepslateOre).isEmpty(), "an ore that is already a deepslate ore gets no form");
+        c.ok(ModdedOres.leftOut("ccstandin:pearl_ore") != null && forBlock(StandInOres.enderKeyOre).isEmpty(),
+                "an End ore told by its translation key gets no form");
 
         // Confirmed against the ore dictionary.
         c.ok(copper.confirmed() && quartz.confirmed() && aqua.confirmed(), "the stand-in ores are confirmed");
@@ -177,6 +181,17 @@ public final class ModdedOresSelfTest implements SelfTest {
         c.eq(StandInOres.gemOre.getStateFromMeta(2), c.world.getBlockState(d), "the layer leaves an unconfirmed candidate");
         c.eq(StandInOres.netherOre.getDefaultState(), c.world.getBlockState(n), "the layer leaves the Nether ore");
         c.eq(DeepslateContent.deepslate, c.world.getBlockState(a.up()).getBlock(), "stone around it is deepslate");
+    }
+
+    /** Every form made from this original block. */
+    private static List<ModdedOres.Form> forBlock(Block original) {
+        List<ModdedOres.Form> out = new ArrayList<ModdedOres.Form>();
+        for (ModdedOres.Form f : ModdedOres.forms()) {
+            if (f.original.getBlock() == original) {
+                out.add(f);
+            }
+        }
+        return out;
     }
 
     private static List<String> names(ModdedOres.Form f) {

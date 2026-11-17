@@ -38,7 +38,9 @@ import java.util.Random;
  *   <li>{@code ore} with three metadata variants, hardness 5 (form: 7.5): 0 drops quartz with Fortune and experience
  *       (level 2), 1 drops 2-4 prisma crystals with Fortune (level 3), 2 is in no ore dictionary (a candidate that is
  *       not an ore);</li>
- *   <li>{@code nether_copper_ore} (a Nether ore, left out) and {@code excluded_ore} (excluded by the setting).</li>
+ *   <li>{@code nether_copper_ore} (a Nether ore, left out) and {@code excluded_ore} (excluded by the setting);</li>
+ *   <li>{@code deepslate_tin_ore} (already a deepslate ore) and {@code pearl_ore} (an End ore by its translation key):
+ *       left out with no form.</li>
  * </ul>
  * In the client test they draw as vanilla's iron, diamond, emerald and redstone ores
  * ({@link StandInOresClient}), so their forms can be held against 1.18's own deepslate ores.
@@ -48,7 +50,7 @@ public final class StandInOres {
 
     public static final String NS = "ccstandin";
 
-    public static Block copperOre, gemOre, netherOre, excludedOre, sandOre, clathrateOre;
+    public static Block copperOre, gemOre, netherOre, excludedOre, sandOre, clathrateOre, deepslateOre, enderKeyOre;
     public static final List<Item> ITEMS = new ArrayList<Item>();
 
     private StandInOres() {
@@ -144,7 +146,11 @@ public final class StandInOres {
         sandOre = name(plain(3.0F, 1), "sand_ore");
         sandOre.setHarvestLevel("shovel", 1);
         clathrateOre = name(plain(3.0F, 1), "ore_fluid");
-        event.getRegistry().registerAll(copperOre, gemOre, netherOre, excludedOre, sandOre, clathrateOre);
+        // A pack's own deepslate ore (left out), and an End ore told only by its translation key (left out, no form).
+        deepslateOre = name(plain(4.5F, 1), "deepslate_tin_ore");
+        enderKeyOre = name(plain(3.0F, 1), "pearl_ore");
+        enderKeyOre.setTranslationKey(NS + ".enderPearlOre");
+        event.getRegistry().registerAll(copperOre, gemOre, netherOre, excludedOre, sandOre, clathrateOre, deepslateOre, enderKeyOre);
     }
 
     @SubscribeEvent
