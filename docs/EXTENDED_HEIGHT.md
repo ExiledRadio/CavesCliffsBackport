@@ -134,6 +134,16 @@ Rules for the transformer:
 * Packaging: the mod jar carries `FMLCorePlugin` and `FMLCorePluginContainsFMLMod` in its manifest, as
   Fluidlogged API does, so it stays one jar. The plugin does nothing unless extended height is possible
   (config on, no conflicting mod found).
+* Mojang's frames: a class Forge does not patch (here `ViewFrustum`, `SPacketChunkData`) keeps ProGuard's
+  stack-map frames, which mark a local TOP once vanilla stops reading it. Inserted code that loads such a local
+  is a `VerifyError` in the real game only (dev runs recompile Minecraft with javac), so inserted loads read only
+  `this` or values vanilla still reads after that point. The start-up check above loads each target without
+  linking it, which does not verify it. Before a release, `tools/release/boot-server.sh <server dir> <log>
+  <Backport Core jar> build/libs/<this mod>.jar` boots the release jars on a plain dedicated server with
+  `-Dcavesandcliffsbackport.loadPatched=true`: `PatchCheck` then loads, links and verifies every class this mod's
+  two transformers patch (`ChangesTransformer`'s too) and logs `PATCHCHECK ok`. The family's frame verifier
+  (`family-notes/tools/verify/ScanAll.java`) checks both sides against the real client jar; `smallchanges` has
+  the JVM verify each patched SRG class of `ChangesTransformer`.
 
 ## 3. Compatibility
 
