@@ -125,6 +125,12 @@ public final class SmallChangesSelfTest implements SelfTest {
                 if (!c.ok(out != null, which + target + " patched")) {
                     continue;
                 }
+                if (e != null) {
+                    // The JVM's own verifier, with Mojang's ProGuard frames (ASM's check below computes its own).
+                    String error = FrameCheck.verify(srg, target, out);
+                    c.ok(error == null, "SRG " + target + " passes the JVM's verifier with Mojang's frames"
+                            + (error == null ? "" : ": " + error));
+                }
                 org.objectweb.asm.tree.ClassNode node = new org.objectweb.asm.tree.ClassNode();
                 new org.objectweb.asm.ClassReader(out).accept(node, 0);
                 for (org.objectweb.asm.tree.MethodNode m : node.methods) {

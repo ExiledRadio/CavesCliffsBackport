@@ -112,6 +112,7 @@ public final class CavesAndCliffsBackport {
      */
     @Mod.EventHandler
     public void serverStarted(FMLServerStartedEvent event) {
+        PatchCheck.runIfAsked();
         String selftest = System.getProperty(MOD_ID + ".selftest");
         if (selftest == null || selftest.isEmpty()) {
             return;
