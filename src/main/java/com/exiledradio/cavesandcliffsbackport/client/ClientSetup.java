@@ -54,6 +54,9 @@ public final class ClientSetup {
         if (com.exiledradio.cavesandcliffsbackport.ModConfig.blocks.enabled) {
             com.exiledradio.cavesandcliffsbackport.blocks.client.LightClient.init();
         }
+        if (com.exiledradio.cavesandcliffsbackport.deepslate.ModdedOres.enabled()) {
+            com.exiledradio.cavesandcliffsbackport.deepslate.client.ModdedOreClient.init();
+        }
         com.exiledradio.cavesandcliffsbackport.music.client.MusicClient.init();
         com.exiledradio.cavesandcliffsbackport.lookfeel.client.LookAndFeelClient.init();
     }

@@ -38,6 +38,46 @@ O2 first (user's choice), then O1, then O3.
 *   **Lang:** "Deepslate " + the ore's own name, in each language the family covers, built from the ore's localized name.
 *   **Placement:** wherever a modded ore would sit in deepslate (both world types), the deepslate form goes instead.
 
+**Built (2026-11-17, branch `claude/cool-lichterman-86c701`):**
+
+*   `deepslate/ModdedOres`: candidates at `Register<Block>` LOWEST (an "ore" word in the registry path; rock, full
+    opaque cube, breakable, no tile entity; one per metadata), named `cavesandcliffsbackport:deepslate/<modid>/<name>[_<meta>]`.
+    Confirmed by an `ore*` ore dictionary name (sweep at item registration, `OreRegisterEvent` after, sweeps again in
+    post-init and load-complete). Not confirmed, never placed and no creative tab (so not in JEI): no `ore*` name, a
+    Nether or End name (registry path, ore dictionary name or translation key: nether, ender, end stone, glowstone...),
+    or mined with something other than a pickaxe (oil sand). Left out with no block: Nether/End by registry path, this
+    family's ores (`minecraft`, ours, any `*backport` namespace) and `deepslate.moddedOresExclude` (`modid:name`,
+    `modid:name:meta`, `modid:*`). Settings `deepslate.moddedOres` (on) and `moddedOresExclude`.
+*   `BlockModdedDeepslateOre` / `ItemModdedDeepslateOre`: hardness `max(4.5, 1.5 x ore)`, the ore's blast resistance,
+    deepslate's sound; harvest tool and level, drops, experience, Silk Touch, light and render layers handed to the
+    original with its state (a drop of the ore itself becomes the form). Ore dictionary names and smelting copied.
+    Name: `gui.cavesandcliffsbackport.deepslate_ore` ("Deepslate %s"), with `.lowercase` for languages that put the
+    ore's name after a word of their own in lower case (nl, pl, uk). Patterns taken from Mojang's 1.18.2 lang files.
+*   Report: log line plus `config/cavesandcliffsbackport-modded-ores.txt` (forms, candidates that are not ores and why,
+    left out and why).
+*   Default worlds: `DeepslateLayer.swaps()` adds `ModdedOres.addSwaps`.
+*   **Caves & Cliffs worlds (for O2):** `ModdedOres.deepslateForm(IBlockState)` returns the form's state, or null when
+    the state is not a confirmed modded stone ore. Not wired into `terrain/`; O2 or the integrator calls it where O2
+    picks the block to place.
+*   Client (`deepslate/client`): an in-memory default pack (below resource packs, so they can replace any file by name;
+    added to the live manager too, since the startup reload is before pre-init). At `TextureStitchEvent.Pre` each
+    form's original model (`ModelLoaderRegistry`, through the state mapper) gives its textures; each is read once:
+    mostly see-through (an overlay layer) is kept, a texture that matches vanilla stone (current pack's or the jar's) or
+    the mod's own stone (per-pixel consensus of its other ore textures) has that stone replaced with
+    `cavesandcliffsbackport:block/deepslate.png` (frames and `.mcmeta` kept). Served as
+    `block/deepslate_ores/<modid>/<path>`, plus `block/deepslate_ores/_form/<modid>/<name>` for the generated blockstate's
+    cube model. At `ModelBakeEvent` each form's model is the original's baked model with its quads moved onto the
+    redrawn sprites (`BakedQuadRetextured`), by known names only (VintageFix), and the original's block and item color
+    handlers tint it.
+*   Tests: `moddedores` (stand-in ores in `selftest/StandInOres`), `runClient -Pclienttest=moddedores` (atlas, models,
+    a wall of originals over forms, F3 + T, and drops/experience of every confirmed form on the integrated server).
+*   Real mods (`G:\VBPTest\cc-o1`, Prism `cco1-client`, Forge 2847): Thermal Foundation 2.6.7.1 and Immersive
+    Engineering 0.12-98, with JEI; plain, with OptiFine HD U G5 and with VintageFix 0.7.0 (dynamic resources): 362/0
+    each. 16 real forms (Thermal's nine metal ores and destabilized redstone, IE's six) drop and give experience as
+    their ores, with Thermal's and IE's own textures redrawn on deepslate. Thermal's oil sands and oil shale (dug with a
+    shovel) and its netherrack and end stone clathrates are found but are not ores: hidden and never placed.
+*   Not done: a Default-world generation census with real mods (the swap is tested with stand-ins).
+
 ### O2. Modded ore heights in Caves & Cliffs worlds
 
 1.18 moved vanilla's ores down as the world grew: diamond from y 0-16 to -64-16, gold from 0-32 to -64-32, iron
