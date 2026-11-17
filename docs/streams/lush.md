@@ -1,7 +1,7 @@
 # Stream L: lush caves
 
-Package `lush` (client part in `lush.client`). Config `lush`: `enabled`, `glowLichen`, `lichenTries` (40),
-`azaleaTrees`; the caves themselves are behind `caves.lushRegions`, which was already there. No packets (ids 25-29
+Package `lush` (client part in `lush.client`). Config `lush`: `enabled`, `glowLichen`, `azaleaTrees`
+(`lichenTries` is gone: the count is 1.18.2's); the caves themselves are behind `caves.lushRegions`, which was already there. No packets (ids 25-29
 unused), no entities, no advancements (1.17 has none for these). Also changed outside the package: the lush
 category's settings icon in `ModConfig` is now our moss block.
 
@@ -81,7 +81,7 @@ ceilings; clay patches two deep with water wherever it is held in on all sides, 
 clay; cave vines under 12% of ceiling moss (1.18's lengths, a fifth of their blocks with berries), spore
 blossoms under 1.5%; and one or two tries a chunk at 1.17's root system (azalea tree on the first open ground
 within 100 above, rooted dirt down to the cave, hanging roots). Nothing is written outside the window. Glow
-lichen is tried `lichenTries` times a chunk between y 5 and 54, on stone faces, half of them spread once.
+lichen is 1.18.2's placed feature (below, "Glow lichen density").
 
 ### Generation parity pass (2026-11-13, branch `cc-gen-parity`)
 
@@ -113,6 +113,36 @@ Before and after, the dev server (`-Pselftest=genscan`, `GenScanSelfTest`, a squ
 | geode amethyst, median | 294 | 370 | 405 |
 | buds per geode, median (10th-90th) | 6 (2-11) | 6 (3-11) | 6 (2-11) |
 
+### Glow lichen density (2026-11-16, branch `cc-lichen-density`)
+
+A playtest said glow lichen lit Default-world caves everywhere. The `cavesandcliffs` world type was already right:
+`FeatureCheck` with all features (`oracle-out/fdef`, 2,048 chunks on the four oracle seeds) is ALL IDENTICAL, glow
+lichen included. 1.18.2's placed `glow_lichen` is the configured feature (search range 20, ceiling and walls but
+**not the floor**, chance of spreading 0.5, on stone, andesite, diorite, granite, dripstone block, calcite, tuff,
+deepslate) with `UniformInt` 104-157 tries a chunk, RANGE_BOTTOM_TO_MAX_TERRAIN_HEIGHT (y -64 to 256), in the
+square, an OCEAN_FLOOR_WG threshold of -13 and the biome filter; lush caves add nothing of their own.
+
+The Default-world generator was its own: 40 tries a chunk between y 5 and 54, each walking up to 8 blocks down from
+stone to find air (so most tries found a cave), any of the six faces including the floor, on stone or dirt. It is
+now the feature itself (`LushCaveGenerator.lichen`): the same draws in the same order, the same placement and
+spreading (MultifaceBlock's static direction order included), `oceanFloor` for OCEAN_FLOOR_WG, and the tries that
+land below y 0 do nothing, so tries are as dense a block as in 1.18.
+
+Measured as `tools/terrain/LichenStats` measures the 1.18.2 dumps (`LichenCensusSelfTest`, `-Pselftest=lichencensus`,
+seed 1718, the 484 fully populated chunks of a 24x24 square at 0,0). "Eligible air" is underground air (air or
+water at most 13 below the ocean floor) with lichen-able stone above or beside it, the walls lichen can take:
+
+| | before | after | 1.18.2 (`fdef`, 2,048 chunks) |
+| --- | --- | --- | --- |
+| lichen blocks a chunk (median, 90th percentile) | 4.75 (3, 12) | 1.03 (0, 3) | 3.11 (2, 7) |
+| lichen per 1,000 eligible air | 15.8 | 3.43 | 3.93 |
+| lichen per 1,000 underground air | 7.18 | 1.56 | 1.19 |
+| blocks with a floor face | 7.8% | 1.8% | 4.7% |
+
+Per wall lichen can take, the Default world is now within 13% of 1.18.2 (it was four times as dense); fewer lichen a
+chunk is because 1.12's caves have a quarter of 1.18's underground air (661 blocks a chunk against 2,622), not fewer
+tries. Exact parity is not possible there (1.12 terrain, java.util.Random).
+
 ## Differences from current Java
 
 *   No waterlogging yet (the plan's later pass): glow lichen, hanging roots and both dripleaves go only in air,
@@ -143,8 +173,8 @@ jar were **not run** either: both are owed before merging.
 *   Glow lichen: placing faces with the item, joining, the up block, lost support, shears per face, spreading.
 *   Recipes; region share, determinism, and the chunk pre-check never skipping a lush block.
 *   A built cave in a lush spot dressed by the generator (moss, clay, vines, blossoms, plants, dripleaves, a
-    rooted azalea tree, nothing outside the window), lichen generation, and 64 really generated chunks (312
-    lichen, 4,439 moss, 350 vine blocks, 823 clay, 74 dripleaves, azalea trees).
+    rooted azalea tree, nothing outside the window), lichen generation (2,000 tries), and 64 really generated
+    chunks (312 lichen before the density pass, 4,439 moss, 350 vine blocks, 823 clay, 74 dripleaves, azalea trees).
 *   Switched off (fresh world): boots, scaffold test passes.
 
 ## Not tested

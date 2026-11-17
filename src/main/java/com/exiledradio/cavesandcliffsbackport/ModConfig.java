@@ -234,11 +234,6 @@ public final class ModConfig {
         @Config.LangKey("config.cavesandcliffsbackport.lush.glowLichen")
         public boolean glowLichen = true;
 
-        @Setting.NewChunks
-        @Config.Comment("How many times a chunk a glow lichen is tried underground. Most tries land in solid stone.")
-        @Config.LangKey("config.cavesandcliffsbackport.lush.lichenTries")
-        @Config.RangeInt(min = 0, max = 500)
-        public int lichenTries = 40;
 
         @Setting.NewChunks
         @Config.Comment("Azalea trees grow on the surface above lush caves, with rooted dirt running down to the cave.")
