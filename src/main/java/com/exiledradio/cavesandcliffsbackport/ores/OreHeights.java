@@ -280,11 +280,22 @@ public final class OreHeights {
     }
 
     /**
-     * The one place that chooses the block of an ore set at its remapped height, over the block it replaces. Stream
-     * O1 will answer the ore's deepslate form where that is deepslate; for now the ore itself.
+     * The one place that chooses the block of an ore set at its remapped height, over the block it replaces: its
+     * deepslate form (stream O1, {@link com.exiledradio.cavesandcliffsbackport.deepslate.ModdedOres#deepslateForm})
+     * where it replaces deepslate or tuff, as 1.18's ores do; otherwise, or when it has none, the ore itself.
      */
     public static IBlockState placed(IBlockState ore, IBlockState replaced) {
-        return ore;
+        if (!stonesLooked) {
+            stonesLooked = true;
+            deepslate = Owners.ourBlock("deepslate");
+            tuff = Owners.ourBlock("tuff");
+        }
+        Block block = replaced.getBlock();
+        if (block == null || block != deepslate && block != tuff) {
+            return ore;
+        }
+        IBlockState form = com.exiledradio.cavesandcliffsbackport.deepslate.ModdedOres.deepslateForm(ore);
+        return form != null ? form : ore;
     }
 
     /** {@code Block.isReplaceableOreGen}'s body ({@code target.apply(state)}), answered for the remap too. */

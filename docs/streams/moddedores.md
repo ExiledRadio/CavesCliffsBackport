@@ -108,7 +108,7 @@ sites in the height coremod:
     write (the chunk and its +x, +z neighbors: vanilla's +8 rule, so nothing reaches an ungenerated chunk) goes to
     `2y - 64`, if the target takes it; otherwise it is not placed. A position far below the world stands for "drop":
     vanilla's own range check then returns false. `placedState` → `OreHeights.placed(ore, replaced)` is the one place
-    that picks the block; it returns the ore for now, O1 will return the deepslate form there.
+    that picks the block: the ore's deepslate form (O1's `ModdedOres.deepslateForm`) where it replaces deepslate or tuff, else the ore.
 *   **`Block.isReplaceableOreGen`** (Forge's stone check, which `WorldGenMinable`, CoFH World and Immersive Engineering
     call) has its body `return target.apply(state)` replaced by `OreHeights.isReplaceableOreGen`. In a run, at y 0-63,
     it also asks the generator's own predicate at the target, where our deepslate and tuff count as stone when the
