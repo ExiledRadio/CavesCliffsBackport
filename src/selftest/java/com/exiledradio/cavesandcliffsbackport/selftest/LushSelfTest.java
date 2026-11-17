@@ -631,7 +631,7 @@ public final class LushSelfTest implements SelfTest {
         }
         c.eq(0, outside, "nothing is placed outside the population window");
         // Glow lichen, in the same cave.
-        int placed = LushCaveGenerator.lichen(c.world, new Random(5), x0, z0, 200);
+        int placed = LushCaveGenerator.lichen(c.world, new Random(5), x0, z0, 2000);
         int lichen = 0;
         for (BlockPos p : BlockPos.getAllInBox(new BlockPos(x0 - 1, 8, z0 - 1), new BlockPos(x0 + 16, 60, z0 + 16))) {
             int mask = BlockGlowLichen.faces(c.world.getBlockState(p));
@@ -644,7 +644,7 @@ public final class LushSelfTest implements SelfTest {
                 }
             }
         }
-        log("lichen: {} of 200 tries placed, {} blocks", placed, lichen);
+        log("lichen: {} of 2000 tries placed, {} blocks", placed, lichen);
         c.ok(placed > 0 && lichen >= placed / 2, "glow lichen generates in a cave: " + placed);
 
         // Real chunks around another lush spot.

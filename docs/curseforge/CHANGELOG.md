@@ -13,6 +13,7 @@ First full release. Since the beta:
 *   **Cave and mountain music follows 1.18's biomes**: lush caves, dripstone caves and the mountain biomes play their music where the terrain really has them.
 *   **Water opened by 1.12's structures flows**: an aquifer a mineshaft or another mod's structure cuts into now spills, as in 1.18.
 *   **Fixed goats now and then failing a long jump** they should make.
+*   **Glow lichen in Default worlds is as common as in 1.18**: it was about four times as dense on cave walls, and grew on floors and dirt. It now generates as 1.18.2's feature does, on ceilings and walls of stone, deepslate, tuff, calcite and dripstone. The `lush.lichenTries` setting is gone.
 *   **Other mods' biomes in Caves & Cliffs worlds**: Biomes O' Plenty, Defiled Lands, Traverse and any mod's biomes in Forge's BiomeManager take the place of the closest 1.18 biome in some regions, with their own top blocks, trees, plants and mobs, as TerraBlender places them in 1.18. Without such a mod the terrain is exactly 1.18's. Settings in the `height` category tune or turn it off. Fixed Biomes O' Plenty's grove and meadow standing in for 1.18's grove and meadow.
 
 Needs Backport Core 1.3.0 or newer. Bamboo jungles grow bamboo with Village & Pillage Backport, and warm oceans grow coral reefs with Update Aquatic Backport (without it, terracotta stands in).

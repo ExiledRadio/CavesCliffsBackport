@@ -1,7 +1,9 @@
 package com.exiledradio.cavesandcliffsbackport.lush;
 
+import com.exiledradio.backportcore.waterlog.Waterlogging;
 import com.exiledradio.cavesandcliffsbackport.ModConfig;
 import com.exiledradio.cavesandcliffsbackport.common.CaveRegions;
+import com.exiledradio.cavesandcliffsbackport.common.Owners;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -16,6 +18,8 @@ import net.minecraft.world.gen.IChunkGenerator;
 import net.minecraftforge.fml.common.IWorldGenerator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -41,8 +45,10 @@ import java.util.Random;
  * Underground means at least 4 below the column's highest block, so an open ravine floor is not a cave.
  *
  * <h2>Glow lichen</h2>
- * Everywhere underground, lush or not: {@code lichenTries} tries a chunk (40) between y 5 and 54, each
- * putting lichen on one stone face next to an air block and half the time spreading it once.
+ * Everywhere underground, lush or not, 1.18.2's placed feature {@code glow_lichen} ({@link #lichen}): 104-157 tries a
+ * chunk at heights drawn from y -64 to 256, kept at least 13 below the ocean floor, each putting lichen on the
+ * ceiling or a wall of stone, deepslate, tuff, calcite or dripstone next to that air (or one space over) and half the
+ * time spreading it once. The Caves &amp; Cliffs world type places its own, the same feature in 1.18's step order.
  *
  * <p>Nothing is written outside the population window, so no other chunk is ever loaded.
  */
@@ -67,7 +73,7 @@ public final class LushCaveGenerator implements IWorldGenerator {
             }
         }
         if (ModConfig.lush.glowLichen) {
-            lichen(world, random, x0, z0, ModConfig.lush.lichenTries);
+            lichen(world, random, x0, z0);
         }
     }
 
@@ -354,47 +360,175 @@ public final class LushCaveGenerator implements IWorldGenerator {
     // ---------------------------------------------------------------------------------------------
     // Glow lichen
 
-    /** @return how many tries placed lichen */
-    public static int lichen(World world, Random random, int x0, int z0, int tries) {
-        int placed = 0;
+    /**
+     * 1.18.2's OCEAN_FLOOR_WG height in a column: one above the highest block that blocks motion, as it stands before
+     * the features (so not leaves, logs or the other plant blocks the decoration grows).
+     */
+    public static int oceanFloor(World world, int x, int z) {
         BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
-        List<EnumFacing> faces = new ArrayList<EnumFacing>(6);
-        for (int t = 0; t < tries; t++) {
-            int x = x0 + random.nextInt(16), z = z0 + random.nextInt(16);
-            int top = Math.min(world.getHeight(x, z) - 4, 54);
-            if (top <= 5) {
+        for (int y = world.getHeight(x, z) - 1; y >= 0; y--) {
+            Material mat = world.getBlockState(m.setPos(x, y, z)).getMaterial();
+            if (mat.blocksMovement() && mat != Material.LEAVES && mat != Material.WOOD && mat != Material.GOURD
+                    && mat != Material.CACTUS && mat != Material.PLANTS && mat != Material.VINE) {
+                return y + 1;
+            }
+        }
+        return 0;
+    }
+
+    /** GLOW_LICHEN's can_be_placed_on: stone, andesite, diorite, granite, dripstone block, calcite, tuff, deepslate. */
+    public static boolean lichenBase(IBlockState s) {
+        Block b = s.getBlock();
+        if (b == Blocks.STONE) {
+            return true;
+        }
+        if (b == Blocks.AIR) {
+            return false;
+        }
+        if (calcite == null) {
+            calcite = Owners.ourBlock("calcite");
+            dripstoneBlock = Owners.ourBlock("dripstone_block");
+            if (calcite == null) {
+                calcite = Blocks.AIR;
+            }
+            if (dripstoneBlock == null) {
+                dripstoneBlock = Blocks.AIR;
+            }
+        }
+        return Soil.baseStone(s) || b == calcite || b == dripstoneBlock;
+    }
+
+    private static Block calcite, dripstoneBlock;
+
+    /** GLOW_LICHEN's valid directions, in GlowLichenConfiguration's order: the ceiling (up), then the walls. */
+    private static final EnumFacing[] LICHEN_DIRECTIONS = {EnumFacing.UP, EnumFacing.NORTH, EnumFacing.EAST, EnumFacing.SOUTH, EnumFacing.WEST};
+
+    /**
+     * MultifaceBlock.DIRECTIONS: one static array that every spread shuffles in place, so each spread starts from the
+     * order the previous one left (1.18.2 does the same for the life of the JVM).
+     */
+    private static final List<EnumFacing> SPREAD_ORDER = Arrays.asList(EnumFacing.values().clone());
+
+    /**
+     * 1.18.2's placed feature {@code glow_lichen}: 104-157 tries a chunk ({@code UniformInt}), each at a height drawn
+     * uniformly from y -64 to 256 (RANGE_BOTTOM_TO_MAX_TERRAIN_HEIGHT), then in the square, then kept only at least 13
+     * below the column's ocean floor (OCEAN_FLOOR_WG). A 1.12 world has no blocks below 0, so the tries that land there
+     * do nothing, and the rest are as dense a block as in 1.18.
+     *
+     * @return how many tries placed lichen
+     */
+    public static int lichen(World world, Random random, int x0, int z0) {
+        return lichen(world, random, x0, z0, 104 + random.nextInt(157 - 104 + 1));
+    }
+
+    /** {@link #lichen(World, Random, int, int)} with a given number of tries. */
+    public static int lichen(World world, Random random, int x0, int z0, int count) {
+        int placed = 0;
+        for (int t = 0; t < count; t++) {
+            int y = random.nextInt(256 + 64 + 1) - 64;
+            int x = x0 + random.nextInt(16);
+            int z = z0 + random.nextInt(16);
+            if (y < 0 || y > 255 || y > oceanFloor(world, x, z) - 13) {
                 continue;
             }
-            int y = 5 + random.nextInt(top - 5);
-            // A random block is usually stone: look a few blocks down for the cave it may be the roof of.
-            for (int i = 0; i < 8 && y > 4 && !airOrWater(world, m.setPos(x, y, z)); i++) {
-                y--;
-            }
-            if (!airOrWater(world, m.setPos(x, y, z))) {
-                continue;
-            }
-            faces.clear();
-            for (EnumFacing f : EnumFacing.values()) {
-                BlockPos behind = m.offset(f);
-                IBlockState s = world.getBlockState(behind);
-                if (Soil.mossReplaceable(s) && s.getBlockFaceShape(world, behind, f.getOpposite()) == BlockFaceShape.SOLID) {
-                    faces.add(f);
-                }
-            }
-            if (faces.isEmpty()) {
-                continue;
-            }
-            BlockPos at = m.toImmutable();
-            BlockGlowLichen.add(world, at, faces.get(random.nextInt(faces.size())), 2);
-            placed++;
-            if (random.nextBoolean()) {
-                List<Object[]> options = BlockGlowLichen.spreads(world, at, BlockGlowLichen.faces(world.getBlockState(at)));
-                if (!options.isEmpty()) {
-                    Object[] pick = options.get(random.nextInt(options.size()));
-                    BlockGlowLichen.add(world, (BlockPos) pick[0], (EnumFacing) pick[1], 2);
-                }
+            if (lichenFeature(world, random, new BlockPos(x, y, z))) {
+                placed++;
             }
         }
         return placed;
+    }
+
+    /** GlowLichenFeature.place with GLOW_LICHEN's configuration (search range 20, no floor, chance of spreading 0.5). */
+    private static boolean lichenFeature(World world, Random random, BlockPos origin) {
+        if (!lichenSpace(world.getBlockState(origin))) {
+            return false;
+        }
+        List<EnumFacing> list = shuffledDirections(random, null);
+        if (placeLichenIfPossible(world, random, origin, list)) {
+            return true;
+        }
+        for (EnumFacing d : list) {
+            List<EnumFacing> list2 = shuffledDirections(random, d.getOpposite());
+            // 1.18.2's search loop sets the same neighbor (origin + d) each of its 20 rounds, and a failed round
+            // changes nothing and draws nothing, so the first round decides.
+            BlockPos p = origin.offset(d);
+            IBlockState s = world.getBlockState(p);
+            if (!lichenSpace(s) && !(s.getBlock() instanceof BlockGlowLichen)) {
+                continue;
+            }
+            if (placeLichenIfPossible(world, random, p, list2)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** GlowLichenConfiguration.getShuffledDirections(Except): a fresh list of the valid directions, shuffled. */
+    private static List<EnumFacing> shuffledDirections(Random random, EnumFacing except) {
+        List<EnumFacing> list = new ArrayList<EnumFacing>(5);
+        for (EnumFacing d : LICHEN_DIRECTIONS) {
+            if (d != except) {
+                list.add(d);
+            }
+        }
+        Collections.shuffle(list, random);
+        return list;
+    }
+
+    /** GlowLichenFeature.isAirOrWater. */
+    private static boolean lichenSpace(IBlockState s) {
+        return s.getBlock() == Blocks.AIR || s.getMaterial() == Material.WATER && s.getBlock() instanceof net.minecraft.block.BlockLiquid;
+    }
+
+    /** GlowLichenFeature.placeGlowLichenIfPossible: on the first direction with a lichen-able block, or nothing. */
+    private static boolean placeLichenIfPossible(World world, Random random, BlockPos pos, List<EnumFacing> dirs) {
+        for (EnumFacing d : dirs) {
+            if (lichenBase(world.getBlockState(pos.offset(d)))) {
+                // MultifaceBlock.getStateForPlacement: null (so nothing) if that face is taken or not full.
+                IBlockState state = world.getBlockState(pos);
+                int mask = BlockGlowLichen.faces(state);
+                if (BlockGlowLichen.has(mask, d) || !BlockGlowLichen.supported(world, pos, d)) {
+                    return false;
+                }
+                Waterlogging.placeKeepingWater(world, pos, BlockGlowLichen.of(mask | 1 << d.getIndex()), 2);
+                if (random.nextFloat() < 0.5F) {
+                    spreadFromFaceTowardRandomDirection(world, random, pos, d);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** MultifaceBlock.spreadFromFaceTowardRandomDirection. */
+    private static boolean spreadFromFaceTowardRandomDirection(World world, Random random, BlockPos pos, EnumFacing face) {
+        int mask = BlockGlowLichen.faces(world.getBlockState(pos));
+        Collections.shuffle(SPREAD_ORDER, random);
+        for (EnumFacing d : SPREAD_ORDER) {
+            if (spreadFromFaceTowardDirection(world, pos, mask, face, d)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** MultifaceBlock.spreadFromFaceTowardDirection: the same space, the next space over, or around the corner. */
+    private static boolean spreadFromFaceTowardDirection(World world, BlockPos pos, int mask, EnumFacing face, EnumFacing d) {
+        if (d.getAxis() == face.getAxis() || !BlockGlowLichen.has(mask, face) || BlockGlowLichen.has(mask, d)) {
+            return false;
+        }
+        if (BlockGlowLichen.canAdd(world, pos, d)) {
+            return spreadToFace(world, pos, d);
+        }
+        BlockPos side = pos.offset(d);
+        if (BlockGlowLichen.canAdd(world, side, face)) {
+            return spreadToFace(world, side, face);
+        }
+        BlockPos corner = side.offset(face);
+        return BlockGlowLichen.canAdd(world, corner, d.getOpposite()) && spreadToFace(world, corner, d.getOpposite());
+    }
+
+    private static boolean spreadToFace(World world, BlockPos pos, EnumFacing face) {
+        return Waterlogging.placeKeepingWater(world, pos, BlockGlowLichen.of(BlockGlowLichen.faces(world.getBlockState(pos)) | 1 << face.getIndex()), 2);
     }
 }
