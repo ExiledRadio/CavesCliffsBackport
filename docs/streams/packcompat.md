@@ -14,7 +14,7 @@ The spawn probe is `selftest/PackProbe` (a test build with `-Dcavesandcliffsback
 | --- | --- | --- | --- |
 | RLCraft 2.9.3 (CurseForge, Forge 2860) | `CavesAndCliffsBackport`, `BackportCore-1.2.0` | nothing: Phosphor 0.2.6 stays (branch `cc-phosphor`; before it, `phosphor-1.12.2-0.2.6`, client and server) | none |
 | RLCraft Dregora, Java 8 (CurseForge) | the same (Core 1.2.0 is already there for V&P) | nothing: Phosphor 0.2.6 and PhosphorCrashFix stay (branch `cc-phosphor`; before it, both) | none |
-| RLCraft Dregora, Cleanroom (Prism) | the same; Fluidlogged API 3.3.3 (the Fast instance has 3.3.2) | nothing: Alfheim 1.6 stays (branch `cc-alfheim`; before it, `Alfheim`) | StellarCore `B:WorldBlockPosJudgement=false` |
+| RLCraft Dregora, Cleanroom (Prism) | the same; Fluidlogged API 3.3.3 (the Fast instance has 3.3.2) | nothing: Alfheim 1.6 stays (branch `cc-alfheim`; before it, `Alfheim`) | none (StellarCore's `WorldBlockPosJudgement` is adapted, branch `cc-stellarcore`) |
 
 Without removing anything, every 1.17 part works in the packs' own worlds and extended height turns itself off with a
 log line naming the mod.

@@ -112,6 +112,7 @@ public final class HeightCorePlugin implements IFMLLoadingPlugin {
         active = why == null;
         if (active) {
             LOG.info("Extended height: coremod on ({} names, {} side).", Asm.srg ? "SRG" : "MCP", client ? "client" : "server");
+            StellarCoreCompat.register();
         } else {
             LOG.warn("Extended height is OFF for this session: {}. Every world keeps y 0-255.", why);
         }
@@ -170,7 +171,7 @@ public final class HeightCorePlugin implements IFMLLoadingPlugin {
 
     /** A {@code String} constant of a class file, read without loading the class; null when there is none. */
     @Nullable
-    private static String constant(String resource, String field) {
+    static String constant(String resource, String field) {
         try (java.io.InputStream in = Launch.classLoader.getResourceAsStream(resource)) {
             if (in != null) {
                 org.objectweb.asm.tree.ClassNode node = new org.objectweb.asm.tree.ClassNode();
