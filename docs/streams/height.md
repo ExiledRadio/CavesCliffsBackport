@@ -377,6 +377,37 @@ Phosphor's code is in plain classes, patched as they load; `MixinChunk` is patch
     and with 1.6.0, world -64 to 319. Plain Forge 2860 + MixinBooter 11.18: StellarCore itself needs ConfigAnytime
     (not tested); a stub jar with StellarCore 1.6.0's own `MixinWorld` class and config, added the way its loader does,
     gives 157/0 with the rewrite applied. Without StellarCore: full suite 4449/0, `selftest.sh height,terrain` 253/0.
+*   **Light below 0** (branch `cc-deep-light`, 2026-11-17; a tester's report of torches below 0 lighting only a sharp-
+    edged box, and a pit below 0 black). Not reproduced in any setup below, so nothing in the mod changed; the checks
+    stay in the tests:
+    *   `HeightSelfTest.deepTorches` (in `height`): in a sealed stone block, a tunnel at y -20 dug first, then a torch
+        on a chunk border; a tunnel at -18 dug after its torch; four shafts with wall torches at -20, -12, -3 and 3, so
+        the light crosses y -16 and y 0 both ways. Every block 0-15 from each torch has 14 minus the distance, and the
+        same after each chunk's NBT round trip (174 positions). `LightEngineSelfTest` runs it too and writes the values
+        to its file, so the `*light2` phase reads them back after a real restart.
+    *   The client test (`HeightClientSelfTest`) builds the site through the integrated server, places the torches in a
+        later tick (single block changes, so the client lights them itself), and compares the client's block light at
+        all 174 positions; then leaves the world, rejoins, and compares the client and the server again. It looks at a
+        3x3 tunnel at y -21 toward a torch in the next chunk and down a shaft lit across y 0 without night vision
+        (screenshots `cc-height-deep-*.png`; the frame's mean brightness and black share are checked), and digs a 1x1
+        pit from the surface to y -30, four blocks a tick: client and server sky light 15 down it.
+    *   Results: dev server `height` 332/0; Phosphor 0.2.6, 0.2.7 and Hesperus 0.2.9.3 on the real server
+        (`G:\VBPTest\cc_phosphor_srv`, `suite.sh`): light1 371/0, light2 26/0, dumps identical; Alfheim 1.6 and
+        Phosphor 0.2.6 again with the values in the light file (`deeplight.sh`): 545/0 + 199/0, 546/0 + 200/0. Dev
+        client: vanilla 46/0, Hesperus 29/0 (before the scenes were added). Dregora copies through Prism with Alfheim
+        1.6 put back: Nothirium + VintageFix ("Fast") 43/0, again 43/0 with StellarCore's `WorldBlockPosJudgement`
+        on; Celeritas 2.5.0 (Demonica moved aside, as before) 50/0; OptiFine HD U G5 with Complementary shaders
+        (`G:\VBPTest\cc-packs\prism\ccheight-Shaders`) 74/0. Full suite 4560/0, `selftest.sh height,terrain` 428/0.
+    *   If a tester sees it again, ask for: `latest.log` (the mod list and the "Extended height" lines), an F3
+        screenshot at the spot, whether F3+A or leaving and rejoining fixes it (render chunks not rebuilt, or wrong
+        light), single player or a server, and the renderer (OptiFine, Celeritas, Nothirium, Vintagium) and lighting
+        mod (Phosphor, Hesperus, Alfheim) with versions. In the report's first screenshot the player is lit while the
+        blocks around are black: an entity's brightness is read from the world's light directly, so that points at
+        stale chunk meshes rather than at the light values.
+    *   Test fixes on the way: the client test's relog no longer sends the quitting packet first (the integrated
+        server could stop before `loadWorld`'s shutdown task was queued, and the client waited forever), and drops
+        packet tasks queued for the old world (an NPE in `SPacketEntityHeadLook` that some packs' crash handlers
+        turn into a crash).
 
 ## Not tested
 

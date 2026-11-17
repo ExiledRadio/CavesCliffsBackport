@@ -296,7 +296,11 @@ public final class HeightClientSelfTest {
                 return;
             }
             case 6: {
-                screenshot(mc, "cc-height-y280");
+                if (this.deep == null) {
+                    screenshot(mc, "cc-height-y280");
+                    this.state = 50;
+                    return;
+                }
                 if (!optifine()) {
                     finish(mc);
                     return;
@@ -317,6 +321,207 @@ public final class HeightClientSelfTest {
                 this.state = 40;
                 return;
             }
+            case 50: {
+                // Torch light below 0 (HeightSelfTest.deepTorches): the site in one tick (sent as whole sections),
+                // the torches in a later one (single block changes: the client lights them itself).
+                final int bx = (this.px & ~15) + 48;
+                final int bz = (this.pz & ~15) + 16;
+                server(mc, world -> {
+                    HeightSelfTest.deepTorchSite(world, bx, bz);
+                    teleport(world, bx - 8 + 0.5, -20, bz + 0.5, 270F, 0F);
+                });
+                this.wait = 200;
+                this.state = 51;
+                return;
+            }
+            case 51: {
+                final int bx = (this.px & ~15) + 48;
+                final int bz = (this.pz & ~15) + 16;
+                server(mc, world -> {
+                    Check check = new Check(world);
+                    try {
+                        this.deep = HeightSelfTest.deepTorchLights(check, world, bx, bz);
+                    } catch (Exception e) {
+                        check.fail("deep torches threw " + e);
+                    }
+                    this.serverFailures.addAll(check.failures());
+                });
+                this.wait = 100;
+                this.state = 52;
+                return;
+            }
+            case 52: {
+                for (String f : this.serverFailures) {
+                    fail("server: " + f);
+                }
+                this.serverFailures.clear();
+                deepLight(mc, "client");
+                final int bx = (this.px & ~15) + 96;
+                final int bz = (this.pz & ~15) + 16;
+                server(mc, world -> {
+                    deepScene(world, bx, bz);
+                    for (EntityPlayerMP p : world.getMinecraftServer().getPlayerList().getPlayers()) {
+                        p.removePotionEffect(net.minecraft.init.MobEffects.NIGHT_VISION);
+                    }
+                    teleport(world, bx - 9.5, -22, bz + 0.5, 270F, 10F);
+                });
+                this.wait = 200;
+                this.state = 60;
+                return;
+            }
+            case 60: {
+                deepView(mc, "cc-height-deep-tunnel", "the tunnel at y -21 toward a torch in the next chunk");
+                final int bx = (this.px & ~15) + 96;
+                final int bz = (this.pz & ~15) + 16;
+                server(mc, world -> teleport(world, bx + 24.5, 12, bz + 0.5, 270F, 89F));
+                this.wait = 200;
+                this.state = 61;
+                return;
+            }
+            case 61: {
+                deepView(mc, "cc-height-deep-shaft", "down a shaft lit by wall torches at y 2 and -12");
+                // A 1x1 pit from the surface to y -30 in a stone sleeve, dug a few blocks a tick as a player digs (a
+                // chunk with 64 changes in a tick is sent whole, with the server's light): the client works out the
+                // sky light down it itself.
+                final int x = (this.px & ~15) + 40;
+                final int z = (this.pz & ~15) + 40;
+                server(mc, world -> {
+                    int top = world.getHeight(x, z);
+                    this.pitTop = top;
+                    for (int y = top; y >= -31; y--) {
+                        for (int dx = -1; dx <= 1; dx++) {
+                            for (int dz = -1; dz <= 1; dz++) {
+                                world.setBlockState(new BlockPos(x + dx, y, z + dz), Blocks.STONE.getDefaultState(), 2);
+                            }
+                        }
+                    }
+                });
+                this.pitY = Integer.MIN_VALUE;
+                this.wait = 40;
+                this.state = 70;
+                return;
+            }
+            case 70: {
+                final int x = (this.px & ~15) + 40;
+                final int z = (this.pz & ~15) + 40;
+                if (this.pitY == Integer.MIN_VALUE) {
+                    this.pitY = this.pitTop;
+                }
+                if (this.pitY < -30) {
+                    this.wait = 60;
+                    this.state = 71;
+                    return;
+                }
+                final int from = this.pitY;
+                this.pitY -= 4;
+                server(mc, world -> {
+                    for (int y = from; y > from - 4 && y >= -30; y--) {
+                        world.setBlockState(new BlockPos(x, y, z), Blocks.AIR.getDefaultState(), 3);
+                    }
+                });
+                this.wait = 2;
+                return;
+            }
+            case 71: {
+                final int x = (this.px & ~15) + 40;
+                final int z = (this.pz & ~15) + 40;
+                int[] ys = {this.pitTop - 1, 16, 15, 1, 0, -1, -15, -16, -17, -29, -30};
+                for (int y : ys) {
+                    eq(15, mc.world.getLightFor(net.minecraft.world.EnumSkyBlock.SKY, new BlockPos(x, y, z)),
+                            "client sky light down a pit dug from the surface (y " + y + ")");
+                }
+                eq(0, mc.world.getLightFor(net.minecraft.world.EnumSkyBlock.SKY, new BlockPos(x + 1, -20, z)),
+                        "client sky light in the stone beside the pit");
+                server(mc, world -> {
+                    for (int y : ys) {
+                        int got = world.getLightFor(net.minecraft.world.EnumSkyBlock.SKY, new BlockPos(x, y, z));
+                        if (got != 15) {
+                            this.serverFailures.add("sky light down the pit at y " + y + ": " + got + ", expected 15");
+                        }
+                    }
+                });
+                this.wait = 5;
+                this.state = 72;
+                return;
+            }
+            case 72: {
+                for (String f : this.serverFailures) {
+                    fail("server: " + f);
+                }
+                this.serverFailures.clear();
+                // Leave the world and come back: the client then has the saved light, sent with the chunks.
+                // No quitting packet first: with it the server can stop on its own before loadWorld's shutdown task
+                // is queued, and loadWorld then waits for that task forever. loadWorld logs the player out itself.
+                // Packets already queued for the client thread would run after it with no world (an NPE that some
+                // packs' crash handlers turn into a crash): drop them.
+                mc.loadWorld(null);
+                java.util.Queue<?> tasks = ObfuscationReflectionHelper.getPrivateValue(Minecraft.class, mc, "field_152351_aB");
+                synchronized (tasks) {
+                    tasks.clear();
+                }
+                mc.displayGuiScreen(new GuiMainMenu());
+                this.wait = 100;
+                this.state = 53;
+                return;
+            }
+            case 53:
+                mc.launchIntegratedServer(WORLD, WORLD, null);
+                this.pendingTicks = 0;
+                this.state = 54;
+                return;
+            case 54:
+                if (mc.world == null || mc.player == null || mc.getIntegratedServer() == null) {
+                    return;
+                }
+                mc.gameSettings.pauseOnLostFocus = false;
+                this.wait = 300;
+                this.state = 55;
+                return;
+            case 55: {
+                final int bx = (this.px & ~15) + 96;
+                final int bz = (this.pz & ~15) + 16;
+                server(mc, world -> {
+                    for (EntityPlayerMP p : world.getMinecraftServer().getPlayerList().getPlayers()) {
+                        p.removePotionEffect(net.minecraft.init.MobEffects.NIGHT_VISION);
+                    }
+                    teleport(world, bx - 9.5, -22, bz + 0.5, 270F, 10F);
+                });
+                this.wait = 300;
+                this.state = 57;
+                return;
+            }
+            case 57: {
+                deepView(mc, "cc-height-deep-tunnel-relog", "the tunnel at y -21 after a relog");
+                deepLight(mc, "client after a relog");
+                final List<int[]> deep = this.deep;
+                server(mc, world -> {
+                    for (int[] e : deep) {
+                        int got = world.getLightFor(net.minecraft.world.EnumSkyBlock.BLOCK, new BlockPos(e[0], e[1], e[2]));
+                        if (got != e[3]) {
+                            this.serverFailures.add("block light at " + e[0] + " " + e[1] + " " + e[2] + " after the reload: "
+                                    + got + ", expected " + e[3]);
+                        }
+                    }
+                });
+                this.wait = 20;
+                this.state = 56;
+                return;
+            }
+            case 56:
+                for (String f : this.serverFailures) {
+                    fail("server: " + f);
+                }
+                eq(0, this.serverFailures.size(), "server deep torch light that changed in a save and reload");
+                this.serverFailures.clear();
+                // Night vision back for the checks after this one (the deep scenes were looked at without it).
+                server(mc, world -> {
+                    for (EntityPlayerMP p : world.getMinecraftServer().getPlayerList().getPlayers()) {
+                        p.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.init.MobEffects.NIGHT_VISION, 1000000, 0, false, false));
+                    }
+                });
+                this.wait = 20;
+                this.state = 6;
+                return;
             case 40: {
                 int[] g = gold(mc);
                 ok(g[1] * 3 > g[2], "a gold wall at y -40 is drawn at its own height, seen from y -40 (Render Regions on): "
@@ -800,6 +1005,96 @@ public final class HeightClientSelfTest {
             CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST cave at {} ({} air of 245 around it)", best, bestScore);
         }
         teleport(world, best.getX() + 0.5, best.getY(), best.getZ() + 0.5, 45F, 10F);
+    }
+
+    /** The deep torch light the server expects (HeightSelfTest.deepTorchLights), and failures found on its thread. */
+    private volatile List<int[]> deep;
+    /** The sky-light pit: the surface's height there, and how far down it is dug. */
+    private volatile int pitTop;
+    private int pitY;
+    private final List<String> serverFailures = java.util.Collections.synchronizedList(new ArrayList<String>());
+
+    /**
+     * A scene to look at, sealed in stone: a 3x3 tunnel at y -22..-20 along x from bx - 16 to bx + 16 with a floor
+     * torch at bx + 2 (the chunk east of the camera), and a 3x3 shaft at bx + 24 from y 14 down to -24 with wall
+     * torches at y 2 and -12, open at the top.
+     */
+    private static void deepScene(WorldServer world, int bx, int bz) {
+        for (int x = bx - 18; x <= bx + 27; x++) {
+            for (int z = bz - 3; z <= bz + 3; z++) {
+                for (int y = -26; y <= 14; y++) {
+                    world.setBlockState(new BlockPos(x, y, z), Blocks.STONE.getDefaultState(), 2);
+                }
+            }
+        }
+        for (int x = bx - 16; x <= bx + 16; x++) {
+            for (int z = bz - 1; z <= bz + 1; z++) {
+                for (int y = -22; y <= -20; y++) {
+                    world.setBlockState(new BlockPos(x, y, z), Blocks.AIR.getDefaultState(), 3);
+                }
+            }
+        }
+        world.setBlockState(new BlockPos(bx + 2, -22, bz), Blocks.TORCH.getDefaultState(), 3);
+        for (int x = bx + 23; x <= bx + 25; x++) {
+            for (int z = bz - 1; z <= bz + 1; z++) {
+                for (int y = -24; y <= 14; y++) {
+                    world.setBlockState(new BlockPos(x, y, z), Blocks.AIR.getDefaultState(), 3);
+                }
+            }
+        }
+        // Stone over the shaft's top so sky light does not reach down it: block light only.
+        for (int x = bx + 23; x <= bx + 25; x++) {
+            for (int z = bz - 1; z <= bz + 1; z++) {
+                world.setBlockState(new BlockPos(x, 15, z), Blocks.STONE.getDefaultState(), 3);
+            }
+        }
+        net.minecraft.block.state.IBlockState wall = Blocks.TORCH.getDefaultState()
+                .withProperty(net.minecraft.block.BlockTorch.FACING, net.minecraft.util.EnumFacing.EAST);
+        world.setBlockState(new BlockPos(bx + 23, 2, bz), wall, 3);
+        world.setBlockState(new BlockPos(bx + 23, -12, bz), wall, 3);
+    }
+
+    /**
+     * Saves a screenshot and checks the scene is not black: the mean brightness (0-255) of the middle half of the
+     * frame, and the share of pixels darker than 4, logged with the file.
+     */
+    private void deepView(Minecraft mc, String name, String what) {
+        screenshot(mc, name);
+        java.awt.image.BufferedImage img = net.minecraft.util.ScreenShotHelper.createScreenshot(mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
+        long sum = 0;
+        int black = 0;
+        int n = 0;
+        for (int y = img.getHeight() / 4; y < img.getHeight() * 3 / 4; y += 2) {
+            for (int x = img.getWidth() / 4; x < img.getWidth() * 3 / 4; x += 2) {
+                int rgb = img.getRGB(x, y);
+                int l = (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
+                sum += l;
+                if (l < 4) {
+                    black++;
+                }
+                n++;
+            }
+        }
+        CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST {}: mean brightness {}, {}% black", name, sum / n, black * 100 / n);
+        ok(sum / n >= 20 && black * 100 / n < 25, what + " is lit (mean brightness " + sum / n + ", " + black * 100 / n + "% black)");
+    }
+
+    /** The client's block light at every position the server checked. */
+    private void deepLight(Minecraft mc, String what) {
+        if (!ok(this.deep != null && !this.deep.isEmpty(), what + ": the deep torch site was built")) {
+            return;
+        }
+        int wrong = 0;
+        for (int[] e : this.deep) {
+            int got = mc.world.getLightFor(net.minecraft.world.EnumSkyBlock.BLOCK, new BlockPos(e[0], e[1], e[2]));
+            if (got != e[3]) {
+                wrong++;
+                if (wrong <= 40) {
+                    fail(what + ": block light at " + e[0] + " " + e[1] + " " + e[2] + ": " + got + ", expected " + e[3]);
+                }
+            }
+        }
+        eq(0, wrong, what + ": deep torch light different from the server's (" + this.deep.size() + " positions)");
     }
 
     private interface ServerTask {
