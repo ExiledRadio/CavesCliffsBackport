@@ -10,10 +10,10 @@ New worlds are Caves & Cliffs worlds, as 1.18's terrain is vanilla's default: 1.
 
 The new biomes are meadows, groves, snowy slopes, jagged, frozen and stony peaks, lush caves and dripstone caves.
 
-| | |
-| --- | --- |
-| ![Jagged peaks with goats](https://media.forgecdn.net/attachments/2205/647/cc-jagged-peaks-jpg.jpg) | ![A meadow below the mountains](https://media.forgecdn.net/attachments/2205/649/cc-meadow-jpg.jpg) |
-| ![A lush cave with axolotls](https://media.forgecdn.net/attachments/2205/648/cc-lush-caves-jpg.jpg) | ![A dripstone cave](https://media.forgecdn.net/attachments/2205/644/cc-dripstone-caves-lifted-jpg.jpg) |
+|                                                                                                                   |                                                                                                                      |
+| ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| <img src="https://media.forgecdn.net/attachments/2205/647/cc-jagged-peaks-jpg.jpg" alt="Jagged peaks with goats"> | <img src="https://media.forgecdn.net/attachments/2205/649/cc-meadow-jpg.jpg" alt="A meadow below the mountains">     |
+| <img src="https://media.forgecdn.net/attachments/2205/648/cc-lush-caves-jpg.jpg" alt="A lush cave with axolotls"> | <img src="https://media.forgecdn.net/attachments/2205/644/cc-dripstone-caves-lifted-jpg.jpg" alt="A dripstone cave"> |
 
 Underground there are cheese, spaghetti and noodle caves, aquifers with their own water and lava levels, ore veins, and deepslate below y 0. The ground is shaped around villages and outposts as in 1.18.
 
@@ -57,7 +57,7 @@ You also get freezing in powder snow, 1.18's music and its own tracks in lush an
 
 Every feature can be turned off in Backport Core's settings screen, under Mod Options.
 
-![Caves & Cliffs Backport's settings](https://media.forgecdn.net/attachments/2205/650/cc-settings-jpg.jpg)
+![Caves & Cliffs Backport's settings](https://media.forgecdn.net/attachments/2215/354/cc-settings-jpg.jpg)
 
 ## Compatibility
 
@@ -79,7 +79,17 @@ Every feature can be turned off in Backport Core's settings screen, under Mod Op
 
 **Fluidlogged API** (optional): candles, pointed dripstone, glow lichen, dripleaf, hanging roots, amethyst buds, lightning rods, light blocks, and the deepslate and copper stairs and slabs hold water. Without it they stay dry and everything else works.
 
-**The other backports**: with Update Aquatic Backport, axolotls hunt its fish and drowned drop copper. With Buzzy Bees Backport, honeycomb waxes copper and makes candles. With Wild Update Backport or Trails & Tales Backport installed when a world is created, it also gets mangrove swamps and the deep dark, or cherry groves, where 1.19 and 1.20 put them. Bamboo comes from Village & Pillage Backport and coral from Update Aquatic Backport.
+**[Village & Pillage Backport](https://www.curseforge.com/minecraft/mc-mods/villager-backport)**: in Caves & Cliffs worlds, its villages and outposts start where 1.18 puts them and the ground is shaped around them, and the terrain grows its bamboo, berry bushes and flowers. The composter takes the lush cave plants, foxes walk on powder snow, and the wandering trader sells pointed dripstone.
+
+**[Update Aquatic Backport](https://www.curseforge.com/minecraft/mc-mods/update-aquatic-backport)**: in Caves & Cliffs worlds, its oceans, coral, kelp, shipwrecks and ocean ruins follow 1.18's biomes and placement. Axolotls hunt its fish and drowned and breed with a bucket of tropical fish, and drowned drop copper.
+
+**[Buzzy Bees Backport](https://www.curseforge.com/minecraft/mc-mods/buzzy-bees-backport)**: honeycomb waxes copper and makes candles, goats can't jump off honey blocks, and trees in Caves & Cliffs worlds get bee nests.
+
+**[Nether Update Backport](https://www.curseforge.com/minecraft/mc-mods/nether-update-backport)**: basalt smelts into smooth basalt, striders freeze in powder snow, mineshafts hang chains, and a doused soul campfire keeps its food. In Caves & Cliffs worlds, ruined portals follow 1.18's placement.
+
+**[Wild Update Backport](https://www.curseforge.com/minecraft/mc-mods/wild-update-backport)**: installed when a world is created, it adds mangrove swamps and the deep dark where 1.19 puts them, and this mod's goats are used. Its allays duplicate with amethyst, water turns rooted dirt into mud, mud under pointed dripstone turns into clay, and sculk spreads over tuff, calcite, dripstone and deepslate.
+
+**[Trails & Tales Backport](https://www.curseforge.com/minecraft/mc-mods/trails-tales-backport)**: installed when a world is created, it adds cherry groves where 1.20 puts them. Desert wells get suspicious sand, the brush and copper trim use this mod's copper, and sniffer eggs hatch twice as fast on moss.
 
 ## Requirements
 
