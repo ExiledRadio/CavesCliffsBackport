@@ -80,6 +80,8 @@ public final class SelfTestRunner {
             new GenScanSelfTest(),
             new LichenCensusSelfTest(),
             new StructSnowSelfTest(),
+            new SpawnLightSelfTest(),
+            new ChangesSelfTest(),
             new ModernFeaturesSelfTest(),
             new FlatSelfTest(),
             new CubicSelfTest("cubic"),

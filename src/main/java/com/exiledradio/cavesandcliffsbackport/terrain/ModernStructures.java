@@ -288,7 +288,9 @@ public final class ModernStructures {
         @Override
         protected StructureStart getStructureStart(int chunkX, int chunkZ) {
             Type type = startAt(Structures.MINESHAFTS, chunkX, chunkZ) == 1 ? Type.MESA : Type.NORMAL;
-            return new StructureMineshaftStart(this.world, this.rand, chunkX, chunkZ, type);
+            // 1.17's supports: the pieces are read back as Caves & Cliffs' own (changes/Mineshafts).
+            return com.exiledradio.cavesandcliffsbackport.changes.Mineshafts.modernize(this.world,
+                    new StructureMineshaftStart(this.world, this.rand, chunkX, chunkZ, type));
         }
 
         @Override

@@ -77,6 +77,7 @@ public final class CavesAndCliffsBackport {
     public void init(FMLInitializationEvent event) {
         com.exiledradio.cavesandcliffsbackport.height.DefaultWorldType.serverInit();
         com.exiledradio.cavesandcliffsbackport.common.Compat.init();
+        com.exiledradio.cavesandcliffsbackport.changes.Mineshafts.init();
         com.exiledradio.cavesandcliffsbackport.deepslate.DeepslateContent.init();
         com.exiledradio.cavesandcliffsbackport.copper.CopperContent.init();
         com.exiledradio.cavesandcliffsbackport.amethyst.AmethystContent.init();

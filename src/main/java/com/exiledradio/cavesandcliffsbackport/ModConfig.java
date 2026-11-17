@@ -81,6 +81,10 @@ public final class ModConfig {
     @Config.LangKey("config.cavesandcliffsbackport.height")
     @Config.Comment("1.18's world height, y -64 to 319, for new worlds of the Caves & Cliffs world type.")
     public static final Height height = new Height();
+    @Setting.Feature(icon = "minecraft:torch")
+    @Config.LangKey("config.cavesandcliffsbackport.changes")
+    @Config.Comment("1.17 and 1.18's changes to how existing mobs, experience orbs and mineshafts behave.")
+    public static final Changes changes = new Changes();
 
     // ------------------------------------------------------------------------------------------
     // Categories. Each stream owns exactly one; caves is common's.
@@ -524,6 +528,29 @@ public final class ModConfig {
         @Config.LangKey("config.cavesandcliffsbackport.height.moddedBiomeRegionSize")
         @Config.RangeInt(min = 64, max = 8192)
         public int moddedBiomeRegionSize = 512;
+    }
+
+    public static final class Changes {
+        @Config.Comment("Monsters spawn only where block light is 0 (1.18), from spawners too.")
+        @Config.LangKey("config.cavesandcliffsbackport.changes.monsterSpawnLight")
+        public boolean monsterSpawnLight = true;
+
+        @Config.Comment("Each player has a mob cap of their own (1.18): mobs within 128 blocks of a player count toward that player's cap, and mobs spawn near a player only while that player's cap has room. The world's cap still applies.")
+        @Config.LangKey("config.cavesandcliffsbackport.changes.localMobCap")
+        public boolean localMobCap = true;
+
+        @Setting.NewChunks
+        @Config.Comment("Mineshafts as 1.17 builds them: logs hold up bridges from the ground below, or a fence and chain hang them from the ceiling; cobwebs only where they touch two solid blocks; supports are not cut by other passages.")
+        @Config.LangKey("config.cavesandcliffsbackport.changes.mineshaftSupports")
+        public boolean mineshaftSupports = true;
+
+        @Config.Comment("Experience orbs of the same size merge into one (1.17), which gives its experience one orb at a time, and orbs stop following players who have died.")
+        @Config.LangKey("config.cavesandcliffsbackport.changes.experienceOrbs")
+        public boolean experienceOrbs = true;
+
+        @Config.Comment("Rabbits spawn on grass blocks, snow, snow blocks and sand, wolves on grass blocks, snow and snow blocks (1.18).")
+        @Config.LangKey("config.cavesandcliffsbackport.changes.snowSpawns")
+        public boolean snowSpawns = true;
     }
 
     // ------------------------------------------------------------------------------------------

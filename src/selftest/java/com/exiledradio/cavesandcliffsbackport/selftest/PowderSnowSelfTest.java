@@ -611,6 +611,9 @@ public final class PowderSnowSelfTest implements SelfTest {
         c.eq(Blocks.AIR, c.world.getBlockState(at).getBlock(), "and melts");
 
         c.world.setBlockState(at, snow(), 2);
+        // Only powder snow's own rule: 1.18's spawn light rule would deny these daylight spawns under the open sky.
+        boolean spawnLight = ModConfig.changes.monsterSpawnLight;
+        ModConfig.changes.monsterSpawnLight = false;
         EntityLiving zombie = new EntityZombie(c.world);
         c.eq(Event.Result.DENY, ForgeEventFactory.canEntitySpawn(zombie, c.world, at.getX() + 0.5F, at.getY(), at.getZ() + 0.5F, false),
                 "nothing spawns inside powder snow");
@@ -618,6 +621,7 @@ public final class PowderSnowSelfTest implements SelfTest {
                 "except what it cannot hurt");
         c.ok(Event.Result.DENY != ForgeEventFactory.canEntitySpawn(zombie, c.world, at.getX() + 0.5F, at.getY() + 3, at.getZ() + 0.5F, false),
                 "and it denies nothing elsewhere");
+        ModConfig.changes.monsterSpawnLight = spawnLight;
         c.world.setBlockState(at, AIR, 2);
     }
 
