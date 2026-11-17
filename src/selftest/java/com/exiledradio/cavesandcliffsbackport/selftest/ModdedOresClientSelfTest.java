@@ -33,7 +33,9 @@ import java.util.List;
  * Stream O1's client test: every form's textures were drawn and are in the atlas, every confirmed form is drawn from
  * its ore's own model, and a wall in a superflat world shows the originals (top row) over their deepslate forms (bottom
  * row), with vanilla's iron ore over 1.18's deepslate iron ore on the left for comparison
- * ({@code screenshots/cc_moddedores_grid.png}). Then F3 + T: everything is drawn again.
+ * ({@code screenshots/cc_moddedores_grid.png}); then every confirmed form face on and side by side, after 1.18's own
+ * deepslate ores, to hold their backgrounds against each other ({@code cc_moddedores_forms.png}). Then F3 + T:
+ * everything is drawn again.
  *
  * <pre>    ./gradlew runClient -Pclienttest=moddedores</pre>
  */
@@ -107,16 +109,28 @@ public final class ModdedOresClientSelfTest {
                 this.state = 3;
                 return;
             case 3:
-                // F3 + T.
-                mc.refreshResources();
-                checkAssets(mc, "after a reload");
-                this.wait = 40;
+                // The forms alone, face on and side by side, to hold their backgrounds against each other.
+                lookAtForms(mc);
+                this.wait = 60;
                 this.state = 4;
                 return;
             case 4:
-                this.shot = "cc_moddedores_grid_reloaded.png";
+                this.shot = "cc_moddedores_forms.png";
                 this.wait = 5;
                 this.state = 5;
+                return;
+            case 5:
+                lookAtGrid(mc);
+                // F3 + T.
+                mc.refreshResources();
+                checkAssets(mc, "after a reload");
+                this.wait = 60;
+                this.state = 6;
+                return;
+            case 6:
+                this.shot = "cc_moddedores_grid_reloaded.png";
+                this.wait = 5;
+                this.state = 7;
                 return;
             default:
                 finish(mc);
@@ -154,6 +168,19 @@ public final class ModdedOresClientSelfTest {
         }
         final int perRow = 8, rows = (pairs.size() + perRow - 1) / perRow;
         final BlockPos p = new BlockPos(mc.player);
+        this.origin = p;
+        this.gridRows = rows;
+        // The forms wall: 1.18's own deepslate ores first, then every confirmed form, touching, 12 to a row.
+        final List<IBlockState> forms = new ArrayList<IBlockState>();
+        for (String v : new String[] {"deepslate_iron_ore", "deepslate_gold_ore", "deepslate_diamond_ore", "deepslate_redstone_ore"}) {
+            forms.add(DeepslateContent.BLOCKS.get(v).getDefaultState());
+        }
+        for (ModdedOres.Form f : ModdedOres.forms()) {
+            if (f.confirmed()) {
+                forms.add(f.block().getDefaultState());
+            }
+        }
+        this.formRows = (forms.size() + FORMS_PER_ROW - 1) / FORMS_PER_ROW;
         IntegratedServer server = mc.getIntegratedServer();
         server.addScheduledTask(() -> {
             WorldServer w = server.getWorld(0);
@@ -163,6 +190,11 @@ public final class ModdedOresClientSelfTest {
                 BlockPos at = p.add(perRow - 1 - 2 * col, 1 + 3 * (rows - 1 - row), 12);
                 w.setBlockState(at.up(), pairs.get(i)[0]);
                 w.setBlockState(at, pairs.get(i)[1]);
+            }
+            BlockPos fo = p.add(FORMS_X, 0, 0);
+            for (int i = 0; i < forms.size(); i++) {
+                int row = i / FORMS_PER_ROW, col = i % FORMS_PER_ROW;
+                w.setBlockState(fo.add(FORMS_PER_ROW / 2 - 1 - col, 1 + (this.formRows - 1 - row), 10), forms.get(i));
             }
             w.setWorldTime(6000);
             // Moved by the server, which would otherwise set a client-side move back.
@@ -174,6 +206,25 @@ public final class ModdedOresClientSelfTest {
         });
         mc.player.capabilities.isFlying = true;
         mc.gameSettings.hideGUI = true;
+    }
+
+    private static final int FORMS_X = -60, FORMS_PER_ROW = 12;
+    private BlockPos origin;
+    private int gridRows, formRows;
+
+    private void moveTo(Minecraft mc, double x, double y, double z) {
+        IntegratedServer server = mc.getIntegratedServer();
+        server.addScheduledTask(() -> server.getPlayerList().getPlayers().get(0).connection.setPlayerLocation(x, y, z, 0, 0));
+    }
+
+    /** Face on to the forms wall, from its middle row's height. */
+    private void lookAtForms(Minecraft mc) {
+        BlockPos fo = this.origin.add(FORMS_X, 0, 0);
+        moveTo(mc, fo.getX(), fo.getY() + 1 + this.formRows / 2.0 - mc.player.getEyeHeight(), fo.getZ() + 0.5);
+    }
+
+    private void lookAtGrid(Minecraft mc) {
+        moveTo(mc, this.origin.getX() + 0.5, this.origin.getY() + 1.5 * this.gridRows, this.origin.getZ() + 0.5);
     }
 
     /**

@@ -88,6 +88,8 @@ public final class ModdedOreClient {
     private static final Map<ResourceLocation, byte[]> FILES = new ConcurrentHashMap<ResourceLocation, byte[]>();
     /** Original sprite name -> our sprite name, for the textures that were redrawn this load. */
     private static final Map<String, ResourceLocation> REDRAWN = new HashMap<String, ResourceLocation>();
+    /** Original sprite names whose redrawn texture is deepslate alone (a base layer): never tinted. */
+    private static final Set<String> PLAIN = new java.util.HashSet<String>();
     /** What the last load did, for the log and the client self-test. */
     private static final List<String> KEPT = new ArrayList<String>();
     private static final Map<Block, String> BAKED = new HashMap<Block, String>();
@@ -182,6 +184,7 @@ public final class ModdedOreClient {
         }
         FILES.clear();
         REDRAWN.clear();
+        PLAIN.clear();
         KEPT.clear();
         IResourceManager rm = mc.getResourceManager();
         BufferedImage deepslate = read(rm, new ResourceLocation(CavesAndCliffsBackport.MOD_ID, "textures/block/deepslate.png"));
@@ -212,12 +215,7 @@ public final class ModdedOreClient {
                 }
                 ModelResourceLocation mrl = v.get(f.original);
                 if (mrl != null) {
-                    IModel model = ModelLoaderRegistry.getModelOrMissing(mrl);
-                    for (ResourceLocation t : model.getTextures()) {
-                        if (!t.getPath().startsWith("missingno") && !list.contains(t)) {
-                            list.add(t);
-                        }
-                    }
+                    addTextures(mrl, list, new java.util.HashSet<ResourceLocation>(), 0);
                 }
             } catch (Exception | LinkageError e) {
                 CavesAndCliffsBackport.LOGGER.debug("Modded ores: no model for {}", f, e);
@@ -265,16 +263,41 @@ public final class ModdedOreClient {
                 l.add(e.getKey());
             }
         }
-        // The mod's own stone: what most of its other ore textures share.
+        // The mod's own stone: the texture of one of its stone blocks the ore was drawn on (Defiled Lands' defiled
+        // stone), else what most of its ore textures share. The block's texture comes first: an ore's own shading
+        // around its bits keeps two textures out of three from agreeing there, and those pixels would stay.
+        Map<String, List<BufferedImage>> modStones = new HashMap<String, List<BufferedImage>>();
         for (List<ResourceLocation> group : unmatched.values()) {
+            String ns = group.get(0).getNamespace();
+            List<BufferedImage> own = modStones.get(ns);
+            if (own == null) {
+                own = modStones(mc, rm, ns, images.keySet());
+                modStones.put(ns, own);
+            }
             List<int[]> frames = new ArrayList<int[]>();
             for (ResourceLocation t : group) {
                 frames.add(OrePainter.firstFrame(images.get(t)));
             }
-            int[] own = OrePainter.consensus(frames);
+            int[] shared = OrePainter.consensus(frames);
             for (ResourceLocation t : group) {
-                if (own != null && OrePainter.match(OrePainter.firstFrame(images.get(t)), own) >= OrePainter.MATCH) {
-                    bases.put(t, Collections.singletonList(own));
+                BufferedImage img = images.get(t);
+                int[] px = OrePainter.firstFrame(img);
+                int w = img.getWidth(), fh = Math.min(OrePainter.frame(img), img.getHeight());
+                int[] best = null;
+                double bestShare = OrePainter.MATCH;
+                for (BufferedImage s : own) {
+                    int[] b = OrePainter.scaled(s, w, fh);
+                    double share = OrePainter.match(px, b);
+                    if (share >= bestShare) {
+                        bestShare = share;
+                        best = b;
+                    }
+                }
+                if (best == null && shared != null && OrePainter.match(px, shared) >= OrePainter.MATCH) {
+                    best = shared;
+                }
+                if (best != null) {
+                    bases.put(t, Collections.singletonList(best));
                 } else {
                     KEPT.add(t.toString());
                 }
@@ -287,6 +310,9 @@ public final class ModdedOreClient {
             ResourceLocation ours = redrawnName(e.getKey());
             if (put(rm, file(ours), OrePainter.paint(images.get(e.getKey()), e.getValue(), deepslate), file(e.getKey()))) {
                 REDRAWN.put(e.getKey().toString(), ours);
+                if (OrePainter.match(OrePainter.firstFrame(images.get(e.getKey())), e.getValue().get(0)) >= 0.9) {
+                    PLAIN.add(e.getKey().toString());
+                }
                 map.registerSprite(ours);
             }
         }
@@ -320,6 +346,72 @@ public final class ModdedOreClient {
         net.minecraft.client.renderer.block.model.ModelManager manager =
                 ReflectionHelper.getPrivateValue(Minecraft.class, mc, "modelManager", "field_175617_aL");
         return manager.getBlockModelShapes();
+    }
+
+    /**
+     * A model's textures and its parents'. A vanilla model reports only the textures it names itself, so a child that
+     * fills in one texture of its parent (NuclearCraft's ore_lead names the overlay; its parent names vanilla stone as
+     * the base) would hide the stone it is drawn on.
+     */
+    private static void addTextures(ResourceLocation loc, List<ResourceLocation> list, Set<ResourceLocation> seen, int depth) {
+        if (depth > 16 || !seen.add(loc)) {
+            return;
+        }
+        IModel model = ModelLoaderRegistry.getModelOrMissing(loc);
+        for (ResourceLocation t : model.getTextures()) {
+            if (!t.getPath().startsWith("missingno") && !list.contains(t)) {
+                list.add(t);
+            }
+        }
+        for (ResourceLocation parent : model.getDependencies()) {
+            addTextures(parent, list, seen, depth + 1);
+        }
+    }
+
+    /** How many of a mod's blocks are looked at for its own stone. */
+    private static final int MOD_STONE_BLOCKS = 256;
+
+    /**
+     * The textures of a mod's own stone blocks (rock, a full opaque cube, not an ore): what its ores may have been
+     * drawn on. Read from each block's default state's model, by name.
+     */
+    private static List<BufferedImage> modStones(Minecraft mc, IResourceManager rm, String ns, Set<ResourceLocation> oreTextures) {
+        List<BufferedImage> out = new ArrayList<BufferedImage>();
+        Set<Block> originals = ModdedOres.originals();
+        Set<ResourceLocation> seen = new java.util.HashSet<ResourceLocation>(oreTextures);
+        int looked = 0;
+        for (Block b : net.minecraftforge.fml.common.registry.ForgeRegistries.BLOCKS.getValuesCollection()) {
+            ResourceLocation name = b.getRegistryName();
+            if (name == null || !ns.equals(name.getNamespace()) || originals.contains(b) || ModdedOres.oreName(name.getPath())) {
+                continue;
+            }
+            if (++looked > MOD_STONE_BLOCKS) {
+                break;
+            }
+            try {
+                IBlockState st = b.getDefaultState();
+                if (st.getMaterial() != net.minecraft.block.material.Material.ROCK || !st.isOpaqueCube() || !st.isFullCube()) {
+                    continue;
+                }
+                ModelResourceLocation mrl = shapes(mc).getBlockStateMapper().getVariants(b).get(st);
+                if (mrl == null) {
+                    continue;
+                }
+                List<ResourceLocation> textures = new ArrayList<ResourceLocation>();
+                addTextures(mrl, textures, new java.util.HashSet<ResourceLocation>(), 0);
+                for (ResourceLocation t : textures) {
+                    if (seen.add(t)) {
+                        BufferedImage img = read(rm, file(t));
+                        if (img != null && OrePainter.clear(OrePainter.firstFrame(img)) < OrePainter.LAYER) {
+                            out.add(img);
+                        }
+                    }
+                }
+            } catch (Exception | LinkageError e) {
+                CavesAndCliffsBackport.LOGGER.debug("Modded ores: no stone texture from {}", name, e);
+            }
+        }
+        return out;
     }
 
     private static void addIfPresent(List<BufferedImage> list, @Nullable BufferedImage img) {
@@ -449,8 +541,13 @@ public final class ModdedOreClient {
             if (done != null) {
                 return done;
             }
-            TextureAtlasSprite s = q.getSprite() == null ? null : this.remap.get(q.getSprite().getIconName());
+            String name = q.getSprite() == null ? null : q.getSprite().getIconName();
+            TextureAtlasSprite s = name == null ? null : this.remap.get(name);
             done = s == null ? q : new BakedQuadRetextured(q, s);
+            if (s != null && done.hasTintIndex() && PLAIN.contains(name)) {
+                // A stone base the original tints (a biome-colored stone): deepslate is never tinted, as in 1.18.
+                done = new BakedQuad(done.getVertexData(), -1, done.getFace(), done.getSprite(), done.shouldApplyDiffuseLighting(), done.getFormat());
+            }
             // A model that makes new quads on every call is not cached, so this never grows without end.
             if (this.quads.size() < 4096) {
                 this.quads.put(q, done);

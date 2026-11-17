@@ -89,6 +89,10 @@ public final class ModdedOres {
      */
     private static final Pattern NETHER_END_NAME = Pattern.compile("nether|hell|ender|endstone|end_stone|glowstone|soulsand|soul_sand");
 
+    /** End ores whose names don't say so (name:meta): Biomes O' Plenty's amethyst and Quark's biotite, in end stone. */
+    private static final Set<String> KNOWN_END = new HashSet<String>(java.util.Arrays.asList(
+            "biomesoplenty:gem_ore:0", "quark:biotite_ore:0"));
+
     /** A candidate: one metadata of another mod's stone ore, and its deepslate form. */
     public static final class Form {
         public final ResourceLocation originalName;
@@ -241,13 +245,35 @@ public final class ModdedOres {
                 || ns.startsWith("backportcore");
     }
 
-    static boolean oreName(String path) {
+    public static boolean oreName(String path) {
         String p = path.toLowerCase(Locale.ROOT);
         return ORE_WORD.matcher(p).find() && !NOT_ORE.matcher(p).find();
     }
 
     static boolean netherOrEnd(String name) {
         return NETHER_END.matcher(name.toLowerCase(Locale.ROOT)).find();
+    }
+
+    /**
+     * A Nether or End ore told by what registration already knows: the block's translation key, and the state's
+     * property values (Thermal Foundation's ore_fluid has type=glowstone and type=ender in one block with its
+     * Overworld ores).
+     */
+    private static boolean netherOrEndByState(Block b, IBlockState st) {
+        try {
+            if (NETHER_END_NAME.matcher(b.getTranslationKey().toLowerCase(Locale.ROOT)).find()) {
+                return true;
+            }
+            for (Comparable<?> v : st.getProperties().values()) {
+                String s = v.toString().toLowerCase(Locale.ROOT);
+                if (NETHER_END_NAME.matcher(s).find() || NETHER_END.matcher(s).find()) {
+                    return true;
+                }
+            }
+        } catch (RuntimeException ignored) {
+            // Told later, by the ore dictionary.
+        }
+        return false;
     }
 
     private static boolean excluded(Set<String> exclude, ResourceLocation name, int meta) {
@@ -283,6 +309,14 @@ public final class ModdedOres {
                 LEFT_OUT.put(name.toString(), "Nether or End ore");
                 continue;
             }
+            if (name.getNamespace().contains("nether")) {
+                LEFT_OUT.put(name.toString(), "Nether or End ore (a Nether mod's)");
+                continue;
+            }
+            if (name.getPath().toLowerCase(Locale.ROOT).contains("deepslate")) {
+                LEFT_OUT.put(name.toString(), "already a deepslate ore");
+                continue;
+            }
             Set<Integer> metas = new TreeSet<Integer>();
             for (IBlockState s : b.getBlockState().getValidStates()) {
                 try {
@@ -306,6 +340,10 @@ public final class ModdedOres {
                 }
                 if (excluded(exclude, name, meta)) {
                     LEFT_OUT.put(name + (meta != 0 ? ":" + meta : ""), "excluded by deepslate.moddedOresExclude");
+                    continue;
+                }
+                if (KNOWN_END.contains(name + ":" + meta) || netherOrEndByState(b, st)) {
+                    LEFT_OUT.put(name + (meta != 0 ? ":" + meta : ""), "Nether or End ore");
                     continue;
                 }
                 Form f = new Form(name, meta, st, hardness);
