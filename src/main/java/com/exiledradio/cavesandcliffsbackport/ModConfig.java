@@ -132,6 +132,17 @@ public final class ModConfig {
         @Setting.NewChunks
         @Config.LangKey("config.cavesandcliffsbackport.deepslate.skipWorldTypes")
         public String[] skipWorldTypes = {"flat", "debug_all_block_states"};
+
+        @Config.RequiresMcRestart
+        @Config.Comment({"Other mods' stone ores get deepslate forms, as 1.18 gave vanilla's: same drops, experience, ore dictionary names and smelting,",
+                "1.5 times as hard. They generate in the deepslate layer instead of the stone ore. The list is in config/cavesandcliffsbackport-modded-ores.txt."})
+        @Config.LangKey("config.cavesandcliffsbackport.deepslate.moddedOres")
+        public boolean moddedOres = true;
+
+        @Config.RequiresMcRestart
+        @Config.Comment("Ores that get no deepslate form, by registry name (modid:name), with :meta for one variant, or modid:* for a whole mod.")
+        @Config.LangKey("config.cavesandcliffsbackport.deepslate.moddedOresExclude")
+        public String[] moddedOresExclude = {};
     }
 
     public static final class Copper {

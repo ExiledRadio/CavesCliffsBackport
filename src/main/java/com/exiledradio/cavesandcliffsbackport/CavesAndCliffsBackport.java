@@ -92,6 +92,12 @@ public final class CavesAndCliffsBackport {
 
     @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event) {
+        com.exiledradio.cavesandcliffsbackport.deepslate.ModdedOres.postInit();
+    }
+
+    @Mod.EventHandler
+    public void loadComplete(net.minecraftforge.fml.common.event.FMLLoadCompleteEvent event) {
+        com.exiledradio.cavesandcliffsbackport.deepslate.ModdedOres.loadComplete();
     }
 
     @Mod.EventHandler

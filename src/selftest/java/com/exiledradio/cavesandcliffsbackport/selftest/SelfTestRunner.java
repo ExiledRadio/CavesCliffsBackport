@@ -45,6 +45,7 @@ public final class SelfTestRunner {
     private static final SelfTest[] TESTS = {
             new ScaffoldSelfTest(),
             new DeepslateSelfTest(),
+            new ModdedOresSelfTest(),
             new CopperSelfTest(),
             new AmethystSelfTest(),
             new DripstoneSelfTest(),
@@ -158,7 +159,9 @@ public final class SelfTestRunner {
     private static void dumpStates(File file) throws Exception {
         PrintWriter out = new PrintWriter(file, "UTF-8");
         for (Block block : ForgeRegistries.BLOCKS) {
-            if (!CavesAndCliffsBackport.MOD_ID.equals(block.getRegistryName().getNamespace())) {
+            // Stream O1's forms of other mods' ores have no files: the client makes their blockstates and models.
+            if (!CavesAndCliffsBackport.MOD_ID.equals(block.getRegistryName().getNamespace())
+                    || com.exiledradio.cavesandcliffsbackport.deepslate.ModdedOres.isForm(block)) {
                 continue;
             }
             String kind = Content.multipartBlocks().contains(block) ? "multipart" : "variants";
@@ -202,7 +205,8 @@ public final class SelfTestRunner {
             }
         }
         for (Item item : ForgeRegistries.ITEMS) {
-            if (CavesAndCliffsBackport.MOD_ID.equals(item.getRegistryName().getNamespace()) && !seen.contains(item)) {
+            if (CavesAndCliffsBackport.MOD_ID.equals(item.getRegistryName().getNamespace()) && !seen.contains(item)
+                    && !(item instanceof com.exiledradio.cavesandcliffsbackport.deepslate.ItemModdedDeepslateOre)) {
                 out.println(item.getRegistryName() + "\t-\tNO_MODEL_REQUEST\t-");
             }
         }

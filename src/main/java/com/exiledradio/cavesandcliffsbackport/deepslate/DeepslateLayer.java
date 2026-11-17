@@ -258,6 +258,8 @@ public final class DeepslateLayer implements IWorldGenerator {
             if (copper != null && deepCopper != null) {
                 m.put(copper.getDefaultState(), deepCopper.getDefaultState());
             }
+            // Stream O1: other mods' confirmed stone ores become their deepslate forms.
+            ModdedOres.addSwaps(m);
             swaps = m;
         }
         return swaps;
