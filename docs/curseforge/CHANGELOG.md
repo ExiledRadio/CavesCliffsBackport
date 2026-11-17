@@ -9,6 +9,7 @@ Behavior changes from 1.17 and 1.18 to things 1.12.2 already has, and fixes. Eac
 *   **Rabbits and wolves spawn on snow**, as in 1.18.
 *   **Works with StellarCore** with any settings: its `WorldBlockPosJudgement` option no longer keeps Caves & Cliffs worlds at y 0-255.
 *   **Glow lichen in Default worlds is as common as in 1.18**: it was about four times as dense on cave walls, and grew on floors and dirt. It now generates as 1.18.2's feature does, on ceilings and walls of stone, deepslate, tuff, calcite and dripstone. The `lush.lichenTries` setting is gone.
+*   **Fixed moss carpet and powder snow breaking into missing-texture particles.**
 
 Needs Backport Core 1.4.0 or newer.
 

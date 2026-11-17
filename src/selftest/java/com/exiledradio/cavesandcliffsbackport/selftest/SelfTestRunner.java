@@ -55,6 +55,7 @@ public final class SelfTestRunner {
             new AxolotlSelfTest(),
             new GoatSelfTest(),
             new BlocksSelfTest(),
+            new ModelParticleSelfTest(),
             new MusicSelfTest(),
             new LookFeelSelfTest(),
             new WaterlogSelfTest(),
