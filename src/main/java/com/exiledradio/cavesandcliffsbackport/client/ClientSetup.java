@@ -59,6 +59,15 @@ public final class ClientSetup {
         }
         com.exiledradio.cavesandcliffsbackport.music.client.MusicClient.init();
         com.exiledradio.cavesandcliffsbackport.lookfeel.client.LookAndFeelClient.init();
+        if ("particles".equals(System.getProperty(CavesAndCliffsBackport.MOD_ID + ".clienttest"))) {
+            // A test build's client test (runClient -Pclienttest=particles), reached by name: a release has no test classes.
+            try {
+                Class.forName("com.exiledradio.cavesandcliffsbackport.selftest.ParticleClientSelfTest")
+                        .getMethod("start", String.class).invoke(null, "particles");
+            } catch (ReflectiveOperationException e) {
+                CavesAndCliffsBackport.LOGGER.error("CLIENT SELFTEST DONE pass=0 fail=1: the test classes are not in this build.", e);
+            }
+        }
     }
 
     @SubscribeEvent

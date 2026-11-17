@@ -13,6 +13,7 @@ Behavior changes from 1.17 and 1.18 to things 1.12.2 already has, and fixes. Eac
 *   **Deepslate forms of other mods' ores**, as 1.18 gave vanilla's: every other mod's stone ore gets a deepslate ore with the same drops, experience, Fortune, ore dictionary names and smelting, 1.5 times as hard, with its texture drawn on deepslate at load (a resource pack can replace it by name). They replace the stone ores in the deepslate layer of Default worlds. The list is written to `config/cavesandcliffsbackport-modded-ores.txt`; `deepslate.moddedOresExclude` leaves ores out and `deepslate.moddedOres` turns it off.
 *   **Works with BuildCraft's quarry** (8.0.0 and 7.99.24.8) in Caves & Cliffs worlds: it digs down to y -64 instead of stopping at y 0. A quarry placed before this update digs on down once its world is loaded again. BuildCraft's water springs generate there again, as they do in Default worlds.
 *   **KAGIC's injectors work below y 5** in Caves & Cliffs worlds: gem seeds go down to y -59, and the depth bonus no longer breaks at or below y 0. Meteor rubies fall from the top of the world.
+*   **Fixed moss carpet and powder snow breaking into missing-texture particles.**
 
 Needs Backport Core 1.4.0 or newer.
 
