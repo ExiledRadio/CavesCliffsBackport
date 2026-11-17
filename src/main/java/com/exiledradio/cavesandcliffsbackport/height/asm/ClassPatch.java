@@ -35,6 +35,15 @@ public abstract class ClassPatch {
     /** Finds and applies every site, recording each with {@link #site} or {@link #expect}. */
     protected abstract void apply(ClassNode node);
 
+    /**
+     * A patch of another mod's own code that only makes that mod work with the extra height (package
+     * {@code height.compat}): its sites go to the mod-compat report, and a miss leaves that class as the mod wrote it
+     * while extended height stays on.
+     */
+    protected boolean modCompat() {
+        return false;
+    }
+
     public final byte[] transform(byte[] bytes) {
         ClassNode node = new ClassNode();
         new ClassReader(bytes).accept(node, 0);
@@ -44,6 +53,11 @@ public abstract class ClassPatch {
         } catch (RuntimeException e) {
             HeightCorePlugin.LOG.error("Extended height: patching {} threw; the class is left unpatched.", this.target, e);
             site("threw " + e, false);
+        }
+        if (!this.complete && modCompat()) {
+            HeightCorePlugin.LOG.warn("Extended height: {} is left as its mod wrote it because a site was not found "
+                    + "(above; probably another version of the mod); that mod keeps its 0-255 code there.", this.target);
+            return bytes;
         }
         if (!this.complete) {
             PatchReport.classSkipped(this.target);
@@ -61,6 +75,14 @@ public abstract class ClassPatch {
 
     /** Records one site as found or not. */
     protected final boolean site(String id, boolean found) {
+        if (modCompat()) {
+            PatchReport.compatSite(this.label + "." + id, found);
+            if (!found) {
+                this.complete = false;
+                HeightCorePlugin.LOG.warn("Extended height: mod-compat site {}.{} not found.", this.label, id);
+            }
+            return found;
+        }
         PatchReport.site(this.label + "." + id, found);
         if (!found) {
             this.complete = false;

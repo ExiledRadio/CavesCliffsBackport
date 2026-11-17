@@ -50,10 +50,15 @@ public final class DeobfJar {
             }
         };
         int classes = 0;
+        // A jar may hold an entry twice (BuildCraft 8.0.0's fml_cache_annotation.json); the first one is kept.
+        java.util.Set<String> seen = new java.util.HashSet<String>();
         try (ZipFile in = new ZipFile(args[1]); ZipOutputStream out = new ZipOutputStream(new FileOutputStream(args[2]))) {
             for (Enumeration<? extends ZipEntry> e = in.entries(); e.hasMoreElements(); ) {
                 ZipEntry entry = e.nextElement();
                 String n = entry.getName();
+                if (!seen.add(n)) {
+                    continue;
+                }
                 if (n.startsWith("META-INF/") && (n.endsWith(".SF") || n.endsWith(".DSA") || n.endsWith(".RSA"))) {
                     continue;
                 }

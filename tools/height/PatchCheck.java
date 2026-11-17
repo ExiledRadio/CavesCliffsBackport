@@ -46,6 +46,9 @@ public final class PatchCheck {
         if ("dump".equals(args[0])) {
             System.exit(dump(new java.io.File(args[1])));
         }
+        if ("compat".equals(args[0])) {
+            System.exit(compat(java.util.Arrays.copyOfRange(args, 1, args.length)));
+        }
         Asm.srg = "srg".equals(args[0]);
         ZipFile game = new ZipFile(args[1]);
         int next = 2;
@@ -105,6 +108,48 @@ public final class PatchCheck {
     }
 
     /** The dump mode: every patch whose class is in the directory. */
+    /**
+     * {@code PatchCheck compat <mod jar>...}: the mod-compat patches (O3, {@code HeightTransformer.modCompat()}) against
+     * release mod jars (SRG names, as an instance has them). Every target class must be in one of the jars and patched.
+     */
+    private static int compat(String[] jars) throws Exception {
+        Asm.srg = true;
+        int errors = 0;
+        System.out.println("== mod-compat patches, srg names");
+        for (ClassPatch patch : HeightTransformer.modCompat()) {
+            String path = patch.target.replace('.', '/') + ".class";
+            ZipFile from = null;
+            for (String jar : jars) {
+                ZipFile z = new ZipFile(jar);
+                if (z.getEntry(path) != null) {
+                    from = z;
+                    break;
+                }
+                z.close();
+            }
+            if (from == null) {
+                System.out.println("   (skipped " + patch.target + ": not in the given jars)");
+                continue;
+            }
+            byte[] in = read(from, from.getEntry(path));
+            byte[] out = patch.transform(in);
+            if (out == in) {
+                System.out.println("   UNPATCHED " + patch.target);
+                errors++;
+                continue;
+            }
+            errors += verify(out);
+        }
+        for (String line : PatchReport.compatLines()) {
+            System.out.println("   " + line);
+            if (line.endsWith("NOT FOUND")) {
+                errors++;
+            }
+        }
+        System.out.println(errors == 0 ? "OK" : errors + " error(s)");
+        return errors == 0 ? 0 : 1;
+    }
+
     private static int dump(java.io.File dir) throws Exception {
         Asm.srg = true;
         int errors = 0;
