@@ -179,6 +179,13 @@ public final class LightEngineSelfTest implements SelfTest {
         check.eq(12, sky(world, roof.down()), "sky light under the middle of a roof at y 310");
         check.eq(15, sky(world, roof.up()), "sky light on the roof");
         expect.append(line("sky", roof.down(), 12));
+
+        // Torches at y -20, -12, -3 and 3 (HeightSelfTest.deepTorches): vanilla's falloff across y -16 and 0 with
+        // this engine, read back after the restart.
+        prepare(world, BX + 64, Z0, 2);
+        for (int[] e : HeightSelfTest.deepTorches(check, world, BX + 64, Z0)) {
+            expect.append(line("block", new BlockPos(e[0], e[1], e[2]), e[3]));
+        }
         Files.write(file.toPath(), expect.toString().getBytes(StandardCharsets.UTF_8));
     }
 

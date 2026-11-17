@@ -86,6 +86,7 @@ public final class HeightSelfTest implements SelfTest {
         generated(check, world);
         everyHeight(check, world);
         light(check, world);
+        deepTorches(check, world, X - 48, Z - 48);
         nbt(check, world);
         packet(check, world);
         packets(check, world);
@@ -417,6 +418,104 @@ public final class HeightSelfTest implements SelfTest {
         world.setBlockState(lamp, Blocks.GLOWSTONE.getDefaultState(), 3);
         check.eq(15, world.getLightFor(EnumSkyBlock.BLOCK, lamp), "block light at a light at y -40");
         check.eq(14, world.getLightFor(EnumSkyBlock.BLOCK, next), "block light next to a light at y -40");
+    }
+
+    /**
+     * Torch light below 0 with vanilla's falloff (14 at the torch, one less per block), across the section edges at
+     * y -16 and 0 in both directions and across a chunk border, in tunnels and shafts sealed in stone; then the same
+     * values after the chunks' NBT round trip. Returns the positions and values checked (for the client test).
+     */
+    static List<int[]> deepTorches(Check check, WorldServer world, int bx, int bz) throws Exception {
+        deepTorchSite(world, bx, bz);
+        return deepTorchLights(check, world, bx, bz);
+    }
+
+    /**
+     * The stone, tunnel and shafts for {@link #deepTorchLights}: thousands of block changes, which a player near them
+     * gets as whole sections (with the server's light); the torches come in a later tick, as single block changes
+     * whose light the client works out itself.
+     */
+    static void deepTorchSite(WorldServer world, int bx, int bz) {
+        // A stone block from y -45 to 20 (no cave, water, lava or lichen inside), lit by nothing.
+        for (int x = bx - 20; x <= bx + 20; x++) {
+            for (int z = bz - 2; z <= bz + 6; z++) {
+                for (int y = -45; y <= 20; y++) {
+                    world.setBlockState(new BlockPos(x, y, z), Blocks.STONE.getDefaultState(), 3);
+                }
+            }
+        }
+        // A tunnel at y -20 along x, dug first, then a torch on the chunk border (bx is a chunk's first column).
+        for (int x = bx - 16; x <= bx + 16; x++) {
+            world.setBlockState(new BlockPos(x, -20, bz), Blocks.AIR.getDefaultState(), 3);
+        }
+        // Shafts along y (their torches in deepTorchLights).
+        for (int i = 0; i < DEEP_SHAFT_TORCHES.length; i++) {
+            for (int y = -40; y <= 18; y++) {
+                world.setBlockState(new BlockPos(bx - 15 + i * 9, y, bz + 4), Blocks.AIR.getDefaultState(), 3);
+            }
+        }
+    }
+
+    /** The shafts' torch heights: -20 (up across -16), -12 (down across -16), -3 (up across 0), 3 (down across 0). */
+    private static final int[] DEEP_SHAFT_TORCHES = {-20, -12, -3, 3};
+
+    /** Lights the site of {@link #deepTorchSite} and checks it; returns the positions and values checked. */
+    static List<int[]> deepTorchLights(Check check, WorldServer world, int bx, int bz) throws Exception {
+        List<int[]> expect = new ArrayList<int[]>();
+        BlockPos torch = new BlockPos(bx, -20, bz);
+        world.setBlockState(torch, Blocks.TORCH.getDefaultState(), 3);
+        for (int d = 0; d <= 15; d++) {
+            expect(check, world, expect, torch.east(d), Math.max(0, 14 - d), "tunnel at y -20, " + d + " east");
+            expect(check, world, expect, torch.west(d), Math.max(0, 14 - d), "tunnel at y -20, " + d + " west");
+        }
+        // A tunnel at y -18 dug after its torch is in: the light follows the digging.
+        BlockPos lateTorch = new BlockPos(bx - 10, -18, bz + 2);
+        world.setBlockState(lateTorch, Blocks.TORCH.getDefaultState(), 3);
+        for (int x = bx - 9; x <= bx + 4; x++) {
+            world.setBlockState(new BlockPos(x, -18, bz + 2), Blocks.AIR.getDefaultState(), 3);
+        }
+        for (int d = 1; d <= 14; d++) {
+            expect(check, world, expect, lateTorch.east(d), Math.max(0, 14 - d), "tunnel at y -18 dug after the torch, " + d + " east");
+        }
+        // The shafts, one torch each, lit up and down 15 blocks.
+        int[] torches = DEEP_SHAFT_TORCHES;
+        for (int i = 0; i < torches.length; i++) {
+            int x = bx - 15 + i * 9;
+            int z = bz + 4;
+            // A wall torch on the shaft's west side (a floor torch over the open shaft would drop).
+            BlockPos t = new BlockPos(x, torches[i], z);
+            world.setBlockState(t, Blocks.TORCH.getDefaultState().withProperty(net.minecraft.block.BlockTorch.FACING,
+                    net.minecraft.util.EnumFacing.EAST), 3);
+            for (int d = 0; d <= 15; d++) {
+                expect(check, world, expect, t.up(d), Math.max(0, 14 - d), "shaft, torch at y " + torches[i] + ", " + d + " up");
+                expect(check, world, expect, t.down(d), Math.max(0, 14 - d), "shaft, torch at y " + torches[i] + ", " + d + " down");
+            }
+        }
+        // The same light after each chunk's NBT round trip.
+        AnvilChunkLoader loader = (AnvilChunkLoader) world.getChunkProvider().chunkLoader;
+        Method write = ObfuscationReflectionHelper.findMethod(AnvilChunkLoader.class, "func_75820_a", void.class,
+                Chunk.class, World.class, NBTTagCompound.class);
+        Method read = ObfuscationReflectionHelper.findMethod(AnvilChunkLoader.class, "func_75823_a", Chunk.class,
+                World.class, NBTTagCompound.class);
+        int wrong = 0;
+        for (int[] e : expect) {
+            BlockPos p = new BlockPos(e[0], e[1], e[2]);
+            NBTTagCompound level = new NBTTagCompound();
+            write.invoke(loader, world.getChunk(p), world, level);
+            Chunk back = (Chunk) read.invoke(loader, world, level);
+            if (back.getLightFor(EnumSkyBlock.BLOCK, p) != e[3]) {
+                wrong++;
+                check.fail("block light at " + p + " after the NBT round trip: " + back.getLightFor(EnumSkyBlock.BLOCK, p)
+                        + ", expected " + e[3]);
+            }
+        }
+        check.eq(0, wrong, "deep torch light that changed in the NBT round trip");
+        return expect;
+    }
+
+    private static void expect(Check check, WorldServer world, List<int[]> expect, BlockPos p, int light, String what) {
+        check.eq(light, world.getLightFor(EnumSkyBlock.BLOCK, p), "block light: " + what + " (y " + p.getY() + ")");
+        expect.add(new int[] {p.getX(), p.getY(), p.getZ(), light});
     }
 
     /** Both section lists in the save, with signed Y, and back. */
