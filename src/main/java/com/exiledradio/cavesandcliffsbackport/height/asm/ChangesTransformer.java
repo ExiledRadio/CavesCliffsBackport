@@ -104,9 +104,9 @@ public final class ChangesTransformer implements IClassTransformer {
         return null;
     }
 
-    /** For the self-test: whether the class as given would be patched, without loading anything. */
-    public static boolean patchable(String target, byte[] bytes) {
-        return patch(target, bytes) != null;
+    /** For the self-test: the class as given, patched (null when it would be left alone), without loading anything. */
+    public static byte[] patchForTest(String target, byte[] bytes) {
+        return patch(target, bytes);
     }
 
     // ------------------------------------------------------------------------------------------

@@ -95,13 +95,49 @@ public final class SmallChangesSelfTest implements SelfTest {
         }
     }
 
-    private static void patches(Check c) {
+    private static void patches(Check c) throws java.io.IOException {
         // Loading each target makes sure the transformer saw it.
         Object[] load = {EntityMinecart.class, EntityItem.class, net.minecraft.block.BlockMycelium.class,
                 net.minecraft.network.NetHandlerPlayServer.class};
         c.ok(load.length == ChangesTransformer.COMMON.length, "every server target loaded");
         for (String target : ChangesTransformer.COMMON) {
             c.ok(ChangesTransformer.APPLIED.containsKey(target), "patched: " + target);
+        }
+        // Every target, client ones too, on Forge's SRG-named jar (a real instance's names) and ASM's stack check.
+        java.io.File srg = new java.io.File(System.getProperty("user.home"),
+                ".gradle/caches/minecraft/net/minecraftforge/forge/1.12.2-14.23.5.2847/stable/39/forge-1.12.2-14.23.5.2847-srgBin.jar");
+        if (!c.ok(srg.isFile(), "Forge's SRG jar is in the Gradle cache")) {
+            return;
+        }
+        java.util.zip.ZipFile zip = new java.util.zip.ZipFile(srg);
+        try {
+            for (String target : ChangesTransformer.targets(true)) {
+                // The SRG jar is vanilla's classes without Forge's patches or Forge's own classes. The minecart's
+                // sites include two methods Forge adds (getMaxSpeed, getSlopeAdjustment, unobfuscated in an instance too),
+                // and GuiIngameForge is Forge's: those are checked on the dev classes (MCP names, Forge's patches) only.
+                java.util.zip.ZipEntry e = target.startsWith("net.minecraftforge.") || target.equals(EntityMinecart.class.getName())
+                        ? null : zip.getEntry(target.replace('.', '/') + ".class");
+                java.io.InputStream in = e != null ? zip.getInputStream(e)
+                        : SmallChangesSelfTest.class.getResourceAsStream("/" + target.replace('.', '/') + ".class");
+                String which = e != null ? "SRG " : "dev ";
+                byte[] bytes = in == null ? null : org.apache.commons.io.IOUtils.toByteArray(in);
+                byte[] out = bytes == null ? null : ChangesTransformer.patchForTest(target, bytes);
+                if (!c.ok(out != null, which + target + " patched")) {
+                    continue;
+                }
+                org.objectweb.asm.tree.ClassNode node = new org.objectweb.asm.tree.ClassNode();
+                new org.objectweb.asm.ClassReader(out).accept(node, 0);
+                for (org.objectweb.asm.tree.MethodNode m : node.methods) {
+                    try {
+                        new org.objectweb.asm.tree.analysis.Analyzer<org.objectweb.asm.tree.analysis.BasicValue>(
+                                new org.objectweb.asm.tree.analysis.BasicVerifier()).analyze(node.name, m);
+                    } catch (Exception ex) {
+                        c.fail(which + target + "." + m.name + " fails ASM's stack check: " + ex);
+                    }
+                }
+            }
+        } finally {
+            zip.close();
         }
     }
 
