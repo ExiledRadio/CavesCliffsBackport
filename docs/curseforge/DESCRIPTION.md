@@ -73,7 +73,9 @@ Every feature can be turned off in Backport Core's settings screen, under Mod Op
 
 **Lighting and rendering**: Alfheim 1.6, Phosphor 0.2.6 and 0.2.7, Hesperus 0.2.9.1 to 0.2.9.3, Celeritas, Nothirium, VintageFix, Entity Culling and RenderLib all light and draw y -64 to 319. With Nothirium and shaders together, flying fast can run Nothirium out of direct memory; a larger `-XX:MaxDirectMemorySize` helps.
 
-**RLCraft and RLCraft Dregora**: tested in both. On Dregora's Cleanroom instances, use Fluidlogged API 3.3.3 and set StellarCore's `B:WorldBlockPosJudgement=false`. A Caves & Cliffs world replaces Open Terrain Generator's terrain, so Dregora's own biomes and structures are only in Default worlds. Default worlds still get the 1.17 blocks, ores, geodes and cave biomes in new chunks.
+**RLCraft and RLCraft Dregora**: tested in both. On Dregora's Cleanroom instances, use Fluidlogged API 3.3.3. A Caves & Cliffs world replaces Open Terrain Generator's terrain, so Dregora's own biomes and structures are only in Default worlds. Default worlds still get the 1.17 blocks, ores, geodes and cave biomes in new chunks.
+
+**StellarCore**: works with any settings.
 
 **Fluidlogged API** (optional): candles, pointed dripstone, glow lichen, dripleaf, hanging roots, amethyst buds, lightning rods, light blocks, and the deepslate and copper stairs and slabs hold water. Without it they stay dry and everything else works.
 

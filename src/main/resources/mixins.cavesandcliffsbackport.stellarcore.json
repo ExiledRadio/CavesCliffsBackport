@@ -1,0 +1,11 @@
+{
+    "required": false,
+    "minVersion": "0.7",
+    "package": "com.exiledradio.cavesandcliffsbackport.height.mixin",
+    "plugin": "com.exiledradio.cavesandcliffsbackport.height.asm.StellarCoreMixinPlugin",
+    "compatibilityLevel": "JAVA_8",
+    "mixinPriority": 1100,
+    "mixins": [
+        "MixinWorldStellarCore"
+    ]
+}

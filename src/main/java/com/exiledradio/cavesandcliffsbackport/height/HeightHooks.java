@@ -125,10 +125,15 @@ public final class HeightHooks {
         if (!probed) {
             probed = true;
             overridden = probe(world);
-            if (overridden != null) {
+            String stellar = com.exiledradio.cavesandcliffsbackport.height.asm.StellarCoreCompat.version();
+            if (overridden != null && stellar != null) {
+                CavesAndCliffsBackport.LOGGER.error("Extended height is OFF: {}. StellarCore {} is installed (adapting its "
+                        + "World checks: {}), so the world keeps y 0-255. Set B:WorldBlockPosJudgement=false in "
+                        + "config/stellar_core.cfg.", overridden, stellar,
+                        com.exiledradio.cavesandcliffsbackport.height.asm.StellarCoreCompat.result());
+            } else if (overridden != null) {
                 CavesAndCliffsBackport.LOGGER.error("Extended height is OFF: {}. Another mod replaces that method after this "
-                        + "mod's patch (a mixin @Overwrite), so the world keeps y 0-255. StellarCore does this with "
-                        + "B:WorldBlockPosJudgement=true in config/stellar_core.cfg; set it to false.", overridden);
+                        + "mod's patch (a mixin @Overwrite), so the world keeps y 0-255.", overridden);
             }
         }
         if (overridden != null) {

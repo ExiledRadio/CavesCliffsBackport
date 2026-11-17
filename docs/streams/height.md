@@ -26,10 +26,12 @@ target class. No mixins, no MixinBooter.
 4.  `PLAN.md`'s "Build and test" still says "No mixins, no coremod, no ASM"; that is now true of every stream but
     this one.
 5.  **Modpacks (RLCraft Revamped / Dregora):** Alfheim 1.6 stays (branch `cc-alfheim`, "Alfheim" below), and so does
-    Phosphor 0.2.6/0.2.7 or Hesperus 0.2.9.x (branch `cc-phosphor`, "Phosphor" below); a pack must set StellarCore's
-    `B:WorldBlockPosJudgement=false` (`config/stellar_core.cfg`). That option `@Overwrite`s
-    `World.isOutsideBuildHeight` with vanilla's 0-255 check after our patch ran; the world then stays 0-255 and the
-    log says which option to change (see "Overrides" below). VintageFix and Nothirium need nothing: both are handled.
+    Phosphor 0.2.6/0.2.7 or Hesperus 0.2.9.x (branch `cc-phosphor`, "Phosphor" below). StellarCore needs nothing
+    either (branch `cc-stellarcore`): its `WorldBlockPosJudgement` (on by default) `@Overwrite`s
+    `World.isOutsideBuildHeight` with a 0-255 check after our patch ran, so with StellarCore installed we add a mixin
+    config of our own (`height.asm.StellarCoreCompat`) whose plugin points that body's two compares at the world's
+    height after Mixin applies it. If the body is not the one we know, the world stays 0-255 and the log names the
+    StellarCore version and `B:WorldBlockPosJudgement=false` as the fallback (see "Overrides" below). VintageFix and Nothirium need nothing: both are handled.
 
 ## Changelog section
 
@@ -365,6 +367,15 @@ Phosphor's code is in plain classes, patched as they load; `MixinChunk` is patch
     hanging): columns topped at -2, -1, -63, -64, 100 and an empty one. Before the fix the -2 column never answered;
     after it 157/0 (85 sites). PatchCheck (dev, SRG and the OptiFine pack's dumped `Chunk`) and the frame check
     clean; full suite 4451/0.
+
+*   **StellarCore `WorldBlockPosJudgement` on** (its default; branch `cc-stellarcore`, rig `G:\VBPTest\cc_stellar`,
+    copies only). Before the fix, a Cleanroom 0.7.14 server with StellarCore 1.6.0 reproduced the tester's log (probe:
+    `isOutsideBuildHeight(y -64) answers true`, world 0-255). After it, `-Pselftest=height` 157/0 on Cleanroom 0.7.14
+    and 0.5.17 servers with StellarCore 1.5.22 and 1.6.0, option on and off, and without StellarCore; every "on" run
+    logs the rewrite. Prism client, Cleanroom 0.6.11, `-Dcavesandcliffsbackport.clienttest=height`: 23/0 with 1.5.22
+    and with 1.6.0, world -64 to 319. Plain Forge 2860 + MixinBooter 11.18: StellarCore itself needs ConfigAnytime
+    (not tested); a stub jar with StellarCore 1.6.0's own `MixinWorld` class and config, added the way its loader does,
+    gives 157/0 with the rewrite applied. Without StellarCore: full suite 4449/0, `selftest.sh height,terrain` 253/0.
 
 ## Not tested
 

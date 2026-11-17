@@ -53,6 +53,7 @@ dependencies {
     deobfCompile 'curse.maven:fluidlogged-api-485654:8445863'
     // Cubic Chunks 1.12.2-0.0.1301 (CurseForge 292243, file 9027901): optional. Package `cubic` compiles against its
     // API and is only loaded with it installed; never bundled. -Pcubicchunks puts it on the run tasks' classpath.
+    // It bundles Mixin, which height.asm.StellarCoreMixinPlugin compiles against (used only with StellarCore).
     if (project.hasProperty('cubicchunks')) {
         deobfCompile 'curse.maven:cubicchunks-292243:9027901'
     } else {
