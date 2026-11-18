@@ -58,7 +58,7 @@ public final class LookAndFeelClient {
 
             @Override
             public void sky(FogPipeline.Sky sky) {
-                if (LookAndFeel.HIDE_LIGHTNING_FLASHES.get() && sky.world != null && sky.world.getLastLightningBolt() > 0) {
+                if (LookAndFeel.HIDE_LIGHTNING_FLASHES.isShown() && LookAndFeel.HIDE_LIGHTNING_FLASHES.get() && sky.world != null && sky.world.getLastLightningBolt() > 0) {
                     double[] rgb = {sky.red, sky.green, sky.blue};
                     LookHooks.undoLightningFlash(rgb, sky.world.getLastLightningBolt(), sky.partialTicks);
                     sky.red = rgb[0];
@@ -162,7 +162,7 @@ public final class LookAndFeelClient {
             return;
         }
         Minecraft mc = Minecraft.getMinecraft();
-        if (mc.gameSettings.hideGUI || !LookAndFeel.AUTOSAVE_INDICATOR.get() || (this.indicator <= 0.0F && this.lastIndicator <= 0.0F)) {
+        if (mc.gameSettings.hideGUI || !LookAndFeel.AUTOSAVE_INDICATOR.isShown() || !LookAndFeel.AUTOSAVE_INDICATOR.get() || (this.indicator <= 0.0F && this.lastIndicator <= 0.0F)) {
             return;
         }
         int alpha = LookHooks.autosaveAlpha(this.lastIndicator, this.indicator, event.getPartialTicks());
