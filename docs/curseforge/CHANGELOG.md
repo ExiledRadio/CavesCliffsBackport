@@ -1,18 +1,33 @@
 # 1.1.0
 
-Behavior changes from 1.17 and 1.18 to things 1.12.2 already has, and fixes. Each change can be turned off in the Other Changes settings.
+Behavior changes from 1.17 and 1.18 to things 1.12.2 already has, other mods' ores in 1.18's layers, and fixes. Each behavior change can be turned off in the Other Changes settings.
 
 *   **Monsters spawn only in complete darkness** (block light 0), as in 1.18, spawners included. Sky light still counts as before.
 *   **Each player has their own mob cap** in multiplayer, as in 1.18: one player's farm or a crowded base no longer stops mobs spawning around everyone else.
 *   **Mineshafts as 1.17 builds them**: bridges over caves stand on log supports or hang from fences and chains, nothing floats, and cobwebs are only where they touch two solid blocks.
 *   **Experience orbs merge** in large numbers, as in 1.17, and stop following players who have died.
 *   **Rabbits and wolves spawn on snow**, as in 1.18.
+*   **Smaller 1.17 and 1.18 changes**:
+    *   Strongholds under the ocean are buried in the seabed in Default worlds, as Caves & Cliffs worlds already did.
+    *   Minecarts in water go half as fast, sink slowly and slow down.
+    *   A shulker box item destroyed by lava, fire, cactus or an explosion drops its contents.
+    *   Flowers, saplings, grass, ferns, dead bushes and sugar cane can be planted on mycelium, and pumpkins and melons grow onto it.
+    *   Anvil names can be 50 characters long instead of 35.
+    *   Absorption hearts show withered under Wither and stay golden under Poison instead of going blank.
+    *   Sleeping through the night clears the weather only when it is raining or snowing.
+    *   Horses, donkeys and mules follow players holding a golden carrot or golden apple, and llamas players holding a hay bale.
+    *   Enchanting tables give off light level 7.
+    *   Brushing past a wall at a shallow angle no longer stops sprinting.
+*   **Snow covers structures in Caves & Cliffs worlds**: villages, igloos and other structures in snowy places get their snow layer, as in 1.18, using 1.18's temperatures for the family backports' structures too.
+*   **1.20's desert wells in Caves & Cliffs worlds** with Trails & Tales Backport: a basin a block deeper, with two suspicious sand to brush.
 *   **Works with StellarCore** with any settings: its `WorldBlockPosJudgement` option no longer keeps Caves & Cliffs worlds at y 0-255.
-*   **Other mods' ores move down in Caves & Cliffs worlds**, as 1.18 moved vanilla's: an ore another mod generates at y 0 to 63 is placed at twice that minus 64 (y 10 at -44, y 40 at 16), in stone, deepslate or tuff, and those veins are doubled so each block of rock keeps the mod's own amount of ore. Ores above y 63, Nether and End ores and everything else a mod generates stay where they were. Setting `height.moddedOreHeights` turns it off.
+*   **Other mods' ores move down in Caves & Cliffs worlds**, as 1.18 moved vanilla's: an ore another mod generates at y 0 to 63 is placed at twice that minus 64 (y 10 at -44, y 40 at 16), in stone, deepslate or tuff (as its deepslate form in deepslate and tuff), and those veins are doubled so each block of rock keeps the mod's own amount of ore. Ores above y 63, Nether and End ores and everything else a mod generates stay where they were. Setting `height.moddedOreHeights` turns it off.
 *   **Glow lichen in Default worlds is as common as in 1.18**: it was about four times as dense on cave walls, and grew on floors and dirt. It now generates as 1.18.2's feature does, on ceilings and walls of stone, deepslate, tuff, calcite and dripstone. The `lush.lichenTries` setting is gone.
 *   **Deepslate forms of other mods' ores**, as 1.18 gave vanilla's: every other mod's stone ore gets a deepslate ore with the same drops, experience, Fortune, ore dictionary names and smelting, 1.5 times as hard, with its texture drawn on deepslate at load (a resource pack can replace it by name). Nether and End ores get none. They replace the stone ores in the deepslate layer of Default worlds. The list is written to `config/cavesandcliffsbackport-modded-ores.txt`; `deepslate.moddedOresExclude` leaves ores out and `deepslate.moddedOres` turns it off.
 *   **Works with BuildCraft's quarry** (8.0.0 and 7.99.24.8) in Caves & Cliffs worlds: it digs down to y -64 instead of stopping at y 0. A quarry placed before this update digs on down once its world is loaded again. BuildCraft's water springs generate there again, as they do in Default worlds.
 *   **KAGIC's injectors work below y 5** in Caves & Cliffs worlds: gem seeds go down to y -59, and the depth bonus no longer breaks at or below y 0. Meteor rubies fall from the top of the world.
+*   **Follows Backport Core's Newer Look and Feel switch**: with it off, the autosave indicator and Hide Lightning Flashes are off too, as in 1.12.2. Each keeps its own choice for when it is back on.
+*   **Real item icons on the settings screen** for the features that showed vanilla stand-ins. Goats show Wild Update Backport's goat horn when it is installed.
 *   **Fixed moss carpet and powder snow breaking into missing-texture particles.**
 
 Needs Backport Core 1.4.0 or newer.
