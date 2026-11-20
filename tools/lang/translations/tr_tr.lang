@@ -222,3 +222,7 @@ config.cavesandcliffsbackport.changes.experienceOrbs=Tecrübe kürelerini birle�
 config.cavesandcliffsbackport.changes.experienceOrbs.tooltip=Aynı büyüklükteki tecrübe küreleri tek bir kürede birleşir (1.17), bu küre tecrübesini birer birer verir ve küreler ölen oyuncuları artık izlemez.
 config.cavesandcliffsbackport.changes.snowSpawns=Karda tavşanlar ve kurtlar
 config.cavesandcliffsbackport.changes.snowSpawns.tooltip=Tavşanlar çimen bloklarında, karda, kar bloklarında ve kumda, kurtlar çimen bloklarında, karda ve kar bloklarında doğar (1.18).
+key.cavesandcliffsbackport.spyglassZoom=Dürbünle yakınlaştır
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
+config.cavesandcliffsbackport.amethyst.zoomKey=Dürbünle yakınlaştırma tuşu
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Dürbünle yakınlaştırma tuşu (varsayılan Z) basılı tutulduğunda, envanterin herhangi bir yerindeki dürbünle elde tutmadan bakılır. Vanilla'da yoktur.

@@ -117,6 +117,8 @@ tile.cavesandcliffsbackport.tinted_glass.name=Tinted Glass
 subtitles.cavesandcliffsbackport.block.amethyst_block.chime=Amethyst chimes
 subtitles.cavesandcliffsbackport.item.spyglass.stop_using=Spyglass retracts
 subtitles.cavesandcliffsbackport.item.spyglass.use=Spyglass expands
+key.cavesandcliffsbackport.spyglassZoom=Zoom with Spyglass
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
 death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s was skewered by a falling stalactite whilst fighting %2$s
@@ -365,6 +367,8 @@ config.cavesandcliffsbackport.amethyst.geodeMinY=Lowest geode height
 config.cavesandcliffsbackport.amethyst.geodeMinY.tooltip=Lowest height of a geode.
 config.cavesandcliffsbackport.amethyst.geodeMaxY=Highest geode height
 config.cavesandcliffsbackport.amethyst.geodeMaxY.tooltip=Highest height of a geode.
+config.cavesandcliffsbackport.amethyst.zoomKey=Zoom with Spyglass key
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Holding the Zoom with Spyglass key (Z by default) looks through a spyglass anywhere in the inventory, without holding it. Not in vanilla.
 config.cavesandcliffsbackport.dripstone.enabled=Enabled
 config.cavesandcliffsbackport.dripstone.enabled.tooltip=Dripstone blocks, pointed dripstone and the lava cauldron. Off, nothing is registered.
 config.cavesandcliffsbackport.dripstone.extraCopperVeins=Extra copper veins
@@ -487,3 +491,4 @@ config.cavesandcliffsbackport.changes.experienceOrbs=Experience orb merging
 config.cavesandcliffsbackport.changes.experienceOrbs.tooltip=Experience orbs of the same size merge into one (1.17), which gives its experience one orb at a time, and orbs stop following players who have died.
 config.cavesandcliffsbackport.changes.snowSpawns=Rabbits and wolves on snow
 config.cavesandcliffsbackport.changes.snowSpawns.tooltip=Rabbits spawn on grass blocks, snow, snow blocks and sand, wolves on grass blocks, snow and snow blocks (1.18).
+

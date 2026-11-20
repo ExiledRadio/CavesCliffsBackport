@@ -222,3 +222,7 @@ config.cavesandcliffsbackport.changes.experienceOrbs.tooltip=Le sfere di esperie
 config.cavesandcliffsbackport.changes.snowSpawns=Conigli e lupi sulla neve
 config.cavesandcliffsbackport.changes.snowSpawns.tooltip=I conigli compaiono su blocchi d'erba, neve, blocchi di neve e sabbia, i lupi su blocchi d'erba, neve e blocchi di neve (1.18).
 generator.cavesandcliffs=Caves & Cliffs
+key.cavesandcliffsbackport.spyglassZoom=Zoom con il cannocchiale
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
+config.cavesandcliffsbackport.amethyst.zoomKey=Tasto zoom con il cannocchiale
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Tenendo premuto il tasto zoom con il cannocchiale (Z di default) si guarda attraverso un cannocchiale presente in qualsiasi punto dell'inventario, senza impugnarlo. Non presente in vanilla.

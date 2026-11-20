@@ -118,6 +118,8 @@ tile.cavesandcliffsbackport.tinted_glass.name=遮光ガラス
 subtitles.cavesandcliffsbackport.block.amethyst_block.chime=アメジストが音を奏でる
 subtitles.cavesandcliffsbackport.item.spyglass.stop_using=望遠鏡をしまう
 subtitles.cavesandcliffsbackport.item.spyglass.use=望遠鏡を覗く
+key.cavesandcliffsbackport.spyglassZoom=望遠鏡でズーム
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
 death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$sは%2$sと戦いながら落ちてきた鍾乳石に串刺しにされた
@@ -366,6 +368,8 @@ config.cavesandcliffsbackport.amethyst.geodeMinY=ジオードの最低の高さ
 config.cavesandcliffsbackport.amethyst.geodeMinY.tooltip=ジオードができる最低の高さ。
 config.cavesandcliffsbackport.amethyst.geodeMaxY=ジオードの最高の高さ
 config.cavesandcliffsbackport.amethyst.geodeMaxY.tooltip=ジオードができる最高の高さ。
+config.cavesandcliffsbackport.amethyst.zoomKey=望遠鏡でズームするキー
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=望遠鏡でズームするキー（初期設定はZ）を押している間、インベントリのどこかにある望遠鏡を手に持たずにのぞけます。バニラにはない機能です。
 config.cavesandcliffsbackport.dripstone.enabled=有効
 config.cavesandcliffsbackport.dripstone.enabled.tooltip=鍾乳石ブロック、鍾乳石、溶岩入りの大釜。オフにすると何も登録されません。
 config.cavesandcliffsbackport.dripstone.extraCopperVeins=追加の銅の鉱脈

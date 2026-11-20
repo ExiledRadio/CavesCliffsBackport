@@ -222,3 +222,7 @@ config.cavesandcliffsbackport.changes.experienceOrbs=Слияние сфер о�
 config.cavesandcliffsbackport.changes.experienceOrbs.tooltip=Сферы опыта одного размера сливаются в одну (1.17), которая отдаёт опыт по одной сфере, и сферы больше не следуют за погибшими игроками.
 config.cavesandcliffsbackport.changes.snowSpawns=Кролики и волки на снегу
 config.cavesandcliffsbackport.changes.snowSpawns.tooltip=Кролики появляются на блоках дёрна, снегу, снежных блоках и песке, волки — на блоках дёрна, снегу и снежных блоках (1.18).
+key.cavesandcliffsbackport.spyglassZoom=Приблизить подзорной трубой
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
+config.cavesandcliffsbackport.amethyst.zoomKey=Клавиша приближения подзорной трубой
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Пока зажата клавиша приближения подзорной трубой (по умолчанию Z), можно смотреть в подзорную трубу из любого места инвентаря, не держа её в руке. Нет в ванильной игре.

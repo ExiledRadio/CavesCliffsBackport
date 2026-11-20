@@ -118,6 +118,8 @@ tile.cavesandcliffsbackport.tinted_glass.name=Vidro fosco
 subtitles.cavesandcliffsbackport.block.amethyst_block.chime=Ametista tine
 subtitles.cavesandcliffsbackport.item.spyglass.stop_using=Luneta se retrai
 subtitles.cavesandcliffsbackport.item.spyglass.use=Luneta amplia-se
+key.cavesandcliffsbackport.spyglassZoom=Aproximar com a luneta
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
 death.attack.cavesandcliffsbackport.fallingStalactite.player=Uma estalactite atingiu %1$s enquanto lutava com %2$s
@@ -366,6 +368,8 @@ config.cavesandcliffsbackport.amethyst.geodeMinY=Altura mínima dos geodos
 config.cavesandcliffsbackport.amethyst.geodeMinY.tooltip=Altura mínima de um geodo.
 config.cavesandcliffsbackport.amethyst.geodeMaxY=Altura máxima dos geodos
 config.cavesandcliffsbackport.amethyst.geodeMaxY.tooltip=Altura máxima de um geodo.
+config.cavesandcliffsbackport.amethyst.zoomKey=Tecla de aproximar com a luneta
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Segurar a tecla de aproximar com a luneta (Z por padrão) permite olhar por uma luneta em qualquer lugar do inventário, sem segurá-la. Não existe no vanilla.
 config.cavesandcliffsbackport.dripstone.enabled=Ativado
 config.cavesandcliffsbackport.dripstone.enabled.tooltip=Os blocos de espeleotema, o espeleotema pontiagudo e o caldeirão de lava. Desativado, nada é registrado.
 config.cavesandcliffsbackport.dripstone.extraCopperVeins=Veios de cobre extras

@@ -222,3 +222,7 @@ config.cavesandcliffsbackport.changes.experienceOrbs=Злиття кульок �
 config.cavesandcliffsbackport.changes.experienceOrbs.tooltip=Кульки досвіду однакового розміру зливаються в одну (1.17), яка віддає досвід по одній кульці, і кульки більше не слідують за загиблими гравцями.
 config.cavesandcliffsbackport.changes.snowSpawns=Кролики й вовки на снігу
 config.cavesandcliffsbackport.changes.snowSpawns.tooltip=Кролики з'являються на блоках дерну, снігу, снігових блоках і піску, вовки — на блоках дерну, снігу і снігових блоках (1.18).
+key.cavesandcliffsbackport.spyglassZoom=Наблизити підзорною трубою
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
+config.cavesandcliffsbackport.amethyst.zoomKey=Клавіша наближення підзорною трубою
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Поки затиснута клавіша наближення підзорною трубою (типово Z), можна дивитися в підзорну трубу з будь-якого місця інвентаря, не тримаючи її в руці. Немає у ванільній грі.

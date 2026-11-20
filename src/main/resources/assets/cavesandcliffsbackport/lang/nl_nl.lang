@@ -118,6 +118,8 @@ tile.cavesandcliffsbackport.tinted_glass.name=Getint glas
 subtitles.cavesandcliffsbackport.block.amethyst_block.chime=Amethist klingelt
 subtitles.cavesandcliffsbackport.item.spyglass.stop_using=Verrekijker schuift in
 subtitles.cavesandcliffsbackport.item.spyglass.use=Verrekijker schuift uit
+key.cavesandcliffsbackport.spyglassZoom=Inzoomen met verrekijker
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
 death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s werd gespietst door een vallende stalactiet tijdens het vechten tegen %2$s
@@ -366,6 +368,8 @@ config.cavesandcliffsbackport.amethyst.geodeMinY=Laagste geodehoogte
 config.cavesandcliffsbackport.amethyst.geodeMinY.tooltip=De laagste hoogte van een geode.
 config.cavesandcliffsbackport.amethyst.geodeMaxY=Hoogste geodehoogte
 config.cavesandcliffsbackport.amethyst.geodeMaxY.tooltip=De hoogste hoogte van een geode.
+config.cavesandcliffsbackport.amethyst.zoomKey=Toets voor inzoomen met verrekijker
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Houd de toets voor inzoomen met verrekijker ingedrukt (standaard Z) om door een verrekijker ergens in de inventaris te kijken, zonder hem vast te houden. Niet in vanilla.
 config.cavesandcliffsbackport.dripstone.enabled=Ingeschakeld
 config.cavesandcliffsbackport.dripstone.enabled.tooltip=Druipsteenblokken, puntige druipsteen en de ketel met lava. Uit: er wordt niets geregistreerd.
 config.cavesandcliffsbackport.dripstone.extraCopperVeins=Extra koperaders

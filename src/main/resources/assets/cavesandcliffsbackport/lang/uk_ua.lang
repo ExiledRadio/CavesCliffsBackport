@@ -118,6 +118,8 @@ tile.cavesandcliffsbackport.tinted_glass.name=Тоноване скло
 subtitles.cavesandcliffsbackport.block.amethyst_block.chime=Аметист дзвенить
 subtitles.cavesandcliffsbackport.item.spyglass.stop_using=Підзорна труба складається
 subtitles.cavesandcliffsbackport.item.spyglass.use=Підзорна труба розкладається
+key.cavesandcliffsbackport.spyglassZoom=Наблизити підзорною трубою
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
 death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s проткнуто падучим сталактитом під час битви з %2$s
@@ -366,6 +368,8 @@ config.cavesandcliffsbackport.amethyst.geodeMinY=Найменша висота �
 config.cavesandcliffsbackport.amethyst.geodeMinY.tooltip=Найменша висота жеоди.
 config.cavesandcliffsbackport.amethyst.geodeMaxY=Найбільша висота жеод
 config.cavesandcliffsbackport.amethyst.geodeMaxY.tooltip=Найбільша висота жеоди.
+config.cavesandcliffsbackport.amethyst.zoomKey=Клавіша наближення підзорною трубою
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Поки затиснута клавіша наближення підзорною трубою (типово Z), можна дивитися в підзорну трубу з будь-якого місця інвентаря, не тримаючи її в руці. Немає у ванільній грі.
 config.cavesandcliffsbackport.dripstone.enabled=Увімкнено
 config.cavesandcliffsbackport.dripstone.enabled.tooltip=Блоки крапельного каменю, загострений крапельний камінь і казан із лавою. Якщо вимкнено, нічого не реєструється.
 config.cavesandcliffsbackport.dripstone.extraCopperVeins=Додаткові мідні жили

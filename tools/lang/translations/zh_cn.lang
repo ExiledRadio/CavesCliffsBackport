@@ -222,3 +222,7 @@ config.cavesandcliffsbackport.changes.experienceOrbs.tooltip=大小相同的经�
 config.cavesandcliffsbackport.changes.snowSpawns=雪上的兔子和狼
 config.cavesandcliffsbackport.changes.snowSpawns.tooltip=兔子可在草方块、雪、雪块和沙子上生成，狼可在草方块、雪和雪块上生成（1.18）。
 generator.cavesandcliffs=Caves & Cliffs
+key.cavesandcliffsbackport.spyglassZoom=使用望远镜缩放
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
+config.cavesandcliffsbackport.amethyst.zoomKey=使用望远镜缩放键
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=按住“使用望远镜缩放”键（默认为 Z）时，可以通过物品栏中任意位置的望远镜观察，无需手持。原版中没有此功能。

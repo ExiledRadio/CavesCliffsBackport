@@ -3,6 +3,12 @@
 *   **The spyglass is held as its 3D model** in first and third person, as in 1.17; the flat icon stays in inventories, on the ground and in item frames.
 *   **Fixed: with VintageFix, everything below y 0 was drawn bright.** VintageFix replaces the method the game reads block light with while drawing chunks, and its copy only knew y 0-255.
 *   **Caves & Cliffs worlds use much less memory.** The terrain generated past the loaded chunks, waiting to be decorated, is kept packed as 1.18 keeps chunks: about a tenth of the memory it took (225 MB at render distance 52). Terrain is unchanged and generation is as fast.
+*   **Fixed: after zooming in with the spyglass, only what was in view while zoomed was drawn** until you moved or turned.
+*   **Fixed a thin gap along the edges of the held spyglass.**
+
+Bonus features, not in vanilla:
+
+*   **Zoom with Spyglass key** (Z by default): hold it to look through a spyglass anywhere in your inventory, without holding it, with the spyglass's view, sounds and slowdown. Setting `amethyst.zoomKey` turns it off.
 
 # 1.1.0
 
