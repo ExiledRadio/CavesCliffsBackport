@@ -57,7 +57,16 @@ public final class Pipeline {
     public static final class Proto {
         public final int cx;
         public final int cz;
-        public final char[] blocks;
+        /**
+         * The blocks, or null while the chunk is packed ({@link Packed}: held, filled and not used for a while). A
+         * chunk {@link #finish} hands back is unpacked; the array is never reused, so a copy of the reference stays
+         * valid (packing drops the Proto's reference only).
+         */
+        public char[] blocks;
+        /** The blocks per section while packed, else null. */
+        Packed packed;
+        /** {@code sequence} when this chunk's blocks were last used. */
+        long lastUse;
         /** Region.worldgenHeights: OCEAN_FLOOR_WG, then WORLD_SURFACE_WG (512). */
         public final int[] worldgen;
         /** Region.primeHeightmaps, kept live by decoration (Region.HEIGHTMAPS * 256). */
@@ -97,7 +106,111 @@ public final class Pipeline {
 
         /** The code at chunk-local x, z and block y. */
         public int get(int x, int y, int z) {
-            return blocks[(x * 16 + z) * HEIGHT + y - MIN_Y];
+            int i = (x * 16 + z) * HEIGHT + y - MIN_Y;
+            char[] b = blocks;
+            return b != null ? b[i] : packed.get(i);
+        }
+    }
+
+    /**
+     * A chunk's blocks packed per 16-high section, as 1.18's paletted containers keep them: one code for a section of
+     * one block (most of them: the air above the surface, the deepslate below the caves), else the section's palette
+     * and an index of ceil(log2 n) bits per block, entries not straddling longs. 14 to 19 KB a chunk against the
+     * array's 192 KB. Lossless: unpacking gives back the same array.
+     */
+    static final class Packed {
+        static final int SECTIONS = HEIGHT / 16;
+        final char[][] palettes = new char[SECTIONS][];
+        /** Per section: null for one code, else the indexes (entry i = column * 16 + y within the section). */
+        final long[][] data = new long[SECTIONS][];
+        final byte[] bits = new byte[SECTIONS];
+
+        int get(int i) {
+            int col = i / HEIGHT;
+            int y = i - col * HEIGHT;
+            int s = y >> 4;
+            char[] palette = palettes[s];
+            long[] d = data[s];
+            if (d == null) {
+                return palette[0];
+            }
+            int b = bits[s];
+            int per = 64 / b;
+            int e = col * 16 + (y & 15);
+            return palette[(int) (d[e / per] >>> (e % per * b) & ((1L << b) - 1))];
+        }
+
+        /**
+         * Packs blocks. slots: a scratch table of 65536 zeros (left zeroed), the asking thread's.
+         */
+        static Packed pack(char[] blocks, int[] slots, char[] scratch) {
+            Packed p = new Packed();
+            for (int s = 0; s < SECTIONS; s++) {
+                int base = s * 16;
+                int n = 0;
+                for (int col = 0, at = base; col < 256; col++, at += HEIGHT) {
+                    for (int y = 0; y < 16; y++) {
+                        char v = blocks[at + y];
+                        if (slots[v] == 0) {
+                            scratch[n++] = v;
+                            slots[v] = n;
+                        }
+                    }
+                }
+                p.palettes[s] = java.util.Arrays.copyOf(scratch, n);
+                if (n > 1) {
+                    int b = 32 - Integer.numberOfLeadingZeros(n - 1);
+                    int per = 64 / b;
+                    long[] d = new long[(4096 + per - 1) / per];
+                    int e = 0;
+                    for (int col = 0, at = base; col < 256; col++, at += HEIGHT) {
+                        for (int y = 0; y < 16; y++, e++) {
+                            d[e / per] |= (long) (slots[blocks[at + y]] - 1) << (e % per * b);
+                        }
+                    }
+                    p.data[s] = d;
+                    p.bits[s] = (byte) b;
+                }
+                for (int i = 0; i < n; i++) {
+                    slots[scratch[i]] = 0;
+                }
+            }
+            return p;
+        }
+
+        char[] unpack() {
+            char[] blocks = new char[VOLUME];
+            for (int s = 0; s < SECTIONS; s++) {
+                int base = s * 16;
+                char[] palette = palettes[s];
+                long[] d = data[s];
+                if (d == null) {
+                    char v = palette[0];
+                    if (v != 0) {
+                        for (int at = base; at < VOLUME; at += HEIGHT) {
+                            java.util.Arrays.fill(blocks, at, at + 16, v);
+                        }
+                    }
+                    continue;
+                }
+                int b = bits[s];
+                int per = 64 / b;
+                long mask = (1L << b) - 1;
+                int at = base;
+                int y = 0;
+                for (int w = 0, e = 0; e < 4096; w++) {
+                    long word = d[w];
+                    for (int k = 0; k < per && e < 4096; k++, e++) {
+                        blocks[at + y] = palette[(int) (word & mask)];
+                        word >>>= b;
+                        if (++y == 16) {
+                            y = 0;
+                            at += HEIGHT;
+                        }
+                    }
+                }
+            }
+            return blocks;
         }
     }
 
@@ -235,6 +348,28 @@ public final class Pipeline {
     /** Held chunks, least recently used first. */
     private final LinkedHashMap<Long, Proto> held = new LinkedHashMap<>(1024, 0.75F, true);
     private final int cap;
+    /**
+     * Held chunks whose blocks went unused for {@code idle} steps of {@code sequence} (one per finish and per
+     * prefetch) are packed ({@link Packed}): the frontier around the explored area, which waits until the player
+     * comes that way. The chunks decoration keeps coming back to stay unpacked. How soon that is depends on the view
+     * distance (one lap of the spawn square's spiral, one row as the player walks), so the window learns it: a chunk
+     * unpacked again within 8 windows of its last use widens it to that gap and a quarter, and it narrows by an
+     * eighth every 128 steps, never below IDLE_MIN (the spawn square's laps widen it to a lap; walking brings it back
+     * to about one row within a few rows).
+     */
+    static final long IDLE_MIN = 64;
+    static final long IDLE_MAX = 1 << 14;
+    private long idle = IDLE_MIN;
+    private long nextNarrow = 128;
+    /** {@link #packIdle} runs every this many steps of {@code sequence}. */
+    private static final long PACK_EVERY = 16;
+    private long nextPack = PACK_EVERY;
+    private final int[] packSlots = new int[65536];
+    private final char[] packScratch = new char[4096];
+    /** Chunks packed and unpacked, for the benchmark and the log. */
+    public long packs;
+    public long unpacks;
+    public long packNanos;
     /** Chunks dropped once settled: finished and decorated, as is everything within two of them. */
     private final LongSet gone = new LongSet();
     private long sequence;
@@ -376,6 +511,7 @@ public final class Pipeline {
                     p = decode(data);
                     if (p != null && p.cx == cx && p.cz == cz) {
                         restored++;
+                        p.lastUse = sequence;
                         held.put(k, p);
                         return p;
                     }
@@ -387,6 +523,7 @@ public final class Pipeline {
                 p.beard = beards.forChunk(cx, cz);
                 beardNanos += System.nanoTime() - t;
             }
+            p.lastUse = sequence;
             held.put(k, p);
             p.task.priority = priority;
             if (pool != null) {
@@ -425,7 +562,72 @@ public final class Pipeline {
             held.remove(key(p.cx, p.cz));
             throw new IllegalStateException("terrain for chunk " + p.cx + "," + p.cz + " failed", t.failure);
         }
+        return use(p);
+    }
+
+    /** A filled chunk about to have its blocks read or written: unpacked, and marked used now. */
+    private Proto use(Proto p) {
+        long gap = sequence - p.lastUse;
+        p.lastUse = sequence;
+        if (p.blocks == null) {
+            if (gap < idle * 8) {
+                idle = Math.min(IDLE_MAX, Math.max(idle, gap + gap / 4));
+            }
+            long t = System.nanoTime();
+            p.blocks = p.packed.unpack();
+            p.packed = null;
+            unpacks++;
+            packNanos += System.nanoTime() - t;
+        }
         return p;
+    }
+
+    /** Game ticks without a chunk asked for after which every filled held chunk is packed. */
+    static final int QUIET_TICKS = 100;
+    private long tickSequence = -1;
+    private int quietTicks;
+
+    /**
+     * Once per game tick (the server thread). The idle window counts chunks asked for, so with nothing generated
+     * (players standing still after the spawn area loaded) it never moves: after {@link #QUIET_TICKS} ticks without a
+     * chunk asked for, and every as many after, every filled held chunk is packed. Decoration unpacks the few it
+     * needs when generation resumes.
+     */
+    public synchronized void tick() {
+        if (sequence != tickSequence) {
+            tickSequence = sequence;
+            quietTicks = 0;
+            return;
+        }
+        if (++quietTicks % QUIET_TICKS == 0) {
+            pack(sequence + 1);
+        }
+    }
+
+    /** Packs the filled held chunks whose blocks went unused for {@code idle} steps. */
+    private void packIdle() {
+        if (sequence < nextPack) {
+            return;
+        }
+        nextPack = sequence + PACK_EVERY;
+        while (sequence >= nextNarrow) {
+            nextNarrow += 128;
+            idle = Math.max(IDLE_MIN, idle - idle / 8);
+        }
+        pack(sequence - idle);
+    }
+
+    /** Packs the filled held chunks last used before that step. */
+    private void pack(long before) {
+        long t = System.nanoTime();
+        for (Proto p : held.values()) {
+            if (p.blocks != null && p.lastUse < before && p.task.state.get() == Task.DONE && p.task.failure == null) {
+                p.packed = Packed.pack(p.blocks, packSlots, packScratch);
+                p.blocks = null;
+                packs++;
+            }
+        }
+        packNanos += System.nanoTime() - t;
     }
 
     /**
@@ -487,6 +689,7 @@ public final class Pipeline {
             // Asked again for a chunk that settled (a world that lost the chunk it had): fill it as it would be.
             c = filled(proto(cx, cz, base));
         }
+        use(c);
         boolean newly = !c.finished;
         if (newly) {
             c.finished = true;
@@ -515,7 +718,7 @@ public final class Pipeline {
 
     private char[] blocksOf(int cx, int cz) {
         Proto p = held.get(key(cx, cz));
-        return p != null && p.task.state.get() == Task.DONE && p.task.failure == null ? p.blocks : null;
+        return p != null && p.task.state.get() == Task.DONE && p.task.failure == null ? use(p).blocks : null;
     }
 
     /**
@@ -781,6 +984,7 @@ public final class Pipeline {
 
     /** Above the cap, drops the least recently used chunks that no fill is running for (into the store, if any). */
     private void trim() {
+        packIdle();
         if (held.size() <= cap) {
             return;
         }
@@ -845,7 +1049,7 @@ public final class Pipeline {
         b.putInt(FORMAT).putInt(p.cx).putInt(p.cz).putInt(Math.max(1, p.changes));
         b.put((byte) ((p.decorated ? 1 : 0) | (p.finished ? 2 : 0)));
         b.putLong(p.lsn);
-        b.asCharBuffer().put(p.blocks);
+        b.asCharBuffer().put(p.blocks != null ? p.blocks : p.packed.unpack());
         b.position(b.position() + VOLUME * 2);
         b.asIntBuffer().put(p.worldgen).put(p.heights);
         b.position(b.position() + (512 + Region.HEIGHTMAPS * 256) * 4);

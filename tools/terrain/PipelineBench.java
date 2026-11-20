@@ -65,6 +65,8 @@ public final class PipelineBench {
             seed, n, threads, System.getProperty("java.version"), elapsed / 1e6 / n, n / (elapsed / 1e9),
             p.fillNanos.get() / 1e6 / Math.max(1, p.filled.get()), p.filled.get(), p.decorateNanos / 1e6 / Math.max(1, p.decorated),
             p.waitNanos / 1e6 / n, p.stolen, p.held(), checksum));
+        System.out.println(String.format(java.util.Locale.ROOT, "packed %d, unpacked %d, %.3f ms/chunk packing",
+            p.packs, p.unpacks, p.packNanos / 1e6 / n));
         p.shutdown();
         if (jdir != null) {
             System.out.println(String.format(java.util.Locale.ROOT, "journal: %d KB, %d records, %.3f ms each on the asking thread",

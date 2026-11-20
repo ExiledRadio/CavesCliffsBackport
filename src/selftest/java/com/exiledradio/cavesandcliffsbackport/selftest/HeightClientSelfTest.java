@@ -432,6 +432,14 @@ public final class HeightClientSelfTest {
                 }
                 eq(0, mc.world.getLightFor(net.minecraft.world.EnumSkyBlock.SKY, new BlockPos(x + 1, -20, z)),
                         "client sky light in the stone beside the pit");
+                // The light blocks are drawn with: ChunkCache (the render chunk's region), whose getLightForExt
+                // VintageFix overwrites with a 0-255 guard (it gave full sky light below 0, bright depths).
+                BlockPos stone = new BlockPos(x + 1, -20, z);
+                net.minecraft.world.ChunkCache region = new net.minecraft.world.ChunkCache(mc.world,
+                        stone.add(-16, -16, -16), stone.add(16, 16, 16), 1);
+                eq(0, region.getCombinedLight(stone, 0) >> 20 & 15, "render region's sky light in the stone at y -20");
+                eq(15, region.getCombinedLight(new BlockPos(x, -16, z), 0) >> 20 & 15,
+                        "render region's sky light down the pit at y -16");
                 server(mc, world -> {
                     for (int y : ys) {
                         int got = world.getLightFor(net.minecraft.world.EnumSkyBlock.SKY, new BlockPos(x, y, z));

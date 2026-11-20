@@ -170,6 +170,39 @@ final class SmallPatches {
     }
 
     /**
+     * VintageFix's {@code allocation_rate.MixinChunkCache} overwrites {@code ChunkCache.getLightForExt} (the light the
+     * client renders blocks with) with vanilla's body and a reused MutableBlockPos, replacing our patched method: its
+     * {@code y >= 0 && y < 256} guard gave every block below y 0 the default light, full sky light, so the depths
+     * rendered bright. Its guard gets the world's range, as vanilla's does. The world is the mixin's shadow field
+     * (always the SRG name in VintageFix's jar), which Mixin moves to ChunkCache.
+     */
+    static final class VintageFixChunkCachePatch extends ClassPatch {
+        private static final String OWNER = "org/embeddedt/vintagefix/mixin/allocation_rate/MixinChunkCache";
+        private final boolean client;
+
+        VintageFixChunkCachePatch(boolean client) {
+            super("org.embeddedt.vintagefix.mixin.allocation_rate.MixinChunkCache");
+            this.client = client;
+        }
+
+        @Override
+        protected void apply(ClassNode node) {
+            MethodNode m = Asm.method(node, "getLightForExt", "func_175629_a",
+                    "(Lnet/minecraft/world/EnumSkyBlock;Lnet/minecraft/util/math/BlockPos;)I");
+            if (m == null && !this.client) {
+                // ChunkCache.getLightForExt is client-only: the overwrite may be stripped on a server.
+                site("getLightForExt (stripped on a server)", true);
+                return;
+            }
+            if (m == null) {
+                site("getLightForExt exists", false);
+                return;
+            }
+            range(m, "getLightForExt", 1, 1, () -> Asm.selfField(OWNER, "field_72815_e", WORLD_DESC));
+        }
+    }
+
+    /**
      * EagleMixins 1.2.4's sub-chunk radiation ({@code nuclearcraft.subchunkradiation.RadiationHandlerMixin}, its
      * overwrite of NuclearCraft's {@code RadiationHandler.updateWorldRadiation}) walks a chunk's entity lists and
      * selects sub-chunk {@code i} of its 16-entry arrays for list {@code i}: list 20 (y 256) and up threw. The list

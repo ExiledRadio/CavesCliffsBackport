@@ -221,6 +221,11 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         return beards;
     }
 
+    /** Once per world tick, on the server thread: packs the held chunks once generation goes quiet. */
+    public void tick() {
+        pipeline.tick();
+    }
+
     /** Saves the held chunks decoration wrote into and the decoration state, for a restart (when the world saves). */
     public void saveHeld() {
         if (store != null) {
@@ -1019,10 +1024,11 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         long n = Math.max(1, this.chunks);
         return String.format(java.util.Locale.ROOT,
                 "chunks=%d fill_ms=%.3f(x%d, workers) decorate_ms=%.3f(x%d) wait_ms=%.3f write_ms=%.3f beard_ms=%.3f"
-                        + " stolen=%d held=%d stored=%d restored=%d threads=%d",
+                        + " stolen=%d held=%d packed=%d unpacked=%d pack_ms=%.3f stored=%d restored=%d threads=%d",
                 this.chunks, p.fillNanos.get() / 1e6 / Math.max(1, p.filled.get()), p.filled.get(),
                 p.decorateNanos / 1e6 / Math.max(1, p.decorated), p.decorated, p.waitNanos / 1e6 / n,
-                this.writeNanos / 1e6 / n, p.beardNanos / 1e6 / n, p.stolen, p.held(), p.stored, p.restored,
+                this.writeNanos / 1e6 / n, p.beardNanos / 1e6 / n, p.stolen, p.held(), p.packs, p.unpacks, p.packNanos / 1e6 / n, p.stored,
+                p.restored,
                 ModernTerrain.threads());
     }
 

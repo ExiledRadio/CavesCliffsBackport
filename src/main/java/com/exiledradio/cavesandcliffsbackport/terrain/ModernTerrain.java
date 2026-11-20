@@ -254,6 +254,15 @@ public final class ModernTerrain {
         return ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).biome3d(x, y, z);
     }
 
+    /** Packs the held chunks once a Caves &amp; Cliffs world stops generating (Pipeline.tick). */
+    @SubscribeEvent
+    public static void onWorldTick(net.minecraftforge.fml.common.gameevent.TickEvent.WorldTickEvent event) {
+        if (event.phase == net.minecraftforge.fml.common.gameevent.TickEvent.Phase.END && !event.world.isRemote
+                && owns(event.world)) {
+            ((ModernGenerator) ((WorldServer) event.world).getChunkProvider().chunkGenerator).tick();
+        }
+    }
+
     /** The held chunks go to disk with the world, so a restart decorates the chunks beyond the explored area alike. */
     @SubscribeEvent
     public static void onWorldSave(WorldEvent.Save event) {

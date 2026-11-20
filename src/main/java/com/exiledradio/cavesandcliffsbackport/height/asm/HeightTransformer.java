@@ -56,6 +56,7 @@ public final class HeightTransformer implements IClassTransformer {
                 new SmallPatches.NetHandlerPlayServerPatch(),
                 new SmallPatches.SpawnerPatch(),
                 new SmallPatches.VintageFixChunkPatch(),
+                new SmallPatches.VintageFixChunkCachePatch(client),
                 new SmallPatches.EagleMixinsRadiationPatch(),
                 new PortalPatches.BlockPortalPatch(),
                 new PortalPatches.BlockPortalSizePatch(),

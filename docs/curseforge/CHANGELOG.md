@@ -1,3 +1,9 @@
+# 1.1.1
+
+*   **The spyglass is held as its 3D model** in first and third person, as in 1.17; the flat icon stays in inventories, on the ground and in item frames.
+*   **Fixed: with VintageFix, everything below y 0 was drawn bright.** VintageFix replaces the method the game reads block light with while drawing chunks, and its copy only knew y 0-255.
+*   **Caves & Cliffs worlds use much less memory.** The terrain generated past the loaded chunks, waiting to be decorated, is kept packed as 1.18 keeps chunks: about a tenth of the memory it took (225 MB at render distance 52). Terrain is unchanged and generation is as fast.
+
 # 1.1.0
 
 Behavior changes from 1.17 and 1.18 to things 1.12.2 already has, other mods' ores in 1.18's layers, and fixes. Each behavior change can be turned off in the Other Changes settings.

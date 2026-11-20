@@ -604,6 +604,40 @@ it failed the goat test's jump aim by 0.004 blocks, the known flaky goat test).
 
 ## Speed
 
+**Held chunks packed (2026-11-18; reported: a new world took about 300 MB more).** Like 1.18, the pipeline holds a
+ring about six chunks deep around everything generated, chunks filled but not yet settled, and it widens with the
+view distance; each was a 192 KB `char[]`. A client at render distance 52 held 1,140 after a full GC (225 MB of block
+arrays). Held chunks whose blocks go unused for a while are now packed per section as 1.18's paletted containers
+keep them (`Pipeline.Packed`: one code for a section of one block, which is 60-65% of them, else a palette and
+ceil(log2 n) bits per block; 14-19 KB a chunk, `tools/terrain/HeldMemory`), and unpacked when decoration next needs
+them. Lossless: every checksum is unchanged. Packing never reuses an array, so a reference to a finished chunk's
+blocks (`CubicGenerator`'s columns) stays valid, and `Proto.get` reads a packed chunk directly.
+
+*   **While generating**, a chunk unused for `idle` steps (one per finish and per prefetch) is packed. A fixed window
+    of 160 was right at render distance 12 and thrashed at 32 (8,833 unpacks, 9% slower), so the window learns the
+    gap after which decoration comes back to a chunk (a spawn spiral's lap, one row as the player walks): an unpack
+    within 8 windows of the last use widens it to that gap and a quarter, and it narrows by an eighth every 128 steps.
+*   **When generation stops** (no chunk asked for in 100 ticks, then every 100; `Pipeline.tick` from the world tick),
+    every filled held chunk is packed: the window counts chunks asked for and does not move while players stand
+    still. A dedicated dev server's fresh Caves & Cliffs world 3 s after "Done": 380 of 569 held chunks unpacked;
+    15 s later all 569 packed and the heap's `char[]` down from 102 MB to 32 MB (569 arrays are 109 MB).
+
+`tools/terrain/WalkBench` (the spawn square, then a view-distance column at a time eastward, the game's prefetch of
+4), against HEAD in a second worktree, alternating on a quiet machine:
+
+| Run | Held blocks before | After | ms/chunk before / after | Unpacks |
+| --- | --- | --- | --- | --- |
+| `WalkBench 42 25 60 0`, one E-core | 171.0 MB | 37.8 MB | 7.401 / 7.400 | 31 |
+| `WalkBench 42 65 20 0`, one E-core (render distance 32) | 231.0 MB | 67.2 MB | 6.406 / 6.435 | 777 |
+| `WalkBench 42 25 60 6`, six workers (earlier window rule) | 217.5 MB | 44.5 MB | 1.36 / 1.39 | 7 |
+
+`PipelineBench 42 16 0`, one E-core, interleaved: 14.94 / 15.05 before, 15.10 / 15.18 after (checksum
+31831c55f1c7bbcc both). `JournalCheck` (store and journal, packed chunks evicted at caps 128 and 300): OK, the same
+lines as before. The client test (ccheight-Fast, render distance 52) passes 45/0; it teleports and generates the
+whole time, so it never goes quiet, and while the spawn spiral widens the window most of its ring stays unpacked
+(1,004 of 1,937 held) until the player stops or walks on. The generator's `stats()` line reports `packed`,
+`unpacked` and `pack_ms`.
+
 **Crash journal (2026-11-15, cc-crash-safe).** The pipeline's asking thread records each decoration's writes
 (`Region.ops`, about 8,500 per decoration: 6,600 section writes of the ore and stone blobs, 1,900 block sets, 80
 marks) and hands the record over; packing (0.09 ms) and writing (0.05 ms) run on the journal's own thread.
