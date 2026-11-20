@@ -222,3 +222,7 @@ config.cavesandcliffsbackport.changes.experienceOrbs.tooltip=Les orbes d'expéri
 config.cavesandcliffsbackport.changes.snowSpawns=Lapins et loups sur la neige
 config.cavesandcliffsbackport.changes.snowSpawns.tooltip=Les lapins apparaissent sur les blocs d'herbe, la neige, les blocs de neige et le sable, les loups sur les blocs d'herbe, la neige et les blocs de neige (1.18).
 generator.cavesandcliffs=Caves & Cliffs
+key.cavesandcliffsbackport.spyglassZoom=Zoomer avec la longue-vue
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
+config.cavesandcliffsbackport.amethyst.zoomKey=Touche de zoom avec la longue-vue
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Maintenir la touche de zoom avec la longue-vue (Z par défaut) permet de regarder dans une longue-vue présente n'importe où dans l'inventaire, sans la tenir. Absent de la version vanilla.

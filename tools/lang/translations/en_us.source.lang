@@ -1,6 +1,8 @@
 # The English each translations/<code>.lang entry was made from. Written by build_langs.py snapshot.
 gui.cavesandcliffsbackport.deepslate_ore=Deepslate %s
 gui.cavesandcliffsbackport.deepslate_ore.lowercase=false
+key.cavesandcliffsbackport.spyglassZoom=Zoom with Spyglass
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 generator.cavesandcliffs=Caves & Cliffs
 config.cavesandcliffsbackport.deepslate=Deepslate and Stone
 config.cavesandcliffsbackport.deepslate.tooltip=Deepslate and its sets, calcite, tuff, smooth basalt, deepslate ores and raw ores.
@@ -100,6 +102,8 @@ config.cavesandcliffsbackport.amethyst.geodeMinY=Lowest geode height
 config.cavesandcliffsbackport.amethyst.geodeMinY.tooltip=Lowest height of a geode.
 config.cavesandcliffsbackport.amethyst.geodeMaxY=Highest geode height
 config.cavesandcliffsbackport.amethyst.geodeMaxY.tooltip=Highest height of a geode.
+config.cavesandcliffsbackport.amethyst.zoomKey=Zoom with Spyglass key
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Holding the Zoom with Spyglass key (Z by default) looks through a spyglass anywhere in the inventory, without holding it. Not in vanilla.
 config.cavesandcliffsbackport.dripstone.enabled=Enabled
 config.cavesandcliffsbackport.dripstone.enabled.tooltip=Dripstone blocks, pointed dripstone and the lava cauldron. Off, nothing is registered.
 config.cavesandcliffsbackport.dripstone.extraCopperVeins=Extra copper veins

@@ -222,3 +222,7 @@ config.cavesandcliffsbackport.changes.experienceOrbs.tooltip=Orbes de experiênc
 config.cavesandcliffsbackport.changes.snowSpawns=Coelhos e lobos na neve
 config.cavesandcliffsbackport.changes.snowSpawns.tooltip=Coelhos surgem em blocos de grama, neve, blocos de neve e areia, e lobos em blocos de grama, neve e blocos de neve (1.18).
 generator.cavesandcliffs=Caves & Cliffs
+key.cavesandcliffsbackport.spyglassZoom=Aproximar com a luneta
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
+config.cavesandcliffsbackport.amethyst.zoomKey=Tecla de aproximar com a luneta
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Segurar a tecla de aproximar com a luneta (Z por padrão) permite olhar por uma luneta em qualquer lugar do inventário, sem segurá-la. Não existe no vanilla.

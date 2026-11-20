@@ -118,6 +118,8 @@ tile.cavesandcliffsbackport.tinted_glass.name=Vetro oscurato
 subtitles.cavesandcliffsbackport.block.amethyst_block.chime=Ametista tintinna
 subtitles.cavesandcliffsbackport.item.spyglass.stop_using=Cannocchiale si ritrae
 subtitles.cavesandcliffsbackport.item.spyglass.use=Cannocchiale si allunga
+key.cavesandcliffsbackport.spyglassZoom=Zoom con il cannocchiale
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
 death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s è stato/a infilzato/a da una stalattite lottando con %2$s
@@ -366,6 +368,8 @@ config.cavesandcliffsbackport.amethyst.geodeMinY=Altezza minima dei geodi
 config.cavesandcliffsbackport.amethyst.geodeMinY.tooltip=L'altezza minima di un geode.
 config.cavesandcliffsbackport.amethyst.geodeMaxY=Altezza massima dei geodi
 config.cavesandcliffsbackport.amethyst.geodeMaxY.tooltip=L'altezza massima di un geode.
+config.cavesandcliffsbackport.amethyst.zoomKey=Tasto zoom con il cannocchiale
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Tenendo premuto il tasto zoom con il cannocchiale (Z di default) si guarda attraverso un cannocchiale presente in qualsiasi punto dell'inventario, senza impugnarlo. Non presente in vanilla.
 config.cavesandcliffsbackport.dripstone.enabled=Attivato
 config.cavesandcliffsbackport.dripstone.enabled.tooltip=I blocchi di speleotema, lo speleotema appuntito e il calderone di lava. Se disattivato, non viene registrato nulla.
 config.cavesandcliffsbackport.dripstone.extraCopperVeins=Vene di rame extra

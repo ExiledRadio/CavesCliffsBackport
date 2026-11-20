@@ -118,6 +118,8 @@ tile.cavesandcliffsbackport.tinted_glass.name=Verre teinté
 subtitles.cavesandcliffsbackport.block.amethyst_block.chime=Tintement d'améthyste
 subtitles.cavesandcliffsbackport.item.spyglass.stop_using=Longue-vue qui se rétracte
 subtitles.cavesandcliffsbackport.item.spyglass.use=Longue-vue qui s'allonge
+key.cavesandcliffsbackport.spyglassZoom=Zoomer avec la longue-vue
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
 death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s s'est fait transpercer par une stalactite en tentant de combattre (un(e)) %2$s
@@ -366,6 +368,8 @@ config.cavesandcliffsbackport.amethyst.geodeMinY=Hauteur minimale des géodes
 config.cavesandcliffsbackport.amethyst.geodeMinY.tooltip=La hauteur minimale d'une géode.
 config.cavesandcliffsbackport.amethyst.geodeMaxY=Hauteur maximale des géodes
 config.cavesandcliffsbackport.amethyst.geodeMaxY.tooltip=La hauteur maximale d'une géode.
+config.cavesandcliffsbackport.amethyst.zoomKey=Touche de zoom avec la longue-vue
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Maintenir la touche de zoom avec la longue-vue (Z par défaut) permet de regarder dans une longue-vue présente n'importe où dans l'inventaire, sans la tenir. Absent de la version vanilla.
 config.cavesandcliffsbackport.dripstone.enabled=Activé
 config.cavesandcliffsbackport.dripstone.enabled.tooltip=Les blocs de spéléothème, le spéléothème pointu et le chaudron de lave. Si désactivé, rien n'est enregistré.
 config.cavesandcliffsbackport.dripstone.extraCopperVeins=Filons de cuivre en plus

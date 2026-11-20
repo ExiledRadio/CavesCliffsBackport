@@ -118,6 +118,8 @@ tile.cavesandcliffsbackport.tinted_glass.name=Тонированное стек�
 subtitles.cavesandcliffsbackport.block.amethyst_block.chime=Аметист звенит
 subtitles.cavesandcliffsbackport.item.spyglass.stop_using=Подзорная труба складывается
 subtitles.cavesandcliffsbackport.item.spyglass.use=Подзорная труба раскладывается
+key.cavesandcliffsbackport.spyglassZoom=Приблизить подзорной трубой
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
 death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s был пронзён обрушившимся сталактитом, пока боролся с %2$s
@@ -366,6 +368,8 @@ config.cavesandcliffsbackport.amethyst.geodeMinY=Наименьшая высот
 config.cavesandcliffsbackport.amethyst.geodeMinY.tooltip=Наименьшая высота жеоды.
 config.cavesandcliffsbackport.amethyst.geodeMaxY=Наибольшая высота жеод
 config.cavesandcliffsbackport.amethyst.geodeMaxY.tooltip=Наибольшая высота жеоды.
+config.cavesandcliffsbackport.amethyst.zoomKey=Клавиша приближения подзорной трубой
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Пока зажата клавиша приближения подзорной трубой (по умолчанию Z), можно смотреть в подзорную трубу из любого места инвентаря, не держа её в руке. Нет в ванильной игре.
 config.cavesandcliffsbackport.dripstone.enabled=Включено
 config.cavesandcliffsbackport.dripstone.enabled.tooltip=Натёчный камень, капельники и котёл с лавой. Если выключено, ничего не регистрируется.
 config.cavesandcliffsbackport.dripstone.extraCopperVeins=Дополнительные медные жилы

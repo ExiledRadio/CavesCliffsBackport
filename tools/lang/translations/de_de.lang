@@ -222,3 +222,7 @@ config.cavesandcliffsbackport.changes.experienceOrbs.tooltip=Erfahrungskugeln gl
 config.cavesandcliffsbackport.changes.snowSpawns=Kaninchen und Wölfe auf Schnee
 config.cavesandcliffsbackport.changes.snowSpawns.tooltip=Kaninchen erscheinen auf Grasblöcken, Schnee, Schneeblöcken und Sand, Wölfe auf Grasblöcken, Schnee und Schneeblöcken (1.18).
 generator.cavesandcliffs=Caves & Cliffs
+key.cavesandcliffsbackport.spyglassZoom=Mit Fernrohr zoomen
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
+config.cavesandcliffsbackport.amethyst.zoomKey=Taste „Mit Fernrohr zoomen“
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Solange die Taste „Mit Fernrohr zoomen“ (standardmäßig Z) gehalten wird, blickt man durch ein Fernrohr irgendwo im Inventar, ohne es in der Hand zu halten. Nicht in Vanilla.

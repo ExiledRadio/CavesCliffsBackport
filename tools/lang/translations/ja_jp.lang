@@ -222,3 +222,7 @@ config.cavesandcliffsbackport.changes.experienceOrbs.tooltip=同じ大きさの�
 config.cavesandcliffsbackport.changes.snowSpawns=雪の上のウサギとオオカミ
 config.cavesandcliffsbackport.changes.snowSpawns.tooltip=ウサギは草ブロック、雪、雪ブロック、砂の上に、オオカミは草ブロック、雪、雪ブロックの上にスポーンします（1.18）。
 generator.cavesandcliffs=Caves & Cliffs
+key.cavesandcliffsbackport.spyglassZoom=望遠鏡でズーム
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
+config.cavesandcliffsbackport.amethyst.zoomKey=望遠鏡でズームするキー
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=望遠鏡でズームするキー（初期設定はZ）を押している間、インベントリのどこかにある望遠鏡を手に持たずにのぞけます。バニラにはない機能です。

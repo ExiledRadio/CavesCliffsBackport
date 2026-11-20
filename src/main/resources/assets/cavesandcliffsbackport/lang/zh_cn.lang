@@ -118,6 +118,8 @@ tile.cavesandcliffsbackport.tinted_glass.name=遮光玻璃
 subtitles.cavesandcliffsbackport.block.amethyst_block.chime=紫水晶：叮铃
 subtitles.cavesandcliffsbackport.item.spyglass.stop_using=望远镜：缩小
 subtitles.cavesandcliffsbackport.item.spyglass.use=望远镜：放大
+key.cavesandcliffsbackport.spyglassZoom=使用望远镜缩放
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
 death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s在与%2$s战斗时被坠落的钟乳石刺穿了
@@ -366,6 +368,8 @@ config.cavesandcliffsbackport.amethyst.geodeMinY=晶洞最低高度
 config.cavesandcliffsbackport.amethyst.geodeMinY.tooltip=晶洞的最低高度。
 config.cavesandcliffsbackport.amethyst.geodeMaxY=晶洞最高高度
 config.cavesandcliffsbackport.amethyst.geodeMaxY.tooltip=晶洞的最高高度。
+config.cavesandcliffsbackport.amethyst.zoomKey=使用望远镜缩放键
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=按住“使用望远镜缩放”键（默认为 Z）时，可以通过物品栏中任意位置的望远镜观察，无需手持。原版中没有此功能。
 config.cavesandcliffsbackport.dripstone.enabled=启用
 config.cavesandcliffsbackport.dripstone.enabled.tooltip=滴水石块、滴水石锥和装有熔岩的炼药锅。关闭时不注册任何内容。
 config.cavesandcliffsbackport.dripstone.extraCopperVeins=额外铜矿脉

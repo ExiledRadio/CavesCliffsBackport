@@ -223,6 +223,11 @@ public final class ModConfig {
         @Config.LangKey("config.cavesandcliffsbackport.amethyst.geodeMaxY")
         @Config.RangeInt(min = 1, max = 240)
         public int geodeMaxY = 46;
+
+        @Setting.Client
+        @Config.Comment("Holding the Zoom with Spyglass key (Z by default) looks through a spyglass anywhere in the inventory, without holding it. Not in vanilla.")
+        @Config.LangKey("config.cavesandcliffsbackport.amethyst.zoomKey")
+        public boolean zoomKey = true;
     }
 
     public static final class Dripstone {

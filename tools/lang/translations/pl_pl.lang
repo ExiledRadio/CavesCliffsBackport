@@ -222,3 +222,7 @@ config.cavesandcliffsbackport.changes.experienceOrbs=Łączenie kul doświadczen
 config.cavesandcliffsbackport.changes.experienceOrbs.tooltip=Kule doświadczenia tej samej wielkości łączą się w jedną (1.17), która oddaje doświadczenie po jednej kuli, a kule przestają podążać za martwymi graczami.
 config.cavesandcliffsbackport.changes.snowSpawns=Króliki i wilki na śniegu
 config.cavesandcliffsbackport.changes.snowSpawns.tooltip=Króliki pojawiają się na blokach trawy, śniegu, blokach śniegu i piasku, wilki na blokach trawy, śniegu i blokach śniegu (1.18).
+key.cavesandcliffsbackport.spyglassZoom=Przybliż lunetą
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
+config.cavesandcliffsbackport.amethyst.zoomKey=Klawisz przybliżania lunetą
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Przytrzymanie klawisza przybliżania lunetą (domyślnie Z) pozwala patrzeć przez lunetę znajdującą się gdziekolwiek w ekwipunku, bez trzymania jej w ręce. Nie ma tego w wersji vanilla.

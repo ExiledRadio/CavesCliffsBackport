@@ -222,3 +222,7 @@ config.cavesandcliffsbackport.changes.experienceOrbs=Ervaringsbollen samenvoegen
 config.cavesandcliffsbackport.changes.experienceOrbs.tooltip=Ervaringsbollen van dezelfde grootte smelten samen tot één (1.17), die zijn ervaring bol voor bol afgeeft, en bollen volgen geen gestorven spelers meer.
 config.cavesandcliffsbackport.changes.snowSpawns=Konijnen en wolven op sneeuw
 config.cavesandcliffsbackport.changes.snowSpawns.tooltip=Konijnen verschijnen op grasblokken, sneeuw, sneeuwblokken en zand, wolven op grasblokken, sneeuw en sneeuwblokken (1.18).
+key.cavesandcliffsbackport.spyglassZoom=Inzoomen met verrekijker
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
+config.cavesandcliffsbackport.amethyst.zoomKey=Toets voor inzoomen met verrekijker
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Houd de toets voor inzoomen met verrekijker ingedrukt (standaard Z) om door een verrekijker ergens in de inventaris te kijken, zonder hem vast te houden. Niet in vanilla.

@@ -118,6 +118,8 @@ tile.cavesandcliffsbackport.tinted_glass.name=Przyciemnione szkło
 subtitles.cavesandcliffsbackport.block.amethyst_block.chime=Ametyst dźwięczy
 subtitles.cavesandcliffsbackport.item.spyglass.stop_using=Luneta się zsuwa
 subtitles.cavesandcliffsbackport.item.spyglass.use=Luneta się rozssuwa
+key.cavesandcliffsbackport.spyglassZoom=Przybliż lunetą
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
 death.attack.cavesandcliffsbackport.fallingStalactite.player=Spadający stalaktyt zrobił z gracza %1$s szaszłyk podczas walki z %2$s
@@ -366,6 +368,8 @@ config.cavesandcliffsbackport.amethyst.geodeMinY=Najniższa wysokość geod
 config.cavesandcliffsbackport.amethyst.geodeMinY.tooltip=Najniższa wysokość geody.
 config.cavesandcliffsbackport.amethyst.geodeMaxY=Najwyższa wysokość geod
 config.cavesandcliffsbackport.amethyst.geodeMaxY.tooltip=Najwyższa wysokość geody.
+config.cavesandcliffsbackport.amethyst.zoomKey=Klawisz przybliżania lunetą
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Przytrzymanie klawisza przybliżania lunetą (domyślnie Z) pozwala patrzeć przez lunetę znajdującą się gdziekolwiek w ekwipunku, bez trzymania jej w ręce. Nie ma tego w wersji vanilla.
 config.cavesandcliffsbackport.dripstone.enabled=Włączone
 config.cavesandcliffsbackport.dripstone.enabled.tooltip=Bloki nacieku, spiczasty naciek i kocioł lawy. Po wyłączeniu nic nie jest rejestrowane.
 config.cavesandcliffsbackport.dripstone.extraCopperVeins=Dodatkowe żyły miedzi

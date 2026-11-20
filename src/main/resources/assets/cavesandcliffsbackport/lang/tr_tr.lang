@@ -118,6 +118,8 @@ tile.cavesandcliffsbackport.tinted_glass.name=Gölgeli Cam
 subtitles.cavesandcliffsbackport.block.amethyst_block.chime=Ametist çınladı
 subtitles.cavesandcliffsbackport.item.spyglass.stop_using=Dürbün geri çekiliyor
 subtitles.cavesandcliffsbackport.item.spyglass.use=Dürbün ile yakınlaştırılıyor
+key.cavesandcliffsbackport.spyglassZoom=Dürbünle yakınlaştır
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
 death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s, %2$s ile savaşırken düşen bir sarkıt tarafından şişlendi
@@ -366,6 +368,8 @@ config.cavesandcliffsbackport.amethyst.geodeMinY=En Düşük Jeot Yüksekliği
 config.cavesandcliffsbackport.amethyst.geodeMinY.tooltip=Bir jeotun en düşük yüksekliği.
 config.cavesandcliffsbackport.amethyst.geodeMaxY=En Yüksek Jeot Yüksekliği
 config.cavesandcliffsbackport.amethyst.geodeMaxY.tooltip=Bir jeotun en yüksek yüksekliği.
+config.cavesandcliffsbackport.amethyst.zoomKey=Dürbünle yakınlaştırma tuşu
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Dürbünle yakınlaştırma tuşu (varsayılan Z) basılı tutulduğunda, envanterin herhangi bir yerindeki dürbünle elde tutmadan bakılır. Vanilla'da yoktur.
 config.cavesandcliffsbackport.dripstone.enabled=Etkin
 config.cavesandcliffsbackport.dripstone.enabled.tooltip=Damla Taş Blokları, Sivri Damla Taş ve Lav Kazanı. Kapalıyken hiçbir şey kaydedilmez.
 config.cavesandcliffsbackport.dripstone.extraCopperVeins=Ek Bakır Damarları

@@ -118,6 +118,8 @@ tile.cavesandcliffsbackport.tinted_glass.name=Vidrio opaco
 subtitles.cavesandcliffsbackport.block.amethyst_block.chime=Amatista tintineando
 subtitles.cavesandcliffsbackport.item.spyglass.stop_using=Catalejo se retrae
 subtitles.cavesandcliffsbackport.item.spyglass.use=Catalejo se extiende
+key.cavesandcliffsbackport.spyglassZoom=Hacer zoom con el catalejo
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
 death.attack.cavesandcliffsbackport.fallingStalactite.player=Una estalactita atravesó a %1$s mientras peleaba con %2$s
@@ -366,6 +368,8 @@ config.cavesandcliffsbackport.amethyst.geodeMinY=Altura mínima de las geodas
 config.cavesandcliffsbackport.amethyst.geodeMinY.tooltip=Altura mínima de una geoda.
 config.cavesandcliffsbackport.amethyst.geodeMaxY=Altura máxima de las geodas
 config.cavesandcliffsbackport.amethyst.geodeMaxY.tooltip=Altura máxima de una geoda.
+config.cavesandcliffsbackport.amethyst.zoomKey=Tecla de zoom con el catalejo
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Mantener la tecla de zoom con el catalejo (Z por defecto) permite mirar por un catalejo que esté en cualquier parte del inventario, sin sostenerlo. No está en vanilla.
 config.cavesandcliffsbackport.dripstone.enabled=Activado
 config.cavesandcliffsbackport.dripstone.enabled.tooltip=Los bloques de espeleotema, el espeleotema puntiagudo y el caldero con lava. Si se desactiva, no se registra nada.
 config.cavesandcliffsbackport.dripstone.extraCopperVeins=Vetas de cobre adicionales

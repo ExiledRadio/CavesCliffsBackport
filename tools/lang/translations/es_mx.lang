@@ -222,3 +222,7 @@ config.cavesandcliffsbackport.changes.experienceOrbs.tooltip=Los orbes de experi
 config.cavesandcliffsbackport.changes.snowSpawns=Conejos y lobos en la nieve
 config.cavesandcliffsbackport.changes.snowSpawns.tooltip=Los conejos aparecen sobre bloques de pasto, nieve, bloques de nieve y arena, y los lobos sobre bloques de pasto, nieve y bloques de nieve (1.18).
 generator.cavesandcliffs=Caves & Cliffs
+key.cavesandcliffsbackport.spyglassZoom=Hacer zoom con el catalejo
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
+config.cavesandcliffsbackport.amethyst.zoomKey=Tecla de zoom con el catalejo
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Mantener la tecla de zoom con el catalejo (Z por defecto) permite mirar por un catalejo que esté en cualquier parte del inventario, sin sostenerlo. No está en vanilla.

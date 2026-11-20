@@ -118,6 +118,8 @@ tile.cavesandcliffsbackport.tinted_glass.name=Getöntes Glas
 subtitles.cavesandcliffsbackport.block.amethyst_block.chime=Amethyst klingt
 subtitles.cavesandcliffsbackport.item.spyglass.stop_using=Fernrohr fährt ein
 subtitles.cavesandcliffsbackport.item.spyglass.use=Fernrohr fährt aus
+key.cavesandcliffsbackport.spyglassZoom=Mit Fernrohr zoomen
+key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
 death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s wurde während des Kampfes mit %2$s von einem fallenden Stalaktiten aufgespießt
@@ -366,6 +368,8 @@ config.cavesandcliffsbackport.amethyst.geodeMinY=Niedrigste Geodenhöhe
 config.cavesandcliffsbackport.amethyst.geodeMinY.tooltip=Niedrigste Höhe einer Geode.
 config.cavesandcliffsbackport.amethyst.geodeMaxY=Höchste Geodenhöhe
 config.cavesandcliffsbackport.amethyst.geodeMaxY.tooltip=Höchste Höhe einer Geode.
+config.cavesandcliffsbackport.amethyst.zoomKey=Taste „Mit Fernrohr zoomen“
+config.cavesandcliffsbackport.amethyst.zoomKey.tooltip=Solange die Taste „Mit Fernrohr zoomen“ (standardmäßig Z) gehalten wird, blickt man durch ein Fernrohr irgendwo im Inventar, ohne es in der Hand zu halten. Nicht in Vanilla.
 config.cavesandcliffsbackport.dripstone.enabled=Aktiviert
 config.cavesandcliffsbackport.dripstone.enabled.tooltip=Tropfsteinblöcke, spitzer Tropfstein und der Lavakessel. Deaktiviert wird nichts registriert.
 config.cavesandcliffsbackport.dripstone.extraCopperVeins=Zusätzliche Kupferadern
