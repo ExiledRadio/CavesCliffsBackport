@@ -1,3 +1,7 @@
+# 1.1.2
+
+*   **The spyglass comes up to the eye in third person**, as in 1.17: the arm holding it rises and follows the head, armor and sleeves with it, and the spyglass is drawn at the eye. The Zoom with Spyglass key does the same when the spyglass is in hand.
+
 # 1.1.1
 
 *   **The spyglass is held as its 3D model** in first and third person, as in 1.17; the flat icon stays in inventories, on the ground and in item frames.

@@ -11,12 +11,16 @@ import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumHand;
+import net.minecraft.world.World;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
+import net.minecraft.client.renderer.block.model.ItemOverride;
 import net.minecraft.client.renderer.block.model.ItemOverrideList;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -41,6 +45,7 @@ import org.lwjgl.input.Keyboard;
 import javax.annotation.Nullable;
 import javax.vecmath.Matrix4f;
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -67,6 +72,26 @@ public final class SpyglassClient {
     public static void init() {
         ClientRegistry.registerKeyBinding(ZOOM);
         MinecraftForge.EVENT_BUS.register(new SpyglassClient());
+        MinecraftForge.EVENT_BUS.register(new SpyglassPose());
+    }
+
+    /**
+     * The hand whose spyglass this entity holds up to its eye, or null: using it, or (this player only) scoping
+     * through the zoom key with one in hand, main hand first. Not when it is only in the inventory.
+     */
+    @Nullable
+    static EnumHand poseHand(EntityLivingBase e) {
+        if (e.isHandActive() && e.getActiveItemStack().getItem() instanceof ItemSpyglass) {
+            return e.getActiveHand();
+        }
+        if (keyZoom && e == Minecraft.getMinecraft().player) {
+            for (EnumHand hand : EnumHand.values()) {
+                if (e.getHeldItem(hand).getItem() instanceof ItemSpyglass) {
+                    return hand;
+                }
+            }
+        }
+        return null;
     }
 
     static boolean hasSpyglass(EntityPlayer p) {
@@ -156,6 +181,21 @@ public final class SpyglassClient {
             return (flat(type) ? this.icon : this.held).handlePerspective(type);
         }
 
+        private final IBakedModel notInHand = new NotInHand(this);
+
+        /** While held up to the eye, the spyglass is drawn there by {@link SpyglassPose}, not in the hand. */
+        private final ItemOverrideList overrides = new ItemOverrideList(Collections.<ItemOverride>emptyList()) {
+            @Override
+            public IBakedModel handleItemState(IBakedModel original, ItemStack stack, @Nullable World world,
+                    @Nullable EntityLivingBase entity) {
+                if (entity == null || SpyglassPose.atEye) {
+                    return original;
+                }
+                EnumHand hand = poseHand(entity);
+                return hand != null && entity.getHeldItem(hand) == stack ? ByPerspective.this.notInHand : original;
+            }
+        };
+
         @Override
         public List<BakedQuad> getQuads(@Nullable IBlockState state, @Nullable EnumFacing side, long rand) {
             return this.icon.getQuads(state, side, rand);
@@ -189,7 +229,61 @@ public final class SpyglassClient {
 
         @Override
         public ItemOverrideList getOverrides() {
-            return this.icon.getOverrides();
+            return this.overrides;
+        }
+    }
+
+    /** Draws nothing held in third person; otherwise as {@link ByPerspective}. */
+    static final class NotInHand implements IBakedModel {
+        private final ByPerspective model;
+
+        NotInHand(ByPerspective model) {
+            this.model = model;
+        }
+
+        @Override
+        public Pair<? extends IBakedModel, Matrix4f> handlePerspective(ItemCameraTransforms.TransformType type) {
+            if (type == ItemCameraTransforms.TransformType.THIRD_PERSON_RIGHT_HAND
+                    || type == ItemCameraTransforms.TransformType.THIRD_PERSON_LEFT_HAND) {
+                return Pair.of(this, null);
+            }
+            return this.model.handlePerspective(type);
+        }
+
+        @Override
+        public List<BakedQuad> getQuads(@Nullable IBlockState state, @Nullable EnumFacing side, long rand) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public boolean isAmbientOcclusion() {
+            return false;
+        }
+
+        @Override
+        public boolean isGui3d() {
+            return this.model.isGui3d();
+        }
+
+        @Override
+        public boolean isBuiltInRenderer() {
+            return false;
+        }
+
+        @Override
+        public TextureAtlasSprite getParticleTexture() {
+            return this.model.getParticleTexture();
+        }
+
+        @SuppressWarnings("deprecation")
+        @Override
+        public ItemCameraTransforms getItemCameraTransforms() {
+            return ItemCameraTransforms.DEFAULT;
+        }
+
+        @Override
+        public ItemOverrideList getOverrides() {
+            return ItemOverrideList.NONE;
         }
     }
 

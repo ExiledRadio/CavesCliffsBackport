@@ -35,7 +35,8 @@ import static com.exiledradio.cavesandcliffsbackport.height.asm.Asm.*;
  *   <li>{@code BlockMycelium}: a {@code canSustainPlant} override (super's answer, then the hook).</li>
  *   <li>{@code NetHandlerPlayServer.processCustomPayload}: the anvil name limit 35 of {@code MC|ItemName}.</li>
  *   <li>Client: {@code GuiIngameForge.renderHealth}'s absorption heart texture offsets ({@code MARGIN + 144} and
- *       {@code + 153}), and {@code EntityPlayerSP.onLivingUpdate}'s {@code collidedHorizontally} in the sprint test.</li>
+ *       {@code + 153}), {@code EntityPlayerSP.onLivingUpdate}'s {@code collidedHorizontally} in the sprint test, and
+ *       {@code ModelBiped.setRotationAngles}'s head and returns for the spyglass's arm pose.</li>
  * </ul>
  * A target not of the expected shape is left exactly as it was (logged), so 1.12.2's behavior stays.
  */
@@ -52,10 +53,12 @@ public final class ChangesTransformer implements IClassTransformer {
     static final String NET = "net.minecraft.network.NetHandlerPlayServer";
     static final String GUI = "net.minecraftforge.client.GuiIngameForge";
     static final String PLAYER_SP = "net.minecraft.client.entity.EntityPlayerSP";
+    static final String BIPED = "net.minecraft.client.model.ModelBiped";
+    static final String SPYGLASS_POSE = "com/exiledradio/cavesandcliffsbackport/amethyst/client/SpyglassPose";
 
     /** Every target with its side: true for client-only classes. */
     public static final String[] COMMON = {CART, ITEM, MYCELIUM, NET};
-    public static final String[] CLIENT = {GUI, PLAYER_SP};
+    public static final String[] CLIENT = {GUI, PLAYER_SP, BIPED};
 
     /** Each target class once patched in the running game; the self-test reads it. */
     public static final Map<String, Boolean> APPLIED = new ConcurrentHashMap<String, Boolean>();
@@ -100,6 +103,9 @@ public final class ChangesTransformer implements IClassTransformer {
         }
         if (PLAYER_SP.equals(target)) {
             return playerSP(bytes);
+        }
+        if (BIPED.equals(target)) {
+            return biped(bytes);
         }
         return null;
     }
@@ -244,6 +250,34 @@ public final class ChangesTransformer implements IClassTransformer {
         }
         replace(m, next(hit.get(0)), list(new MethodInsnNode(Opcodes.INVOKESTATIC, CLIENT_HOOKS, "sprintBlocked",
                 "(Lnet/minecraft/client/entity/EntityPlayerSP;)Z", false)));
+        return write(node);
+    }
+
+    /**
+     * The spyglass's third-person pose (1.17): {@code ModelBiped.setRotationAngles} calls {@code SpyglassPose.pre(this,
+     * entity)} at its head, where every parameter is live, and {@code SpyglassPose.post(this)} before every return
+     * (only {@code this}). The hooks pose only an entity holding a spyglass up.
+     */
+    private static byte[] biped(byte[] bytes) {
+        ClassNode node = read(bytes);
+        MethodNode m = method(node, "setRotationAngles", "func_78087_a", "(FFFFFFLnet/minecraft/entity/Entity;)V");
+        if (m == null) {
+            LOG.warn("Other Changes: ModelBiped.setRotationAngles not found; the spyglass pose is skipped.");
+            return null;
+        }
+        String model = "Lnet/minecraft/client/model/ModelBiped;";
+        List<AbstractInsnNode> returns = new ArrayList<AbstractInsnNode>();
+        for (AbstractInsnNode n = m.instructions.getFirst(); n != null; n = n.getNext()) {
+            if (n.getOpcode() == Opcodes.RETURN) {
+                returns.add(n);
+            }
+        }
+        for (AbstractInsnNode n : returns) {
+            m.instructions.insertBefore(n, list(new VarInsnNode(Opcodes.ALOAD, 0),
+                    new MethodInsnNode(Opcodes.INVOKESTATIC, SPYGLASS_POSE, "post", "(" + model + ")V", false)));
+        }
+        m.instructions.insert(list(new VarInsnNode(Opcodes.ALOAD, 0), new VarInsnNode(Opcodes.ALOAD, 7),
+                new MethodInsnNode(Opcodes.INVOKESTATIC, SPYGLASS_POSE, "pre", "(" + model + "Lnet/minecraft/entity/Entity;)V", false)));
         return write(node);
     }
 
