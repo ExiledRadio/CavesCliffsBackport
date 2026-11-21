@@ -91,6 +91,8 @@ Every feature can be turned off in Backport Core's settings screen, under Mod Op
 
 **[Trails & Tales Backport](https://www.curseforge.com/minecraft/mc-mods/trails-tales-backport)**: installed when a world is created, it adds cherry groves where 1.20 puts them. Desert wells get suspicious sand, the brush and copper trim use this mod's copper, and sniffer eggs hatch twice as fast on moss.
 
+**Game Drops Backport**: installed when a world is created, it adds the dappled forest and the sulfur caves where 26.3 puts them. Baby goats and axolotls get 26.1's baby models.
+
 ## Requirements
 
 Minecraft 1.12.2 with Forge 14.23.5.2847 or newer, and [Backport Core](https://www.curseforge.com/minecraft/mc-mods/backport-core) 1.3.0 or newer. The CurseForge app installs Backport Core with it. [Fluidlogged API](https://www.curseforge.com/minecraft/mc-mods/fluidlogged-api) 3.3.3 or newer is optional, for waterlogged blocks.

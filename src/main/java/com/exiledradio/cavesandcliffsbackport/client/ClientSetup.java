@@ -68,6 +68,14 @@ public final class ClientSetup {
                 CavesAndCliffsBackport.LOGGER.error("CLIENT SELFTEST DONE pass=0 fail=1: the test classes are not in this build.", e);
             }
         }
+        if ("babyrender".equals(System.getProperty(CavesAndCliffsBackport.MOD_ID + ".clienttest"))) {
+            // runClient -Pclienttest=babyrender: 26.1's baby models drawn in a flat world, with screenshots.
+            try {
+                Class.forName("com.exiledradio.cavesandcliffsbackport.selftest.ClientBabyRenderTest").getMethod("register").invoke(null);
+            } catch (ReflectiveOperationException e) {
+                CavesAndCliffsBackport.LOGGER.error("BABYRENDER DONE pass=0 fail=1: the test classes are not in this build.", e);
+            }
+        }
     }
 
     @SubscribeEvent

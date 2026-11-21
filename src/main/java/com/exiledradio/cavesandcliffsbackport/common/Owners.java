@@ -36,6 +36,9 @@ public final class Owners {
     /** 1.16: basalt, smelted into our smooth basalt. */
     public static final String NETHER_UPDATE = "netherupdatebackport";
 
+    /** Game Drops Backport: 26.x's drops (26.1's baby models follow its settings). */
+    public static final String GAME_DROPS = "gamedropsbackport";
+
     private Owners() {
     }
 

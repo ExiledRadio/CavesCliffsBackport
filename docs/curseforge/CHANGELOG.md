@@ -1,3 +1,7 @@
+# 1.1.4
+
+*   **With Game Drops Backport, babies get 26.1's models**: baby goats and axolotls are drawn with their own 26.1 models and textures, the axolotl with 26.1's swimming, walking, idle and playing-dead animations. They follow Game Drops Backport's Baby Models setting; without it, they show when Backport Core's look is 26.1 or later, and are 1.17's shrunken adults otherwise.
+
 # 1.1.3
 
 *   **With Game Drops Backport, new Caves & Cliffs worlds get its biomes where 26.3 places them**: the dappled forest beside cool plains and taigas, with patches of coarse dirt, its poplars and fallen poplars, and the sulfur caves deep under low inland ground, banded with sulfur and cinnabar. The rest of the biome map is unchanged, so with all the family's backports a seed's biomes match 26.3's. Worlds made before keep their biomes.

@@ -3,6 +3,7 @@ package com.exiledradio.cavesandcliffsbackport.axolotl.client;
 import com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport;
 import com.exiledradio.cavesandcliffsbackport.axolotl.AxolotlVariant;
 import com.exiledradio.cavesandcliffsbackport.axolotl.EntityAxolotl;
+import com.exiledradio.cavesandcliffsbackport.babies.client.CaveBabies;
 
 import net.minecraft.client.renderer.entity.RenderLiving;
 import net.minecraft.client.renderer.entity.RenderManager;
@@ -19,7 +20,7 @@ public final class AxolotlClient {
     }
 
     public static void init() {
-        RenderingRegistry.registerEntityRenderingHandler(EntityAxolotl.class, Render::new);
+        RenderingRegistry.registerEntityRenderingHandler(EntityAxolotl.class, m -> CaveBabies.axolotl(m, new Render(m)));
     }
 
     static final class Render extends RenderLiving<EntityAxolotl> {
