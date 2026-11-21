@@ -56,8 +56,50 @@ public final class Decorator {
         return names;
     }
 
+    /**
+     * 26.3's dappled forest's features per step (Editions.GAME_DROPS), less its vegetal step's trees, mushrooms, shrubs
+     * and grass: Game Drops' PoplarFeatures.vegetation places those at population (ModernGenerator). Names the
+     * editions' step order does not hold are left out, as for any biome.
+     */
+    private static final String[][] DAPPLED_FOREST = {
+        {},
+        {"lake_lava_underground", "lake_lava_surface"},
+        {"amethyst_geode"},
+        {"monster_room", "monster_room_deep"},
+        {},
+        {},
+        {"ore_dirt", "ore_gravel", "ore_granite_upper", "ore_granite_lower", "ore_diorite_upper", "ore_diorite_lower", "ore_andesite_upper", "ore_andesite_lower", "ore_tuff", "ore_coal_upper", "ore_coal_lower", "ore_iron_upper", "ore_iron_middle", "ore_iron_small", "ore_gold", "ore_gold_lower", "ore_redstone", "ore_redstone_lower", "ore_diamond", "ore_diamond_medium", "ore_diamond_large", "ore_diamond_buried", "ore_lapis", "ore_lapis_buried", "ore_copper", "underwater_magma", "disk_sand", "disk_clay", "disk_gravel"},
+        {},
+        {"spring_water", "spring_lava"},
+        {"glow_lichen"},
+        {"freeze_top_layer"}};
+
+    /**
+     * 26.2's sulfur caves' features per step (Editions.GAME_DROPS). Its springs, pools and spikes are Game Drops'
+     * own, placed at population; here they are names no step order holds, so they are left out.
+     */
+    private static final String[][] SULFUR_CAVES = {
+        {},
+        {"lake_lava_underground", "lake_lava_surface", "rooted_sulfur_spring", "sulfur_pool"},
+        {"amethyst_geode"},
+        {"monster_room", "monster_room_deep"},
+        {},
+        {},
+        {"ore_dirt", "ore_gravel", "ore_granite_upper", "ore_granite_lower", "ore_diorite_upper", "ore_diorite_lower", "ore_andesite_upper", "ore_andesite_lower", "ore_tuff", "ore_coal_upper", "ore_coal_lower", "ore_iron_upper", "ore_iron_middle", "ore_iron_small", "ore_gold", "ore_gold_lower", "ore_redstone", "ore_redstone_lower", "ore_diamond", "ore_diamond_medium", "ore_diamond_large", "ore_diamond_buried", "ore_lapis", "ore_lapis_buried", "ore_copper", "underwater_magma", "disk_sand", "disk_clay", "disk_gravel"},
+        {"sulfur_spike_cluster", "sulfur_spike"},
+        {"spring_water", "spring_lava"},
+        {"glow_lichen", "patch_tall_grass_2"},
+        {"freeze_top_layer"}};
+
+    /** The bit of a biome in a chunk's biome mask: 64 on the void's, 65 and 66 on two nether biomes' (never stored). */
+    private static int bit(int biome) {
+        return biome < 64 ? biome : biome == 64 ? 0 : Biomes.NETHER_WASTES + biome - 65;
+    }
+
     /** FeatureSorter's per-step order for the editions' biomes. */
     static String[][] steps(int editions) {
+        // Game Drops' two biomes bring no step order of their own (see biomeFeatures).
+        editions &= ~Editions.GAME_DROPS;
         if ((editions & Editions.SPRING) != 0) {
             switch (editions & ~Editions.SPRING) {
                 case Editions.PALE | Editions.WILD | Editions.CHERRY:
@@ -95,6 +137,12 @@ public final class Decorator {
      * pale garden every biome's are 1.21.4's).
      */
     static String[][] biomeFeatures(int biome, int editions) {
+        if (biome == Biomes.SULFUR_CAVES) {
+            return SULFUR_CAVES;
+        }
+        if (biome == Biomes.DAPPLED_FOREST) {
+            return DAPPLED_FOREST;
+        }
         if ((editions & Editions.SPRING) != 0) {
             return FeatureTables12111.BIOMES[biome];
         }
@@ -341,9 +389,10 @@ public final class Decorator {
                 mask |= storedBiomes(cx + dx, cz + dz);
             }
         }
-        // Bit b & 63: the pale garden (64) shares the void's bit, and the void lists no overworld feature.
+        // bit(b): the pale garden (64) shares the void's bit, the sulfur caves and the dappled forest two nether
+        // biomes'; none of those lists an overworld feature.
         for (int b = 0; b < Biomes.COUNT; b++) {
-            present[b] = (mask >>> (b & 63) & 1L) != 0L;
+            present[b] = (mask >>> bit(b) & 1L) != 0L;
         }
         // Per kind: 1 allowed, 0 denied, -1 not asked yet.
         int[] gate = this.gateAnswers;
@@ -377,7 +426,7 @@ public final class Decorator {
         this.region = null;
     }
 
-    // Per chunk, the set of biome ids it stores (bit id & 63: 64, the pale garden, on the void's), direct-mapped: each chunk is in
+    // Per chunk, the set of biome ids it stores (by bit(id)), direct-mapped: each chunk is in
     // nine decorations' 3x3 unions.
     private static final int CACHE = 64;
     private final long[] maskKeys = new long[CACHE * CACHE];
@@ -391,7 +440,7 @@ public final class Decorator {
             biomes.fillChunk(cx, cz, stored);
             long m = 0L;
             for (byte b : stored) {
-                m |= 1L << (b & 63);
+                m |= 1L << bit(b);
             }
             masks[slot] = m;
             maskKeys[slot] = key;

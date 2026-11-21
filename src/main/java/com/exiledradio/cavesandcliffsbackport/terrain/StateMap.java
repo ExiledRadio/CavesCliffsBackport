@@ -187,6 +187,11 @@ public final class StateMap {
         FALLBACK.put("creaking_heart", "minecraft:log2[variant=dark_oak]");
         FALLBACK.put("pale_moss_block", "minecraft:dirt");
         FALLBACK.put("pale_moss_carpet", "minecraft:air");
+        // Game Drops' sulfur caves' bands, by its ids (other mods have blocks named sulfur): stone without them.
+        v("sulfur", "gamedropsbackport:sulfur");
+        v("cinnabar", "gamedropsbackport:cinnabar");
+        FALLBACK.put("sulfur", "minecraft:stone");
+        FALLBACK.put("cinnabar", "minecraft:stone");
         FALLBACK.put("pale_hanging_moss", "minecraft:air");
         FALLBACK.put("closed_eyeblossom", "minecraft:air");
         for (String plant : new String[]{"kelp", "kelp_plant", "seagrass", "tall_seagrass", "sea_pickle"}) {

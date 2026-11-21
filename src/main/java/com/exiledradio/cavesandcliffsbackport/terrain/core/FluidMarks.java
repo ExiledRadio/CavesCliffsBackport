@@ -29,7 +29,7 @@ public final class FluidMarks {
 
     public FluidMarks(OverworldNoise noise) {
         this.noise = noise;
-        this.aquifer1214 = (noise.editions & Editions.PALE) == 0 ? null
+        this.aquifer1214 = !Editions.from1214(noise.editions) ? null
             : ThreadLocal.withInitial(() -> new ChunkFiller.Aquifer(noise, new ColumnCache(noise)));
     }
 

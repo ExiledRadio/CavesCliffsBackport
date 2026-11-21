@@ -108,6 +108,9 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
     /** Other backports' newer placed features (Tricky Trials' spring plants), or null for none. */
     @Nullable
     private final ModernFeatures modern;
+    /** Game Drops' dappled forest's vegetation, in a world with its edition (else null). */
+    @Nullable
+    private final DappledForest dappled;
 
     /** Time spent writing finished chunks into 1.12 chunks, for the benchmark. */
     public long writeNanos;
@@ -134,6 +137,7 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         com.exiledradio.cavesandcliffsbackport.terrain.core.Decorator.TreeGate gate = ModDecoration.gate(trees, ModDecoration.quarkStones());
         // Tricky Trials' 1.21.5 spring plants: its tree selectors, its cactus patches (see ModernFeatures).
         this.modern = ModernFeatures.of(trees);
+        this.dappled = DappledForest.of(terrain.editions);
         if (this.modern != null) {
             gate = ModDecoration.gate(gate, this.modern.cactusGate());
             List<String> skipped = this.pipeline.modernTrees(this.modern.selectors);
@@ -633,6 +637,10 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
             if (mansion) {
                 FreezeTopLayer.afterBuilding(this.world, this.mansion, x, z);
             }
+        }
+        // Game Drops' dappled forest's vegetal step (its poplars, mushrooms, shrubs and grass).
+        if (this.dappled != null) {
+            this.dappled.populate(this.world, x, z);
         }
         // Other mods' generation in 1.12's dungeon and ore events (Quark's stones and underground biomes).
         ModDecoration.populate(this, this.world, x, z, village, this.modern, terrain.map.modded());

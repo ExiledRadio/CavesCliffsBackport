@@ -242,6 +242,19 @@ no seam through it:
   MossyCarpetBlock.placeAt updates the carpet again after its topper (a side under a topper's side is tall). 1.21.11's
   noise fill, aquifer marks and spawn search come out as 1.21.4's (checked). The setting `height.paleGarden1214` (off;
   read when a world is made) gives 1.21.4's edition instead, for comparing seeds with Chunkbase at 1.21.4.
+- **GAME_DROPS** (Game Drops Backport installed with `gamedropsbackport:sulfur_caves` and `dappled_forest` registered;
+  `docs/CORE_REQUESTS.md` 4 and SC-1 there): 26.3's dappled forest in `MIDDLE_BIOMES_VARIANT[1][0]` and 26.2's sulfur
+  caves after the lush caves in `addUndergroundBiomes` (continentalness coast to inland, erosion 5-6, weirdness -1.1 to
+  -0.85). Surface rules from 26.3's material rules: the sulfur caves' bands (`sulfur_cave_bands`: cinnabar -0.4..-0.1,
+  sulfur 0..0.4, cinnabar above, of the 3D `sulfur_cave_gradient`) first in `underground` (before deepslate; below the
+  min surface level too, for columns whose zoom quarts hold the biome) and as `biome_surface/sulfur_caves` (bands, then
+  stone) beside the dripstone caves' stone; the dappled forest's coarse dirt where `small_patch` >= 1.2, after the
+  mushroom fields. Both noises are 26.x's NormalNoise (`core/ModernNoise`: its normalization and float Perlin; seeding
+  as 1.18's). Ids 65 and 66 (`Biomes.COUNT` 67); the decorator's biome mask puts them on two nether biomes' bits.
+  Feature lists: 26.3's, filtered to the editions' step order (the sulfur caves' springs, pools and spikes and the
+  dappled forest's trees, mushrooms, shrubs and grass are Game Drops', the latter through
+  `PoplarFeatures.vegetation` at population, `terrain/DappledForest`). RTree and aquifer sampling 1.20's, aquifer marks
+  and spawn search 1.21.4's (`Editions.from1214`). Saved "26.3" with every edition, else the others' name and "-26.3".
 - Features ported for them, from Mojang's code: `trees_mangrove` (UpwardsBranchingTrunkPlacer, MangroveRootPlacer with
   muddy roots and moss carpets, 70-try random spread leaves, 1.19's leave vines, AttachedToLeavesDecorator's hanging
   propagules, the beehive last), `disk_grass` (1.19's DiskFeature on mud), `trees_cherry` (CherryTrunkPlacer,
@@ -601,6 +614,15 @@ pass, 4 natural hearts, `creaking_heart_state=dormant`); a pale garden at -3704,
     core's are Tricky's, dormant, their tiles natural; 262 pass, 0 fail. Without it: 252 pass, 0 fail. The whole
     suite (`runServer -Pselftest=all`, fresh Default world): 4451 pass, 0 fail; with SPRING 4448 pass, 0 fail (one run before
 it failed the goat test's jump aim by 0.004 blocks, the known flaky goat test).
+
+*   **26.2's sulfur caves and 26.3's dappled forest** (`Editions.GAME_DROPS`, 2026-11-21, cc-gd-edition): the
+    builder's leaves with every edition (7594) identical, in order, to 26.3's `OverworldBiomeBuilder.addBiomes` (run
+    from 26.3's client.jar with its libraries); `small_patch` and `sulfur_cave_gradient` (`core/ModernNoise`) identical
+    bit for bit to 26.3's `NormalNoise` on 2000 samples. `GameDropsEditionSelfTest` (part of `terrain`): saved names,
+    the two biomes' leaves (the rest unchanged), coarse dirt among a dappled forest's grass, sulfur and cinnabar only
+    where the sulfur caves are and none without the edition; with Game Drops' dev jar also the 3D biome id, the column
+    biome and its poplars at population. `height,terrain` 110/0 without Game Drops, 113/0 with it ("1.18-26.3");
+    whole suite (fresh Default world) 4762/0.
 
 ## Speed
 

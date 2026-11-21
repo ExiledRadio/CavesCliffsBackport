@@ -28,6 +28,9 @@ public final class SurfaceBuilder {
     private static final int NONE = -1;
     /** 1.19's mud (SurfaceRuleData.MUD): the mangrove swamp's floor and the ground under it. */
     private static final int MUD = BlockCodes.register("mud");
+    /** 26.2's sulfur and cinnabar (Game Drops Backport's): the sulfur caves' bands. */
+    private static final int SULFUR = BlockCodes.register("sulfur");
+    private static final int CINNABAR = BlockCodes.register("cinnabar");
     private static final int MIN_QUART_Y = MIN_Y >> 2;
     private static final int MAX_QUART_Y = MIN_QUART_Y + (HEIGHT >> 2) - 1;
 
@@ -55,6 +58,9 @@ public final class SurfaceBuilder {
     private final DoubleNoise powderSnowNoise;
     private final DoubleNoise packedIceNoise;
     private final DoubleNoise iceNoise;
+    /** 26.x's small_patch and sulfur_cave_gradient ({@link Editions#GAME_DROPS}), else null. */
+    private final ModernNoise smallPatchNoise;
+    private final ModernNoise sulfurGradientNoise;
 
     // ---- the chunk ----
     private char[] blocks;
@@ -86,6 +92,10 @@ public final class SurfaceBuilder {
     private boolean iceDone;
     private double swamp;
     private boolean swampDone;
+    private double smallPatch;
+    private boolean smallPatchDone;
+    /** Whether the column's four zoom quart columns hold the sulfur caves at any height (else no block asks). */
+    private boolean sulfurColumn;
     private int preliminaryCellX = Integer.MIN_VALUE;
     private int preliminaryCellZ = Integer.MIN_VALUE;
     private final int[] preliminary = new int[4];
@@ -119,6 +129,15 @@ public final class SurfaceBuilder {
         powderSnowNoise = noise(p, "powder_snow", -6, 1, 1, 1, 1);
         packedIceNoise = noise(p, "packed_ice", -7, 1, 1, 1, 1);
         iceNoise = noise(p, "ice", -4, 1, 1, 1, 1);
+        if ((noise.editions & Editions.GAME_DROPS) != 0) {
+            // 26.3's worldgen/noise/small_patch.json and sulfur_cave_gradient.json.
+            smallPatchNoise = new ModernNoise(p.fromHashOf("minecraft:small_patch"), 0.955388882960065D, -3, 1, 3.0D);
+            sulfurGradientNoise = new ModernNoise(p.fromHashOf("minecraft:sulfur_cave_gradient"), 1.1817507833955654D, -5,
+                3, 1.0D, 0.0D, 1.0D);
+        } else {
+            smallPatchNoise = null;
+            sulfurGradientNoise = null;
+        }
         bands = generateBands(p.fromHashOf("minecraft:clay_bands"));
         bedrockFloor = p.fromHashOf("minecraft:bedrock_floor").forkPositional();
         deepslate = p.fromHashOf("minecraft:deepslate").forkPositional();
@@ -249,6 +268,12 @@ public final class SurfaceBuilder {
                     return r;
                 }
             }
+            if (sulfurColumn) {
+                int band = sulfurBand();
+                if (band != NONE) {
+                    return band;
+                }
+            }
             if (y <= 0 || y < 8 && gradient(deepslate, y, 0, 8)) {
                 return DEEPSLATE;
             }
@@ -296,6 +321,7 @@ public final class SurfaceBuilder {
         packedIceDone = false;
         iceDone = false;
         swampDone = false;
+        smallPatchDone = false;
         steep = -1;
         minSurfaceLevel = minSurfaceLevel();
     }
@@ -342,11 +368,37 @@ public final class SurfaceBuilder {
         int deepTop = Math.min(scanTo - 1, Math.min(top, 7));
         // Stone turned into another non-air block leaves the heightmap as it is (Heightmap.update only moves for
         // a non-air block above the top or air at the top), so these are plain writes.
+        boolean sulfur = sulfurColumn;
+        if (sulfur) {
+            // Between y 8 and the scan nothing applies but the sulfur caves' bands (no bedrock or deepslate).
+            for (int y = Math.min(scanTo - 1, Math.min(top, MAX_Y)); y > deepTop; --y) {
+                if (b[at + y] == STONE) {
+                    this.y = y;
+                    this.biome = -1;
+                    int r = sulfurBand();
+                    if (r != NONE) {
+                        b[at + y] = (char) r;
+                    }
+                }
+            }
+        }
         for (int y = deepTop; y >= MIN_Y; --y) {
             if (b[at + y] == STONE) {
                 if (y <= -64 || y < -59 && gradient(bedrockFloor, y, -64, -59)) {
                     b[at + y] = BEDROCK;
-                } else if (y <= 0 || gradient(deepslate, y, 0, 8)) {
+                    continue;
+                }
+                if (sulfur) {
+                    // The sulfur caves' bands come before the deepslate gradient, below the min surface too.
+                    this.y = y;
+                    this.biome = -1;
+                    int r = sulfurBand();
+                    if (r != NONE) {
+                        b[at + y] = (char) r;
+                        continue;
+                    }
+                }
+                if (y <= 0 || gradient(deepslate, y, 0, 8)) {
                     b[at + y] = DEEPSLATE;
                 }
             }
@@ -365,10 +417,43 @@ public final class SurfaceBuilder {
         if (r != NONE) {
             return r;
         }
+        if (sulfurColumn) {
+            r = sulfurBand();
+            if (r != NONE) {
+                return r;
+            }
+        }
         if (y <= 0 || y < 8 && gradient(deepslate, y, 0, 8)) {
             return DEEPSLATE;
         }
         return NONE;
+    }
+
+    /**
+     * 26.3's material rule overworld/underground's first line (Editions.GAME_DROPS): in the sulfur caves,
+     * sulfur_cave_bands (cinnabar, sulfur, cinnabar up the 3D gradient), else NONE (deepslate's gradient next).
+     */
+    private int sulfurBand() {
+        if (biome() != Biomes.SULFUR_CAVES) {
+            return NONE;
+        }
+        double v = sulfurGradientNoise.get((double) bx, (double) y, (double) bz);
+        if (v >= (double) -0.4F && v <= (double) -0.1F) {
+            return CINNABAR;
+        }
+        if (v >= 0.0D && v <= (double) 0.4F) {
+            return SULFUR;
+        }
+        return v >= (double) 0.4F ? CINNABAR : NONE;
+    }
+
+    /** small_patch at the column (26.3's noise_threshold, 2D). */
+    private double smallPatch() {
+        if (!smallPatchDone) {
+            smallPatch = smallPatchNoise.get((double) bx, 0.0D, (double) bz);
+            smallPatchDone = true;
+        }
+        return smallPatch;
     }
 
     /** VerticalGradientConditionSource between trueAtAndBelow and falseAtAndAbove (exclusive here). */
@@ -673,6 +758,11 @@ public final class SurfaceBuilder {
         if (b == Biomes.DRIPSTONE_CAVES) {
             return STONE;
         }
+        if (b == Biomes.SULFUR_CAVES) {
+            // 26.2: biome_surface/sulfur_caves, the bands then stone.
+            int r = sulfurBand();
+            return r != NONE ? r : STONE;
+        }
         return NONE;
     }
 
@@ -758,6 +848,12 @@ public final class SurfaceBuilder {
                 return MUD;
             case Biomes.MUSHROOM_FIELDS:
                 return MYCELIUM;
+            case Biomes.DAPPLED_FOREST:
+                // 26.3: biome_surface/dappled_forest, after the mushroom fields, before the default grass.
+                if (smallPatch() >= (double) 1.2F) {
+                    return COARSE_DIRT;
+                }
+                return grass();
             default: {
                 int r = stonyRule(b);
                 return r != NONE ? r : grass();
@@ -989,6 +1085,17 @@ public final class SurfaceBuilder {
         slot10 = biomes.slotOf(l + 1, j1);
         slot01 = biomes.slotOf(l, j1 + 1);
         slot11 = biomes.slotOf(l + 1, j1 + 1);
+        sulfurColumn = sulfurGradientNoise != null
+            && (sulfurIn(slot00) || sulfurIn(slot10) || sulfurIn(slot01) || sulfurIn(slot11));
+    }
+
+    private boolean sulfurIn(int slot) {
+        for (int qy = MIN_QUART_Y; qy <= MAX_QUART_Y; qy++) {
+            if (biomes.storedInSlot(slot, qy) == Biomes.SULFUR_CAVES) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** BiomeManager.getBiome at a block, over stored biomes (quart y clamped). */

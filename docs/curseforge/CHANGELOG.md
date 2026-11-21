@@ -1,3 +1,7 @@
+# 1.1.3
+
+*   **With Game Drops Backport, new Caves & Cliffs worlds get its biomes where 26.3 places them**: the dappled forest beside cool plains and taigas, with patches of coarse dirt, its poplars and fallen poplars, and the sulfur caves deep under low inland ground, banded with sulfur and cinnabar. The rest of the biome map is unchanged, so with all the family's backports a seed's biomes match 26.3's. Worlds made before keep their biomes.
+
 # 1.1.2
 
 *   **The spyglass comes up to the eye in third person**, as in 1.17: the arm holding it rises and follows the head, armor and sleeves with it, and the spyglass is drawn at the eye. The Zoom with Spyglass key does the same when the spyglass is in hand.

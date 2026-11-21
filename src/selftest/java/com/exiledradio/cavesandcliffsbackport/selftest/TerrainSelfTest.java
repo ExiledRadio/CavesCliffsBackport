@@ -58,6 +58,7 @@ public final class TerrainSelfTest implements SelfTest {
         ModernGenerator generator = (ModernGenerator) world.getChunkProvider().chunkGenerator;
         exact(check, world, generator);
         NewerBiomesSelfTest.run(check, world, generator);
+        GameDropsEditionSelfTest.run(check, world, generator);
         structures(check, world, generator);
         TerrainHeights heights = TerrainHeights.forWorld(world);
         check.ok(heights != null, "Backport Core's TerrainHeights has a sampler for this world");

@@ -134,7 +134,8 @@ public final class ModernTerrain {
      * The newer versions' additions the installed backports have the blocks for: 1.19's mangrove swamp and deep dark
      * with a mod registering mud and the mangrove wood (Wild Update Backport), 1.20's cherry grove with one registering
      * the cherry wood and pink petals (Trails &amp; Tales Backport), 1.21.4's pale garden with Tricky Trials Backport
-     * and its pale garden biome registered (its paleGarden.generateBiome). Read when a world is made.
+     * and its pale garden biome registered (its paleGarden.generateBiome), 26.2's sulfur caves and 26.3's dappled
+     * forest with Game Drops Backport and both its biomes registered. Read when a world is made.
      */
     static int installedEditions() {
         int e = Editions.NONE;
@@ -150,6 +151,11 @@ public final class ModernTerrain {
                     new net.minecraft.util.ResourceLocation("trickytrialsbackport", "pale_garden"))) {
                 // 1.21.5's placement (Tricky Trials covers up to 1.21.11), or 1.21.4's when the setting asks.
                 e |= ModConfig.height.paleGarden1214 ? Editions.PALE : Editions.PALE | Editions.SPRING;
+            }
+            if (net.minecraftforge.fml.common.Loader.isModLoaded("gamedropsbackport")
+                    && biome("gamedropsbackport", "sulfur_caves") && biome("gamedropsbackport", "dappled_forest")) {
+                // 26.2's sulfur caves and 26.3's dappled forest.
+                e |= Editions.GAME_DROPS;
             }
         }
         return e;
@@ -172,6 +178,11 @@ public final class ModernTerrain {
             return com.exiledradio.cavesandcliffsbackport.terrain.core.Rules.V119;
         }
         return com.exiledradio.cavesandcliffsbackport.terrain.core.Rules.V118;
+    }
+
+    private static boolean biome(String namespace, String path) {
+        return net.minecraftforge.fml.common.registry.ForgeRegistries.BIOMES.containsKey(
+            new net.minecraft.util.ResourceLocation(namespace, path));
     }
 
     private static boolean blocks(String... names) {

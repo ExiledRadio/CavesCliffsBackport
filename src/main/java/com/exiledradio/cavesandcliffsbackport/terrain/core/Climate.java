@@ -602,6 +602,10 @@ public final class Climate {
                 // 1.21.4: the temperate, most humid plateau variant (null before: the dark forest of PLATEAU_BIOMES).
                 PLATEAU_BIOMES_VARIANT[2][4] = Biomes.PALE_GARDEN;
             }
+            if ((editions & Editions.GAME_DROPS) != 0) {
+                // 26.3: the cool, driest middle variant (weirdness above 0), plains before.
+                MIDDLE_BIOMES_VARIANT[1][0] = Biomes.DAPPLED_FOREST;
+            }
             this.out = out;
         }
 
@@ -805,6 +809,11 @@ public final class Climate {
         private void addUndergroundBiomes() {
             addUndergroundBiome(FULL_RANGE, FULL_RANGE, P.span(0.8F, 1.0F), FULL_RANGE, FULL_RANGE, 0.0F, Biomes.DRIPSTONE_CAVES);
             addUndergroundBiome(FULL_RANGE, P.span(0.7F, 1.0F), FULL_RANGE, FULL_RANGE, FULL_RANGE, 0.0F, Biomes.LUSH_CAVES);
+            if ((editions & Editions.GAME_DROPS) != 0) {
+                // 26.2: coast to inland continentalness, the two highest erosions, weirdness -1.1 to -0.85.
+                addUndergroundBiome(FULL_RANGE, FULL_RANGE, P.span(coastContinentalness, inlandContinentalness),
+                    P.span(erosions[5], erosions[6]), P.span(-1.1F, -0.85F), 0.0F, Biomes.SULFUR_CAVES);
+            }
             if ((editions & Editions.WILD) != 0) {
                 // 1.19: addBottomBiome, depth the point 1.1.
                 add(FULL_RANGE, FULL_RANGE, FULL_RANGE, P.span(erosions[0], erosions[1]), P.point(1.1F), FULL_RANGE, 0.0F, Biomes.DEEP_DARK);

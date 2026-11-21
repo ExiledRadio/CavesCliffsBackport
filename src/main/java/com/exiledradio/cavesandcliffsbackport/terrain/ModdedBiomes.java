@@ -141,7 +141,7 @@ public final class ModdedBiomes {
     static final Set<String> FAMILY = new java.util.HashSet<>(java.util.Arrays.asList("minecraft",
             CavesAndCliffsBackport.MOD_ID, "backportcore", "villagerbackport", "updateaquaticbackport",
             "buzzybeesbackport", "netherupdatebackport", "wildupdatebackport", "trailsandtalesbackport",
-            "trickytrialsbackport"));
+            "trickytrialsbackport", "gamedropsbackport"));
 
     // ---- the candidates
 

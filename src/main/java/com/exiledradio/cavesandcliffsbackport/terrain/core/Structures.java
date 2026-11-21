@@ -119,6 +119,14 @@ public final class Structures {
                 allowed[WOODLAND_MANSIONS][0][Biomes.PALE_GARDEN] = true;
             }
         }
+        if ((noise.editions & Editions.GAME_DROPS) != 0) {
+            // 26.3's tags: mineshafts and standard ruined portals in both (no village, outpost or mansion: the plains
+            // the dappled forest replaces lose their villages, as in 26.3). Its abandoned camps are Game Drops'.
+            for (int b : new int[]{Biomes.SULFUR_CAVES, Biomes.DAPPLED_FOREST}) {
+                allowed[MINESHAFTS][0][b] = true;
+                allowed[RUINED_PORTALS][0][b] = true;
+            }
+        }
         poolEntries = new int[StructureTables.START_POOLS.length][];
         for (int p = 0; p < poolEntries.length; p++) {
             int[] runs = StructureTables.START_POOLS[p];

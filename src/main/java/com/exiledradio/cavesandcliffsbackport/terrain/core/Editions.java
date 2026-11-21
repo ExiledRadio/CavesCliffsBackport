@@ -21,6 +21,13 @@ package com.exiledradio.cavesandcliffsbackport.terrain.core;
  *       default with Tricky Trials Backport (the newest version installed wins); the setting
  *       height.paleGarden1214 gives 1.21.4's instead. The rest is PALE's: 1.21.11's terrain changes (the aquifer's
  *       sampling above the surface, the preliminary surface level, the carvers' trigonometry) are not here.</li>
+ *   <li>{@link #GAME_DROPS}: 26.2's sulfur caves and 26.3's dappled forest (Game Drops Backport, with both biomes
+ *       registered): the sulfur caves in OverworldBiomeBuilder.addUndergroundBiomes (after the lush caves) and their
+ *       bands in the surface rules before deepslate (26.3's material rules), the dappled forest in
+ *       MIDDLE_BIOMES_VARIANT[1][0] with coarse dirt on its grass where small_patch is above 1.2. The RTree and
+ *       aquifer sampling are 1.20's, the aquifer marks and the spawn search 1.21.4's (as with PALE); the feature
+ *       tables stay the other editions' (the two biomes' lists are 26.3's, filtered to those tables' names; their
+ *       own features are Game Drops' at population). With all the others, the biomes are 26.3's.</li>
  * </ul>
  * With WILD and CHERRY, the tables are 1.20.1's; with WILD alone 1.19.2's; with CHERRY alone 1.20.1's without the
  * mangrove swamp's and the deep dark's features (and 1.18.2's swamp line in the biome builder). With PALE they are
@@ -36,6 +43,10 @@ public final class Editions {
     public static final int PALE = 4;
     /** With PALE: 1.21.5's pale garden placement and 1.21.11's tables (the newest Tricky Trials Backport covers). */
     public static final int SPRING = 8;
+    /** 26.2's sulfur caves and 26.3's dappled forest (Game Drops Backport). */
+    public static final int GAME_DROPS = 16;
+    /** Every edition: 26.3's overworld biomes. */
+    public static final int ALL = WILD | CHERRY | PALE | SPRING | GAME_DROPS;
 
     /** 1.19's aquifers (and 1.20's): any newer edition. */
     public static boolean newerAquifers(int editions) {
@@ -44,15 +55,25 @@ public final class Editions {
 
     /** 1.20's RTree (6 children per node) and aquifer sampling order: CHERRY or anything newer. */
     public static boolean from120(int editions) {
-        return (editions & (CHERRY | PALE)) != 0;
+        return (editions & (CHERRY | PALE | GAME_DROPS)) != 0;
+    }
+
+    /** 1.21.4's aquifer marks and spawn search: PALE or anything newer. */
+    public static boolean from1214(int editions) {
+        return (editions & (PALE | GAME_DROPS)) != 0;
     }
 
     /**
      * The world's saved name for the editions: "1.18", "1.19" (WILD), "1.20" (both), "1.20-cherry" (CHERRY); with the
      * pale garden "1.21.4" (all three), else "1.21.4-" and the others it has, "1.21.4-wild-pale", "1.21.4-cherry-pale",
-     * "1.21.4-pale"; with SPRING the same with "1.21.11".
+     * "1.21.4-pale"; with SPRING the same with "1.21.11"; with GAME_DROPS "26.3" (every edition), else the others'
+     * name and "-26.3" ("1.18-26.3" with Game Drops alone).
      */
     public static String name(int editions) {
+        if ((editions & GAME_DROPS) != 0) {
+            // "26.3" with every edition, else the others' name and "-26.3".
+            return editions == ALL ? "26.3" : name(editions & ~GAME_DROPS) + "-26.3";
+        }
         if ((editions & PALE) != 0) {
             String v = (editions & SPRING) != 0 ? "1.21.11" : "1.21.4";
             if ((editions & (WILD | CHERRY)) == (WILD | CHERRY)) {
@@ -74,6 +95,13 @@ public final class Editions {
 
     /** The editions of a saved name, or -1 for one this version does not know. */
     public static int byName(String name) {
+        if ("26.3".equals(name)) {
+            return ALL;
+        }
+        if (name.endsWith("-26.3")) {
+            int e = byName(name.substring(0, name.length() - "-26.3".length()));
+            return e < 0 ? -1 : e | GAME_DROPS;
+        }
         if (name.startsWith("1.21.11")) {
             int e = byName("1.21.4" + name.substring("1.21.11".length()));
             return e < 0 ? -1 : e | SPRING;

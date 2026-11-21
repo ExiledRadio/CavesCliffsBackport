@@ -73,7 +73,7 @@ public final class SpawnSearch {
     long fitness(int x, int z) {
         long squared = (long) x * (long) x + (long) z * (long) z;
         long distance;
-        if ((noise.editions & Editions.PALE) != 0) {
+        if (Editions.from1214(noise.editions)) {
             distance = squared;
         } else {
             double d0 = 2500.0D * 2500.0D;
@@ -104,6 +104,6 @@ public final class SpawnSearch {
             }
             best = Math.min(best, sum);
         }
-        return (noise.editions & Editions.PALE) != 0 ? best * 2048L * 2048L + distance : distance + best;
+        return Editions.from1214(noise.editions) ? best * 2048L * 2048L + distance : distance + best;
     }
 }
