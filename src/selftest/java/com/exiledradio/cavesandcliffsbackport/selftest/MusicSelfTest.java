@@ -267,6 +267,35 @@ public final class MusicSelfTest implements SelfTest {
                 c.ok(e.getAsJsonObject().get("name").getAsString().startsWith(M + ":"), "a game track is our file");
             }
         }
+        // 26.2: fingerspit's tracks in the eight biome lists (26.3's sounds.json), Game Drops Backport's files.
+        JsonObject fs = json("/" + M + "_packs/fingerspit/assets/" + M + "/sounds.json");
+        if (c.ok(fs != null, "the 26.2 biome pack is in the jar")) {
+            c.eq(8, fs.entrySet().size(), "26.2 adds to all eight music biomes");
+            String[][] want = {{"lush_caves", "shores"}, {"dripstone_caves", "ebb", "nightly", "shores"}, {"meadow", "home"},
+                    {"grove", "shores"}, {"snowy_slopes", "nightly"}, {"jagged_peaks", "ebb", "nightly"},
+                    {"frozen_peaks", "ebb", "home", "nightly"}, {"stony_peaks", "nightly"}};
+            int entries = 0;
+            for (String[] w : want) {
+                String event = "music.overworld." + w[0];
+                c.ok(fs.has(event) && !fs.getAsJsonObject(event).has("replace"), event + ": added to, nothing replaced");
+                Set<String> names = new TreeSet<String>();
+                if (fs.has(event)) {
+                    for (JsonElement e : fs.getAsJsonObject(event).getAsJsonArray("sounds")) {
+                        JsonObject o = e.getAsJsonObject();
+                        String name = o.get("name").getAsString();
+                        entries++;
+                        c.ok(name.startsWith("gamedropsbackport:music/game/") && o.get("stream").getAsBoolean()
+                                && o.get("weight").getAsInt() == 2, event + ": " + name + " is Game Drops', streamed, weight 2");
+                        boolean full = "dripstone_caves".equals(w[0]) && name.endsWith("/nightly");
+                        c.eq(full ? 1.0F : 0.4F, o.has("volume") ? o.get("volume").getAsFloat() : 1.0F, event + ": " + name + " volume");
+                        names.add(name.substring(name.lastIndexOf('/') + 1));
+                    }
+                }
+                c.eq(set(Arrays.copyOfRange(w, 1, w.length)), names, event + ": 26.2's tracks");
+            }
+            c.eq(13, entries, "13 entries");
+        }
+
         // The menu tracks, and Core's pool with them.
         List<String[]> menu = MusicContent.menuTracks();
         Set<String> names = new TreeSet<String>();

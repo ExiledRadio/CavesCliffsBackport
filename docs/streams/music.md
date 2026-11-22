@@ -62,6 +62,12 @@ from `common/CaveRegions` (the 1.17 regions, by the key the server sends at logi
     non-replacing so the track finishes: 1.12.2's own game music would cut it off at every region edge.
     `music.biomeMusic`, read every tick. Core's ticker plays it; a ticker another mod installed is left alone by
     Core, and then no biome music plays.
+*   **26.2's additions** (branch `gd-paintings-music`, 1.1.5): with Game Drops Backport installed (its
+    `music/game/ebb.ogg` is on the classpath) and `music.biomeMusic` on, a second built-in pack serves one more
+    `cavesandcliffsbackport:sounds.json` (`cavesandcliffsbackport_packs/fingerspit/`) adding fingerspit's tracks to
+    the eight lists as 26.3's `sounds.json` has them: 13 entries, weight 2, volume 0.4 (Nightly in the dripstone
+    caves at full volume, as vanilla), replacing nothing. These lists play only without Trails & Tales, whose "1.20"
+    step swaps each for its own list (which adds the same tracks).
 *   **Events**: `music.overworld.lush_caves`, `dripstone_caves`, `meadow`, `grove`, `snowy_slopes`, `jagged_peaks`,
     `frozen_peaks`, `stony_peaks`, with 1.18's lists, weights and volumes.
 *   **Assets** (`tools/music/generate.py`, from the 1.18 asset index): a file 1.12.2 already ships byte for byte
