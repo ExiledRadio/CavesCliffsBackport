@@ -1,0 +1,111 @@
+{
+  "music.overworld.lush_caves": {
+    "sounds": [
+      {
+        "name": "gamedropsbackport:music/game/shores",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      }
+    ]
+  },
+  "music.overworld.dripstone_caves": {
+    "sounds": [
+      {
+        "name": "gamedropsbackport:music/game/ebb",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      },
+      {
+        "name": "gamedropsbackport:music/game/nightly",
+        "stream": true,
+        "weight": 2
+      },
+      {
+        "name": "gamedropsbackport:music/game/shores",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      }
+    ]
+  },
+  "music.overworld.meadow": {
+    "sounds": [
+      {
+        "name": "gamedropsbackport:music/game/home",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      }
+    ]
+  },
+  "music.overworld.grove": {
+    "sounds": [
+      {
+        "name": "gamedropsbackport:music/game/shores",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      }
+    ]
+  },
+  "music.overworld.snowy_slopes": {
+    "sounds": [
+      {
+        "name": "gamedropsbackport:music/game/nightly",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      }
+    ]
+  },
+  "music.overworld.jagged_peaks": {
+    "sounds": [
+      {
+        "name": "gamedropsbackport:music/game/ebb",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      },
+      {
+        "name": "gamedropsbackport:music/game/nightly",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      }
+    ]
+  },
+  "music.overworld.frozen_peaks": {
+    "sounds": [
+      {
+        "name": "gamedropsbackport:music/game/ebb",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      },
+      {
+        "name": "gamedropsbackport:music/game/home",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      },
+      {
+        "name": "gamedropsbackport:music/game/nightly",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      }
+    ]
+  },
+  "music.overworld.stony_peaks": {
+    "sounds": [
+      {
+        "name": "gamedropsbackport:music/game/nightly",
+        "stream": true,
+        "volume": 0.4,
+        "weight": 2
+      }
+    ]
+  }
+}

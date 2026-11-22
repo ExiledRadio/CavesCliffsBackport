@@ -33,6 +33,9 @@ public final class MusicClient {
         if (ModConfig.music.gameMusic) {
             installGameMusic();
         }
+        if (ModConfig.music.biomeMusic && fingerspitShipped()) {
+            installFingerspit();
+        }
         GameMusic.add("1.18", "biome music", new GameMusic.Step() {
             @Override
             public void choose(GameMusic.Situation s) {
@@ -70,11 +73,32 @@ public final class MusicClient {
         }
     }
 
+    /** For the client self-test: 26.2's biome additions are in the default packs. */
+    public static volatile boolean fingerspitInstalled;
+
+    /** @return true when Game Drops Backport's fingerspit tracks are installed (26.2, which added them to the lists) */
+    public static boolean fingerspitShipped() {
+        return MusicClient.class.getResource("/assets/gamedropsbackport/sounds/music/game/ebb.ogg") != null;
+    }
+
     private static void installGameMusic() {
-        GameMusicPack pack = new GameMusicPack();
+        if (addPack(new GameMusicPack())) {
+            CavesAndCliffsBackport.LOGGER.info("Music: 1.18's tracks join the game music.");
+        }
+    }
+
+    /** 26.2: fingerspit's tracks join the eight biome lists, as 26.3's sounds.json has them. */
+    private static void installFingerspit() {
+        fingerspitInstalled = addPack(new GameMusicPack(GameMusicPack.FINGERSPIT, CavesAndCliffsBackport.MOD_ID, "fingerspit"));
+        if (fingerspitInstalled) {
+            CavesAndCliffsBackport.LOGGER.info("Music: 26.2's tracks join the biome music.");
+        }
+    }
+
+    private static boolean addPack(GameMusicPack pack) {
         try {
             if (!pack.complete()) {
-                throw new IllegalStateException(GameMusicPack.FILE + " is missing from the jar");
+                throw new IllegalStateException(pack.getPackName() + " is missing from the jar");
             }
             Minecraft mc = Minecraft.getMinecraft();
             // Kept for every later reload (F3+T, a resource pack change), which rebuilds from this list...
@@ -86,9 +110,10 @@ public final class MusicClient {
             if (manager instanceof SimpleReloadableResourceManager) {
                 ((SimpleReloadableResourceManager) manager).reloadResourcePack(pack);
             }
-            CavesAndCliffsBackport.LOGGER.info("Music: 1.18's tracks join the game music.");
+            return true;
         } catch (Exception e) {
-            CavesAndCliffsBackport.LOGGER.warn("Music: could not add 1.18's tracks to the game music.", e);
+            CavesAndCliffsBackport.LOGGER.warn("Music: could not add the built-in pack {}.", pack.getPackName(), e);
+            return false;
         }
     }
 }
