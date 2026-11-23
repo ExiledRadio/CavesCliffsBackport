@@ -77,6 +77,8 @@ Every feature can be turned off in Backport Core's settings screen, under Mod Op
 
 **StellarCore**: works with any settings.
 
+**[Alfheim Lighting Engine](https://www.curseforge.com/minecraft/mc-mods/alfheim-lighting-engine)** (optional, recommended): a faster lighting engine, so worlds generate faster, on Forge and Cleanroom. Use version 1.6: with any other version, the y -64 to 319 height turns itself off and the log says why.
+
 **Fluidlogged API** (optional): candles, pointed dripstone, glow lichen, dripleaf, hanging roots, amethyst buds, lightning rods, light blocks, and the deepslate and copper stairs and slabs hold water. Without it they stay dry and everything else works.
 
 **[Village & Pillage Backport](https://www.curseforge.com/minecraft/mc-mods/villager-backport)**: in Caves & Cliffs worlds, its villages and outposts start where 1.18 puts them and the ground is shaped around them, and the terrain grows its bamboo, berry bushes and flowers. The composter takes the lush cave plants, foxes walk on powder snow, and the wandering trader sells pointed dripstone.
@@ -95,7 +97,7 @@ Every feature can be turned off in Backport Core's settings screen, under Mod Op
 
 ## Requirements
 
-Minecraft 1.12.2 with Forge 14.23.5.2847 or newer, and [Backport Core](https://www.curseforge.com/minecraft/mc-mods/backport-core) 1.3.0 or newer. The CurseForge app installs Backport Core with it. [Fluidlogged API](https://www.curseforge.com/minecraft/mc-mods/fluidlogged-api) 3.3.3 or newer is optional, for waterlogged blocks.
+Minecraft 1.12.2 with Forge 14.23.5.2847 or newer, and [Backport Core](https://www.curseforge.com/minecraft/mc-mods/backport-core) 1.3.0 or newer. The CurseForge app installs Backport Core with it. [Fluidlogged API](https://www.curseforge.com/minecraft/mc-mods/fluidlogged-api) 3.3.3 or newer is optional, for waterlogged blocks. [Alfheim](https://www.curseforge.com/minecraft/mc-mods/alfheim-lighting-engine) 1.6 is optional and recommended, for faster world generation.
 
 Removing this mod from a Caves & Cliffs world keeps everything from y 0 to 255. Everything below and above is lost, and the bottom of the world is open.
 
