@@ -5,6 +5,7 @@ import com.exiledradio.cavesandcliffsbackport.height.Heights;
 import com.exiledradio.cavesandcliffsbackport.height.asm.PatchReport;
 import com.exiledradio.cavesandcliffsbackport.height.compat.BuildCraftHooks;
 import com.exiledradio.cavesandcliffsbackport.height.compat.KagicHooks;
+import com.exiledradio.cavesandcliffsbackport.height.compat.ParasitesHooks;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -30,12 +31,14 @@ import java.util.Arrays;
 import java.util.Random;
 
 /**
- * Stream O3 ({@code docs/streams/moddedores.md}): BuildCraft's quarry and water springs and KAGIC's injector in a world
- * with 1.18's height, and the same code in a world of 0-255 (the Nether) as each mod wrote it.
+ * Stream O3 ({@code docs/streams/moddedores.md}): BuildCraft's quarry and water springs, KAGIC's injector and Scape and
+ * Run: Parasites' spawner in a world with 1.18's height, and the same code in a world of 0-255 (the Nether) as each mod
+ * wrote it.
  *
  * <pre>
  *   sh tools/height/selftest.sh modcompat   (level-type cavesandcliffs on a fresh world; BuildCraft 8.0.0 and KAGIC
- *                                            X11p13, dev-named with tools/height/run.sh DeobfJar, in eclipse/mods)
+ *                                            X11p13, SRParasites 1.9.21, dev-named with tools/height/run.sh DeobfJar,
+ *                                            in eclipse/mods)
  * </pre>
  * Without either mod (the whole suite) it checks the hooks alone. Everything about the mods goes through reflection:
  * their jars are not on the compile class path.
@@ -67,13 +70,18 @@ public final class ModCompatSelfTest implements SelfTest {
         }
         boolean bc = Loader.isModLoaded("buildcraftbuilders");
         boolean kagic = Loader.isModLoaded("kagic");
-        CavesAndCliffsBackport.LOGGER.info("SELFTEST modcompat: BuildCraft {}, KAGIC {}, overworld {}.",
-                bc ? "present" : "absent", kagic ? "present" : "absent", extended ? "extended" : "0-255");
+        boolean srp = Loader.isModLoaded("srparasites");
+        CavesAndCliffsBackport.LOGGER.info("SELFTEST modcompat: BuildCraft {}, KAGIC {}, SRParasites {}, overworld {}.",
+                bc ? "present" : "absent", kagic ? "present" : "absent", srp ? "present" : "absent",
+                extended ? "extended" : "0-255");
         if (bc) {
             buildCraft(check, over, nether, extended);
         }
         if (kagic) {
             kagic(check, over, nether, extended);
+        }
+        if (srp) {
+            parasites(check, over, nether, extended);
         }
         for (String line : PatchReport.compatLines()) {
             CavesAndCliffsBackport.LOGGER.info("SELFTEST modcompat: {}", line);
@@ -89,7 +97,10 @@ public final class ModCompatSelfTest implements SelfTest {
                 check.ok(PatchReport.compatPatched(label), label + " patched");
             }
         }
-        if (!bc && !kagic) {
+        if (srp) {
+            check.ok(PatchReport.compatPatched("ParasitesSpawner"), "ParasitesSpawner patched");
+        }
+        if (!bc && !kagic && !srp) {
             check.eq(Arrays.asList(), PatchReport.compatLines(), "mod-compat sites without the mods");
         }
     }
@@ -137,6 +148,25 @@ public final class ModCompatSelfTest implements SelfTest {
         }
         EntityArmorStand ruby = new EntityArmorStand(world);
         check.eq(tall ? 320.0 : 256.0, KagicHooks.meteorY(ruby), "meteor ruby y" + w);
+
+        // SRP's spawn height: SRP's own draw in a 0-255 world, from the bottom in an extended one.
+        int same = 0;
+        int below = 0;
+        int lowest = Integer.MAX_VALUE;
+        int highest = Integer.MIN_VALUE;
+        for (long seed = 0; seed < 256; seed++) {
+            int y = ParasitesHooks.spawnY(new Random(seed), 128, world);
+            same += y == new Random(seed).nextInt(128) ? 1 : 0;
+            below += y < 0 ? 1 : 0;
+            lowest = Math.min(lowest, y);
+            highest = Math.max(highest, y);
+        }
+        if (tall) {
+            check.ok(below > 0 && lowest >= -64 && highest < 128, "parasite spawn y from -64 below 128" + w + ": "
+                    + below + "/256 below 0, " + lowest + ".." + highest);
+        } else {
+            check.eq(256, same, "parasite spawn y is SRP's own draw" + w);
+        }
     }
 
     // ------------------------------------------------------------------------------------------
@@ -400,6 +430,117 @@ public final class ModCompatSelfTest implements SelfTest {
         check.eq(34 - 256, red.invoke(injector, nether, new BlockPos(kx, 40, Z)), "redstone injector over a seed" + w);
         nether.setBlockState(new BlockPos(kx, 34, Z), Blocks.STONE.getDefaultState(), 2 | 16);
         check.eq(5, auto.invoke(injector, nether, new BlockPos(kx, 40, Z)), "automatic injector, solid rock" + w);
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // Scape and Run: Parasites 1.9.21
+    // ------------------------------------------------------------------------------------------
+
+    private static void parasites(Check check, WorldServer over, WorldServer nether, boolean extended) throws Exception {
+        Class<?> spawner = Class.forName("com.dhanantry.scapeandrunparasites.world.SRPWorldEntitySpawner");
+        Method draw = spawner.getDeclaredMethod("getRandomChunkPosition", World.class, int.class, int.class);
+        draw.setAccessible(true);
+        int px = X + 320;
+        if (extended) {
+            draws(check, over, draw, px, true);
+            deepSpawn(check, over, spawner, px + 48);
+        }
+        draws(check, nether, draw, px, false);
+    }
+
+    /**
+     * SRP's own spawn draws in a 5x5-chunk area, each against the same seed replayed through SRP's code as SRP wrote it
+     * (0-255) or with the draw from the world's bottom (extended).
+     */
+    private static void draws(Check check, WorldServer world, Method draw, int x, boolean tall) throws Exception {
+        String w = tall ? " (extended)" : " (0-255)";
+        prepare(world, x, Z, 2);
+        int matched = 0;
+        int below = 0;
+        int lowest = Integer.MAX_VALUE;
+        int total = 0;
+        for (int cx = (x >> 4) - 2; cx <= (x >> 4) + 2; cx++) {
+            for (int cz = (Z >> 4) - 2; cz <= (Z >> 4) + 2; cz++) {
+                for (long seed = 0; seed < 80; seed++) {
+                    world.rand.setSeed(seed * 31 + cx * 7 + cz);
+                    BlockPos got = (BlockPos) draw.invoke(null, world, cx, cz);
+                    world.rand.setSeed(seed * 31 + cx * 7 + cz);
+                    BlockPos want = srpDraw(world, cx, cz, tall);
+                    matched += got.equals(want) ? 1 : 0;
+                    below += got.getY() < 0 ? 1 : 0;
+                    lowest = Math.min(lowest, got.getY());
+                    total++;
+                }
+            }
+        }
+        check.eq(total, matched, "SRP spawn positions" + w);
+        if (tall) {
+            check.ok(below > total / 20 && lowest >= Heights.minY(world), "SRP spawn attempts below y 0" + w + ": "
+                    + below + "/" + total + ", lowest " + lowest);
+        } else {
+            check.ok(below == 0 && lowest >= 0, "no SRP spawn attempt below y 0" + w + ": lowest " + lowest);
+        }
+        CavesAndCliffsBackport.LOGGER.info("SELFTEST modcompat: SRP draws{}: {}/{} below 0, lowest {}", w, below, total,
+                lowest);
+    }
+
+    /** SRP's {@code getRandomChunkPosition} as SRP wrote it, its height draw from the bottom in an extended world. */
+    private static BlockPos srpDraw(World world, int cx, int cz, boolean tall) {
+        net.minecraft.world.chunk.Chunk chunk = world.getChunk(cx, cz);
+        int i = cx * 16 + world.rand.nextInt(16);
+        int j = cz * 16 + world.rand.nextInt(16);
+        int k = net.minecraft.util.math.MathHelper.roundUp(chunk.getHeight(new BlockPos(i, 0, j)) + 1, 16);
+        int bound = Math.max(1, k > 0 ? k : chunk.getTopFilledSegment() + 16 - 1);
+        int min = Heights.minY(world);
+        int l = tall ? min + world.rand.nextInt(bound - min) : world.rand.nextInt(bound);
+        return new BlockPos(i, l, j);
+    }
+
+    /**
+     * A parasite from SRP's own spawn list, in a dark deepslate cave at y -40, through every check SRP's spawner makes
+     * before it adds a mob: the placement, the mob's own spawn rules (light, floor, difficulty) and room.
+     */
+    private static void deepSpawn(Check check, WorldServer over, Class<?> spawner, int x) throws Exception {
+        String w = " (extended)";
+        prepare(over, x, Z, 1);
+        Block deep = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(CavesAndCliffsBackport.MOD_ID, "deepslate"));
+        IBlockState rock = (deep == null || deep == Blocks.AIR ? Blocks.STONE : deep).getDefaultState();
+        int y = -40;
+        fill(over, x - 8, x + 8, y - 3, y + 9, Z - 8, Z + 8, rock);
+        fill(over, x - 5, x + 5, y, y + 6, Z - 5, Z + 5, Blocks.AIR.getDefaultState());
+        BlockPos pos = new BlockPos(x, y, Z);
+        check.eq(0, over.getLightFor(net.minecraft.world.EnumSkyBlock.SKY, pos), "sky light in the cave at y -40");
+        check.eq(0, over.getLightFor(net.minecraft.world.EnumSkyBlock.BLOCK, pos), "block light in the cave at y -40");
+        Method entryAt = spawner.getMethod("getSpawnListEntryForTypeAt", WorldServer.class, BlockPos.class);
+        Method placement = spawner.getMethod("canCreatureTypeSpawnAtLocation",
+                net.minecraft.entity.EntityLiving.SpawnPlacementType.class, World.class, BlockPos.class);
+        int tried = 0;
+        int spawned = 0;
+        java.util.Set<String> kinds = new java.util.TreeSet<String>();
+        for (int attempt = 0; attempt < 40; attempt++) {
+            net.minecraft.world.biome.Biome.SpawnListEntry entry =
+                    (net.minecraft.world.biome.Biome.SpawnListEntry) entryAt.invoke(null, over, pos);
+            if (entry == null) {
+                continue;
+            }
+            tried++;
+            if (!(Boolean) placement.invoke(null,
+                    net.minecraft.entity.EntitySpawnPlacementRegistry.getPlacementForEntity(entry.entityClass), over, pos)) {
+                continue;
+            }
+            net.minecraft.entity.EntityLiving mob = entry.newInstance(over);
+            mob.setLocationAndAngles(x + 0.5, y, Z + 0.5, 0.0F, 0.0F);
+            if (mob.getCanSpawnHere() && mob.isNotColliding() && over.spawnEntity(mob)) {
+                spawned++;
+                kinds.add(mob.getClass().getSimpleName());
+                check.ok(mob.posY < 0 && over.loadedEntityList.contains(mob), "parasite in the world at y " + mob.posY);
+                mob.setDead();
+            }
+        }
+        CavesAndCliffsBackport.LOGGER.info("SELFTEST modcompat: parasites at y -40: {} of {} spawned: {}", spawned, tried,
+                kinds);
+        check.ok(tried > 0, "SRP's spawn list for the overworld has parasites");
+        check.ok(spawned > 0, "parasites spawn in a dark cave at y -40" + w + ": " + spawned + " of " + tried);
     }
 
     /** The gem chosen (its class), the defective rate and the flags of an injector result. */

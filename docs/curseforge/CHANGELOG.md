@@ -1,3 +1,7 @@
+# 1.1.4
+
+*   **Scape and Run: Parasites mobs spawn below y 0** in Caves & Cliffs worlds, in the deepslate layer, as they do elsewhere underground. SRP's own spawner drew spawn heights from 0 up.
+
 # 1.1.3
 
 *   **With Game Drops Backport, new worlds get its biomes where 26.3 places them**: the dappled forest beside cool plains and taigas, and sulfur caves deep under low inland ground. The rest of the biome map is unchanged. Worlds made before keep their biomes.

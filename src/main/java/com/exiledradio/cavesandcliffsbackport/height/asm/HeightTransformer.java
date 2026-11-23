@@ -37,6 +37,7 @@ public final class HeightTransformer implements IClassTransformer {
                 new ModCompatPatches.InjectorResultPatch(),
                 new ModCompatPatches.MeteorRubyTickPatch(),
                 new ModCompatPatches.MeteorRubyCommandPatch(),
+                new ModCompatPatches.ParasitesSpawnerPatch(),
         };
     }
 
