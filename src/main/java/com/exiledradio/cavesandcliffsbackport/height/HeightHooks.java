@@ -86,6 +86,9 @@ public final class HeightHooks {
             }
             return;
         }
+        // An old world marked for the upgrade to y -64..319 switches now (it becomes a Caves & Cliffs world).
+        com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade.worldConstructed(world, dir, info);
+        ours = info.getTerrainType() == HeightContent.worldType();
         File file = new File(new File(dir, "data"), DATA_FILE);
         int min;
         int max;

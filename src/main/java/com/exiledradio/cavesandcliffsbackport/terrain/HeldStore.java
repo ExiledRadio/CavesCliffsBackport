@@ -308,9 +308,12 @@ final class HeldStore implements Pipeline.Store {
         });
     }
 
+    /** An upgraded world's old chunks still to get their part below y 0 (they go through the pipeline), or null. */
+    java.util.function.BiPredicate<Integer, Integer> upgrading;
+
     @Override
     public boolean finished(int cx, int cz) {
-        return world.getChunkProvider().isChunkGeneratedAt(cx, cz);
+        return world.getChunkProvider().isChunkGeneratedAt(cx, cz) && (upgrading == null || !upgrading.test(cx, cz));
     }
 
     /** Waits until every write handed over so far is done. */

@@ -190,12 +190,18 @@ public final class OverworldNoise {
         double offset;
         double factor;
         double jaggedness;
+        double splineOffset;
+        double splineFactor;
+        double splineJaggedness;
         if (editions == Editions.NONE) {
             point[Spline.RIDGES] = TerrainShaper.peaksAndValleys((float) r);
             // lerp(blendAlpha = 1, blendValue, spline) leaves the spline value, plus a positive zero.
-            offset = clamp((double) shaper.offset(point), -0.81D, 2.5D) + 0.0D;
-            factor = clamp((double) shaper.factor(point), 0.0D, 8.0D) + 0.0D;
-            jaggedness = clamp((double) shaper.jaggedness(point), 0.0D, 1.28D) + 0.0D;
+            splineOffset = clamp((double) shaper.offset(point), -0.81D, 2.5D);
+            splineFactor = clamp((double) shaper.factor(point), 0.0D, 8.0D);
+            splineJaggedness = clamp((double) shaper.jaggedness(point), 0.0D, 1.28D);
+            offset = splineOffset + 0.0D;
+            factor = splineFactor + 0.0D;
+            jaggedness = splineJaggedness + 0.0D;
         } else {
             // 1.19 (TerrainShaper became TerrainProvider's splines on density functions): ridges_folded is a density
             // function, in double; the offset adds -0.50375F in double; 1.19's lerp(alpha, constant, f) is
@@ -203,9 +209,12 @@ public final class OverworldNoise {
             // (the splines stay inside 1.18.2's bounds anyway).
             double folded = (Math.abs(Math.abs(r) + -0.6666666666666666D) + -0.3333333333333333D) * -3.0D;
             point[Spline.RIDGES] = (float) folded;
-            offset = (double) shaper.offsetSpline(point) + (double) -0.50375F + 0.0D;
-            factor = 1.0D * ((double) shaper.factor(point) + -10.0D) + 10.0D;
-            jaggedness = 1.0D * ((double) shaper.jaggedness(point) + -0.0D) + 0.0D;
+            splineOffset = (double) shaper.offsetSpline(point) + (double) -0.50375F;
+            splineFactor = (double) shaper.factor(point);
+            splineJaggedness = (double) shaper.jaggedness(point);
+            offset = splineOffset + 0.0D;
+            factor = 1.0D * (splineFactor + -10.0D) + 10.0D;
+            jaggedness = 1.0D * (splineJaggedness + -0.0D) + 0.0D;
         }
         out[at + COL_SHIFT_X] = sx;
         out[at + COL_SHIFT_Z] = sz;
@@ -215,6 +224,30 @@ public final class OverworldNoise {
         out[at + COL_OFFSET] = offset;
         out[at + COL_FACTOR] = factor;
         out[at + COL_JAGGEDNESS] = jaggedness;
+        out[at + COL_SPLINE_OFFSET] = splineOffset;
+        out[at + COL_SPLINE_FACTOR] = splineFactor;
+        out[at + COL_SPLINE_JAGGEDNESS] = splineJaggedness;
+    }
+
+    /**
+     * The column values with 1.18's blending (Blender.blendOffsetAndFactor's alpha and offset, the BlendAlpha and
+     * BlendOffset of the offset, factor and jaggedness splines): DensityFunctions.lerp(alpha, blend, spline) in
+     * 1.18.2 is blend * (alpha * -1 + 1) + spline * alpha; 1.19's lerp with a constant blend is
+     * alpha * (spline - blend) + blend. With alpha 1 and offset 0 this is what {@link #column} wrote.
+     */
+    public void blend(double[] col, int at, double alpha, double blendOffset) {
+        double so = col[at + COL_SPLINE_OFFSET];
+        double sf = col[at + COL_SPLINE_FACTOR];
+        double sj = col[at + COL_SPLINE_JAGGEDNESS];
+        double rest = alpha * -1.0D + 1.0D;
+        col[at + COL_OFFSET] = blendOffset * rest + so * alpha;
+        if (editions == Editions.NONE) {
+            col[at + COL_FACTOR] = 10.0D * rest + sf * alpha;
+            col[at + COL_JAGGEDNESS] = 0.0D * rest + sj * alpha;
+        } else {
+            col[at + COL_FACTOR] = alpha * (sf + -10.0D) + 10.0D;
+            col[at + COL_JAGGEDNESS] = alpha * (sj + -0.0D) + 0.0D;
+        }
     }
 
     public static final int COL_SHIFT_X = 0;
@@ -225,7 +258,11 @@ public final class OverworldNoise {
     public static final int COL_OFFSET = 5;
     public static final int COL_FACTOR = 6;
     public static final int COL_JAGGEDNESS = 7;
-    public static final int COL_SIZE = 8;
+    /** The splines before blending (1.18.2: clamped; 1.19: the offset with its -0.50375 added). */
+    public static final int COL_SPLINE_OFFSET = 8;
+    public static final int COL_SPLINE_FACTOR = 9;
+    public static final int COL_SPLINE_JAGGEDNESS = 10;
+    public static final int COL_SIZE = 11;
 
     /** overworld/depth: the height gradient plus the offset spline. */
     public static double depth(int y, double offset) {

@@ -103,8 +103,11 @@ public final class ModCompatSelfTest implements SelfTest {
                 check.ok(PatchReport.compatPatched("ParasitesSpawner110"), "ParasitesSpawner110 patched");
             }
         }
+        // The world upgrade's structure guard is patched the mod-compat way in a vanilla class: always there.
+        check.ok(PatchReport.compatPatched("StructureGuard"), "StructureGuard patched");
         if (!bc && !kagic && !srp) {
-            check.eq(Arrays.asList(), PatchReport.compatLines(), "mod-compat sites without the mods");
+            check.eq(Arrays.asList("StructureGuard.recursiveGenerate.start: found"), PatchReport.compatLines(),
+                    "mod-compat sites without the mods");
         }
     }
 

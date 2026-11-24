@@ -71,6 +71,9 @@ public final class SelfTestRunner {
             new RestartSelfTest("restart2"),
             new RestartSelfTest("crash1"),
             new RestartSelfTest("crash2"),
+            new UpgradeSelfTest("upgrade1"),
+            new UpgradeSelfTest("upgrade2"),
+            new UpgradeSelfTest("upgrade3"),
             new LightEngineSelfTest("alfheimlight1"),
             new LightEngineSelfTest("alfheimlight2"),
             new LightEngineSelfTest("alfheimdump"),
@@ -130,8 +133,10 @@ public final class SelfTestRunner {
             // The restart and light-engine phases need a server of their own each (tools/terrain/restart.sh, Alfheim or
             // Phosphor installed),
             // the flat test a superflat world (tools/flat/selftest.sh), and the structure snow test a new Caves & Cliffs
-            // world (tools/height/selftest.sh structsnow): never part of "all".
+            // world (tools/height/selftest.sh structsnow), the world upgrade three servers on one world
+            // (tools/height/upgrade.sh): never part of "all".
             boolean all = this.wanted.contains("all") && !(test instanceof RestartSelfTest) && !(test instanceof LightEngineSelfTest)
+                    && !(test instanceof UpgradeSelfTest)
                     && !(test instanceof FlatSelfTest) && !(test instanceof StructSnowSelfTest);
             if (all || this.wanted.contains(test.name())) {
                 check.section(test.name());

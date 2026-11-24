@@ -25,6 +25,19 @@ public final class BiomeSource {
     /** Per column, the biome at each quart y of the world (-16..79), or -1 until asked. */
     private final byte[] stored = new byte[SIZE * SIZE * QUARTS_Y];
     private final double[] column = new double[OverworldNoise.COL_SIZE];
+    /** The column cache's blender generation each slot was computed under (blended offsets differ per chunk). */
+    private final int[] generations = new int[SIZE * SIZE];
+    /**
+     * An upgraded world's biomes that are not the climate's (Pipeline.Upgrades): per chunk, its stored quarts
+     * (fillChunk's layout) as blending and the upgrade made them. Null in every other world.
+     */
+    java.util.Map<Long, byte[]> overrides;
+
+    /** The overriding quarts of the chunk holding quart qx, qz, or null. */
+    private byte[] override(int qx, int qz) {
+        java.util.Map<Long, byte[]> o = overrides;
+        return o == null ? null : o.get((long) (qx >> 2) << 32 | ((qz >> 2) & 0xFFFFFFFFL));
+    }
 
     public BiomeSource(OverworldNoise noise, ColumnCache columns, Climate climate) {
         this.noise = noise;
@@ -35,7 +48,8 @@ public final class BiomeSource {
     private int slot(int qx, int qz) {
         int slot = (qx & MASK) << BITS | (qz & MASK);
         long key = (long) qx << 32 | (qz & 0xFFFFFFFFL);
-        if (!present[slot] || keys[slot] != key) {
+        if (!present[slot] || keys[slot] != key || generations[slot] != columns.generation()) {
+            generations[slot] = columns.generation();
             int x = qx << 2;
             int z = qz << 2;
             columns.get(x, z, column);
@@ -62,6 +76,12 @@ public final class BiomeSource {
 
     /** The biome id at a quart position (any y: the depth function goes on past the world's height). */
     public int biome(int qx, int qy, int qz) {
+        if (overrides != null && qy >= MIN_QUART_Y && qy < MIN_QUART_Y + QUARTS_Y) {
+            byte[] o = override(qx, qz);
+            if (o != null) {
+                return o[((qx & 3) * 4 + (qz & 3)) * QUARTS_Y + qy - MIN_QUART_Y];
+            }
+        }
         int slot = slot(qx, qz);
         long depth = Climate.quantize((float) OverworldNoise.depth(qy << 2, offsets[slot]));
         return climate.biome(cached[slot], depth);
@@ -71,6 +91,13 @@ public final class BiomeSource {
      * ChunkAccess.getNoiseBiome: the biome a chunk stores at a quart, quart y clamped to the world's height.
      */
     public int stored(int qx, int qy, int qz) {
+        if (overrides != null) {
+            byte[] o = override(qx, qz);
+            if (o != null) {
+                int y = qy < MIN_QUART_Y ? 0 : qy >= MIN_QUART_Y + QUARTS_Y ? QUARTS_Y - 1 : qy - MIN_QUART_Y;
+                return o[((qx & 3) * 4 + (qz & 3)) * QUARTS_Y + y];
+            }
+        }
         return storedInSlot(slot(qx, qz), qy);
     }
 
@@ -100,6 +127,11 @@ public final class BiomeSource {
      * for the chunk's quarts qx, qz in 0..3 and quart y -16..79.
      */
     public void fillChunk(int cx, int cz, byte[] out) {
+        byte[] o = override(cx << 2, cz << 2);
+        if (o != null && o != out) {
+            System.arraycopy(o, 0, out, 0, o.length);
+            return;
+        }
         int qx0 = cx << 2;
         int qz0 = cz << 2;
         for (int qx = 0; qx < 4; qx++) {

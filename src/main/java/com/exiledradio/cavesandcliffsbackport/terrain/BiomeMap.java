@@ -130,6 +130,108 @@ public final class BiomeMap {
         return best;
     }
 
+    /**
+     * 1.12's biomes as 1.18 names them after an old world is upgraded (Mojang's renames, with the biomes 1.18 removed
+     * as their 1.18 replacements: hills and mutated variants as their base biome, mountains as windswept hills, snowy
+     * mountains as snowy plains, the badlands plateaus as badlands).
+     */
+    private static final java.util.Map<String, Integer> UPGRADED = new java.util.HashMap<>();
+
+    private static void u(String legacy, int modern) {
+        UPGRADED.put("minecraft:" + legacy, modern);
+    }
+
+    static {
+        u("ocean", Biomes.OCEAN);
+        u("plains", Biomes.PLAINS);
+        u("desert", Biomes.DESERT);
+        u("extreme_hills", Biomes.WINDSWEPT_HILLS);
+        u("forest", Biomes.FOREST);
+        u("taiga", Biomes.TAIGA);
+        u("swampland", Biomes.SWAMP);
+        u("river", Biomes.RIVER);
+        u("hell", Biomes.NETHER_WASTES);
+        u("sky", Biomes.THE_END);
+        u("frozen_ocean", Biomes.FROZEN_OCEAN);
+        u("frozen_river", Biomes.FROZEN_RIVER);
+        u("ice_flats", Biomes.SNOWY_PLAINS);
+        u("ice_mountains", Biomes.SNOWY_PLAINS);
+        u("mushroom_island", Biomes.MUSHROOM_FIELDS);
+        u("mushroom_island_shore", Biomes.MUSHROOM_FIELDS);
+        u("beaches", Biomes.BEACH);
+        u("desert_hills", Biomes.DESERT);
+        u("forest_hills", Biomes.FOREST);
+        u("taiga_hills", Biomes.TAIGA);
+        u("smaller_extreme_hills", Biomes.WINDSWEPT_HILLS);
+        u("jungle", Biomes.JUNGLE);
+        u("jungle_hills", Biomes.JUNGLE);
+        u("jungle_edge", Biomes.SPARSE_JUNGLE);
+        u("deep_ocean", Biomes.DEEP_OCEAN);
+        u("stone_beach", Biomes.STONY_SHORE);
+        u("cold_beach", Biomes.SNOWY_BEACH);
+        u("birch_forest", Biomes.BIRCH_FOREST);
+        u("birch_forest_hills", Biomes.BIRCH_FOREST);
+        u("roofed_forest", Biomes.DARK_FOREST);
+        u("taiga_cold", Biomes.SNOWY_TAIGA);
+        u("taiga_cold_hills", Biomes.SNOWY_TAIGA);
+        u("redwood_taiga", Biomes.OLD_GROWTH_PINE_TAIGA);
+        u("redwood_taiga_hills", Biomes.OLD_GROWTH_PINE_TAIGA);
+        u("extreme_hills_with_trees", Biomes.WINDSWEPT_FOREST);
+        u("savanna", Biomes.SAVANNA);
+        u("savanna_rock", Biomes.SAVANNA_PLATEAU);
+        u("mesa", Biomes.BADLANDS);
+        u("mesa_rock", Biomes.WOODED_BADLANDS);
+        u("mesa_clear_rock", Biomes.BADLANDS);
+        u("void", Biomes.THE_VOID);
+        u("mutated_plains", Biomes.SUNFLOWER_PLAINS);
+        u("mutated_desert", Biomes.DESERT);
+        u("mutated_extreme_hills", Biomes.WINDSWEPT_GRAVELLY_HILLS);
+        u("mutated_forest", Biomes.FLOWER_FOREST);
+        u("mutated_taiga", Biomes.TAIGA);
+        u("mutated_swampland", Biomes.SWAMP);
+        u("mutated_ice_flats", Biomes.ICE_SPIKES);
+        u("mutated_jungle", Biomes.JUNGLE);
+        u("mutated_jungle_edge", Biomes.SPARSE_JUNGLE);
+        u("mutated_birch_forest", Biomes.OLD_GROWTH_BIRCH_FOREST);
+        u("mutated_birch_forest_hills", Biomes.OLD_GROWTH_BIRCH_FOREST);
+        u("mutated_roofed_forest", Biomes.DARK_FOREST);
+        u("mutated_taiga_cold", Biomes.SNOWY_TAIGA);
+        u("mutated_redwood_taiga", Biomes.OLD_GROWTH_SPRUCE_TAIGA);
+        u("mutated_redwood_taiga_hills", Biomes.OLD_GROWTH_SPRUCE_TAIGA);
+        u("mutated_extreme_hills_with_trees", Biomes.WINDSWEPT_GRAVELLY_HILLS);
+        u("mutated_savanna", Biomes.WINDSWEPT_SAVANNA);
+        u("mutated_savanna_rock", Biomes.WINDSWEPT_SAVANNA);
+        u("mutated_mesa", Biomes.ERODED_BADLANDS);
+        u("mutated_mesa_rock", Biomes.WOODED_BADLANDS);
+        u("mutated_mesa_clear_rock", Biomes.BADLANDS);
+    }
+
+    /**
+     * The 1.18 biome id an old 1.12 chunk's biome becomes in an upgraded world: vanilla's by Mojang's renames, a
+     * family backport's registered under a 1.18 name as that biome, or -1 for another mod's biome.
+     */
+    public static int upgraded(Biome legacy) {
+        if (legacy == null) {
+            return -1;
+        }
+        ResourceLocation id = legacy.getRegistryName();
+        if (id == null) {
+            return -1;
+        }
+        Integer v = UPGRADED.get(id.toString());
+        if (v != null) {
+            return v;
+        }
+        if (ModdedBiomes.FAMILY.contains(id.getNamespace())) {
+            for (int i = 0; i < Biomes.COUNT; i++) {
+                if (id.getPath().equals(Biomes.name(i))) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
     /** The 1.12 biome of a 1.18 biome id. */
     public Biome biome(int modern) {
         return biomes[modern];

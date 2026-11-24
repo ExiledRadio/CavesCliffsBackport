@@ -1,3 +1,7 @@
+# 1.1.5
+
+*   **Upgrade an existing world to y -64 to 319**, as 1.18 upgraded old worlds: `/cavesandcliffs upgradeworld` (operators; it asks you to confirm and backs up level.dat), then restart. Explored chunks keep everything from y 0 up. Each one gets deepslate, caves, ores and aquifers below y 0 when it first loads, and its bedrock floor moves to y -64. New chunks get the 1.18 terrain and blend into the old ones at the border. No new structure starts in or reaches into an old chunk. Default worlds only; it can't be undone, so back up the world first.
+
 # 1.1.4
 
 *   **Fixed: Scape and Run: Parasites 1.10 mobs still did not spawn below y 0** in Caves & Cliffs worlds. SRP 1.10 spawns through a new spawner that 1.1.3 did not cover; both SRP 1.9 and 1.10 are covered now.

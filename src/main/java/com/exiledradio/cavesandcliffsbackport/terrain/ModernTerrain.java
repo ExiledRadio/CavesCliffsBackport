@@ -131,6 +131,23 @@ public final class ModernTerrain {
     private static final String DATA_FILE = CavesAndCliffsBackport.MOD_ID + "_terrain.dat";
 
     /**
+     * An old world upgraded to y -64..319 (upgrade.WorldUpgrade): its new chunks get the 1.18 terrain, with the newer
+     * biomes the installed backports have blocks for, as a new world would. Written before the world's generator exists.
+     */
+    public static void chooseModern(File dir) {
+        File file = new File(new File(dir, "data"), DATA_FILE);
+        NBTTagCompound tag = new NBTTagCompound();
+        tag.setString("Terrain", "1.18");
+        tag.setString("Biomes", Editions.name(installedEditions()));
+        file.getParentFile().mkdirs();
+        try (java.io.FileOutputStream out = new java.io.FileOutputStream(file)) {
+            CompressedStreamTools.writeCompressed(tag, out);
+        } catch (java.io.IOException e) {
+            CavesAndCliffsBackport.LOGGER.error("Could not write {}.", file, e);
+        }
+    }
+
+    /**
      * The newer versions' additions the installed backports have the blocks for: 1.19's mangrove swamp and deep dark
      * with a mod registering mud and the mangrove wood (Wild Update Backport), 1.20's cherry grove with one registering
      * the cherry wood and pink petals (Trails &amp; Tales Backport), 1.21.4's pale garden with Tricky Trials Backport
@@ -281,6 +298,24 @@ public final class ModernTerrain {
         if (!world.isRemote && owns(world)) {
             ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).saveHeld();
         }
+        com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade upgrade =
+                com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade.of(world);
+        if (upgrade != null) {
+            upgrade.save();
+        }
+    }
+
+    /**
+     * An upgraded world's chunk as it loads from disk, before it joins the world: an old one gets its part below
+     * y 0 (ModernGenerator.chunkLoaded). Forge posts this on the server thread.
+     */
+    @SubscribeEvent
+    public static void onChunkDataLoad(ChunkDataEvent.Load event) {
+        World world = event.getWorld();
+        if (world != null && !world.isRemote && owns(world)) {
+            ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).chunkLoaded(event.getChunk(),
+                    event.getData());
+        }
     }
 
     /**
@@ -291,7 +326,9 @@ public final class ModernTerrain {
     public static void onChunkSave(ChunkDataEvent.Save event) {
         World world = event.getWorld();
         if (!world.isRemote && owns(world)) {
-            ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).beforeChunkSave();
+            ModernGenerator g = (ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator;
+            g.beforeChunkSave();
+            g.chunkSaving(event.getChunk(), event.getData());
         }
     }
 
@@ -328,6 +365,11 @@ public final class ModernTerrain {
     @SubscribeEvent
     public static void onWorldUnload(WorldEvent.Unload event) {
         World world = event.getWorld();
+        com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade upgrade =
+                com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade.of(world);
+        if (upgrade != null) {
+            upgrade.save();
+        }
         if (!world.isRemote && owns(world)) {
             ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).shutdown();
         }

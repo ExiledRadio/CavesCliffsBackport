@@ -328,6 +328,33 @@ final class ModCompatPatches {
     }
 
     /**
+     * Not another mod's code, but patched the same soft way: {@code MapGenStructure.recursiveGenerate} hands each new
+     * structure start to {@code upgrade.StructureGuard}, which empties a start that would lie in or reach into an old
+     * chunk of an upgraded world (1.18 starts no structure in an old chunk). A miss only means no world can be
+     * upgraded this session ({@code /cavesandcliffs upgradeworld} says so).
+     */
+    static final class StructureGuardPatch extends ModPatch {
+        StructureGuardPatch() {
+            super("net.minecraft.world.gen.structure.MapGenStructure", "StructureGuard");
+        }
+
+        @Override
+        protected void apply(ClassNode node) {
+            MethodNode m = method(node, "recursiveGenerate", "func_180701_a",
+                    "(" + WORLD_DESC + "IIIILnet/minecraft/world/chunk/ChunkPrimer;)V");
+            for (AbstractInsnNode n : expect("recursiveGenerate.start", m, 1, invoke(Opcodes.INVOKEVIRTUAL,
+                    "getStructureStart", "func_75049_b", "(II)Lnet/minecraft/world/gen/structure/StructureStart;"))) {
+                // Only this is loaded: a parameter past vanilla's last use of it can be TOP in ProGuard's frames.
+                m.instructions.insert(n, list(new VarInsnNode(Opcodes.ALOAD, 0),
+                        new MethodInsnNode(Opcodes.INVOKESTATIC, "com/exiledradio/cavesandcliffsbackport/upgrade/StructureGuard",
+                                "filter", "(Lnet/minecraft/world/gen/structure/StructureStart;"
+                                        + "Lnet/minecraft/world/gen/structure/MapGenStructure;)"
+                                        + "Lnet/minecraft/world/gen/structure/StructureStart;", false)));
+            }
+        }
+    }
+
+    /**
      * {@code com.dhanantry.scapeandrunparasites.world.SRPWorldEntitySpawner} (Scape and Run: Parasites 1.9.21): SRP's
      * own spawner, on by default ("Evolution Custom Spawner"), picks each attempt's height in
      * {@code getRandomChunkPosition}, a copy of vanilla's that draws from 0, so parasites never spawned below y 0. The
