@@ -28,7 +28,7 @@ import java.util.List;
  * panorama), the brightness default applied, then a superflat world: a save shows the autosave indicator
  * ({@code cc_lookfeel_saving.png}), the overworld's clouds are at 192, and the F3 rows are 1.18.2's
  * ({@code cc_lookfeel_f3.png}). The screenshots are for a person to look at; the game then quits through
- * {@code Minecraft.shutdown}. Since 1.1.6 the indicator, the clouds, the fog and the F3 rows are Backport Core's
+ * {@code Minecraft.shutdown}. Since 1.1.5 the indicator, the clouds, the fog and the F3 rows are Backport Core's
  * ({@code presentation.versions.Look118}); this mod keeps the panoramas.
  *
  * <pre>    ./gradlew runClient -Pselftest=lookfeel -Pclienttest=lookfeel</pre>

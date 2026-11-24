@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Stream Lf: 1.17's and 1.18's look and feel. Since 1.1.6 Backport Core owns every piece but the panoramas, their
+ * Stream Lf: 1.17's and 1.18's look and feel. Since 1.1.5 Backport Core owns every piece but the panoramas, their
  * overlay and the music (Core's {@code presentation.versions.Look118}): this checks that this mod still declares the
  * versions and that Core's pieces are there and right with it installed: assets and text, options and defaults, and
  * the numbers of the client steps (checked against 1.18.2's code).

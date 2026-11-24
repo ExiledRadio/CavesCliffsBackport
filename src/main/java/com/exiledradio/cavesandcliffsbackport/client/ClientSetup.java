@@ -60,7 +60,7 @@ public final class ClientSetup {
         com.exiledradio.cavesandcliffsbackport.music.client.MusicClient.init();
         if ("lookfeel".equals(System.getProperty(CavesAndCliffsBackport.MOD_ID + ".clienttest"))) {
             // A test build's client test (runClient -Pclienttest=lookfeel), reached by name: a release has no test classes.
-            // 1.17's and 1.18's look and feel is Backport Core's since 1.1.6 (versions.Look118); the test checks it with this mod.
+            // 1.17's and 1.18's look and feel is Backport Core's since 1.1.5 (versions.Look118); the test checks it with this mod.
             try {
                 Class.forName("com.exiledradio.cavesandcliffsbackport.selftest.LookFeelClientSelfTest")
                         .getMethod("start", String.class).invoke(null, "lookfeel");
