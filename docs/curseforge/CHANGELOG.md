@@ -1,6 +1,7 @@
 # 1.1.6
 
 *   **Fixed: with Dynamic Trees, 1.18 trees and dynamic trees generated side by side** in the 1.18 terrain where two biomes meet. Each tree now asks about the biome it stands in: Dynamic Trees' trees where it grows them, 1.18's elsewhere.
+*   **Fixed: with Valkyrie, nothing below y 0 was drawn** without Celeritas or Nothirium, and the game could crash when flying above y 320. Valkyrie replaces the code that places the game's render chunks, and its copy only knew y 0-255. Valkyrie 0.3-Dev-5 now draws y -64 to 319; with another Valkyrie version the y -64 to 319 height turns itself off and the log says why.
 
 Needs Backport Core 1.4.9 or newer.
 

@@ -92,6 +92,8 @@ public final class HeightTransformer implements IClassTransformer {
                 new ClientPatches.OptiFineChunkVisibilityPatch(),
                 new ClientPatches.OptiFineRenderChunkUtilsPatch(),
                 new ClientPatches.RenderChunkPatch(),
+                new ValkyriePatches.ViewFrustumMixinPatch(),
+                new ValkyriePatches.RenderGlobalMixinPatch(),
         };
         ClassPatch[] out = new ClassPatch[common.length + clientOnly.length];
         System.arraycopy(common, 0, out, 0, common.length);
@@ -104,6 +106,7 @@ public final class HeightTransformer implements IClassTransformer {
         Map<String, Boolean> out = new LinkedHashMap<String, Boolean>();
         for (ClassPatch p : all(client)) {
             if (p.target.startsWith("org.embeddedt.vintagefix.") || p.target.startsWith("dev.redstudio.alfheim.mixin.")
+                    || p.target.startsWith("dev.redstudio.valkyrie.mixin.")
                     || p.target.startsWith("eaglemixins.mixin.")
                     || p.target.startsWith("me.jellysquid.mods.phosphor.mixins.")) {
                 // A mixin class: Mixin reads it (through the transformers) when it applies it; loading it directly
