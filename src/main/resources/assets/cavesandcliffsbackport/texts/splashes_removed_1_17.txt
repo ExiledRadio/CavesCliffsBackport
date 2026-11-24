@@ -1,3 +1,0 @@
-OpenGL 2.1 (if supported)!
-Woo, /v/!
-Now Java 8!

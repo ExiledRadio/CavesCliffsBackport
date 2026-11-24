@@ -1,3 +1,7 @@
+# 1.1.6
+
+*   **1.17's and 1.18's look and feel is Backport Core's now** (needs Backport Core 1.4.7): Hide Lightning Flashes, the Autosave Indicator, the clouds at 192, 1.18.1's fog, 1.18.2's F3 Block and Chunk rows, the brightness default of 50, the splashes, the title and startup logos, the button, check box and Accessibility textures, the multiplayer warning and vanilla's 1.18 wording. They work as before, and a later backport installed without this one has them too. Saved option values carry over, and the brightness default is not applied a second time. The panoramas and the music stay in this mod.
+
 # 1.1.5
 
 *   **Upgrade an existing world to y -64 to 319**, as 1.18 upgraded old worlds: `/cavesandcliffs upgradeworld` (operators; it asks you to confirm and backs up level.dat), then restart. Explored chunks keep everything from y 0 up. Each one gets deepslate, caves, ores and aquifers below y 0 when it first loads, and its bedrock floor moves to y -64. New chunks get the 1.18 terrain and blend into the old ones at the border. No new structure starts in or reaches into an old chunk. Default worlds only; it can't be undone, so back up the world first.

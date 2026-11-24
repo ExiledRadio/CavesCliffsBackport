@@ -4,8 +4,8 @@ import com.exiledradio.backportcore.presentation.GameVersion;
 import com.exiledradio.backportcore.presentation.Presentation;
 import com.exiledradio.backportcore.presentation.client.FogPipeline;
 import com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport;
-import com.exiledradio.cavesandcliffsbackport.lookfeel.LookAndFeel;
-import com.exiledradio.cavesandcliffsbackport.lookfeel.client.LookAndFeelClient;
+import com.exiledradio.backportcore.presentation.versions.Look118;
+import com.exiledradio.backportcore.presentation.versions.client.Look118Client;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.server.integrated.IntegratedServer;
@@ -28,7 +28,8 @@ import java.util.List;
  * panorama), the brightness default applied, then a superflat world: a save shows the autosave indicator
  * ({@code cc_lookfeel_saving.png}), the overworld's clouds are at 192, and the F3 rows are 1.18.2's
  * ({@code cc_lookfeel_f3.png}). The screenshots are for a person to look at; the game then quits through
- * {@code Minecraft.shutdown}.
+ * {@code Minecraft.shutdown}. Since 1.1.6 the indicator, the clouds, the fog and the F3 rows are Backport Core's
+ * ({@code presentation.versions.Look118}); this mod keeps the panoramas.
  *
  * <pre>    ./gradlew runClient -Pselftest=lookfeel -Pclienttest=lookfeel</pre>
  */
@@ -116,8 +117,8 @@ public final class LookFeelClientSelfTest {
                 return;
             case 4: {
                 eq(192.0F, FogPipeline.cloudHeight(mc.world.provider, 128.0F), "the overworld's clouds are at 192");
-                ok(LookAndFeel.AUTOSAVE_INDICATOR.get(), "Autosave Indicator is on");
-                this.savesBefore = LookAndFeelClient.indicatorFrames;
+                ok(Look118.AUTOSAVE_INDICATOR.get(), "Autosave Indicator is on");
+                this.savesBefore = Look118Client.indicatorFrames;
                 IntegratedServer server = mc.getIntegratedServer();
                 server.addScheduledTask(() -> {
                     server.getPlayerList().saveAllPlayerData();
@@ -135,14 +136,14 @@ public final class LookFeelClientSelfTest {
                 return;
             }
             case 5:
-                ok(LookAndFeelClient.indicatorFrames > this.savesBefore, "a save shows \"Saving world\": " + LookAndFeelClient.indicatorFrames + " frames");
+                ok(Look118Client.indicatorFrames > this.savesBefore, "a save shows \"Saving world\": " + Look118Client.indicatorFrames + " frames");
                 this.shot = "cc_lookfeel_saving.png";
                 mc.gameSettings.showDebugInfo = true;
                 this.wait = 40;
                 this.state = 6;
                 return;
             case 6:
-                ok(LookAndFeelClient.debugEdits > 0, "the F3 rows went through 1.18.2's step: " + LookAndFeelClient.debugEdits);
+                ok(Look118Client.debugEdits > 0, "the F3 rows went through 1.18.2's step: " + Look118Client.debugEdits);
                 this.shot = "cc_lookfeel_f3.png";
                 this.wait = 5;
                 this.state = 7;

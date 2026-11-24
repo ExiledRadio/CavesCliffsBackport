@@ -8,9 +8,8 @@ import com.exiledradio.backportcore.presentation.Splashes;
 import com.exiledradio.backportcore.presentation.VersionedDefaults;
 import com.exiledradio.backportcore.presentation.option.OptionScreen;
 import com.exiledradio.backportcore.presentation.option.PresentationOption;
+import com.exiledradio.backportcore.presentation.versions.Look118;
 import com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport;
-import com.exiledradio.cavesandcliffsbackport.lookfeel.LookAndFeel;
-import com.exiledradio.cavesandcliffsbackport.lookfeel.LookHooks;
 import net.minecraft.util.ResourceLocation;
 
 import java.io.BufferedReader;
@@ -20,17 +19,18 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
- * Stream Lf: 1.17's and 1.18's look and feel registered with Backport Core, its assets and text, its options and
- * defaults, and the numbers of its client steps (checked against 1.18.2's code).
+ * Stream Lf: 1.17's and 1.18's look and feel. Since 1.1.6 Backport Core owns every piece but the panoramas, their
+ * overlay and the music (Core's {@code presentation.versions.Look118}): this checks that this mod still declares the
+ * versions and that Core's pieces are there and right with it installed: assets and text, options and defaults, and
+ * the numbers of the client steps (checked against 1.18.2's code).
  */
 public final class LookFeelSelfTest implements SelfTest {
 
     private static final String ID = CavesAndCliffsBackport.MOD_ID;
+    private static final String CORE = "backportcore";
     private static final String[] CODES = {"en_us", "de_de", "es_ar", "es_es", "es_mx", "es_uy", "es_ve", "fr_fr", "it_it",
             "ja_jp", "ko_kr", "nl_nl", "pl_pl", "pt_br", "ru_ru", "tr_tr", "uk_ua", "zh_cn", "zh_tw"};
 
@@ -71,16 +71,18 @@ public final class LookFeelSelfTest implements SelfTest {
         };
         for (String[] a : assets) {
             ResourceLocation src = Presentation.asset(a[0]);
-            c.eq(new ResourceLocation(ID, a[0]), src, "Core serves vanilla's " + a[0] + " from 1.18's");
+            // 1.18.2's files are 1.16.5's: Core's 1.18 serves its 1.16 copy.
+            c.eq(new ResourceLocation(CORE, "look/1.16/" + a[0]), src, "Core serves vanilla's " + a[0] + " from its own copy");
+            c.ok(pngSize(new ResourceLocation(ID, a[0])) == null, a[0] + " is no longer in this mod's jar");
             int[] size = src == null ? null : pngSize(src);
             c.ok(size != null && (a[1] == null || a[1].equals(size[0] + "x" + size[1])), a[0] + " is in the jar: " + Arrays.toString(size));
         }
-        c.eq(new ResourceLocation(ID, "textures/gui/accessibility.png"), Presentation.titleAccessibilityIcon(), "the title screen's Accessibility icon");
-        c.ok(pngSize(new ResourceLocation(ID, "textures/gui/accessibility.png")) != null, "accessibility.png is in the jar");
+        c.eq(new ResourceLocation(CORE, "look/1.16/textures/gui/accessibility.png"), Presentation.titleAccessibilityIcon(), "the title screen's Accessibility icon");
+        c.ok(pngSize(new ResourceLocation(CORE, "look/1.16/textures/gui/accessibility.png")) != null, "accessibility.png is in Core's jar");
         String[] warn = Presentation.multiplayerWarning();
         c.ok(warn != null && "multiplayerWarning.header".equals(warn[0]) && "multiplayerWarning.check".equals(warn[2]),
                 "the multiplayer warning uses vanilla's keys: " + Arrays.toString(warn));
-        c.ok(Presentation.vanillaTexts().contains(new ResourceLocation(ID, "vanilla_text")), "1.18's vanilla text is registered");
+        c.ok(Presentation.vanillaTexts().contains(new ResourceLocation(CORE, "look/1.18/vanilla_text")), "1.18's vanilla text is registered");
     }
 
     private static void panoramas(Check c) throws IOException {
@@ -118,10 +120,10 @@ public final class LookFeelSelfTest implements SelfTest {
     }
 
     private static void splashes(Check c) throws IOException {
-        List<String> add17 = lines(new ResourceLocation(ID, "texts/splashes_added_1_17.txt"));
-        List<String> rem17 = lines(new ResourceLocation(ID, "texts/splashes_removed_1_17.txt"));
-        List<String> add18 = lines(new ResourceLocation(ID, "texts/splashes_added_1_18.txt"));
-        List<String> rem18 = lines(new ResourceLocation(ID, "texts/splashes_removed_1_18.txt"));
+        List<String> add17 = lines(new ResourceLocation(CORE, "look/1.18/texts/splashes_added_1_17.txt"));
+        List<String> rem17 = lines(new ResourceLocation(CORE, "look/1.18/texts/splashes_removed_1_17.txt"));
+        List<String> add18 = lines(new ResourceLocation(CORE, "look/1.18/texts/splashes_added_1_18.txt"));
+        List<String> rem18 = lines(new ResourceLocation(CORE, "look/1.18/texts/splashes_removed_1_18.txt"));
         c.eq(13, add17.size(), "1.17.1 adds this many splashes to 1.16.5's");
         c.eq(3, rem17.size(), "1.17.1 removes this many");
         c.eq(2, add18.size(), "1.18.2 adds this many to 1.17.1's");
@@ -136,49 +138,52 @@ public final class LookFeelSelfTest implements SelfTest {
         c.ok(base.contains("Woo, /v/!") && !pool.contains("Woo, /v/!"), "1.17 removed \"Woo, /v/!\"");
         c.ok(!pool.contains("Now Java 16!") && !pool.contains("Java 16 + 1 = 17!") && !pool.contains("Now on OpenGL 3.2 core profile!"),
                 "the splashes naming a Java or OpenGL version are not shown (false on 1.12.2)");
-        if (Presentation.installed().size() == 4) {
-            // Alone: 1.12.2's list, less 1.17's and 1.18's removals, plus their additions (Core drops the runtime ones).
-            Set<String> expected = new LinkedHashSet<String>(base);
-            expected.removeAll(rem17);
-            expected.addAll(add17);
-            expected.removeAll(rem18);
-            expected.addAll(add18);
-            expected.removeIf(Splashes::isAboutTheRuntime);
-            Set<String> got = new LinkedHashSet<String>(pool);
-            got.removeIf(Splashes::isAboutTheRuntime);
-            c.eq(expected.size(), got.size(), "pool size: 1.12.2's less the removals plus the additions");
+        // Every 1.17 and 1.18 addition is in, every removal out (unless the other version put it back), whatever else
+        // is installed (Core's own 1.13 to 1.16 lists apply too since Core 1.4.7, so the pool's size is not checked).
+        for (String s : add17) {
+            c.ok(Splashes.isAboutTheRuntime(s) || rem18.contains(s) || pool.contains(s), "1.17's splash \"" + s + "\" is in the pool");
         }
+        for (String s : add18) {
+            c.ok(Splashes.isAboutTheRuntime(s) || pool.contains(s), "1.18's splash \"" + s + "\" is in the pool");
+        }
+        for (String s : rem18) {
+            c.ok(!pool.contains(s), "1.18 removed \"" + s + "\"");
+        }
+        c.ok(CavesAndCliffsBackport.class.getResource("/assets/" + ID + "/texts/splashes_added_1_18.txt") == null,
+                "the splash files are no longer this mod's");
     }
 
     private static void options(Check c) {
-        PresentationOption hide = Presentation.option(LookAndFeel.HIDE_LIGHTNING_FLASHES.id());
-        PresentationOption save = Presentation.option(LookAndFeel.AUTOSAVE_INDICATOR.id());
-        c.ok(hide == LookAndFeel.HIDE_LIGHTNING_FLASHES, "Hide Lightning Flashes is registered");
-        c.ok(save == LookAndFeel.AUTOSAVE_INDICATOR, "Autosave Indicator is registered");
-        c.eq(OptionScreen.ACCESSIBILITY, LookAndFeel.HIDE_LIGHTNING_FLASHES.screen(), "Hide Lightning Flashes is on Accessibility Settings");
-        c.eq(OptionScreen.VIDEO, LookAndFeel.AUTOSAVE_INDICATOR.screen(), "Autosave Indicator is on Video Settings");
-        c.eq(GameVersion.parse("1.18"), LookAndFeel.HIDE_LIGHTNING_FLASHES.since(), "Hide Lightning Flashes since 1.18");
-        c.eq(GameVersion.parse("1.18"), LookAndFeel.AUTOSAVE_INDICATOR.since(), "Autosave Indicator since 1.18");
-        c.eq("options.hideLightningFlashes", LookAndFeel.HIDE_LIGHTNING_FLASHES.labelKey(), "its label is vanilla's key");
-        c.eq("options.hideLightningFlashes.tooltip", LookAndFeel.HIDE_LIGHTNING_FLASHES.tooltipKey(), "its tooltip");
-        c.eq("options.autosaveIndicator", LookAndFeel.AUTOSAVE_INDICATOR.labelKey(), "Autosave Indicator's label");
-        c.eq(false, LookAndFeel.HIDE_LIGHTNING_FLASHES.defaultValue(), "Hide Lightning Flashes is OFF by default");
-        c.eq(true, LookAndFeel.AUTOSAVE_INDICATOR.defaultValue(), "Autosave Indicator is ON by default");
-        c.ok(LookAndFeel.HIDE_LIGHTNING_FLASHES.isShown() && LookAndFeel.AUTOSAVE_INDICATOR.isShown(), "both show at the newest version");
-        c.ok(!LookAndFeel.HIDE_LIGHTNING_FLASHES.isShownAt(GameVersion.parse("1.17.1")), "neither shows before 1.18");
+        PresentationOption hide = Presentation.option(Look118.HIDE_LIGHTNING_FLASHES.id());
+        PresentationOption save = Presentation.option(Look118.AUTOSAVE_INDICATOR.id());
+        c.ok(hide == Look118.HIDE_LIGHTNING_FLASHES && hide.isCoreOwned(), "Hide Lightning Flashes is registered, Core's");
+        c.ok(save == Look118.AUTOSAVE_INDICATOR && save.isCoreOwned(), "Autosave Indicator is registered, Core's");
+        c.eq(ID + ":hide_lightning_flashes", hide == null ? null : hide.id(), "it keeps this mod's id (saved values carry over)");
+        c.eq(ID + ":autosave_indicator", save == null ? null : save.id(), "so does Autosave Indicator");
+        c.eq(OptionScreen.ACCESSIBILITY, Look118.HIDE_LIGHTNING_FLASHES.screen(), "Hide Lightning Flashes is on Accessibility Settings");
+        c.eq(OptionScreen.VIDEO, Look118.AUTOSAVE_INDICATOR.screen(), "Autosave Indicator is on Video Settings");
+        c.eq(GameVersion.parse("1.18"), Look118.HIDE_LIGHTNING_FLASHES.since(), "Hide Lightning Flashes since 1.18");
+        c.eq(GameVersion.parse("1.18"), Look118.AUTOSAVE_INDICATOR.since(), "Autosave Indicator since 1.18");
+        c.eq("options.hideLightningFlashes", Look118.HIDE_LIGHTNING_FLASHES.labelKey(), "its label is vanilla's key");
+        c.eq("options.hideLightningFlashes.tooltip", Look118.HIDE_LIGHTNING_FLASHES.tooltipKey(), "its tooltip");
+        c.eq("options.autosaveIndicator", Look118.AUTOSAVE_INDICATOR.labelKey(), "Autosave Indicator's label");
+        c.eq(false, Look118.HIDE_LIGHTNING_FLASHES.defaultValue(), "Hide Lightning Flashes is OFF by default");
+        c.eq(true, Look118.AUTOSAVE_INDICATOR.defaultValue(), "Autosave Indicator is ON by default");
+        c.ok(Look118.HIDE_LIGHTNING_FLASHES.isShown() && Look118.AUTOSAVE_INDICATOR.isShown(), "both show at the newest version");
+        c.ok(!Look118.HIDE_LIGHTNING_FLASHES.isShownAt(GameVersion.parse("1.17.1")), "neither shows before 1.18");
         // 1.18.2's Accessibility Settings: ... FOV Effects, Monochrome Logo, Hide Lightning Flashes.
-        c.eq(Presentation.MONOCHROME_LOGO.id(), LookAndFeel.HIDE_LIGHTNING_FLASHES.after(), "Hide Lightning Flashes follows Monochrome Logo");
+        c.eq(Presentation.MONOCHROME_LOGO.id(), Look118.HIDE_LIGHTNING_FLASHES.after(), "Hide Lightning Flashes follows Monochrome Logo");
         List<String> access = ids(Presentation.optionsOn(OptionScreen.ACCESSIBILITY));
         int mono = access.indexOf(Presentation.MONOCHROME_LOGO.id());
-        int hideAt = access.indexOf(LookAndFeel.HIDE_LIGHTNING_FLASHES.id());
+        int hideAt = access.indexOf(Look118.HIDE_LIGHTNING_FLASHES.id());
         c.ok(mono >= 0 && hideAt == mono + 1, "Accessibility Settings: Monochrome Logo (1.17, Core's), then Hide Lightning Flashes: " + access);
         List<String> video = ids(Presentation.optionsOn(OptionScreen.VIDEO));
-        c.ok(!video.isEmpty() && video.get(video.size() - 1).equals(LookAndFeel.AUTOSAVE_INDICATOR.id()),
+        c.ok(!video.isEmpty() && video.get(video.size() - 1).equals(Look118.AUTOSAVE_INDICATOR.id()),
                 "Video Settings ends with Autosave Indicator, as 1.18.2's does: " + video);
-        LookAndFeel.HIDE_LIGHTNING_FLASHES.set(true);
-        c.eq(true, LookAndFeel.HIDE_LIGHTNING_FLASHES.get(), "Hide Lightning Flashes can be set");
-        LookAndFeel.HIDE_LIGHTNING_FLASHES.reset();
-        c.eq(false, LookAndFeel.HIDE_LIGHTNING_FLASHES.get(), "and reset");
+        Look118.HIDE_LIGHTNING_FLASHES.set(true);
+        c.eq(true, Look118.HIDE_LIGHTNING_FLASHES.get(), "Hide Lightning Flashes can be set");
+        Look118.HIDE_LIGHTNING_FLASHES.reset();
+        c.eq(false, Look118.HIDE_LIGHTNING_FLASHES.get(), "and reset");
     }
 
     private static void defaults(Check c) {
@@ -195,7 +200,7 @@ public final class LookFeelSelfTest implements SelfTest {
     private static void text(Check c) throws IOException {
         List<String> keys = null;
         for (String code : CODES) {
-            List<String> lines = lines(new ResourceLocation(ID, "vanilla_text/" + code + ".lang"));
+            List<String> lines = lines(new ResourceLocation(CORE, "look/1.18/vanilla_text/" + code + ".lang"));
             List<String> k = new ArrayList<String>();
             for (String l : lines) {
                 k.add(l.substring(0, l.indexOf('=')));
@@ -206,7 +211,7 @@ public final class LookFeelSelfTest implements SelfTest {
                 c.ok(keys.equals(k), "vanilla_text/" + code + ".lang has en_us's keys");
             }
         }
-        List<String> en = lines(new ResourceLocation(ID, "vanilla_text/en_us.lang"));
+        List<String> en = lines(new ResourceLocation(CORE, "look/1.18/vanilla_text/en_us.lang"));
         for (String want : new String[] {"options.vsync=VSync", "tile.blockLapis.name=Block of Lapis Lazuli",
                 "build.tooHigh=Height limit for building is %s", "menu.savingLevel=Saving world",
                 "options.hideLightningFlashes=Hide Lightning Flashes", "options.autosaveIndicator=Autosave Indicator",
@@ -217,14 +222,14 @@ public final class LookFeelSelfTest implements SelfTest {
     }
 
     private static void numbers(Check c) {
-        c.eq(192.0F, LookHooks.cloudHeight(0, 128.0F), "the overworld's clouds are at 192 (1.18)");
-        c.eq(128.0F, LookHooks.cloudHeight(7, 128.0F), "another dimension keeps its own");
-        c.eq(150.0F, LookHooks.cloudHeight(0, 150.0F), "a provider's own cloud height stays");
+        c.eq(192.0F, Look118.cloudHeight(0, 128.0F), "the overworld's clouds are at 192 (1.18)");
+        c.eq(128.0F, Look118.cloudHeight(7, 128.0F), "another dimension keeps its own");
+        c.eq(150.0F, Look118.cloudHeight(0, 150.0F), "a provider's own cloud height stays");
         // FogRenderer.setupFog (1.18.2): start = far - clamp(far / 10, 4, 64), end = far, far at least 32.
         float[][] fog = {{32, 28, 32}, {128, 115.2F, 128}, {192, 172.8F, 192}, {512, 460.8F, 512}, {1024, 960, 1024}, {16, 28, 32}};
         for (float[] f : fog) {
-            c.ok(Math.abs(LookHooks.terrainFogStart(f[0]) - f[1]) < 1e-3, "fog start at " + f[0] + " is " + f[1] + ": " + LookHooks.terrainFogStart(f[0]));
-            c.eq(f[2], LookHooks.terrainFogEnd(f[0]), "fog end at " + f[0]);
+            c.ok(Math.abs(Look118.terrainFogStart(f[0]) - f[1]) < 1e-3, "fog start at " + f[0] + " is " + f[1] + ": " + Look118.terrainFogStart(f[0]));
+            c.eq(f[2], Look118.terrainFogEnd(f[0]), "fog end at " + f[0]);
         }
         // The flash: World.getSkyColorBody blends toward (0.8, 0.8, 1.0); undoing it gives the sky back.
         double[] sky = {0.47, 0.65, 1.0};
@@ -232,21 +237,21 @@ public final class LookFeelSelfTest implements SelfTest {
         float pt = 0.3F;
         float f = Math.min(bolt - pt, 1.0F) * 0.45F;
         double[] flashed = {(float) sky[0] * (1 - f) + 0.8F * f, (float) sky[1] * (1 - f) + 0.8F * f, (float) sky[2] * (1 - f) + 1.0F * f};
-        LookHooks.undoLightningFlash(flashed, bolt, pt);
+        Look118.undoLightningFlash(flashed, bolt, pt);
         c.ok(Math.abs(flashed[0] - sky[0]) < 1e-5 && Math.abs(flashed[1] - sky[1]) < 1e-5 && Math.abs(flashed[2] - sky[2]) < 1e-5,
                 "Hide Lightning Flashes gives back the sky without the flash: " + Arrays.toString(flashed));
         double[] none = {0.1, 0.2, 0.3};
-        LookHooks.undoLightningFlash(none, 0, 0.5F);
+        Look118.undoLightningFlash(none, 0, 0.5F);
         c.ok(none[0] == 0.1 && none[1] == 0.2 && none[2] == 0.3, "no bolt, no change");
-        c.eq("Block: -17 70 33 [15 6 1]", LookHooks.blockRow(-17, 70, 33), "1.18.2's F3 Block row");
-        c.eq("Chunk: -2 4 2 [30 2 in r.-1.0.mca]", LookHooks.chunkRow(-17, 70, 33), "1.18.2's F3 Chunk row");
-        c.eq("Chunk: 40 -4 -33 [8 31 in r.1.-2.mca]", LookHooks.chunkRow(640, -60, -520), "below y 0 and in a negative region");
+        c.eq("Block: -17 70 33 [15 6 1]", Look118.blockRow(-17, 70, 33), "1.18.2's F3 Block row");
+        c.eq("Chunk: -2 4 2 [30 2 in r.-1.0.mca]", Look118.chunkRow(-17, 70, 33), "1.18.2's F3 Chunk row");
+        c.eq("Chunk: 40 -4 -33 [8 31 in r.1.-2.mca]", Look118.chunkRow(640, -60, -520), "below y 0 and in a negative region");
         float v = 0.0F;
         for (int i = 0; i < 3; i++) {
-            v = LookHooks.autosaveStep(v, true);
+            v = Look118.autosaveStep(v, true);
         }
         c.ok(Math.abs(v - 0.488F) < 1e-4, "the indicator fades in by 20% of the rest each tick: " + v);
-        c.eq(108, LookHooks.autosaveAlpha(0.36F, 0.488F, 0.5F), "its alpha between ticks");
+        c.eq(108, Look118.autosaveAlpha(0.36F, 0.488F, 0.5F), "its alpha between ticks");
     }
 
     // ---- helpers ----

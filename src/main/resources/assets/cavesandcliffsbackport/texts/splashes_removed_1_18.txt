@@ -1,2 +1,0 @@
-Now Java 16!
-[this splash text has been delayed until part 2]
