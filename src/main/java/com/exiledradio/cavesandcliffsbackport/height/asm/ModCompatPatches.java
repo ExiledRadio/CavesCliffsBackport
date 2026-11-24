@@ -333,13 +333,21 @@ final class ModCompatPatches {
      * {@code getRandomChunkPosition}, a copy of vanilla's that draws from 0, so parasites never spawned below y 0. The
      * draw becomes {@code ParasitesHooks.spawnY}, the same change as vanilla's spawner gets (S1).
      */
-    static final class ParasitesSpawnerPatch extends ModPatch {
+    static class ParasitesSpawnerPatch extends ModPatch {
         ParasitesSpawnerPatch() {
-            super("com.dhanantry.scapeandrunparasites.world.SRPWorldEntitySpawner", "ParasitesSpawner");
+            this("com.dhanantry.scapeandrunparasites.world.SRPWorldEntitySpawner", "ParasitesSpawner");
+        }
+
+        ParasitesSpawnerPatch(String target, String label) {
+            super(target, label);
         }
 
         @Override
         protected void apply(ClassNode node) {
+            if (Asm.method(node, "findGroundSpawnPos", "findGroundSpawnPos", "(" + WORLD_DESC + POS + ")" + POS) != null) {
+                applyFloors(node);
+                return;
+            }
             MethodNode m = method(node, "getRandomChunkPosition", "getRandomChunkPosition",
                     "(" + WORLD_DESC + "II)" + POS);
             // int l = world.rand.nextInt(Math.max(1, k > 0 ? k : chunk.getTopFilledSegment() + 16 - 1));
@@ -349,6 +357,55 @@ final class ModCompatPatches {
                         new MethodInsnNode(Opcodes.INVOKESTATIC, PARASITES_HOOKS, "spawnY",
                                 "(Ljava/util/Random;I" + WORLD_DESC + ")I", false)));
             }
+        }
+
+        /**
+         * SRP 1.10's {@code SRPWorldEntitySpawner}: the draw is {@code 1 + nextInt(max(2, height - 2) - 1 + 1)} and the
+         * ground and water searches start at y 1. Each constant 1 becomes {@code ParasitesHooks.floor(1, world)}.
+         */
+        private void applyFloors(ClassNode node) {
+            MethodNode draw = method(node, "getRandomChunkPosition", "getRandomChunkPosition",
+                    "(" + WORLD_DESC + "II)" + POS);
+            // int minY = 1; int maxY = Math.max(minY + 1, world.getActualHeight() - 2);
+            for (AbstractInsnNode n : expect("getRandomChunkPosition.floor", draw, 1, icst(1), istore(-1), iload(-1),
+                    icst(1), op(Opcodes.IADD), aload(0),
+                    invoke(Opcodes.INVOKEVIRTUAL, "getActualHeight", "func_72940_L", "()I"))) {
+                floor(draw, n);
+            }
+            MethodNode ground = method(node, "findGroundSpawnPos", "findGroundSpawnPos",
+                    "(" + WORLD_DESC + POS + ")" + POS);
+            // int lo = Math.max(1, pos.getY() - 12);
+            for (AbstractInsnNode n : expect("findGroundSpawnPos.floor", ground, 1, icst(1), aload(1), getY(),
+                    icst(12), op(Opcodes.ISUB))) {
+                floor(ground, n);
+            }
+            MethodNode water = method(node, "findWaterSpawnPos", "findWaterSpawnPos",
+                    "(" + WORLD_DESC + POS + ")" + POS);
+            // int hi = Math.max(1, top.getY() + 2); ... for (int y = 1; y <= hi; y++)
+            for (AbstractInsnNode n : expect("findWaterSpawnPos.top", water, 1, icst(1), aload(-1), getY(), icst(2),
+                    op(Opcodes.IADD))) {
+                floor(water, n);
+            }
+            for (AbstractInsnNode n : expect("findWaterSpawnPos.loop", water, 1, icst(1), istore(-1), iload(-1),
+                    iload(-1), op(Opcodes.IF_ICMPGT))) {
+                floor(water, n);
+            }
+        }
+
+        private static void floor(MethodNode m, AbstractInsnNode constant) {
+            m.instructions.insert(constant, list(new VarInsnNode(Opcodes.ALOAD, 0),
+                    new MethodInsnNode(Opcodes.INVOKESTATIC, PARASITES_HOOKS, "floor", "(I" + WORLD_DESC + ")I", false)));
+        }
+    }
+
+    /**
+     * {@code com.dhanantry.scapeandrunparasites.world.SRPWorldParasiteSpawner} (SRP 1.10): the spawner SRP 1.10's world
+     * tick runs. Its {@code getRandomChunkPosition} is the same copy of vanilla's as 1.9.21's old spawner, so it gets
+     * the same {@code ParasitesHooks.spawnY} draw.
+     */
+    static final class ParasitesSpawner110Patch extends ParasitesSpawnerPatch {
+        ParasitesSpawner110Patch() {
+            super("com.dhanantry.scapeandrunparasites.world.SRPWorldParasiteSpawner", "ParasitesSpawner110");
         }
     }
 }

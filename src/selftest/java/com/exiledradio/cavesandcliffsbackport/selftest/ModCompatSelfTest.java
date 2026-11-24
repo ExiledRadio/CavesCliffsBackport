@@ -99,6 +99,9 @@ public final class ModCompatSelfTest implements SelfTest {
         }
         if (srp) {
             check.ok(PatchReport.compatPatched("ParasitesSpawner"), "ParasitesSpawner patched");
+            if (parasites110()) {
+                check.ok(PatchReport.compatPatched("ParasitesSpawner110"), "ParasitesSpawner110 patched");
+            }
         }
         if (!bc && !kagic && !srp) {
             check.eq(Arrays.asList(), PatchReport.compatLines(), "mod-compat sites without the mods");
@@ -437,7 +440,11 @@ public final class ModCompatSelfTest implements SelfTest {
     // ------------------------------------------------------------------------------------------
 
     private static void parasites(Check check, WorldServer over, WorldServer nether, boolean extended) throws Exception {
-        Class<?> spawner = Class.forName("com.dhanantry.scapeandrunparasites.world.SRPWorldEntitySpawner");
+        Class<?> old = Class.forName("com.dhanantry.scapeandrunparasites.world.SRPWorldEntitySpawner");
+        // SRP 1.10's world tick spawns through SRPWorldParasiteSpawner (the same vanilla-copy draw as 1.9.21's old
+        // spawner); its SRPWorldEntitySpawner draws and searches from y 1.
+        Class<?> spawner = parasites110()
+                ? Class.forName("com.dhanantry.scapeandrunparasites.world.SRPWorldParasiteSpawner") : old;
         Method draw = spawner.getDeclaredMethod("getRandomChunkPosition", World.class, int.class, int.class);
         draw.setAccessible(true);
         int px = X + 320;
@@ -446,6 +453,50 @@ public final class ModCompatSelfTest implements SelfTest {
             deepSpawn(check, over, spawner, px + 48);
         }
         draws(check, nether, draw, px, false);
+        if (parasites110()) {
+            Method floors = old.getDeclaredMethod("getRandomChunkPosition", World.class, int.class, int.class);
+            floors.setAccessible(true);
+            if (extended) {
+                floorDraws(check, over, floors, px, true);
+            }
+            floorDraws(check, nether, floors, px, false);
+        }
+    }
+
+    private static boolean parasites110() {
+        try {
+            Class.forName("com.dhanantry.scapeandrunparasites.world.SRPWorldParasiteSpawner", false,
+                    ModCompatSelfTest.class.getClassLoader());
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    /**
+     * SRP 1.10's {@code SRPWorldEntitySpawner.getRandomChunkPosition}: {@code y = 1 + nextInt(max(2, height - 2))},
+     * with 1 the world's bottom + 1 in an extended world.
+     */
+    private static void floorDraws(Check check, WorldServer world, Method draw, int x, boolean tall) throws Exception {
+        String w = tall ? " (extended)" : " (0-255)";
+        int lo = (tall ? Heights.minY(world) : 0) + 1;
+        int matched = 0;
+        int below = 0;
+        int total = 0;
+        for (long seed = 0; seed < 2000; seed++) {
+            world.rand.setSeed(seed);
+            BlockPos got = (BlockPos) draw.invoke(null, world, x >> 4, Z >> 4);
+            world.rand.setSeed(seed);
+            int i = (x >> 4) * 16 + world.rand.nextInt(16);
+            int j = (Z >> 4) * 16 + world.rand.nextInt(16);
+            int hi = Math.max(lo + 1, world.getActualHeight() - 2);
+            BlockPos want = new BlockPos(i, lo + world.rand.nextInt(hi - lo + 1), j);
+            matched += got.equals(want) ? 1 : 0;
+            below += got.getY() < 0 ? 1 : 0;
+            total++;
+        }
+        check.eq(total, matched, "SRP 1.10 old-spawner draws" + w);
+        check.ok(tall ? below > 0 : below == 0, "SRP 1.10 old-spawner draws below 0" + w + ": " + below + "/" + total);
     }
 
     /**

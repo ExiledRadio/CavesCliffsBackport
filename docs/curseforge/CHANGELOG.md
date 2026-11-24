@@ -1,3 +1,7 @@
+# 1.1.4
+
+*   **Fixed: Scape and Run: Parasites 1.10 mobs still did not spawn below y 0** in Caves & Cliffs worlds. SRP 1.10 spawns through a new spawner that 1.1.3 did not cover; both SRP 1.9 and 1.10 are covered now.
+
 # 1.1.3
 
 *   **With Game Drops Backport, new worlds get its biomes where 26.3 places them**: the dappled forest beside cool plains and taigas, and sulfur caves deep under low inland ground. The rest of the biome map is unchanged. Worlds made before keep their biomes.
