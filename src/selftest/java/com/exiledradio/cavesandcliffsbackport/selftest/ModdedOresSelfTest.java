@@ -180,7 +180,10 @@ public final class ModdedOresSelfTest implements SelfTest {
         c.eq(ModdedOres.deepslateForm(StandInOres.gemOre.getStateFromMeta(1)), c.world.getBlockState(b), "the layer turns a variant into its form");
         c.eq(StandInOres.gemOre.getStateFromMeta(2), c.world.getBlockState(d), "the layer leaves an unconfirmed candidate");
         c.eq(StandInOres.netherOre.getDefaultState(), c.world.getBlockState(n), "the layer leaves the Nether ore");
-        c.eq(DeepslateContent.deepslate, c.world.getBlockState(a.up()).getBlock(), "stone around it is deepslate");
+        net.minecraft.block.Block around = c.world.getBlockState(a.up()).getBlock();
+        // The layer also lays tuff blobs (half the chunks), so the block above may be tuff.
+        c.ok(around == DeepslateContent.deepslate || around == DeepslateContent.BLOCKS.get("tuff"),
+                "stone around it is deepslate (or a tuff blob): " + around.getRegistryName());
     }
 
     /** Every form made from this original block. */
