@@ -310,11 +310,12 @@ public final class Decorator {
         boolean allows(int cx, int cz, int kind);
 
         /**
-         * Asked for each {@link #TREES} or {@link #CACTUS} feature at the column it is placed in, once
-         * {@link #allows} let the chunk have them: false leaves that one out (Dynamic Trees, by the biome there, as
-         * its own trees pick theirs). The feature's later draws in the chunk are then not the same as without it.
+         * Asked for each {@link #TREES} or {@link #CACTUS} feature where it is placed, once {@link #allows} let the
+         * chunk have them, with the 1.18 biome its biome filter read there: false leaves that one out (Dynamic Trees,
+         * by that biome, as its own trees pick theirs). The feature's later draws in the chunk are then not the same
+         * as without it.
          */
-        default boolean allowsAt(int x, int z, int kind) {
+        default boolean allowsAt(int x, int z, int biome, int kind) {
             return true;
         }
     }
@@ -536,7 +537,7 @@ public final class Decorator {
     private void run(Placed p, int at, int x, int y, int z) {
         int[] ops = p.ops;
         if (at == ops.length) {
-            if (region.canWrite(x, z) && (positionKind == 0 || treeGate.allowsAt(x, z, positionKind))) {
+            if (region.canWrite(x, z) && (positionKind == 0 || treeGate.allowsAt(x, z, zoomedBiome(x, y, z), positionKind))) {
                 p.feature.place(region, random, x, y, z);
             }
             return;

@@ -162,8 +162,8 @@ final class ModDecoration {
             }
 
             @Override
-            public boolean allowsAt(int x, int z, int kind) {
-                return a.allowsAt(x, z, kind) && b.allowsAt(x, z, kind);
+            public boolean allowsAt(int x, int z, int biome, int kind) {
+                return a.allowsAt(x, z, biome, kind) && b.allowsAt(x, z, biome, kind);
             }
         };
     }

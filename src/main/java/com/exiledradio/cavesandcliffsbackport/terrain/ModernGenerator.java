@@ -136,7 +136,7 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         this.states.resolveAll();
         // Dynamic Trees grows its own trees where it cancels vanilla's; the 1.18 trees step aside there. Asked on the
         // server thread, which finishes chunks.
-        com.exiledradio.cavesandcliffsbackport.terrain.core.Decorator.TreeGate trees = DynamicTreesGate.of(world);
+        com.exiledradio.cavesandcliffsbackport.terrain.core.Decorator.TreeGate trees = DynamicTreesGate.of(world, terrain.map);
         com.exiledradio.cavesandcliffsbackport.terrain.core.Decorator.TreeGate gate = ModDecoration.gate(trees, ModDecoration.quarkStones());
         // Tricky Trials' 1.21.5 spring plants: its tree selectors, its cactus patches (see ModernFeatures).
         this.modern = ModernFeatures.of(trees);
