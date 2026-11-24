@@ -157,6 +157,62 @@ public final class ModdedOresClientSelfTest {
         }
         // Textures with no stone under them (a Nether or sand ore's) are kept; a confirmed form must not use one.
         CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST {}: textures kept as they are: {}", when, ModdedOreClient.kept());
+        // Texture families: vanilla's ores (the stand-ins' textures) are one drawing on one stone, so a family cuts them.
+        CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST {}: texture families: {}", when, ModdedOreClient.families());
+        for (String vanilla : new String[] {"minecraft:blocks/iron_ore", "minecraft:blocks/diamond_ore", "minecraft:blocks/emerald_ore"}) {
+            ok(ModdedOreClient.families().containsKey(vanilla), when + ": " + vanilla + " was cut by a texture family");
+        }
+        for (String real : new String[] {"thermalfoundation:blocks/ore/ore_silver", "thermalfoundation:blocks/ore/ore_platinum",
+                "immersiveengineering:blocks/ore_nickel", "immersiveengineering:blocks/ore_silver"}) {
+            if (ModdedOreClient.redrawn().containsKey(real)) {
+                ok(ModdedOreClient.families().containsKey(real), when + ": " + real + " (grey specks) was cut by a texture family");
+            }
+        }
+        shaderIds(when);
+    }
+
+    /**
+     * With OptiFine and a shader pack: every form gets its original's shader block id, as OptiFine itself answers it
+     * (its own lookup by block number and metadata); a form whose original has none keeps its own number, as the
+     * original does.
+     */
+    private void shaderIds(String when) {
+        try {
+            Class<?> shaders = Class.forName("net.optifine.shaders.Shaders");
+            if (shaders.getMethod("getShaderPack").invoke(null) == null) {
+                CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST {}: OptiFine without a shader pack; shader ids not checked", when);
+                return;
+            }
+            java.lang.reflect.Method alias = Class.forName("net.optifine.shaders.BlockAliases").getMethod("getBlockAliasId", int.class, int.class);
+            int given = 0;
+            for (ModdedOres.Form f : ModdedOres.forms()) {
+                if (!f.confirmed()) {
+                    continue;
+                }
+                int id = net.minecraft.block.Block.getIdFromBlock(f.original.getBlock());
+                int original = (Integer) alias.invoke(null, id, f.original.getBlock().getMetaFromState(f.original));
+                int formId = net.minecraft.block.Block.getIdFromBlock(f.block());
+                int form = (Integer) alias.invoke(null, formId, 0);
+                if (original == id) {
+                    eq(formId, form, when + ": " + f + " has no shader id, as its ore has none");
+                } else {
+                    eq(original, form, when + ": " + f + " has its ore's shader id");
+                    given++;
+                }
+            }
+            CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST {}: shader ids: {} forms have their ore's; file: {}", when, given, ModdedOreClient.shaderIds());
+            // Our own blocks by their vanilla names: a pack that names deepslate_iron_ore gives ours its id.
+            CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST {}: shader ids by vanilla name: {}", when, ModdedOreClient.shaderNamed());
+            net.minecraft.block.Block iron = DeepslateContent.BLOCKS.get("deepslate_iron_ore");
+            if (ModdedOreClient.shaderNamed().contains(iron.getRegistryName().toString())) {
+                int ironId = net.minecraft.block.Block.getIdFromBlock(iron);
+                ok((Integer) alias.invoke(null, ironId, 0) != ironId, when + ": deepslate iron ore has the pack's id for deepslate_iron_ore");
+            }
+        } catch (ClassNotFoundException e) {
+            CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST {}: no OptiFine; shader ids not checked", when);
+        } catch (ReflectiveOperationException e) {
+            fail(when + ": OptiFine's shader ids could not be read: " + e);
+        }
     }
 
     /** Pairs in rows of eight: each original over its form, vanilla's iron ore over 1.18's deepslate iron ore first. */

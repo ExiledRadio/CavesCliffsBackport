@@ -101,6 +101,40 @@ O2 first (user's choice), then O1, then O3.
 *   Real mods (Forge 2860 for NuclearCraft 2.19a): NuclearCraft, Defiled Lands (with Baubles), Biomes O' Plenty,
     BetterNether, Ice and Fire 2.0.9 (with LLibrary), with Thermal and IE as before.
 
+**Texture families and shader ids (2026-11-24, branch `claude/cc-ore-shaders`):**
+
+*   Grey specks (Thermal's silver, platinum, mithril; IE's nickel and silver) came out patchy, and IE's forms kept
+    specks of stone: a speck pixel within 14 of the stone counted as stone, and IE drew its ores on altered copies of
+    stone. The image work moved to `deepslate/client/OreTextures` (plain images, no game classes) and now cuts by
+    **texture family**: a mod's still ore textures of one size are grouped, and two of them are *partners* when 40-98%
+    of their pixels agree (within 2): drawn on one copy of a stone. A member's pixel is stone where a partner has the
+    same color there or where its color is one the partners agree on anywhere (the stone's palette: a member whose
+    shape differs from its partners'); every other pixel varies between the ores and is ore. On an exact copy of the
+    stone (40% of pixels identical), a pixel only faintly off it (14 or less) is ore only in the family's speck core
+    (where most members are clearly off the stone), which leaves out tinted rims of stone. Textures in no family
+    (IE's uranium, on its own copy of stone) are cut by their colors as before. Under 2% left as ore (a near copy): as before.
+*   Dev tool: `tools/oretextures/run.sh <out> <minecraft jar> <mod jars...>` compiles `OrePainter` and `OreTextures`
+    with `OreFamilyTool` and writes each mod's sheet (original, before = families off, after, pixels drawn as ore),
+    each family's mask and a report. Thermal: one family of 9 (its fluid ores are animated, never in one); IE: one of 5
+    (uranium, on its own stone, cut alone). NuclearCraft's ores are overlay layers and stay as they are.
+*   Shader ids: OptiFine reads `<modid>:shaders/block.properties` from every mod's resources whenever it loads block
+    ids. `ShaderBlockIds` serves ours from its own default pack (always added, modded ores or not), built when asked:
+    the shader pack's file and other mods' (OptiFine's `MacroProcessor`, `PropertiesOrdered`, `ConnectedParser`, by
+    reflection) are read, every entry naming a vanilla block 1.12 lacks (`deepslate_iron_ore`, `minecraft:tuff`) is
+    repeated for our block of that name (properties kept only where our block has them), and every confirmed form
+    goes under the first entry matching its original's block number and metadata, as OptiFine's own lookup does.
+    Complementary Unbound r5.7.1 lists no Thermal, IE or NuclearCraft ore (its modded-ore id 10024 is empty), so
+    those originals and their forms have no id; our own deepslate ores now glow like vanilla's.
+*   Tests: `runClient -Pclienttest=moddedores` 89/0 (checks vanilla's ores, the stand-ins' textures, are cut by a
+    family; with OptiFine and a shader pack, every confirmed form's id equals its original's through OptiFine's own
+    `BlockAliases.getBlockAliasId`, or stays its own number when the original has none, and our deepslate iron ore has
+    the pack's id). Real mods (`G:\VBPTest\cc-o1`, Thermal, IE, NuclearCraft, Forge 2860): no OptiFine 466/0; OptiFine G5
+    + Complementary Unbound r5.7.1 521/0 (169 entries for our blocks by vanilla name); the same pack with Thermal, IE
+    and NuclearCraft ores put in `block.10024` 521/0, 23 forms given 10024. Screenshots and comparisons in
+    `G:\VBPTest\cc-o1\shots-oreshaders` (`compare-forms.png`, `compare-shaders.png`, `tool/` = the dev tool's sheets).
+*   Left as they are: NuclearCraft's thorium and boron overlays are dark or mid grey and show little on deepslate (the
+    mod's own drawing, used as it is, as vanilla's deepslate coal ore shows little).
+
 ### O2. Modded ore heights in Caves & Cliffs worlds
 
 1.18 moved vanilla's ores down as the world grew: diamond from y 0-16 to -64-16, gold from 0-32 to -64-32, iron

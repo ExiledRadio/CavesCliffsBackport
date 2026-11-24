@@ -57,6 +57,7 @@ public final class ClientSetup {
         if (com.exiledradio.cavesandcliffsbackport.deepslate.ModdedOres.enabled()) {
             com.exiledradio.cavesandcliffsbackport.deepslate.client.ModdedOreClient.init();
         }
+        com.exiledradio.cavesandcliffsbackport.deepslate.client.ShaderBlockIds.init();
         com.exiledradio.cavesandcliffsbackport.music.client.MusicClient.init();
         com.exiledradio.cavesandcliffsbackport.lookfeel.client.LookAndFeelClient.init();
         if ("particles".equals(System.getProperty(CavesAndCliffsBackport.MOD_ID + ".clienttest"))) {

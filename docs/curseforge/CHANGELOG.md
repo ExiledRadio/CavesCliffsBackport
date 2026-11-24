@@ -1,6 +1,8 @@
 # 1.1.5
 
 *   **Upgrade an existing world to y -64 to 319**, as 1.18 upgraded old worlds: `/cavesandcliffs upgradeworld` (operators; it asks you to confirm and backs up level.dat), then restart. Explored chunks keep everything from y 0 up. Each one gets deepslate, caves, ores and aquifers below y 0 when it first loads, and its bedrock floor moves to y -64. New chunks get the 1.18 terrain and blend into the old ones at the border. No new structure starts in or reaches into an old chunk. Default worlds only; it can't be undone, so back up the world first.
+*   **Shader packs know our blocks** (OptiFine): deepslate ores, deepslate, tuff and the rest get the ids a pack gives their vanilla names, so Complementary's glowing ores and block effects work on them. Deepslate forms of other mods' ores get their original ore's id.
+*   **Deepslate forms of other mods' ores look cleaner**, most of all ores with grey specks (Thermal's silver and platinum, Immersive Engineering's nickel and silver). A mod's ore textures are compared with each other to find which pixels are ore and which are stone.
 
 # 1.1.4
 

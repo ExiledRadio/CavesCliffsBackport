@@ -93,6 +93,8 @@ public final class ModdedOreClient {
     /** What the last load did, for the log and the client self-test. */
     private static final List<String> KEPT = new ArrayList<String>();
     private static final Map<Block, String> BAKED = new HashMap<Block, String>();
+    /** Texture name -> texture family number, for textures a family cut at the last load (the self-test, the log). */
+    private static final Map<String, Integer> FAMILIES = new LinkedHashMap<String, Integer>();
 
     private ModdedOreClient() {
     }
@@ -223,96 +225,37 @@ public final class ModdedOreClient {
             textures.put(f, list);
         }
 
-        // Read every texture once, and sort them: layers, ores on vanilla stone, and the rest (by mod).
-        Map<ResourceLocation, BufferedImage> images = new LinkedHashMap<ResourceLocation, BufferedImage>();
+        // Read every texture once; then which stone each was drawn on and which of its pixels are ore (OreTextures).
+        Map<String, BufferedImage> images = new LinkedHashMap<String, BufferedImage>();
+        Map<String, ResourceLocation> names = new HashMap<String, ResourceLocation>();
         for (List<ResourceLocation> list : textures.values()) {
             for (ResourceLocation t : list) {
-                if (!images.containsKey(t)) {
-                    images.put(t, read(rm, file(t)));
+                if (!images.containsKey(t.toString())) {
+                    images.put(t.toString(), read(rm, file(t)));
+                    names.put(t.toString(), t);
                 }
             }
         }
-        Map<ResourceLocation, List<int[]>> bases = new HashMap<ResourceLocation, List<int[]>>();
-        Map<String, List<ResourceLocation>> unmatched = new HashMap<String, List<ResourceLocation>>();
-        for (Map.Entry<ResourceLocation, BufferedImage> e : images.entrySet()) {
-            BufferedImage img = e.getValue();
-            if (img == null) {
-                continue;
-            }
-            int[] px = OrePainter.firstFrame(img);
-            if (OrePainter.clear(px) >= OrePainter.LAYER) {
-                continue;
-            }
-            int w = img.getWidth(), fh = Math.min(OrePainter.frame(img), img.getHeight());
-            List<int[]> mine = new ArrayList<int[]>();
-            boolean matched = false;
-            for (BufferedImage s : stones) {
-                int[] b = OrePainter.scaled(s, w, fh);
-                mine.add(b);
-                matched |= OrePainter.match(px, b) >= OrePainter.MATCH;
-            }
-            if (matched) {
-                bases.put(e.getKey(), mine);
-            } else {
-                String key = e.getKey().getNamespace() + "@" + w + "x" + fh;
-                List<ResourceLocation> l = unmatched.get(key);
-                if (l == null) {
-                    l = new ArrayList<ResourceLocation>();
-                    unmatched.put(key, l);
-                }
-                l.add(e.getKey());
-            }
-        }
-        // The mod's own stone: the texture of one of its stone blocks the ore was drawn on (Defiled Lands' defiled
-        // stone), else what most of its ore textures share. The block's texture comes first: an ore's own shading
-        // around its bits keeps two textures out of three from agreeing there, and those pixels would stay.
-        Map<String, List<BufferedImage>> modStones = new HashMap<String, List<BufferedImage>>();
-        for (List<ResourceLocation> group : unmatched.values()) {
-            String ns = group.get(0).getNamespace();
+        // The mod's own stone: its stone blocks' textures, looked up once per mod.
+        final Map<String, List<BufferedImage>> modStones = new HashMap<String, List<BufferedImage>>();
+        final Set<ResourceLocation> oreTextures = new java.util.HashSet<ResourceLocation>(names.values());
+        OreTextures.Result result = OreTextures.paint(images, stones, ns -> {
             List<BufferedImage> own = modStones.get(ns);
             if (own == null) {
-                own = modStones(mc, rm, ns, images.keySet());
-                modStones.put(ns, own);
+                modStones.put(ns, own = modStones(mc, rm, ns, oreTextures));
             }
-            List<int[]> frames = new ArrayList<int[]>();
-            for (ResourceLocation t : group) {
-                frames.add(OrePainter.firstFrame(images.get(t)));
-            }
-            int[] shared = OrePainter.consensus(frames);
-            for (ResourceLocation t : group) {
-                BufferedImage img = images.get(t);
-                int[] px = OrePainter.firstFrame(img);
-                int w = img.getWidth(), fh = Math.min(OrePainter.frame(img), img.getHeight());
-                int[] best = null;
-                double bestShare = OrePainter.MATCH;
-                for (BufferedImage s : own) {
-                    int[] b = OrePainter.scaled(s, w, fh);
-                    double share = OrePainter.match(px, b);
-                    if (share >= bestShare) {
-                        bestShare = share;
-                        best = b;
-                    }
-                }
-                if (best == null && shared != null && OrePainter.match(px, shared) >= OrePainter.MATCH) {
-                    best = shared;
-                }
-                if (best != null) {
-                    bases.put(t, Collections.singletonList(best));
-                } else {
-                    KEPT.add(t.toString());
-                }
-            }
-        }
+            return own;
+        }, deepslate, true);
+        KEPT.addAll(result.kept);
+        PLAIN.addAll(result.plain);
 
-        // Paint them, and register the sprites.
+        // Register the sprites.
         TextureMap map = event.getMap();
-        for (Map.Entry<ResourceLocation, List<int[]>> e : bases.entrySet()) {
-            ResourceLocation ours = redrawnName(e.getKey());
-            if (put(rm, file(ours), OrePainter.paint(images.get(e.getKey()), e.getValue(), deepslate), file(e.getKey()))) {
-                REDRAWN.put(e.getKey().toString(), ours);
-                if (OrePainter.match(OrePainter.firstFrame(images.get(e.getKey())), e.getValue().get(0)) >= 0.9) {
-                    PLAIN.add(e.getKey().toString());
-                }
+        for (Map.Entry<String, BufferedImage> e : result.painted.entrySet()) {
+            ResourceLocation original = names.get(e.getKey());
+            ResourceLocation ours = redrawnName(original);
+            if (put(rm, file(ours), e.getValue(), file(original))) {
+                REDRAWN.put(e.getKey(), ours);
                 map.registerSprite(ours);
             }
         }
@@ -321,21 +264,23 @@ public final class ModdedOreClient {
         for (Map.Entry<ModdedOres.Form, List<ResourceLocation>> e : textures.entrySet()) {
             ResourceLocation main = null;
             for (ResourceLocation t : e.getValue()) {
-                if (bases.containsKey(t) && OrePainter.match(OrePainter.firstFrame(images.get(t)), bases.get(t).get(0)) < 0.9) {
+                if (result.painted.containsKey(t.toString()) && !result.plain.contains(t.toString())) {
                     main = t;
                     break;
                 }
             }
             ResourceLocation formTex = formTexture(e.getKey());
-            BufferedImage img = main != null ? OrePainter.paint(images.get(main), bases.get(main), deepslate) : deepslate;
+            BufferedImage img = main != null ? result.painted.get(main.toString()) : deepslate;
             if (main == null) {
                 plain++;
             }
             put(rm, file(formTex), img, main != null ? file(main) : null);
             map.registerSprite(formTex);
         }
-        CavesAndCliffsBackport.LOGGER.info("Modded ores: drew {} deepslate ore textures for {} forms; {} with no ore texture found{}.",
-                REDRAWN.size(), textures.size(), plain, KEPT.isEmpty() ? "" : "; kept as they are (no stone found under them): " + KEPT);
+        FAMILIES.clear();
+        FAMILIES.putAll(result.family);
+        CavesAndCliffsBackport.LOGGER.info("Modded ores: drew {} deepslate ore textures for {} forms ({} cut by a texture family); {} with no ore texture found{}.",
+                REDRAWN.size(), textures.size(), FAMILIES.size(), plain, KEPT.isEmpty() ? "" : "; kept as they are (no stone found under them): " + KEPT);
     }
 
     /**
@@ -516,6 +461,21 @@ public final class ModdedOreClient {
 
     public static ResourceLocation formSprite(ModdedOres.Form f) {
         return formTexture(f);
+    }
+
+    /** For the client self-test: texture name -> texture family, for textures a family cut at the last load. */
+    public static Map<String, Integer> families() {
+        return Collections.unmodifiableMap(FAMILIES);
+    }
+
+    /** For the client self-test: form registry name -> the shader block id it was given at the last shader load. */
+    public static Map<String, Integer> shaderIds() {
+        return Collections.unmodifiableMap(ShaderBlockIds.LAST);
+    }
+
+    /** For the client self-test: our blocks' entries (by their vanilla names) at the last shader load. */
+    public static Set<String> shaderNamed() {
+        return Collections.unmodifiableSet(ShaderBlockIds.NAMED);
     }
 
     /** For the client self-test: textures kept as they are at the last load (no stone found under them). */
