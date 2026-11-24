@@ -17,7 +17,7 @@ import static com.exiledradio.cavesandcliffsbackport.height.asm.Asm.*;
 
 /**
  * Other mods' own code that assumes y 0-255 (plan {@code docs/streams/moddedores.md}, O3): BuildCraft 8.0.0 (and
- * 7.99.24.8, same classes) and KAGIC X11p13. One class per target. Every site calls {@code height.compat}'s
+ * 7.99.24.8, same classes), KAGIC X11p13 and Scape and Run: Parasites 1.9.21. One class per target. Every site calls {@code height.compat}'s
  * {@code BuildCraftHooks} or {@code KagicHooks}, which answer the mod's own value in a world of 0-255, so only a
  * Caves &amp; Cliffs world sees a change. The patched sites push only the mod's own locals and fields: no Minecraft
  * member name is emitted. A miss leaves that class as its mod wrote it ({@link ClassPatch#modCompat}).
@@ -26,6 +26,7 @@ final class ModCompatPatches {
 
     static final String BC_HOOKS = "com/exiledradio/cavesandcliffsbackport/height/compat/BuildCraftHooks";
     static final String KAGIC_HOOKS = "com/exiledradio/cavesandcliffsbackport/height/compat/KagicHooks";
+    static final String PARASITES_HOOKS = "com/exiledradio/cavesandcliffsbackport/height/compat/ParasitesHooks";
     private static final String POS = "Lnet/minecraft/util/math/BlockPos;";
     private static final String TE = "Lnet/minecraft/tileentity/TileEntity;";
 
@@ -323,6 +324,31 @@ final class ModCompatPatches {
             replace(m, rubyY, list(new VarInsnNode(Opcodes.ALOAD, 2), kagic("meteorY", "(" + sender + ")D")));
             replace(m, soundY, list(new VarInsnNode(Opcodes.ALOAD, 2), kagic("meteorTop", "(" + sender + ")I")));
             replace(m, messageY, list(new VarInsnNode(Opcodes.ALOAD, 2), kagic("meteorTop", "(" + sender + ")I")));
+        }
+    }
+
+    /**
+     * {@code com.dhanantry.scapeandrunparasites.world.SRPWorldEntitySpawner} (Scape and Run: Parasites 1.9.21): SRP's
+     * own spawner, on by default ("Evolution Custom Spawner"), picks each attempt's height in
+     * {@code getRandomChunkPosition}, a copy of vanilla's that draws from 0, so parasites never spawned below y 0. The
+     * draw becomes {@code ParasitesHooks.spawnY}, the same change as vanilla's spawner gets (S1).
+     */
+    static final class ParasitesSpawnerPatch extends ModPatch {
+        ParasitesSpawnerPatch() {
+            super("com.dhanantry.scapeandrunparasites.world.SRPWorldEntitySpawner", "ParasitesSpawner");
+        }
+
+        @Override
+        protected void apply(ClassNode node) {
+            MethodNode m = method(node, "getRandomChunkPosition", "getRandomChunkPosition",
+                    "(" + WORLD_DESC + "II)" + POS);
+            // int l = world.rand.nextInt(Math.max(1, k > 0 ? k : chunk.getTopFilledSegment() + 16 - 1));
+            for (AbstractInsnNode n : expect("getRandomChunkPosition.y", m, 1,
+                    invoke(Opcodes.INVOKEVIRTUAL, "nextInt", "nextInt", "(I)I"), istore(-1))) {
+                replace(m, n, list(new VarInsnNode(Opcodes.ALOAD, 0),
+                        new MethodInsnNode(Opcodes.INVOKESTATIC, PARASITES_HOOKS, "spawnY",
+                                "(Ljava/util/Random;I" + WORLD_DESC + ")I", false)));
+            }
         }
     }
 }

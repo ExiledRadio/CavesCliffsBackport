@@ -257,6 +257,33 @@ Found while building, left as the mods do it:
     ore and structure generators with y ranges, and anything that loops `y > 0`. Each gets a site table and a patch in
     `height/compat/`, the same pattern as above.
 
+#### Scape and Run: Parasites 1.9.21 (2026-11-23, branch `claude/cc-srp-deep-spawns`)
+
+Reported: parasites never spawned below y 0 in Caves & Cliffs worlds. SRP spawns with a spawner of its own (on by
+default, config "Evolution Custom Spawner"): `SRPWorldEntitySpawner.findChunksForSpawning`, run from its world tick.
+Its `getRandomChunkPosition` is a copy of vanilla's `WorldEntitySpawner` method, so the attempt's height is
+`rand.nextInt(max(1, heightmap top rounded up to 16))`, always 0 or more. Vanilla's copy gets the height coremod's
+`SpawnerPatch` (`Heights.spawnY`); SRP's never did. Nothing else in the spawn path is bounded: the pack walk keeps the
+attempt's y, the placement check (`canSpawnAt` on the block below), the mob's `getCanSpawnHere` (sky light, block light,
+floor, difficulty, `spawnDays`) and `isNotColliding` all go through the world, which the coremod already serves below
+0, and SRP reads no chunk storage. With the spawner off ("Evolution Custom Spawner" false) SRP uses vanilla's spawner,
+which already covered negative y.
+
+| Class | Site | Pattern | Becomes |
+|---|---|---|---|
+| `com.dhanantry.scapeandrunparasites.world.SRPWorldEntitySpawner` | `getRandomChunkPosition.y` | `invokevirtual Random.nextInt(I)I; istore n` | `aload_0; ParasitesHooks.spawnY(Random, int, World)` = `Heights.spawnY`: SRP's own draw in a 0-255 world, the world's bottom up to the same bound in an extended one |
+
+`PatchCheck compat` against the release jar: the one site found. `sh tools/height/selftest.sh modcompat` with the
+dev-named jar in `eclipse/mods` on a fresh Caves & Cliffs world: 99 checks, 0 failures. In a 5x5-chunk area 2000 draws
+through SRP's patched method all equal a replay of SRP's code drawing from -64; 794 are below 0, the lowest -64. In a
+dark deepslate cave at y -40, 40 of 40 entries from SRP's own spawn list pass its placement and spawn checks and join
+the world. The same 2000 draws in the Nether (0-255) equal SRP's code as it wrote it, none below 0. With the patch left
+out the test fails 3 checks (draws, below-0 count, patched); the cave spawns still pass, so the height draw was the
+only thing keeping parasites above 0.
+
+Left as SRP does it: `EntityAIFlightLimits` keeps flying parasites at y 1 or higher, and SRP's own world generation
+(parasite balls, colonies, bushes) stops at y 0 or 1. These are not spawning.
+
 ## Tests
 
 *   O1: a self-test with stand-in mod ores (the dev environment can't load real coremod mods), checking blocks, drops,

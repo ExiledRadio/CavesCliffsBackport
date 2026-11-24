@@ -3,6 +3,7 @@
 *   **With Game Drops Backport, new worlds get its biomes where 26.3 places them**: the dappled forest beside cool plains and taigas, and sulfur caves deep under low inland ground. The rest of the biome map is unchanged. Worlds made before keep their biomes.
 *   **With Game Drops Backport, baby goats and axolotls get 26.1's models**, textures and animations. They follow Game Drops' Baby Models setting.
 *   **fingerspit's music** with Game Drops Backport: Ebb, Home, Memories, Nightly and Shores play in lush and dripstone caves and the mountain biomes, as in 26.2.
+*   **Scape and Run: Parasites mobs spawn below y 0** in Caves & Cliffs worlds, in the deepslate layer, as they do elsewhere underground. SRP's own spawner drew spawn heights from 0 up.
 
 # 1.1.2
 
