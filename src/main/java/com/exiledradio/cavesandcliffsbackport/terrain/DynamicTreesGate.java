@@ -1,23 +1,26 @@
 package com.exiledradio.cavesandcliffsbackport.terrain;
 
+import com.exiledradio.backportcore.compat.DynamicTrees;
 import com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.Decorator;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
-import net.minecraftforge.fml.common.Loader;
 
 import javax.annotation.Nullable;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.Set;
 
 /**
- * Dynamic Trees grows its own trees in a 1.12 world and cancels vanilla's: its {@code TreeGenCancelEventHandler} denies
- * 1.12's TREE and BIG_SHROOM decoration events (and CACTUS, unless {@code vanillaCactusWorldGen}) in every biome its
- * biome database says to. The 1.18 terrain places its trees itself, so this asks the same question of Dynamic Trees
- * directly, with that handler's logic, and the decorator leaves the 1.18 trees (or cacti) out of those chunks; Dynamic
- * Trees' own world generator then grows its trees there as in a Default world.
+ * Dynamic Trees grows its own trees in a 1.12 world and cancels 1.12's TREE and BIG_SHROOM decoration (and CACTUS,
+ * unless {@code vanillaCactusWorldGen}) in every biome its biome database says to. The 1.18 terrain places its trees
+ * itself, so each 1.18 tree (huge mushroom, cactus patch) asks Backport Core the same question for the biome its own
+ * biome filter read where it lands ({@link DynamicTrees#replacesTrees}, the 1.18 biome as the 1.12 biome the world
+ * stores for it) and steps aside where Dynamic Trees grows its own; Dynamic Trees' world generator then grows its
+ * trees there, each by the biome at its own spot. Asked per tree, not per chunk: a chunk across a biome border has
+ * both kinds of biome, and a chunk-wide answer put the 1.18 trees beside Dynamic Trees' on one side of the border or
+ * left the other side bare.
+ *
+ * <p>Per chunk ({@link #allows}), only the cactus patches 1.21.5's spring plants place (Tricky Trials) are asked, by
+ * the biome at the middle of the chunk's decoration square, as 1.12.2 decorates.
  *
  * <p>Asked directly, not through the decoration event: the 1.18 trees are placed while a chunk is generated, before it
  * is in the world, and other mods generate in that event (Biomes O' Plenty places its trees in it, which reads the
@@ -26,63 +29,39 @@ import java.util.Set;
 final class DynamicTreesGate implements Decorator.TreeGate {
 
     private final World world;
-    private final Object database;
-    private final Method getEntry;
-    private final Method cancels;
-    private final boolean vanillaCactus;
+    private final BiomeMap map;
 
-    private DynamicTreesGate(World world, Object database, Method getEntry, Method cancels, boolean vanillaCactus) {
+    private DynamicTreesGate(World world, BiomeMap map) {
         this.world = world;
-        this.database = database;
-        this.getEntry = getEntry;
-        this.cancels = cancels;
-        this.vanillaCactus = vanillaCactus;
+        this.map = map;
     }
 
-    /** The gate for a world, or null when Dynamic Trees is not installed or leaves this dimension alone. */
+    /** The gate for a world, or null when Dynamic Trees is not installed. */
     @Nullable
-    static Decorator.TreeGate of(World world) {
-        if (!Loader.isModLoaded("dynamictrees")) {
+    static Decorator.TreeGate of(World world, BiomeMap map) {
+        if (!DynamicTrees.loaded()) {
             return null;
         }
-        try {
-            Class<?> generator = Class.forName("com.ferreusveritas.dynamictrees.worldgen.TreeGenerator");
-            Class<?> configs = Class.forName("com.ferreusveritas.dynamictrees.ModConfigs");
-            Class<?> databaseClass = Class.forName("com.ferreusveritas.dynamictrees.worldgen.BiomeDataBase");
-            int dim = world.provider.getDimension();
-            Object instance = generator.getMethod("getTreeGenerator").invoke(null);
-            Object database = generator.getMethod("getBiomeDataBase", int.class).invoke(instance, dim);
-            Object blacklisted = generator.getField("DIMENSIONBLACKLISTED").get(null);
-            Set<?> dims = (Set<?>) configs.getField("dimensionBlacklist").get(null);
-            if (database == null || database == blacklisted || dims.contains(dim)) {
-                return null;
-            }
-            Field cactus = configs.getField("vanillaCactusWorldGen");
-            Method getEntry = databaseClass.getMethod("getEntry", Biome.class);
-            Method cancels = getEntry.getReturnType().getMethod("shouldCancelVanillaTreeGen");
-            CavesAndCliffsBackport.LOGGER.info("Dynamic Trees is installed: the 1.18 trees step aside in the biomes where it "
-                    + "grows its own.");
-            return new DynamicTreesGate(world, database, getEntry, cancels, cactus.getBoolean(null));
-        } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
-            CavesAndCliffsBackport.LOGGER.warn("Could not ask Dynamic Trees which biomes it grows trees in; the 1.18 trees "
-                    + "are placed everywhere, beside its own.", e);
-            return null;
-        }
+        CavesAndCliffsBackport.LOGGER.info("Dynamic Trees is installed: the 1.18 trees step aside in the biomes where it "
+                + "grows its own.");
+        return new DynamicTreesGate(world, map);
     }
 
     @Override
     public boolean allows(int cx, int cz, int kind) {
-        if (kind != TREES && kind != CACTUS || kind == CACTUS && this.vanillaCactus) {
+        if (kind != CACTUS) {
             return true;
         }
-        try {
-            // The handler reads the biome at the event's position, the chunk's corner. The chunk being generated is not
-            // in the world yet, so this is the biome provider's answer, which is the chunk's own.
-            Biome biome = this.world.getBiome(new BlockPos(cx << 4, 0, cz << 4));
-            Object entry = this.getEntry.invoke(this.database, biome);
-            return entry == null || !(Boolean) this.cancels.invoke(entry);
-        } catch (ReflectiveOperationException e) {
+        // The chunk being generated is not in the world yet, so this is the biome provider's answer, the column's own.
+        return !DynamicTrees.replacesCactus(this.world, new BlockPos((cx << 4) + 16, 0, (cz << 4) + 16));
+    }
+
+    @Override
+    public boolean allowsAt(int x, int z, int biome, int kind) {
+        if (kind != TREES && kind != CACTUS) {
             return true;
         }
+        Biome legacy = this.map.biome(biome, x, z);
+        return kind == TREES ? !DynamicTrees.replacesTrees(this.world, legacy) : !DynamicTrees.replacesCactus(this.world, legacy);
     }
 }

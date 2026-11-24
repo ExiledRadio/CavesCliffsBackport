@@ -162,6 +162,13 @@ public final class HeightContent {
             }
         }
         List<String> missed = PatchReport.missed();
+        for (String site : missed) {
+            if (site.startsWith(ValkyrieCheck.LABEL_PREFIX)) {
+                return "Valkyrie " + ValkyrieCheck.version() + " is installed and its render chunk code could not be "
+                        + "adjusted for y -64 to 319 (made for Valkyrie " + ValkyrieCheck.MADE_FOR + "; missed: " + missed
+                        + "). Remove Valkyrie or install that version";
+            }
+        }
         if (!missed.isEmpty()) {
             return missed.size() + " patch site(s) not found (" + missed + "); another mod has probably changed that code";
         }
@@ -174,6 +181,10 @@ public final class HeightContent {
                             + " was not patched (not read through the transformers)";
                 }
             }
+        }
+        String valkyrie = ValkyrieCheck.unpatched();
+        if (valkyrie != null) {
+            return valkyrie;
         }
         if (phosphor) {
             // Its engine classes load above; MixinChunk is read when Chunk loads (above, at the latest). Every one

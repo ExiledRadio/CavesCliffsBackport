@@ -155,7 +155,17 @@ final class ModDecoration {
         if (a == null || b == null) {
             return a == null ? b : a;
         }
-        return (cx, cz, kind) -> a.allows(cx, cz, kind) && b.allows(cx, cz, kind);
+        return new Decorator.TreeGate() {
+            @Override
+            public boolean allows(int cx, int cz, int kind) {
+                return a.allows(cx, cz, kind) && b.allows(cx, cz, kind);
+            }
+
+            @Override
+            public boolean allowsAt(int x, int z, int biome, int kind) {
+                return a.allowsAt(x, z, biome, kind) && b.allowsAt(x, z, biome, kind);
+            }
+        };
     }
 
     /**

@@ -85,13 +85,13 @@ Every feature can be turned off in Backport Core's settings screen, under Mod Op
 
 **Quark**: its marble, limestone, jasper and slate, its underground biomes and its varied dungeons all generate in Caves & Cliffs worlds. 1.18's granite, diorite and andesite blobs step aside where Quark places its own. Quark's candles, speleothems and crystals live beside ours.
 
-**Dynamic Trees**: its trees replace the 1.18 trees, so they don't grow twice.
+**Dynamic Trees**: its trees replace the 1.18 trees, tree by tree by the biome each stands in, so they don't grow twice.
 
 **Realistic Terrain Generation and Open Terrain Generator**: new RTG and OTG worlds run from y -64 to 319. Their own terrain, biomes and structures stay from y 0 up. Below y 0 come 1.18's deepslate, caves, aquifers, ores, lush caves, dripstone caves and, with Wild Update Backport, the deep dark.
 
 **Cubic Chunks**: the Caves & Cliffs world type becomes a cubic world with the same 1.18 terrain, block for block, from y -64 to 319.
 
-**Lighting and rendering**: Alfheim 1.6, Phosphor 0.2.6 and 0.2.7, Hesperus 0.2.9.1 to 0.2.9.3, Celeritas, Nothirium, VintageFix, Entity Culling and RenderLib all light and draw y -64 to 319. With Nothirium and shaders together, flying fast can run Nothirium out of direct memory; a larger `-XX:MaxDirectMemorySize` helps.
+**Lighting and rendering**: Alfheim 1.6, Phosphor 0.2.6 and 0.2.7, Hesperus 0.2.9.1 to 0.2.9.3, Celeritas, Nothirium, VintageFix, Valkyrie 0.3-Dev-5, Entity Culling and RenderLib all light and draw y -64 to 319. With Nothirium and shaders together, flying fast can run Nothirium out of direct memory; a larger `-XX:MaxDirectMemorySize` helps.
 
 **RLCraft and RLCraft Dregora**: tested in both. On Dregora's Cleanroom instances, use Fluidlogged API 3.3.3. A Caves & Cliffs world replaces Open Terrain Generator's terrain, so Dregora's own biomes and structures are only in Default worlds. Default worlds still get the 1.17 blocks, ores, geodes and cave biomes in new chunks.
 
