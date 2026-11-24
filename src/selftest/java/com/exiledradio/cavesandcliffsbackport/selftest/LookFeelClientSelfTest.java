@@ -105,7 +105,7 @@ public final class LookFeelClientSelfTest {
             }
             case 2:
                 mc.getSaveLoader().deleteWorldDirectory(WORLD);
-                mc.launchIntegratedServer(WORLD, WORLD, new WorldSettings(1718L, GameType.CREATIVE, false, false, WorldType.FLAT));
+                mc.launchIntegratedServer(WORLD, WORLD, new WorldSettings(1718L, GameType.CREATIVE, false, false, WorldType.FLAT).enableCommands());
                 this.state = 3;
                 return;
             case 3:
@@ -144,6 +144,8 @@ public final class LookFeelClientSelfTest {
                 return;
             case 6:
                 ok(Look118Client.debugEdits > 0, "the F3 rows went through 1.18.2's step: " + Look118Client.debugEdits);
+                mc.gameSettings.showDebugInfo = false;
+                aloneKeys(mc);
                 this.shot = "cc_lookfeel_f3.png";
                 this.wait = 5;
                 this.state = 7;
@@ -151,6 +153,29 @@ public final class LookFeelClientSelfTest {
             default:
                 finish(mc);
         }
+    }
+
+    /**
+     * Backport Core 1.4.7, with Caves &amp; Cliffs the only backport: 1.16's F3 + F4 opens the game mode switcher and 1.13's
+     * command suggestions are on (both from Core, no Nether Update or Update Aquatic installed).
+     */
+    private void aloneKeys(Minecraft mc) {
+        if (net.minecraftforge.fml.common.Loader.isModLoaded("netherupdatebackport") || net.minecraftforge.fml.common.Loader.isModLoaded("updateaquaticbackport")) {
+            ok(true, "alone: skipped, an earlier backport is installed");
+            return;
+        }
+        java.util.Map<Integer, com.exiledradio.backportcore.presentation.DebugKeys.Key> keys = com.exiledradio.backportcore.presentation.DebugKeys
+                .map(Presentation.installed(com.exiledradio.backportcore.presentation.LookArea.DEBUG));
+        com.exiledradio.backportcore.presentation.DebugKeys.Key f4 = keys.get(org.lwjgl.input.Keyboard.KEY_F4);
+        ok(f4 != null && f4.action != null && "debug.gamemodes.help".equals(f4.helpKey), "alone: F3 + F4 is in the F3 keys: " + f4);
+        if (f4 != null && f4.action != null) {
+            f4.action.run();
+            ok(mc.currentScreen instanceof com.exiledradio.backportcore.presentation.versions.client.GuiGameModeSwitcher,
+                    "alone: F3 + F4 opens the game mode switcher: " + mc.currentScreen);
+            mc.displayGuiScreen(null);
+        }
+        com.exiledradio.backportcore.presentation.option.ToggleOption suggest = Presentation.commandSuggestions();
+        ok(suggest != null && suggest.get(), "alone: 1.13's command suggestions are on: " + suggest);
     }
 
     /** height.defaultWorldType: a new Create World screen starts on Caves & Cliffs; one re-creating a world keeps its type. */

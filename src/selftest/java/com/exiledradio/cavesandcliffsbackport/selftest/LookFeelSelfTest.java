@@ -48,6 +48,35 @@ public final class LookFeelSelfTest implements SelfTest {
         defaults(c);
         text(c);
         numbers(c);
+        alone(c);
+    }
+
+    /**
+     * Backport Core 1.4.7: with Caves &amp; Cliffs the only backport installed, every earlier version's look and feel is
+     * still there, from Core (1.13's command suggestions, 1.14's scroll options, 1.15's toggles, 1.16's FOV Effects).
+     */
+    private static void alone(Check c) {
+        String[] others = {"updateaquaticbackport", "villagerbackport", "buzzybeesbackport", "netherupdatebackport", "wildupdatebackport",
+                "trailsandtalesbackport", "trickytrialsbackport", "gamedropsbackport"};
+        for (String other : others) {
+            if (net.minecraftforge.fml.common.Loader.isModLoaded(other)) {
+                c.ok(true, "alone: skipped, " + other + " is installed");
+                return;
+            }
+        }
+        com.exiledradio.backportcore.presentation.option.ToggleOption suggest = Presentation.commandSuggestions();
+        c.ok(suggest != null && "updateaquaticbackport:auto_suggestions".equals(suggest.id()) && suggest.isCoreOwned(),
+                "alone: 1.13's command suggestions are on, from Core: " + suggest);
+        c.ok(suggest != null && suggest.isShown() && Presentation.optionsOn(OptionScreen.CHAT).contains(suggest),
+                "alone: Chat Settings shows Command Suggestions");
+        for (String id : new String[] {"updateaquaticbackport:biome_blend_radius", "villagerbackport:mouse_wheel_sensitivity",
+                "buzzybeesbackport:toggle_crouch", "netherupdatebackport:fov_effect_scale", "netherupdatebackport:entity_distance_scaling"}) {
+            PresentationOption o = Presentation.option(id);
+            c.ok(o != null && o.isCoreOwned() && o.isShown(), "alone: " + id + " is Core's and shows");
+        }
+        Contribution v116 = Presentation.coreContribution("1.16");
+        c.ok(v116 != null && Presentation.installed().contains(v116), "alone: Core's 1.16 pieces apply below 1.18");
+        c.ok(Presentation.multiplayerWarning() != null && Presentation.titleAccessibilityIcon() != null, "alone: the multiplayer warning and the Accessibility icon");
     }
 
     private static void registration(Check c) throws IOException {
