@@ -101,7 +101,10 @@ public final class DeepslateLayer implements IWorldGenerator {
         if (!dimOk || Arrays.asList(ModConfig.deepslate.skipWorldTypes).contains(world.getWorldType().getName())) {
             return false;
         }
-        return com.exiledradio.backportcore.terrain.WorldHeights.minY(world) >= 0;
+        // A hybrid world (RTG, OTG with y -64..319): its own terrain from y 0 up gets the layer, 1.18's below has its own.
+        return com.exiledradio.backportcore.terrain.WorldHeights.minY(world) >= 0
+                || com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade.of(world) != null
+                && com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade.of(world).hybrid();
     }
 
     /** @return the status of a loaded chunk, for tests; -1 if untracked */

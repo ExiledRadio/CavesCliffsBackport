@@ -114,6 +114,10 @@ def srgMcp = "${gradle.gradleUserHomeDir}/caches/minecraft/de/oceanlabs/mcp/mcp_
     if (clienttest) {
         task.systemProperty 'cavesandcliffsbackport.clienttest', clienttest
     }
+    // -Pclienttestworld=RTG: the client test's world of another mod's type (that mod's jar in eclipse/mods).
+    if (project.hasProperty('clienttestworld')) {
+        task.systemProperty 'cavesandcliffsbackport.clienttest.world', project.property('clienttestworld')
+    }
 }
 
 processResources {

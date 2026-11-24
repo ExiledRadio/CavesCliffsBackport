@@ -41,5 +41,7 @@ public final class NetworkHandler {
                 com.exiledradio.cavesandcliffsbackport.glowsquid.PacketGlowInk.class, 40, net.minecraftforge.fml.relauncher.Side.CLIENT);
         channel.registerMessage(com.exiledradio.cavesandcliffsbackport.terrain.PacketChunkBiomes.Handler.class,
                 com.exiledradio.cavesandcliffsbackport.terrain.PacketChunkBiomes.class, 65, net.minecraftforge.fml.relauncher.Side.CLIENT);
+        channel.registerMessage(com.exiledradio.cavesandcliffsbackport.height.HeightPacket.Handler.class,
+                com.exiledradio.cavesandcliffsbackport.height.HeightPacket.class, 66, net.minecraftforge.fml.relauncher.Side.CLIENT);
     }
 }

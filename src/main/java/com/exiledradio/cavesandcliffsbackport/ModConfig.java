@@ -485,6 +485,13 @@ public final class ModConfig {
         @Config.LangKey("config.cavesandcliffsbackport.height.defaultWorldType")
         public boolean defaultWorldType = true;
 
+        @Config.Comment({"Other mods' world types (their names, as in level.dat) whose new worlds also run from y -64 to 319.",
+                "Their own terrain stays from y 0 up; below it each chunk gets 1.18's deepslate, caves, aquifers, ores,",
+                "lush caves, dripstone caves and the deep dark, as 1.18 gave old worlds. Remove a name to keep its new",
+                "worlds at y 0 to 255. Existing worlds change only with /cavesandcliffs upgradeworld."})
+        @Config.LangKey("config.cavesandcliffsbackport.height.otherWorldTypes")
+        public String[] otherWorldTypes = {"RTG", "OTG"};
+
         @Config.RequiresWorldRestart
         @Config.Comment({"Worker threads that build the 1.18 terrain of a Caves & Cliffs world ahead of the server thread.",
                 "0: the computer's cores less two, from 1 to 6."})

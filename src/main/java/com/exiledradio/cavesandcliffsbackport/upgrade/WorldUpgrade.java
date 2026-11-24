@@ -52,6 +52,11 @@ public final class WorldUpgrade {
     private int oldCount;
     private int doneCount;
     private boolean dirty;
+    /**
+     * Another mod's world type (RTG, OTG: {@code height.otherWorldTypes}) with y -64..319: its own generator makes every
+     * chunk from y 0 up, so every chunk is old and gets 1.18's part below 0 as it is made or first loads.
+     */
+    private boolean hybrid;
 
     private WorldUpgrade(File file) {
         this.file = file;
@@ -82,12 +87,51 @@ public final class WorldUpgrade {
 
     /** Whether the chunk existed when the world was upgraded (BlendingData's old noise). */
     public boolean isOld(int cx, int cz) {
-        return get(old, cx, cz);
+        return hybrid || get(old, cx, cz);
+    }
+
+    /**
+     * Whether this world keeps another mod's generator (RTG, OTG) from y 0 up: every chunk gets 1.18's part below 0,
+     * and that generator places its structures as before (no structure guard).
+     */
+    public boolean hybrid() {
+        return hybrid;
+    }
+
+    /** Whether new worlds of this type get y -64..319 under their own terrain ({@code height.otherWorldTypes}). */
+    public static boolean hybridType(@Nullable WorldType type) {
+        if (type == null || type == WorldType.DEFAULT || type == HeightContent.worldType()) {
+            return false;
+        }
+        for (String name : com.exiledradio.cavesandcliffsbackport.ModConfig.height.otherWorldTypes) {
+            if (name != null && name.trim().equalsIgnoreCase(type.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * A new world of a {@link #hybridType} (no region files yet), from {@code HeightHooks.worldConstructed}: it runs from
+     * y -64 to 319 under its own terrain from the start.
+     */
+    public static void startHybrid(World world, File dir) {
+        // Its part below 0 is 1.18's terrain, with the newer biomes the installed backports have, as a new world's.
+        com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain.chooseModern(dir);
+        WorldUpgrade up = new WorldUpgrade(new File(new File(dir, "data"), FILE));
+        up.hybrid = true;
+        up.dirty = true;
+        up.save();
+        synchronized (WorldUpgrade.class) {
+            WORLDS.put(world, up);
+        }
+        CavesAndCliffsBackport.LOGGER.info("New {} world: y -64 to 319. Its own terrain from y 0 up; below 0 each chunk "
+                + "gets 1.18's as it is made.", world.getWorldInfo().getTerrainType().getName());
     }
 
     /** Whether the chunk is an old one that has not had its part below y 0 yet. */
     public boolean pending(int cx, int cz) {
-        return isOld(cx, cz) && !get(done, cx, cz);
+        return (hybrid || get(old, cx, cz)) && !get(done, cx, cz);
     }
 
     /** The chunk got its part below y 0 (or never will: no bedrock at y 0); saved with the world. */
@@ -108,6 +152,9 @@ public final class WorldUpgrade {
 
     /** Whether any old chunk lies within r chunks of cx, cz. */
     public boolean oldWithin(int cx, int cz, int r) {
+        if (hybrid) {
+            return true;
+        }
         for (int dx = -r; dx <= r; dx++) {
             for (int dz = -r; dz <= r; dz++) {
                 if (isOld(cx + dx, cz + dz)) {
@@ -149,6 +196,7 @@ public final class WorldUpgrade {
             }
             WorldUpgrade up = new WorldUpgrade(file);
             up.scan(new File(dir, "region"));
+            up.hybrid = hybridType(info.getTerrainType());
             NBTTagCompound out = up.write();
             out.setString("State", UPGRADED);
             out.setLong("Upgraded", System.currentTimeMillis());
@@ -160,9 +208,15 @@ public final class WorldUpgrade {
                 return;
             }
             tag = out;
-            CavesAndCliffsBackport.LOGGER.info("World upgraded to y -64..319: {} old chunks get their part below y 0 as "
-                    + "they load; new chunks blend toward them. level.dat was backed up as {}.", up.oldCount,
-                    UpgradeCommand.BACKUP);
+            if (up.hybrid) {
+                CavesAndCliffsBackport.LOGGER.info("World upgraded to y -64..319: {} old chunks get their part below y 0 as "
+                        + "they load, and so does every new {} chunk as it is made. level.dat was backed up as {}.",
+                        up.oldCount, info.getTerrainType().getName(), UpgradeCommand.BACKUP);
+            } else {
+                CavesAndCliffsBackport.LOGGER.info("World upgraded to y -64..319: {} old chunks get their part below y 0 as "
+                        + "they load; new chunks blend toward them. level.dat was backed up as {}.", up.oldCount,
+                        UpgradeCommand.BACKUP);
+            }
             state = UPGRADED;
         }
         if (!UPGRADED.equals(state)) {
@@ -175,12 +229,14 @@ public final class WorldUpgrade {
                     + "before playing it.", HeightContent.refusal());
             return;
         }
-        if (info.getTerrainType() != ours) {
+        boolean hybrid = tag.getBoolean("Hybrid");
+        if (!hybrid && info.getTerrainType() != ours) {
             // level.dat is written by the game, at its next save; until then it may still name the old type.
             info.setTerrainType(ours);
         }
         WorldUpgrade up = new WorldUpgrade(file);
         up.read(tag);
+        up.hybrid = hybrid;
         synchronized (WorldUpgrade.class) {
             WORLDS.put(world, up);
         }
@@ -193,8 +249,8 @@ public final class WorldUpgrade {
         if (why != null) {
             return why;
         }
-        if (info.getTerrainType() != WorldType.DEFAULT) {
-            return "the world type is " + info.getTerrainType().getName() + ", not default";
+        if (info.getTerrainType() != WorldType.DEFAULT && !hybridType(info.getTerrainType())) {
+            return "the world type is " + info.getTerrainType().getName() + ", not default (or one of height.otherWorldTypes)";
         }
         File height = new File(new File(dir, "data"), HeightHooks.DATA_FILE);
         NBTTagCompound saved = read(height);
@@ -294,6 +350,9 @@ public final class WorldUpgrade {
 
     private NBTTagCompound write() {
         NBTTagCompound tag = new NBTTagCompound();
+        if (hybrid) {
+            tag.setBoolean("Hybrid", true);
+        }
         tag.setTag("Old", list(old));
         tag.setTag("Done", list(done));
         return tag;

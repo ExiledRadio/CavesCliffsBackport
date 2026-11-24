@@ -63,6 +63,17 @@ public final class HeightClientSelfTest {
     /** A Default world instead of a Caves & Cliffs one. */
     private final boolean defaultWorld = "default".equals(System.getProperty(CavesAndCliffsBackport.MOD_ID + ".clienttest.world"))
             || new java.io.File("selftest-client-world-default").isFile();
+    /**
+     * {@code -Dcavesandcliffsbackport.clienttest.world=RTG} (any other world type by name): a new world of another mod's
+     * type in {@code height.otherWorldTypes}, extended under its own terrain; the client learns its height from the
+     * server's {@code height.HeightPacket}, and the rest of the test runs as in a Caves &amp; Cliffs world.
+     */
+    private net.minecraft.world.WorldType otherType;
+
+    private static net.minecraft.world.WorldType otherType() {
+        String name = System.getProperty(CavesAndCliffsBackport.MOD_ID + ".clienttest.world");
+        return name == null || "default".equals(name) ? null : net.minecraft.world.WorldType.byName(name);
+    }
 
     /** Frame-rate sampling: the state to go on to, and the samples (one a second). */
     private int fpsNext;
@@ -152,7 +163,9 @@ public final class HeightClientSelfTest {
                     return;
                 }
                 mc.getSaveLoader().deleteWorldDirectory(WORLD);
-                WorldSettings settings = new WorldSettings(1718L, GameType.CREATIVE, true, false, HeightContent.worldType());
+                WorldSettings settings = new WorldSettings(1718L, GameType.CREATIVE, true, false,
+                        (this.otherType = otherType()) != null ? this.otherType : HeightContent.worldType());
+                CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST world type {}", settings.getTerrainType().getName());
                 mc.launchIntegratedServer(WORLD, WORLD, settings);
                 this.state = 1;
                 return;

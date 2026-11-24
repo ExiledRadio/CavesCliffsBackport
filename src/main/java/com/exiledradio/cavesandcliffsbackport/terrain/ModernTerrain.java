@@ -93,6 +93,40 @@ public final class ModernTerrain {
         return g;
     }
 
+    /**
+     * The 1.18 pipeline of a server world: its chunk generator in a Caves &amp; Cliffs world, or in a hybrid world (another
+     * mod's generator from y 0 up, {@code upgrade.WorldUpgrade#hybrid}) the one that gives each chunk its part below
+     * y 0, made on first use; null for any other world.
+     */
+    @Nullable
+    public static ModernGenerator host(World world) {
+        if (!(world instanceof WorldServer)) {
+            return null;
+        }
+        ChunkProviderServer provider = ((WorldServer) world).getChunkProvider();
+        IChunkGenerator generator = provider == null ? null : provider.chunkGenerator;
+        if (generator instanceof ModernGenerator) {
+            return (ModernGenerator) generator;
+        }
+        com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade up =
+                com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade.of(world);
+        if (up == null || !up.hybrid() || provider == null) {
+            return null;
+        }
+        synchronized (ModernTerrain.class) {
+            ModernGenerator g = GENERATORS.get(world);
+            if (g == null) {
+                ModernTerrain t = of(world);
+                if (t == null) {
+                    return null;
+                }
+                g = new ModernGenerator(world, t, true);
+                GENERATORS.put(world, g);
+            }
+            return g;
+        }
+    }
+
     /** The 1.18 biome provider for a world type's getBiomeProvider, or null for 1.12's. */
     @Nullable
     public static net.minecraft.world.biome.BiomeProvider biomeProvider(World world) {
@@ -274,20 +308,29 @@ public final class ModernTerrain {
     // ---------------------------------------------------------------------------------------------
     // Events
 
-    /** 1.18's biome id at a block of a world with 1.18 terrain (three dimensions), or -1 for any other world. */
+    /**
+     * 1.18's biome id at a block of a world with 1.18 terrain (three dimensions), or -1 for any other world. In a hybrid
+     * world only below y 0: from y 0 up its own generator's biomes stand, and this mod's 1.17 cave regions with them.
+     */
     public static int biomeAt(World world, int x, int y, int z) {
-        if (world.isRemote || !owns(world)) {
+        if (world.isRemote) {
             return -1;
         }
-        return ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).biome3d(x, y, z);
+        ModernGenerator g = host(world);
+        if (g == null || g.hybrid && y >= 0) {
+            return -1;
+        }
+        return g.biome3d(x, y, z);
     }
 
     /** Packs the held chunks once a Caves &amp; Cliffs world stops generating (Pipeline.tick). */
     @SubscribeEvent
     public static void onWorldTick(net.minecraftforge.fml.common.gameevent.TickEvent.WorldTickEvent event) {
-        if (event.phase == net.minecraftforge.fml.common.gameevent.TickEvent.Phase.END && !event.world.isRemote
-                && owns(event.world)) {
-            ((ModernGenerator) ((WorldServer) event.world).getChunkProvider().chunkGenerator).tick();
+        if (event.phase == net.minecraftforge.fml.common.gameevent.TickEvent.Phase.END && !event.world.isRemote) {
+            ModernGenerator g = host(event.world);
+            if (g != null) {
+                g.tick();
+            }
         }
     }
 
@@ -295,8 +338,9 @@ public final class ModernTerrain {
     @SubscribeEvent
     public static void onWorldSave(WorldEvent.Save event) {
         World world = event.getWorld();
-        if (!world.isRemote && owns(world)) {
-            ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).saveHeld();
+        ModernGenerator g = world.isRemote ? null : host(world);
+        if (g != null) {
+            g.saveHeld();
         }
         com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade upgrade =
                 com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade.of(world);
@@ -312,9 +356,9 @@ public final class ModernTerrain {
     @SubscribeEvent
     public static void onChunkDataLoad(ChunkDataEvent.Load event) {
         World world = event.getWorld();
-        if (world != null && !world.isRemote && owns(world)) {
-            ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).chunkLoaded(event.getChunk(),
-                    event.getData());
+        ModernGenerator g = world == null || world.isRemote ? null : host(world);
+        if (g != null) {
+            g.chunkLoaded(event.getChunk(), event.getData());
         }
     }
 
@@ -325,8 +369,8 @@ public final class ModernTerrain {
     @SubscribeEvent
     public static void onChunkSave(ChunkDataEvent.Save event) {
         World world = event.getWorld();
-        if (!world.isRemote && owns(world)) {
-            ModernGenerator g = (ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator;
+        ModernGenerator g = world.isRemote ? null : host(world);
+        if (g != null) {
             g.beforeChunkSave();
             g.chunkSaving(event.getChunk(), event.getData());
         }
@@ -335,18 +379,23 @@ public final class ModernTerrain {
     @SubscribeEvent
     public static void onChunkUnload(ChunkEvent.Unload event) {
         World world = event.getWorld();
-        if (!world.isRemote && owns(world)) {
-            ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).biomes3d.remove(
-                    event.getChunk().x, event.getChunk().z);
+        ModernGenerator g = world.isRemote ? null : host(world);
+        if (g != null) {
+            g.biomes3d.remove(event.getChunk().x, event.getChunk().z);
         }
     }
 
-    /** A chunk the generator just made is now in the world: its waterlogged blocks get their water. */
+    /**
+     * A chunk the generator just made is now in the world: its waterlogged blocks get their water. In a hybrid world a
+     * chunk its own generator just made gets its part below y 0 first, before it populates.
+     */
     @SubscribeEvent
     public static void onChunkLoad(ChunkEvent.Load event) {
         World world = event.getWorld();
-        if (!world.isRemote && owns(world)) {
-            ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).placeWater(event.getChunk());
+        ModernGenerator g = world.isRemote ? null : host(world);
+        if (g != null) {
+            g.hybridChunkMade(event.getChunk());
+            g.placeWater(event.getChunk());
         }
     }
 
@@ -370,8 +419,18 @@ public final class ModernTerrain {
         if (upgrade != null) {
             upgrade.save();
         }
-        if (!world.isRemote && owns(world)) {
-            ((ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator).shutdown();
+        ModernGenerator g = null;
+        if (!world.isRemote) {
+            synchronized (ModernTerrain.class) {
+                g = owns(world) ? (ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator
+                        : GENERATORS.get(world);
+                if (g != null && !owns(world) && !g.hybrid) {
+                    g = null;
+                }
+            }
+        }
+        if (g != null) {
+            g.shutdown();
         }
         synchronized (ModernTerrain.class) {
             WORLDS.remove(world);

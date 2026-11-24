@@ -106,10 +106,10 @@ public class PacketChunkBiomes implements IMessage {
                 return;
             }
             World world = chunk.getWorld();
-            if (world.isRemote || !ModernTerrain.owns(world)) {
+            ModernGenerator gen = world.isRemote ? null : ModernTerrain.host(world);
+            if (gen == null) {
                 return;
             }
-            ModernGenerator gen = (ModernGenerator) ((WorldServer) world).getChunkProvider().chunkGenerator;
             byte[] q = gen.quarts(chunk.x, chunk.z);
             if (q != null) {
                 NetworkHandler.channel.sendTo(new PacketChunkBiomes(world.provider.getDimension(), gen.zoomSeed(),

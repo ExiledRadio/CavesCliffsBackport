@@ -1,3 +1,9 @@
+# 1.1.6
+
+*   **RTG and OTG worlds run from y -64 to 319.** New Realistic Terrain Generation and Open Terrain Generator worlds keep their own terrain, biomes and structures from y 0 up. Below y 0 every chunk gets 1.18's deepslate, caves, aquifers, ores, lush caves, dripstone caves and, with Wild Update Backport, the deep dark, as 1.18 gave old worlds. The config's `otherWorldTypes` lists the world types. Existing worlds keep y 0-255.
+*   **`/cavesandcliffs upgradeworld` upgrades RTG and OTG worlds too.** They stay RTG and OTG worlds: old and new chunks keep their own terrain from y 0 up and get 1.18's below.
+*   Upgraded worlds keep the deep dark below y 0 (Wild Update Backport), as 1.19 does.
+
 # 1.1.5
 
 *   **Upgrade an existing world to y -64 to 319**, as 1.18 upgraded old worlds: `/cavesandcliffs upgradeworld` (operators; it asks you to confirm and backs up level.dat), then restart. Explored chunks keep everything from y 0 up. Each one gets deepslate, caves, ores and aquifers below y 0 when it first loads, and its bedrock floor moves to y -64. New chunks get the 1.18 terrain and blend into the old ones at the border. No new structure starts in or reaches into an old chunk. Default worlds only; it can't be undone, so back up the world first.

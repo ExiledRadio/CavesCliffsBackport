@@ -29,7 +29,7 @@ Default is still under World Type, for 1.12's terrain, and a server keeps the ty
 
 Explored chunks keep everything from y 0 up. Below them come deepslate, caves, ores and aquifers down to y -64, and their bedrock floor moves there too. New chunks get 1.18's terrain and biomes, blended into the old ones at the border. No new structure starts in or reaches into an old chunk.
 
-It works on Default worlds and can't be undone, so back up the world first.
+It works on Default, RTG and OTG worlds and can't be undone, so back up the world first. RTG and OTG worlds stay RTG and OTG worlds: their new chunks keep their own terrain from y 0 up and get 1.18's below.
 
 |                                                                                        |                                                                                         |
 | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -86,6 +86,8 @@ Every feature can be turned off in Backport Core's settings screen, under Mod Op
 **Quark**: its marble, limestone, jasper and slate, its underground biomes and its varied dungeons all generate in Caves & Cliffs worlds. 1.18's granite, diorite and andesite blobs step aside where Quark places its own. Quark's candles, speleothems and crystals live beside ours.
 
 **Dynamic Trees**: its trees replace the 1.18 trees, so they don't grow twice.
+
+**Realistic Terrain Generation and Open Terrain Generator**: new RTG and OTG worlds run from y -64 to 319. Their own terrain, biomes and structures stay from y 0 up. Below y 0 come 1.18's deepslate, caves, aquifers, ores, lush caves, dripstone caves and, with Wild Update Backport, the deep dark.
 
 **Cubic Chunks**: the Caves & Cliffs world type becomes a cubic world with the same 1.18 terrain, block for block, from y -64 to 319.
 

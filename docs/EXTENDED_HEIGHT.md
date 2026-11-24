@@ -305,3 +305,48 @@ below 0, 1.45 million deepslate, 12,660 deepslate ores, bedrock at -64 in every 
 the new terrain's ground is 0.3 blocks from the old on average (the unblended 1.18 terrain 1.9). 16 structure starts
 since the upgrade: 12 built, all clear of the old chunks; 4 emptied; the village saved before the upgrade keeps its
 pieces.
+
+## 10. Other mods' world types (RTG, OTG)
+
+New worlds of a world type in `height.otherWorldTypes` (default `RTG`, `OTG`) run from y -64 to 319 under their own
+terrain. They keep their world type, chunk generator, biome provider and structures. Each chunk gets 1.18's part below
+y 0 by section 9's old-chunk rule, so every chunk of such a world is an old chunk (`WorldUpgrade.hybrid`, saved as
+`Hybrid` in `cavesandcliffsbackport_upgrade.dat`). The user chose this level on 2026-11-24 ("A"). The alternative, 1.18's
+caves and aquifers from their surface down, was not built.
+
+* **Which worlds.** `HeightHooks.worldConstructed`: a world with no saved height and no region files, of a listed type.
+  It is extended, and `WorldUpgrade.startHybrid` writes the state and the 1.18 terrain choice (`ModernTerrain.chooseModern`,
+  with the installed backports' newer biomes). An existing world of a listed type stays 0-255, but
+  `/cavesandcliffs upgradeworld` accepts it. Its old chunks upgrade as in section 9, and it stays its type.
+* **The pipeline beside their generator.** `ModernTerrain.host(world)` is the world's `ModernGenerator` in a Caves &
+  Cliffs world. In a hybrid world it is a `ModernGenerator` built with `hybrid` (made on first use), which is not the
+  world's generator. It replaces no structure generator and has no beards. The world events (tick, save, chunk load,
+  save and unload, world unload) go to it. `ModernTerrain.owns` stays false, so this mod's 1.17 generators keep
+  decorating y 0-255. The deepslate layer runs there too (`DeepslateLayer.eligible`).
+* **When a chunk gets its part.** A chunk loaded from disk gets it at `ChunkDataEvent.Load` (section 9). A chunk the
+  generator just made gets it at `ChunkEvent.Load`. `ChunkProviderServer.provideChunk` posts that right after
+  `generateChunk` and before `populate`, so 1.12's population sees the finished chunk
+  (`ModernGenerator.hybridChunkMade`). The chunk's sky light map is generated again.
+* **Neighbors not made yet** (`UpgradeTerrain.hybrid`). They count as old and still to upgrade, with their blocks from
+  y 0 up unknown. Features read the noise's blocks there and write only below 0 (`Region.writeTop`). Nothing blends:
+  every chunk is old, and 1.18's Blender inside old land changes nothing. The carvers keep 1.18's mask around old
+  chunks. 1.12's population decorates from y 0 up (`decorateAll` is never set).
+* **Biomes.** A held chunk's fill may run before the chunk exists, so its stored biomes are redone from the real chunk
+  when it is written (`Upgrade.retrogenBiomes`). From y 0 up they are its column biome. Below 0 they are the column
+  biome too, except lush caves, dripstone caves and the deep dark, which stay (1.19 keeps the deep dark as well; Default
+  upgrades now do too). A biome 1.18 has no counterpart of (OTG's own, other mods') is plains there, not the noise's.
+  `ModernTerrain.biomeAt` answers only below 0 in these worlds, so from y 0 up this mod's 1.17 cave regions decide
+  lush and dripstone as before.
+* **Structures.** The structure guard does nothing in a hybrid world. The generator's structures are the same ones
+  as before the upgrade and start where they always did.
+* **The client.** It decides extended height from the world type, which here is RTG's or OTG's. `height.HeightPacket`
+  (id 66) tells it the overworld is extended, and `height.client.ClientHeight` extends the client world and lays out
+  the render chunks again (`RenderGlobal.loadRenderers`). It is sent from `EntityJoinWorldEvent` for the player. On
+  login and through a portal, PlayerList adds the player to the world before sending chunks, so the packet arrives
+  first. A respawn sends the chunks first (`recreatePlayerEntity`), so after one the player's chunks are sent again
+  (`PlayerChunkMap` remove and add).
+* **Tests.** `sh tools/height/hybrid.sh <server dir> <RTG|OTG> <jar>` runs four servers (`HybridSelfTest`):
+  - `hybridnew`: a fresh world;
+  - `hybridreload`: a restart;
+  - `hybridold1`: a 0-255 world of the type, then the command;
+  - `hybridold2`: the upgrade.

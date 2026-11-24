@@ -120,8 +120,19 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
     public long chunks;
     /** Whose code 1.18.2's own features run (terrain.core.Rules). */
     private final int rules;
+    /**
+     * Not the world's chunk generator: another mod's (RTG, OTG) makes the chunks from y 0 up, and this one gives each
+     * its part below y 0 as it is made or first loads ({@link #hybridChunkMade}, {@link #upgradeChunk}). It touches
+     * none of the world's structure generators.
+     */
+    final boolean hybrid;
 
     ModernGenerator(World world, ModernTerrain terrain) {
+        this(world, terrain, false);
+    }
+
+    ModernGenerator(World world, ModernTerrain terrain, boolean hybrid) {
+        this.hybrid = hybrid;
         this.world = world;
         this.terrain = terrain;
         this.features = world.getWorldInfo().isMapFeaturesEnabled();
@@ -159,15 +170,16 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         this.structures = new ModernStructures(new Structures(terrain.noise, columns,
                 new BiomeSource(terrain.noise, columns, terrain.climate)));
         ModernStructures.Village own = structures.new Village(this);
-        this.villages = StructureGenerators.replace(world, com.exiledradio.backportcore.structure.Structures.VILLAGE, own);
-        this.village = this.villages == own ? own : null;
+        this.villages = hybrid ? own
+                : StructureGenerators.replace(world, com.exiledradio.backportcore.structure.Structures.VILLAGE, own);
+        this.village = this.villages == own && !hybrid ? own : null;
         this.temple = structures.new Temple(this);
         this.monument = structures.new Monument();
         this.mineshaft = structures.new Mineshaft();
         this.stronghold = structures.new Stronghold();
         this.mansion = structures.new Mansion(this);
         this.biomes3d = new ChunkBiomes(world, terrain);
-        if (this.features) {
+        if (this.features && !hybrid) {
             this.beards = new StructureBeards(world, this.village, this.stronghold);
             this.pipeline.setBeards(this.beards);
         } else {
@@ -179,8 +191,14 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
             // An old world upgraded to y -64..319: its old chunks get their part below 0, new ones blend toward them.
             this.upgrade = new UpgradeTerrain((net.minecraft.world.WorldServer) world, upgrade, this.states);
             this.pipeline.setUpgrades(this.upgrade);
-            CavesAndCliffsBackport.LOGGER.info("Upgraded world: {} old chunks, {} of them upgraded below y 0 so far.",
-                    upgrade.oldCount(), upgrade.doneCount());
+            if (upgrade.hybrid()) {
+                CavesAndCliffsBackport.LOGGER.info("{} world from y -64 to 319: {}'s terrain from y 0 up, 1.18's below "
+                        + "({} chunks done so far).", world.getWorldInfo().getTerrainType().getName(),
+                        world.getWorldInfo().getTerrainType().getName(), upgrade.doneCount());
+            } else {
+                CavesAndCliffsBackport.LOGGER.info("Upgraded world: {} old chunks, {} of them upgraded below y 0 so far.",
+                        upgrade.oldCount(), upgrade.doneCount());
+            }
         } else {
             this.upgrade = null;
         }
@@ -518,6 +536,11 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
     /** The 3D biomes of an upgraded world's chunk that are not the noise's, in its save. */
     private static final String BIOMES_3D = CavesAndCliffsBackport.MOD_ID + ":Biomes3D";
 
+    /** Whether this pipeline gives another mod's chunks (RTG, OTG) their part below y 0 ({@link #hybrid}). */
+    public boolean isHybrid() {
+        return this.hybrid;
+    }
+
     /** Whether this world is an old one upgraded to y -64..319. */
     public boolean upgraded() {
         return this.upgrade != null;
@@ -537,6 +560,10 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
             if (q.length == Pipeline.QUARTS) {
                 this.biomes3d.put(chunk.x, chunk.z, q);
             }
+            if (this.hybrid) {
+                // Saved by the extended world: it has its part below 0 (a lost state file must not give it twice).
+                this.upgrade.upgrade.markDone(chunk.x, chunk.z);
+            }
             return;
         }
         if (this.upgrade.upgrade.isOld(chunk.x, chunk.z)) {
@@ -553,6 +580,18 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         byte[] q = this.biomes3d.kept(chunk.x, chunk.z);
         if (q != null) {
             nbt.getCompoundTag("Level").setByteArray(BIOMES_3D, q);
+        }
+    }
+
+    /**
+     * ChunkEvent.Load in a hybrid world (another mod's generator, {@link #hybrid}): a chunk that generator just made,
+     * before it populates, gets its part below y 0 as an old chunk would. A chunk from disk had its turn at
+     * ChunkDataEvent.Load. Server thread.
+     */
+    void hybridChunkMade(Chunk chunk) {
+        if (this.hybrid && this.upgrade.upgrade.pending(chunk.x, chunk.z) && upgradeChunk(chunk)) {
+            // Its generator lit it before it had sections below 0 (a column open at y 0 lights down to -64).
+            chunk.generateSkylightMap();
         }
     }
 
@@ -672,7 +711,12 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
             }
         }
         FluidUpdates.put(chunk, java.util.Arrays.copyOf(kept, n));
-        this.biomes3d.put(x, z, p.quarts.clone());
+        byte[] quarts = p.quarts.clone();
+        if (this.hybrid) {
+            // The fill may have run before the chunk existed (as a neighbor): its biomes from y 0 up are the chunk's own.
+            com.exiledradio.cavesandcliffsbackport.terrain.core.Upgrade.retrogenBiomes(quarts, this.upgrade.biomesOf(old));
+        }
+        this.biomes3d.put(x, z, quarts);
         if (all) {
             chunk.generateSkylightMap();
         }
