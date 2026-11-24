@@ -32,6 +32,11 @@ import java.util.List;
  * of the Caves & Cliffs type, waits for the chunks around the player, and checks the render frustum is 24 render
  * chunks high, that the client's chunks hold blocks at -64 and 319, and that render chunks below 0 and at the top
  * compile (the camera in a pocket at y -60, then above the world). Logged, not looked at; the game then quits.
+ * <p>
+ * Before the test places any block, the natural world below 0: a spectator in the rock at y -30, then a flight of
+ * {@code -Dcavesandcliffsbackport.clienttest.flight} blocks (1200) at y -20 through new terrain. After the flight every
+ * render section below 0 within 4 chunks with faces to draw is built (vanilla's frustum or Celeritas's sections), and
+ * the client's sections below 0 hold what the integrated server's do (the "holes below 0" reports).
  *
  * <pre>    ./gradlew runClient -Pselftest=heightclient</pre>
  * Started by name from {@code HeightContent} when the system property {@code cavesandcliffsbackport.clienttest} is
@@ -173,7 +178,7 @@ public final class HeightClientSelfTest {
                     world.getWorldInfo().setThundering(false);
                 });
                 // The frame rate at spawn first (camera at the surface), then the test proper.
-                this.fpsNext = this.defaultWorld ? 20 : 2;
+                this.fpsNext = this.defaultWorld ? 20 : 80;
                 this.wait = 200;
                 this.state = 30;
                 return;
@@ -191,6 +196,59 @@ public final class HeightClientSelfTest {
                         this.defaultWorld ? "Default" : "Caves & Cliffs", HeightContent.allowed() ? "on" : "off",
                         sum / this.fps.size(), this.fps.size(), this.fps);
                 this.state = this.fpsNext;
+                return;
+            case 80: {
+                // The natural world below 0 first, before the test places any block: a spectator in the rock at
+                // y -30 looking up, as a tester exploring below 0.
+                final int x = (int) Math.floor(mc.player.posX);
+                final int z = (int) Math.floor(mc.player.posZ);
+                server(mc, world -> {
+                    for (EntityPlayerMP p : world.getMinecraftServer().getPlayerList().getPlayers()) {
+                        p.setGameType(GameType.SPECTATOR);
+                        p.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.init.MobEffects.NIGHT_VISION, 1000000, 0, false, false));
+                    }
+                    teleport(world, x + 0.5, -30, z + 0.5, 0F, -45F);
+                });
+                this.wait = 600;
+                this.state = 81;
+                return;
+            }
+            case 81:
+                naturalBelowZero(mc, false);
+                screenshot(mc, "cc-height-natural-below0");
+                this.flightStart = mc.player.posX;
+                this.flightTicks = 0;
+                this.state = 84;
+                return;
+            case 84:
+                // Flight: a spectator at y -20 at a block a tick through new terrain (the server generates ahead of
+                // it), as a tester exploring below 0 at speed.
+                if (++this.flightTicks <= FLIGHT_TICKS) {
+                    double fx = this.flightStart + this.flightTicks;
+                    mc.player.setPositionAndUpdate(fx, -20, mc.player.posZ);
+                    mc.player.rotationPitch = -20F;
+                    mc.player.rotationYaw = -90F;
+                    return;
+                }
+                this.wait = 300;
+                this.state = 85;
+                return;
+            case 85: {
+                naturalBelowZero(mc, true);
+                screenshot(mc, "cc-height-natural-flight");
+                snapshotServerSections(mc);
+                this.state = 86;
+                return;
+            }
+            case 86:
+                compareClientSections(mc);
+                server(mc, world -> {
+                    for (EntityPlayerMP p : world.getMinecraftServer().getPlayerList().getPlayers()) {
+                        p.setGameType(GameType.CREATIVE);
+                    }
+                });
+                this.wait = 40;
+                this.state = 2;
                 return;
             case 20:
                 // Default world: vanilla's frustum (16 high from 0), and its blocks render.
@@ -1085,6 +1143,269 @@ public final class HeightClientSelfTest {
         }
         CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST {}: mean brightness {}, {}% black", name, sum / n, black * 100 / n);
         ok(sum / n >= 20 && black * 100 / n < 25, what + " is lit (mean brightness " + sum / n + ", " + black * 100 / n + "% black)");
+    }
+
+    /**
+     * The natural world below 0 (no block placed by the test): every render section below y 0 within the render distance (less one) of the
+     * player whose client data has both air and blocks (so it has faces to draw) is built with something to draw.
+     * The camera is a spectator inside the rock at y -30, as a tester looking around below 0. Vanilla's frustum, or
+     * Celeritas's sections; Nothirium is skipped.
+     */
+    private void naturalBelowZero(Minecraft mc, boolean check) throws ReflectiveOperationException {
+        int cx = (int) Math.floor(mc.player.posX) >> 4;
+        int cz = (int) Math.floor(mc.player.posZ) >> 4;
+        // [0]: below y 0, [1]: y 0..63 (to compare with).
+        int[] expected = new int[2];
+        int[] built = new int[2];
+        int[] dummy = new int[2];
+        int[] dummyQueued = new int[2];
+        int[] empty = new int[2];
+        int[] notWalked = new int[2];
+        List<String> examples = new ArrayList<String>();
+        List<String> examplesAbove = new ArrayList<String>();
+        // Not drawn within 4 chunks of the player (the far rows can wait on a neighbor chunk that is still coming).
+        int nearBad = 0;
+        List<String> nearExamples = new ArrayList<String>();
+        Object celeritas = celeritasManager();
+        java.util.Map<Long, Object> celSections = new java.util.HashMap<Long, Object>();
+        if (celeritas != null) {
+            for (Object s : (java.util.Collection<?>) celeritas.getClass().getMethod("getAllRenderSections").invoke(celeritas)) {
+                Class<?> c = s.getClass();
+                celSections.put(key((Integer) c.getMethod("getChunkX").invoke(s), (Integer) c.getMethod("getChunkY").invoke(s),
+                        (Integer) c.getMethod("getChunkZ").invoke(s)), s);
+            }
+        } else if (nothiriumPresent()) {
+            CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST natural sections below 0: Nothirium, skipped");
+            return;
+        }
+        java.util.Set<BlockPos> walked = new java.util.HashSet<BlockPos>();
+        java.util.Map<BlockPos, RenderChunk> frustumChunks = new java.util.HashMap<BlockPos, RenderChunk>();
+        if (celeritas == null) {
+            List<?> infos = ObfuscationReflectionHelper.getPrivateValue(RenderGlobal.class, mc.renderGlobal, "field_72755_R");
+            for (Object info : new ArrayList<Object>(infos)) {
+                walked.add(chunkOf(info).getPosition());
+            }
+            ViewFrustum frustum = ObfuscationReflectionHelper.getPrivateValue(RenderGlobal.class, mc.renderGlobal, "field_175008_n");
+            for (RenderChunk r : frustum.renderChunks) {
+                frustumChunks.put(r.getPosition(), r);
+            }
+        }
+        int reach = mc.gameSettings.renderDistanceChunks - 1;
+        for (int sx = cx - reach; sx <= cx + reach; sx++) {
+            for (int sz = cz - reach; sz <= cz + reach; sz++) {
+                net.minecraft.world.chunk.Chunk chunk = mc.world.getChunkProvider().getLoadedChunk(sx, sz);
+                if (chunk == null || chunk.isEmpty()) {
+                    continue;
+                }
+                for (int sy = -4; sy < 4; sy++) {
+                    int h = sy < 0 ? 0 : 1;
+                    if (!hasFaces(mc, sx, sy, sz)) {
+                        continue;
+                    }
+                    expected[h]++;
+                    BlockPos base = new BlockPos(sx << 4, sy << 4, sz << 4);
+                    String state;
+                    if (celeritas != null) {
+                        Object s = celSections.get(key(sx, sy, sz));
+                        if (!(Boolean) celeritas.getClass().getMethod("isSectionVisible", int.class, int.class, int.class)
+                                .invoke(celeritas, sx, sy, sz)) {
+                            notWalked[h]++;
+                            continue;
+                        }
+                        boolean b = s != null && (Boolean) s.getClass().getMethod("isBuilt").invoke(s);
+                        boolean d = s != null && (Boolean) s.getClass().getMethod("hasAnythingToRender").invoke(s);
+                        state = s == null ? "missing" : !b ? "not built" : !d ? "built empty" : null;
+                        if (state == null) {
+                            built[h]++;
+                        } else if (!b) {
+                            dummy[h]++;
+                        } else {
+                            empty[h]++;
+                        }
+                    } else {
+                        RenderChunk r = frustumChunks.get(base);
+                        if (r == null) {
+                            state = "no render chunk";
+                            dummy[h]++;
+                        } else if (!walked.contains(base)) {
+                            notWalked[h]++;
+                            continue;
+                        } else if (r.getCompiledChunk() == CompiledChunk.DUMMY) {
+                            state = r.needsUpdate() ? "DUMMY, queued" : "DUMMY, not queued";
+                            if (r.needsUpdate()) {
+                                dummyQueued[h]++;
+                            } else {
+                                dummy[h]++;
+                            }
+                        } else if (r.getCompiledChunk().isEmpty()) {
+                            state = "compiled empty";
+                            empty[h]++;
+                        } else {
+                            state = null;
+                            built[h]++;
+                        }
+                    }
+                    boolean near = Math.abs(sx - cx) <= 4 && Math.abs(sz - cz) <= 4;
+                    if (state != null && h == 0 && near && !"DUMMY, queued".equals(state)) {
+                        nearBad++;
+                        if (nearExamples.size() < 12) {
+                            nearExamples.add("(" + sx + " " + sy + " " + sz + ") " + state);
+                        }
+                    }
+                    List<String> ex = h == 0 ? examples : examplesAbove;
+                    if (state != null && ex.size() < 12) {
+                        ex.add("(" + sx + " " + sy + " " + sz + ") " + state);
+                    }
+                }
+            }
+        }
+        CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST natural sections below 0 ({}): {} with faces to draw, {} built, "
+                        + "{} never built, {} queued, {} built empty, {} not reached by the culling walk; {}",
+                celeritas != null ? "Celeritas" : "vanilla frustum", expected[0], built[0], dummy[0], dummyQueued[0], empty[0],
+                notWalked[0], examples);
+        CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST natural sections at y 0..63, to compare: {} with faces to draw, {} built, "
+                        + "{} never built, {} queued, {} built empty, {} not reached by the culling walk; {}",
+                expected[1], built[1], dummy[1], dummyQueued[1], empty[1], notWalked[1], examplesAbove);
+        CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST natural sections below 0 within 4 chunks not drawn: {} {}", nearBad, nearExamples);
+        if (check) {
+            ok(expected[0] > 20, "natural sections below 0 with faces near the player (" + expected[0] + ")");
+            eq(0, nearBad, "natural sections below 0 within 4 chunks not drawn (" + nearExamples + ")");
+        }
+    }
+
+    /** Flight below 0: blocks (one a tick) and the start x. */
+    private static final int FLIGHT_TICKS = Integer.getInteger(CavesAndCliffsBackport.MOD_ID + ".clienttest.flight", 1200);
+    private double flightStart;
+    private int flightTicks;
+    /** The chunks compared, and the server's digest of each section below 0 (by chunk, then -4..-1). */
+    private final List<int[]> compareChunks = new ArrayList<int[]>();
+    private final java.util.Map<Long, long[]> serverDigests = new java.util.concurrent.ConcurrentHashMap<Long, long[]>();
+
+    /** The client's loaded chunks within 7 of the player, and the server's digests of their sections below 0. */
+    private void snapshotServerSections(Minecraft mc) {
+        this.compareChunks.clear();
+        this.serverDigests.clear();
+        int cx = (int) Math.floor(mc.player.posX) >> 4;
+        int cz = (int) Math.floor(mc.player.posZ) >> 4;
+        for (int x = cx - 7; x <= cx + 7; x++) {
+            for (int z = cz - 7; z <= cz + 7; z++) {
+                net.minecraft.world.chunk.Chunk c = mc.world.getChunkProvider().getLoadedChunk(x, z);
+                if (c != null && !c.isEmpty()) {
+                    this.compareChunks.add(new int[] {x, z});
+                }
+            }
+        }
+        final List<int[]> chunks = new ArrayList<int[]>(this.compareChunks);
+        server(mc, world -> {
+            for (int[] p : chunks) {
+                net.minecraft.world.chunk.Chunk c = world.getChunkProvider().getLoadedChunk(p[0], p[1]);
+                if (c != null) {
+                    this.serverDigests.put(net.minecraft.util.math.ChunkPos.asLong(p[0], p[1]), digests(c));
+                }
+            }
+        });
+    }
+
+    /** Per section y -4..-1: non-air count in the high half, a sum of state ids in the low half. */
+    private static long[] digests(net.minecraft.world.chunk.Chunk c) {
+        long[] out = new long[4];
+        for (int sy = -4; sy < 0; sy++) {
+            long n = 0;
+            long sum = 0;
+            for (int y = 0; y < 16; y++) {
+                for (int x = 0; x < 16; x++) {
+                    for (int z = 0; z < 16; z++) {
+                        net.minecraft.block.state.IBlockState s = c.getBlockState(x, (sy << 4) + y, z);
+                        if (s.getBlock() != Blocks.AIR) {
+                            n++;
+                            sum += Block.getStateId(s);
+                        }
+                    }
+                }
+            }
+            out[sy + 4] = n << 40 | (sum & 0xFFFFFFFFFFL);
+        }
+        return out;
+    }
+
+    /** The client's sections below 0 hold what the server's do. */
+    private void compareClientSections(Minecraft mc) {
+        int compared = 0;
+        int differ = 0;
+        int holes = 0;
+        List<String> examples = new ArrayList<String>();
+        for (int[] p : this.compareChunks) {
+            long[] server = this.serverDigests.get(net.minecraft.util.math.ChunkPos.asLong(p[0], p[1]));
+            net.minecraft.world.chunk.Chunk c = mc.world.getChunkProvider().getLoadedChunk(p[0], p[1]);
+            if (server == null || c == null) {
+                continue;
+            }
+            long[] client = digests(c);
+            for (int i = 0; i < 4; i++) {
+                compared++;
+                if (client[i] != server[i]) {
+                    differ++;
+                    long sn = server[i] >>> 40;
+                    long cn = client[i] >>> 40;
+                    if (sn - cn > 512) {
+                        holes++;
+                    }
+                    if (examples.size() < 16) {
+                        examples.add("(" + p[0] + " " + (i - 4) + " " + p[1] + ") server " + sn + " client " + cn);
+                    }
+                }
+            }
+        }
+        CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST client vs server sections below 0 after the flight: {} compared, "
+                + "{} differ, {} missing over 512 blocks on the client; {}", compared, differ, holes, examples);
+        ok(compared > 300, "sections compared after the flight (" + compared + ")");
+        eq(0, holes, "client sections below 0 missing blocks the server has (" + examples + ")");
+    }
+
+    /** Whether the client's section at (sx, sy, sz) holds both air and something else (it has faces to draw). */
+    private static boolean hasFaces(Minecraft mc, int sx, int sy, int sz) {
+        boolean air = false;
+        boolean solid = false;
+        BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                for (int y = 0; y < 16; y++) {
+                    p.setPos((sx << 4) + x, (sy << 4) + y, (sz << 4) + z);
+                    if (mc.world.isAirBlock(p)) {
+                        air = true;
+                    } else {
+                        solid = true;
+                    }
+                    if (air && solid) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private static long key(int x, int y, int z) {
+        return ((long) x & 0x3FFFFFL) << 42 | ((long) y & 0xFFFFFL) << 22 | ((long) z & 0x3FFFFFL);
+    }
+
+    @javax.annotation.Nullable
+    private static Object celeritasManager() {
+        try {
+            Object renderer = Class.forName("org.taumc.celeritas.impl.render.terrain.CeleritasWorldRenderer").getMethod("instance").invoke(null);
+            return renderer.getClass().getMethod("getRenderSectionManager").invoke(renderer);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private static boolean nothiriumPresent() {
+        try {
+            Class.forName("meldexun.nothirium.mc.renderer.ChunkRenderManager");
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     /** The client's block light at every position the server checked. */
