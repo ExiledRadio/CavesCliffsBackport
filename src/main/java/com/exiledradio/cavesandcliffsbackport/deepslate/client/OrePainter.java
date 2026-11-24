@@ -61,6 +61,15 @@ final class OrePainter {
         return (b >>> 24) >= 128 && near(a, b, TOLERANCE);
     }
 
+    /** The largest per-channel difference of two colors. */
+    static int distance(int a, int b) {
+        int d = 0;
+        for (int shift = 0; shift <= 16; shift += 8) {
+            d = Math.max(d, Math.abs(((a >> shift) & 255) - ((b >> shift) & 255)));
+        }
+        return d;
+    }
+
     static boolean near(int a, int b, int tolerance) {
         for (int shift = 0; shift <= 16; shift += 8) {
             if (Math.abs(((a >> shift) & 255) - ((b >> shift) & 255)) > tolerance) {
@@ -129,6 +138,13 @@ final class OrePainter {
      * @param bases the stones the ore may have been drawn on, each the size of one frame
      */
     static BufferedImage paint(BufferedImage ore, List<int[]> bases, BufferedImage deepslate) {
+        return paint(ore, bases, deepslate, null);
+    }
+
+    /**
+     * @param oreMask the pixels (of one frame) to draw as ore, from the texture's family; null to tell them by color
+     */
+    static BufferedImage paint(BufferedImage ore, List<int[]> bases, BufferedImage deepslate, boolean[] oreMask) {
         int w = ore.getWidth(), h = ore.getHeight(), f = frame(ore);
         int[] ds = scaled(deepslate, w, f);
         // The stone's own shades: an ore drawn on a moved or older copy of the stone keeps them, off their places.
@@ -146,6 +162,11 @@ final class OrePainter {
                 int local = (y % f) * w + x;
                 int p = ore.getRGB(x, y);
                 boolean stone = (p >>> 24) < 128;
+                if (oreMask != null) {
+                    stone |= local >= oreMask.length || !oreMask[local];
+                    out.setRGB(x, y, stone ? ds[local] | 0xFF000000 : p | 0xFF000000);
+                    continue;
+                }
                 for (int[] b : bases) {
                     stone |= close(p, b[local]);
                 }
