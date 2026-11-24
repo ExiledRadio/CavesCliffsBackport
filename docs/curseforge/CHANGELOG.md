@@ -1,3 +1,9 @@
+# 1.1.6
+
+*   **Fixed: with Valkyrie, nothing below y 0 was drawn** without Celeritas or Nothirium, and the game could crash when flying above y 320. Valkyrie replaces the code that places the game's render chunks, and its copy only knew y 0-255. Valkyrie 0.3-Dev-5 now draws y -64 to 319; with another Valkyrie version the y -64 to 319 height turns itself off and the log says why.
+
+Needs Backport Core 1.4.7 or newer.
+
 # 1.1.5
 
 *   **Upgrade an existing world to y -64 to 319**, as 1.18 upgraded old worlds: `/cavesandcliffs upgradeworld` (operators; it asks you to confirm and backs up level.dat), then restart. Explored chunks keep everything from y 0 up. Each one gets deepslate, caves, ores and aquifers below y 0 when it first loads, and its bedrock floor moves to y -64. New chunks get the 1.18 terrain and blend into the old ones at the border. No new structure starts in or reaches into an old chunk. Default worlds only; it can't be undone, so back up the world first.

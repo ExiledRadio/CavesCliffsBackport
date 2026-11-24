@@ -151,6 +151,7 @@ public final class HeightClientSelfTest {
                 ok(HeightContent.allowed(), "extended height is on (refusal: " + HeightContent.refusal() + ")");
                 eq(new ArrayList<String>(), PatchReport.missed(), "client patch sites not found");
                 optifineReport();
+                valkyrieReport();
                 if (!HeightContent.allowed()) {
                     // No Caves & Cliffs world type to make a world with.
                     finish(mc);
@@ -809,6 +810,23 @@ public final class HeightClientSelfTest {
     }
 
     /** With OptiFine, the drift report names its variants (no site fell back to vanilla's). */
+    /**
+     * With Valkyrie (no OptiFine): its frustum mixins were patched as Mixin read them (height.asm.ValkyriePatches);
+     * the frustum and natural-band checks that follow then show its render chunks span the world's height.
+     */
+    private void valkyrieReport() {
+        if (!net.minecraftforge.fml.common.Loader.isModLoaded("valkyrie")) {
+            return;
+        }
+        CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST Valkyrie {} installed", net.minecraftforge.fml.common.Loader.instance()
+                .getIndexedModList().get("valkyrie").getVersion());
+        if (optifine()) {
+            return;
+        }
+        ok(PatchReport.classPatched("ValkyrieViewFrustumMixin"), "Valkyrie: its ViewFrustumMixin is patched");
+        ok(PatchReport.classPatched("ValkyrieRenderGlobalMixin"), "Valkyrie: its RenderGlobalMixin is patched");
+    }
+
     private void optifineReport() {
         if (!optifine()) {
             return;
