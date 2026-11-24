@@ -1,5 +1,7 @@
 # 1.1.3
 
+*   **Upgrade an existing world to y -64 to 319**, as 1.18 upgraded old worlds: `/cavesandcliffs upgradeworld` (operators; it asks you to confirm and backs up level.dat), then restart. Explored chunks keep everything from y 0 up. Each one gets deepslate, caves, ores and aquifers below y 0 when it first loads, and its bedrock floor moves to y -64. New chunks get the 1.18 terrain and blend into the old ones at the border. No new structure starts in or reaches into an old chunk. Default worlds only; it can't be undone, so back up the world first.
+
 *   **With Game Drops Backport, new worlds get its biomes where 26.3 places them**: the dappled forest beside cool plains and taigas, and sulfur caves deep under low inland ground. The rest of the biome map is unchanged. Worlds made before keep their biomes.
 *   **With Game Drops Backport, baby goats and axolotls get 26.1's models**, textures and animations. They follow Game Drops' Baby Models setting.
 *   **fingerspit's music** with Game Drops Backport: Ebb, Home, Memories, Nightly and Shores play in lush and dripstone caves and the mountain biomes, as in 26.2.

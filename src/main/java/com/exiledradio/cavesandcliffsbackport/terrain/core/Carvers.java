@@ -94,6 +94,30 @@ public final class Carvers {
      * Carves chunk cx, cz in blocks (ChunkFiller's layout), which ChunkFiller.fill and SurfaceBuilder.build made.
      */
     public void carve(int cx, int cz, char[] blocks) {
+        carve(cx, cz, blocks, false, null);
+    }
+
+    /** The highest y carved: HIGHEST_CARVED, or -1 in an old chunk being upgraded. */
+    private int highest = HIGHEST_CARVED;
+    /** Blender.addAroundOldChunksCarvingMaskFilter's filter, or null. */
+    private Blending.CarveMask extra;
+
+    /**
+     * carve for an upgraded world: upgrading, the chunk is an old one getting its part below y 0 (WorldCarver's
+     * gen depth is then BelowZeroRetrogen's 64, and it carves up to y -1); extra, the filter around old chunks.
+     */
+    public void carve(int cx, int cz, char[] blocks, boolean upgrading, Blending.CarveMask extra) {
+        this.highest = upgrading ? MIN_Y + 64 - 1 : HIGHEST_CARVED;
+        this.extra = extra;
+        try {
+            carveChunk(cx, cz, blocks);
+        } finally {
+            this.highest = HIGHEST_CARVED;
+            this.extra = null;
+        }
+    }
+
+    private void carveChunk(int cx, int cz, char[] blocks) {
         this.blocks = blocks;
         this.cx = cx;
         this.cz = cz;
@@ -383,7 +407,7 @@ public final class Carvers {
         int k = Math.max(McMath.floor(x - hr) - i - 1, 0);
         int l = Math.min(McMath.floor(x + hr) - i, 15);
         int i1 = Math.max(McMath.floor(y - vr) - 1, LOWEST_CARVED);
-        int k1 = Math.min(McMath.floor(y + vr) + 1, HIGHEST_CARVED);
+        int k1 = Math.min(McMath.floor(y + vr) + 1, highest);
         int l1 = Math.max(McMath.floor(z - hr) - j - 1, 0);
         int i2 = Math.min(McMath.floor(z + hr) - j, 15);
         for (int j2 = k; j2 <= l; ++j2) {
@@ -400,7 +424,7 @@ public final class Carvers {
                         if (!skip(p, d3, d5, d4, j3)) {
                             int bit = j2 | l2 << 4 | (j3 - MIN_Y) << 8;
                             long m = 1L << bit;
-                            if ((mask[bit >>> 6] & m) == 0L) {
+                            if ((mask[bit >>> 6] & m) == 0L && (extra == null || !extra.masked(j2, j3, l2))) {
                                 mask[bit >>> 6] |= m;
                                 grass = carveBlock(column, k2, j3, i3, grass);
                             }

@@ -100,10 +100,8 @@ slot, boundary flags two sections to a bit).
 * Extended height is a property of a world, chosen when it is created: a world type "Caves & Cliffs"
   (`cavesandcliffs`), and a config switch that makes it the default for new worlds. Only the overworld;
   the Nether and End keep 0-255.
-* **Existing worlds keep 0-255 for good.** Old chunks are never padded or shifted, and a world is never half
-  converted. There is no seam to manage and nothing to break when the mod is added to an old world: it simply
-  doesn't get extended height. Converting an old world is a separate, later feature if wanted: it would add
-  empty sections below and above every chunk (the deep part stays solid stone) and mark the world as extended.
+* **Existing worlds keep 0-255** unless an operator upgrades them with `/cavesandcliffs upgradeworld` (section 9),
+  the way 1.18 upgraded old worlds. Adding the mod to an old world changes nothing by itself.
 * The 1.17 streams already built (deepslate layer, ores, geodes) keep working in old worlds within 0-255. In an
   extended world, the deepslate layer pass steps aside (it already skips worlds whose minimum is below 0), and
   the terrain places deepslate itself.
@@ -234,4 +232,76 @@ in our worlds and 0-255 elsewhere.
 
 * **Alfheim**: works (1.6; section 3). A new Alfheim version refuses extended height until its patterns are checked.
 * **Fluidlogged blocks outside 0-255** wait for (a) or (b) in section 3.
-* **Old worlds stay 0-255.** A converter for them is possible later; say if it's wanted.
+* **Old worlds stay 0-255** unless upgraded (section 9).
+
+## 9. Upgrading an old world
+
+`/cavesandcliffs upgradeworld` (operator level 4: the server console, or a single player with cheats on) upgrades a
+0-255 Default world to y -64..319 the way 1.18 upgraded worlds from 1.17. Package `upgrade`; the terrain side is
+`terrain.UpgradeTerrain`, `terrain.core.Upgrade` and `terrain.core.Blending`.
+
+**The command.** `upgradeworld` explains what happens and asks for `upgradeworld confirm` within 60 seconds. Confirm
+saves the world, copies `level.dat` to `level.dat.before-extended-height` and writes
+`data/cavesandcliffsbackport_upgrade.dat` (state pending); it tells the player to back up the world folder and
+restart. `upgradeworld cancel` clears a pending request; `upgradeworld status` reports progress. It refuses when:
+extended height is off (Cubic Chunks, Caves Not Cliffs, Farmer's Future Delight, an Alfheim other than 1.6, a
+Phosphor other than the supported ones, the config switch, a missed patch site: `HeightContent.refusal()`); StellarCore
+keeps `World.isOutsideBuildHeight` at 0-255; the structure guard patch was not applied; the world type is not
+Default (1.18 upgraded Default, Large Biomes and Amplified; this mod has only Default's terrain); the world is
+extended or upgraded already, or the request is pending.
+
+**The switch, at load** (`WorldUpgrade.worldConstructed`, from `HeightHooks.worldConstructed`, before the world's
+height is read and before its chunk generator exists). The checks run again; then every chunk in `region/*.mca` is
+recorded as old (one bit per chunk, from the region headers), `cavesandcliffsbackport_terrain.dat` says 1.18 (with the
+newer biomes the installed backports have), `cavesandcliffsbackport_height.dat` says -64..319, the state file says
+upgraded (written last, atomically), and the world type becomes Caves & Cliffs (level.dat gets it at the next save;
+an upgraded state file puts it back if level.dat lags). Stopping or crashing at any point leaves the old world or the
+upgraded one.
+
+**Old chunks** (`ModernGenerator.upgradeChunk`, on `ChunkDataEvent.Load`, before the chunk joins the world). A chunk
+whose save has no `cavesandcliffsbackport:Sections` list was written by the 0-255 world. As in 1.18
+(`ChunkHeightAndBiomeFix`, `BelowZeroRetrogen`, `ChunkStatus.NOISE`):
+
+| 1.18 | Here |
+| --- | --- |
+| Retrogen only for chunks with bedrock somewhere at y 0 that are not air all over y 0 | Same; others stay empty below 0 |
+| `missing_bedrock`: columns with air at y 0 stay air below 0 | Same |
+| Noise, surface rules and carvers only in y -64..-1 (the generation height accessor); carvers up to y -1 | Same (`Region.writeTop`, `Carvers.highest`) |
+| Bedrock at y 0..4 becomes deepslate (`replaceOldBedrock`); the surface rules put the new floor at -64 | Same |
+| Features write only below 0 (`WorldGenRegion.ensureCanWrite`), in any of the 3x3 chunks | Same, for features of the upgraded chunk |
+| Chunks the old version never populated: retrogen to their status, then features at every height | Same (`Upgrade.decorateAll`, 1.12's `TerrainPopulated` false) |
+| Biomes below 0: the old column biome, but lush and dripstone caves stay | Same; 1.12 biomes become 1.18's by Mojang's renames (`BiomeMap.upgraded`) |
+| Carvers skip what lies within 4 blocks of the old 0..255 box (`addAroundOldChunksCarvingMaskFilter`) | Same (`Blending.CarveMask`) |
+| Old blocks the features read from y 0 up | The old chunk's blocks; a block the 1.18 terrain has no code for reads as stone (air, water and lava as themselves) |
+
+The chunk's light is checked again once its neighbors load (`setLightPopulated(false)`), so lava and lichen below 0
+light up. Its 3D biomes are saved with it (`cavesandcliffsbackport:Biomes3D`), since they are not the noise's.
+Nothing from y 0 up changes but the bedrock rule, in a chunk 1.12 populated.
+
+**New chunks** blend toward old ones within 7 chunks, as `Blender` does: the offset, factor and jaggedness splines
+lerp toward the old terrain's heights (`blendOffsetAndFactor`), the density at noise corners right at the border toward
+the old blocks' (`blendDensity`, read as `BlendingData.getDensityColumn` reads them), and the biomes toward the old
+ones (`blendBiome`, with the same shift noise). The old chunks' data is read from loaded chunks or straight from the
+region files (`upgrade.OldChunks`, no chunk is loaded). Differences: the inverse-distance sums visit old chunks in a
+fixed order, not fastutil's hash order (last-bit differences); `Blender.generateBorderTicks` is not ported (the
+generator's own fluid updates cover the border); a feature of an old chunk being upgraded that crosses into a neighbor
+written already is cut there, as any feature crossing into an existing chunk in this generator is.
+
+**Structures** (`upgrade.StructureGuard`). Every 1.12 structure generator makes its starts in
+`MapGenStructure.recursiveGenerate`; the coremod hands each new start to the guard there (a mod-compat site: a miss
+leaves the class alone and only blocks the upgrade). A start whose chunk is old, or whose bounding box reaches into an
+old chunk, is emptied (no pieces; kept so the chunk is not asked again). That covers 1.12's own structures, Backport
+Core's `ScatteredStructure`, `ModernJigsaw` and data-driven structures, ancient cities and trial chambers, and other
+mods' `MapGenStructure`s; structures that other mods build from an `IWorldGenerator` of their own are not covered.
+Starts saved before the upgrade are read from the save and go on as before.
+
+**Tests.** `sh tools/height/upgrade.sh -Pcore_version=1.4.5` (`UpgradeSelfTest`, three servers on one world):
+`upgrade1` makes a Default world, a 12 x 12 chunk area around a village with known blocks, and runs the command;
+`upgrade2` checks the old chunks byte for byte from y 0 up, deepslate, caves, ores and bedrock below, the bedrock
+hole, new chunks at full height, the border, the structures and the command's refusal; `upgrade3` restarts and
+checks every chunk loads as it was saved and none is upgraded twice. Results (2026-11-23): 144 old chunks upgraded as
+they loaded in 3.2 s; 9,326,498 blocks from y 0 up the same, 110,686 bedrock blocks now deepslate, none else changed;
+below 0, 1.45 million deepslate, 12,660 deepslate ores, bedrock at -64 in every column but the hole's. At the border
+the new terrain's ground is 0.3 blocks from the old on average (the unblended 1.18 terrain 1.9). 16 structure starts
+since the upgrade: 12 built, all clear of the old chunks; 4 emptied; the village saved before the upgrade keeps its
+pieces.

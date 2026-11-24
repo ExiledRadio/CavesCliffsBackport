@@ -91,6 +91,8 @@ public final class Pipeline {
         long lsn;
         /** The structure pieces' terrain adaptation for the fill, or null. */
         Beardifier beard;
+        /** In an upgraded world: how this chunk is an old one or next to old ones ({@link Upgrade}), or null. */
+        public Upgrade upgrade;
         final Task task;
 
         Proto(int cx, int cz, Pipeline owner) {
@@ -256,6 +258,19 @@ public final class Pipeline {
         void append(int[] record, int size);
     }
 
+    /**
+     * An upgraded world (a 0-255 world given y -64..319, as 1.18 upgraded old worlds): which chunks are old ones and
+     * which are near them. Called on the asking thread, when a chunk is first held.
+     */
+    public interface Upgrades {
+        /**
+         * The chunk's {@link Upgrade}, or null for a chunk that is neither old (still to upgrade) nor within 7 chunks
+         * of an old one. blocks: false for a chunk restored from the store (filled already), which needs only to know
+         * whether it is upgrading.
+         */
+        Upgrade forChunk(int cx, int cz, boolean blocks);
+    }
+
     /** The fill of one Proto, queued on the pool or run by the asking thread if no worker has started it. */
     static final class Task implements Runnable, Comparable<Task> {
         static final int QUEUED = 0;
@@ -307,7 +322,15 @@ public final class Pipeline {
         final Carvers carvers = new Carvers(noise, columns, surface);
         final BiomeZoom zoom = new BiomeZoom(noise, biomes);
 
+        Kit() {
+            biomes.overrides = biomeOverrides;
+        }
+
         void produce(Proto p) {
+            if (p.upgrade != null) {
+                produceUpgrade(p, p.upgrade);
+                return;
+            }
             long t = System.nanoTime();
             filler.fill(p.cx, p.cz, p.blocks, p.beard);
             p.beard = null;
@@ -330,6 +353,89 @@ public final class Pipeline {
             biomes.fillChunk(p.cx, p.cz, p.quarts);
             fillNanos.addAndGet(System.nanoTime() - t);
             filled.incrementAndGet();
+        }
+
+        /**
+         * produce in an upgraded world, in 1.18's status order: the biomes (blended, and for an old chunk the
+         * retrogen's: its old biome but for lush and dripstone caves below 0), then the noise (blended), then for an
+         * old chunk its old blocks from y 0 up and the bedrock rules, then the surface and the carvers (an old
+         * chunk's only below y 0). Every column value is the blended one meanwhile.
+         */
+        void produceUpgrade(Proto p, Upgrade up) {
+            long t = System.nanoTime();
+            columns.setBlender(up.blender);
+            try {
+                biomes.fillChunk(p.cx, p.cz, p.quarts);
+                up.applyBiomes(p.cx, p.cz, p.quarts);
+                java.util.Map<Long, byte[]> overrides = biomeOverrides;
+                if (overrides != null) {
+                    overrides.put(key(p.cx, p.cz), p.quarts);
+                }
+                filler.fill(p.cx, p.cz, p.blocks, p.beard, up.blender);
+                p.beard = null;
+                if (up.upgrading) {
+                    up.overlay(p.blocks);
+                    Upgrade.replaceOldBedrock(p.blocks);
+                    up.applyBedrockMask(p.blocks);
+                }
+                surface.marks = p.marks;
+                try {
+                    surface.build(p.cx, p.cz, p.blocks);
+                    if (up.upgrading) {
+                        // The surface rules write below y 0 only (BelowZeroRetrogen's height accessor).
+                        up.overlay(p.blocks);
+                        Upgrade.replaceOldBedrock(p.blocks);
+                    }
+                    carvers.carve(p.cx, p.cz, p.blocks, up.upgrading, up.carveMask);
+                } finally {
+                    surface.marks = null;
+                }
+                if (!up.upgrading) {
+                    // An old chunk done already, read by its neighbors: from y 0 up, its blocks as the world holds them.
+                    up.overlay(p.blocks);
+                }
+                Region.worldgenHeights(p.blocks, p.worldgen);
+                Region.primeHeightmaps(p.blocks, p.heights);
+                int bx = p.cx << 4;
+                int bz = p.cz << 4;
+                for (int c = 0; c < 256; c++) {
+                    int top = p.worldgen[256 + c] - 1;
+                    p.surfaceBiomes[c] = (byte) zoom.biome(bx + (c >> 4), Math.max(top, MIN_Y), bz + (c & 15));
+                }
+            } finally {
+                columns.setBlender(null);
+                up.old = null;
+            }
+            fillNanos.addAndGet(System.nanoTime() - t);
+            filled.incrementAndGet();
+        }
+    }
+
+    /** The upgraded world's chunks, or null for any other world. */
+    private Upgrades upgrades;
+    /** Per chunk, the stored biomes of the held chunks that have an {@link Upgrade} (read by every BiomeSource). */
+    private volatile java.util.Map<Long, byte[]> biomeOverrides;
+    private final BiomeSource decoratorBiomes;
+
+    /** Marks the world as an upgraded one ({@link Upgrades}); before the first chunk is asked for. */
+    public synchronized void setUpgrades(Upgrades upgrades) {
+        this.upgrades = upgrades;
+        java.util.Map<Long, byte[]> map = new java.util.concurrent.ConcurrentHashMap<>();
+        this.biomeOverrides = map;
+        this.own.biomes.overrides = map;
+        this.decoratorBiomes.overrides = map;
+    }
+
+    /** Whether this world is an upgraded one. */
+    public synchronized boolean upgraded() {
+        return upgrades != null;
+    }
+
+    /** A held chunk is dropped: its biomes stop overriding. */
+    private void forget(long k) {
+        java.util.Map<Long, byte[]> overrides = biomeOverrides;
+        if (overrides != null) {
+            overrides.remove(k);
         }
     }
 
@@ -434,7 +540,8 @@ public final class Pipeline {
             }
         };
         this.own = new Kit();
-        this.decorator = new Decorator(noise, new BiomeSource(noise, new ColumnCache(noise), climate));
+        this.decoratorBiomes = new BiomeSource(noise, new ColumnCache(noise), climate);
+        this.decorator = new Decorator(noise, this.decoratorBiomes);
         this.fluidMarks = new FluidMarks(noise);
         this.cap = Math.max(cap, 7 * 7 + 64);
         if (threads > 0) {
@@ -492,6 +599,9 @@ public final class Pipeline {
         }
         synchronized (this) {
             held.clear();
+            if (biomeOverrides != null) {
+                biomeOverrides.clear();
+            }
         }
     }
 
@@ -510,6 +620,13 @@ public final class Pipeline {
                 if (data != null) {
                     p = decode(data);
                     if (p != null && p.cx == cx && p.cz == cz) {
+                        if (upgrades != null) {
+                            p.upgrade = upgrades.forChunk(cx, cz, false);
+                            if (p.upgrade != null) {
+                                p.upgrade.old = null;
+                                biomeOverrides.put(k, p.quarts);
+                            }
+                        }
                         restored++;
                         p.lastUse = sequence;
                         held.put(k, p);
@@ -518,6 +635,9 @@ public final class Pipeline {
                 }
             }
             p = new Proto(cx, cz, this);
+            if (upgrades != null) {
+                p.upgrade = upgrades.forChunk(cx, cz, true);
+            }
             if (beards != null) {
                 long t = System.nanoTime();
                 p.beard = beards.forChunk(cx, cz);
@@ -560,6 +680,7 @@ public final class Pipeline {
         }
         if (t.failure != null) {
             held.remove(key(p.cx, p.cz));
+            forget(key(p.cx, p.cz));
             throw new IllegalStateException("terrain for chunk " + p.cx + "," + p.cz + " failed", t.failure);
         }
         return use(p);
@@ -766,7 +887,14 @@ public final class Pipeline {
         region.set(cx, cz, b25, w25, h25, m25);
         region.recording = log != null;
         region.opCount = 0;
-        decorator.decorate(region);
+        // An old chunk being upgraded writes only below y 0 (WorldGenRegion.ensureCanWrite).
+        region.writeTop = center.upgrade != null && center.upgrade.upgrading && !center.upgrade.decorateAll
+                ? 0 : Integer.MAX_VALUE;
+        try {
+            decorator.decorate(region);
+        } finally {
+            region.writeTop = Integer.MAX_VALUE;
+        }
         decorateNanos += System.nanoTime() - t;
         decorated++;
         center.decorated = true;
@@ -938,6 +1066,7 @@ public final class Pipeline {
         }
         for (Proto p : drop) {
             held.remove(key(p.cx, p.cz));
+            forget(key(p.cx, p.cz));
             gone.add(key(p.cx, p.cz));
             if (store != null) {
                 store.released(p.cx, p.cz, p.saved != 0, false);
@@ -960,6 +1089,7 @@ public final class Pipeline {
         }
         for (Long k : drop) {
             Proto p = held.remove(k);
+            forget(k);
             gone.add(k);
             if (store != null) {
                 store.released(p.cx, p.cz, p.saved != 0, p.changes != p.saved);
@@ -1003,6 +1133,7 @@ public final class Pipeline {
                 stored++;
             }
             it.remove();
+            forget(key(p.cx, p.cz));
         }
     }
 

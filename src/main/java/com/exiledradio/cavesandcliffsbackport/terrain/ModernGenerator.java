@@ -103,6 +103,9 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
     private final StructureBeards beards;
     /** Held chunks across restarts (null for a world without a save directory). */
     private final HeldStore store;
+    /** An upgraded world's old chunks ({@code upgrade.WorldUpgrade}), or null. */
+    @Nullable
+    private final UpgradeTerrain upgrade;
     /** 1.18's biomes in three dimensions for loaded chunks: mob spawning, the axolotls' lush caves. */
     final ChunkBiomes biomes3d;
     /** Other backports' newer placed features (Tricky Trials' spring plants), or null for none. */
@@ -170,9 +173,24 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         } else {
             this.beards = null;
         }
+        com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade upgrade =
+                com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade.of(world);
+        if (upgrade != null && world instanceof net.minecraft.world.WorldServer) {
+            // An old world upgraded to y -64..319: its old chunks get their part below 0, new ones blend toward them.
+            this.upgrade = new UpgradeTerrain((net.minecraft.world.WorldServer) world, upgrade, this.states);
+            this.pipeline.setUpgrades(this.upgrade);
+            CavesAndCliffsBackport.LOGGER.info("Upgraded world: {} old chunks, {} of them upgraded below y 0 so far.",
+                    upgrade.oldCount(), upgrade.doneCount());
+        } else {
+            this.upgrade = null;
+        }
         java.io.File dir = world.getSaveHandler().getWorldDirectory();
         if (dir != null && world instanceof net.minecraft.world.WorldServer) {
             this.store = new HeldStore((net.minecraft.world.WorldServer) world, dir);
+            if (this.upgrade != null) {
+                final UpgradeTerrain u = this.upgrade;
+                this.store.upgrading = u::upgrades;
+            }
             this.store.loadState();
             this.pipeline.setStore(this.store);
             this.store.open(this.pipeline);
@@ -492,6 +510,179 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
                 sections[slot] = this.sections.write(blocks, base, this.sky);
             }
         }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Upgraded worlds (upgrade.WorldUpgrade)
+
+    /** The 3D biomes of an upgraded world's chunk that are not the noise's, in its save. */
+    private static final String BIOMES_3D = CavesAndCliffsBackport.MOD_ID + ":Biomes3D";
+
+    /** Whether this world is an old one upgraded to y -64..319. */
+    public boolean upgraded() {
+        return this.upgrade != null;
+    }
+
+    /**
+     * ChunkDataEvent.Load in an upgraded world: a chunk the 0-255 world saved (no section list of the extended world
+     * in its save) gets its part below y 0 now, before it joins the world; a chunk saved since gets its 3D biomes back.
+     */
+    void chunkLoaded(Chunk chunk, net.minecraft.nbt.NBTTagCompound nbt) {
+        if (this.upgrade == null) {
+            return;
+        }
+        net.minecraft.nbt.NBTTagCompound level = nbt.getCompoundTag("Level");
+        if (level.hasKey(com.exiledradio.cavesandcliffsbackport.height.HeightHooks.SECTIONS)) {
+            byte[] q = level.getByteArray(BIOMES_3D);
+            if (q.length == Pipeline.QUARTS) {
+                this.biomes3d.put(chunk.x, chunk.z, q);
+            }
+            return;
+        }
+        if (this.upgrade.upgrade.isOld(chunk.x, chunk.z)) {
+            upgradeChunk(chunk);
+        }
+    }
+
+    /** ChunkDataEvent.Save in an upgraded world: the 3D biomes of a chunk near old ones (blended or retrogen). */
+    void chunkSaving(Chunk chunk, net.minecraft.nbt.NBTTagCompound nbt) {
+        if (this.upgrade == null || !this.upgrade.upgrade.oldWithin(chunk.x, chunk.z,
+                com.exiledradio.cavesandcliffsbackport.terrain.core.Blending.HEIGHT_RANGE_CHUNKS)) {
+            return;
+        }
+        byte[] q = this.biomes3d.kept(chunk.x, chunk.z);
+        if (q != null) {
+            nbt.getCompoundTag("Level").setByteArray(BIOMES_3D, q);
+        }
+    }
+
+    /** Old chunks upgraded below y 0 this session (for the self-test). */
+    public volatile int upgradedChunks;
+
+    /**
+     * 1.18's below-zero retrogen of an old chunk, as it loads: the 1.18 pipeline makes the chunk with its blocks from
+     * y 0 up as they are (BelowZeroRetrogen: noise, surface, carvers and features below 0 only), and its four sections
+     * below 0 go in; its bedrock at y 0..4 becomes deepslate. A chunk 1.12 never populated also gets 1.18's features
+     * above 0 (its status was before features). A chunk with no bedrock at y 0 is left as it is. Server thread.
+     */
+    public boolean upgradeChunk(final Chunk chunk) {
+        final UpgradeTerrain u = this.upgrade;
+        if (u == null) {
+            return false;
+        }
+        int x = chunk.x;
+        int z = chunk.z;
+        com.exiledradio.cavesandcliffsbackport.upgrade.OldChunks.OldChunk old = u.chunks.refresh(chunk);
+        if (!old.eligible()) {
+            u.upgrade.markDone(x, z);
+            return false;
+        }
+        if (store != null) {
+            // Old chunks load before any is generated (the spawn area): the held chunks a crash left come back first.
+            store.recover(pipeline);
+        }
+        long t = System.nanoTime();
+        Pipeline.Proto p = pipeline.finish(x, z);
+        final boolean all = p.upgrade != null && p.upgrade.decorateAll;
+        ExtendedBlockStorage[] sections = chunk.getBlockStorageArray();
+        for (int slot = HeightLayout.FIRST_LOW_SLOT; slot < sections.length; slot++) {
+            sections[slot] = this.sections.write(p.blocks, HeightLayout.slotBase(slot), this.sky);
+        }
+        net.minecraft.block.state.IBlockState deepslate = this.states.state(BlockCodes.DEEPSLATE);
+        final java.util.BitSet changed = all ? new java.util.BitSet(65536) : null;
+        boolean[] touched = new boolean[16];
+        for (int c = 0; c < 256; c++) {
+            int lx = c >> 4;
+            int lz = c & 15;
+            int at = c * Pipeline.HEIGHT - Pipeline.MIN_Y;
+            int top = all ? 256 : 5;
+            for (int y = 0; y < top; y++) {
+                ExtendedBlockStorage s = sections[y >> 4];
+                net.minecraft.block.state.IBlockState real = s == Chunk.NULL_BLOCK_STORAGE
+                        ? net.minecraft.init.Blocks.AIR.getDefaultState() : s.get(lx, y & 15, lz);
+                net.minecraft.block.state.IBlockState now = null;
+                if (y <= 4 && real.getBlock() == net.minecraft.init.Blocks.BEDROCK) {
+                    now = deepslate;
+                } else if (all) {
+                    int code = p.blocks[at + y];
+                    if (code != u.code(com.exiledradio.cavesandcliffsbackport.upgrade.OldChunks.stateId(real))) {
+                        now = this.states.state(code);
+                        changed.set(c * 256 + y);
+                    }
+                }
+                if (now == null || now == real) {
+                    continue;
+                }
+                if (s == Chunk.NULL_BLOCK_STORAGE) {
+                    s = new ExtendedBlockStorage(y >> 4 << 4, this.sky);
+                    sections[y >> 4] = s;
+                }
+                s.set(lx, y & 15, lz, now);
+                touched[y >> 4] = true;
+            }
+        }
+        for (int i = 0; i < 16; i++) {
+            if (touched[i] && sections[i] != Chunk.NULL_BLOCK_STORAGE) {
+                sections[i].recalculateRefCounts();
+            }
+        }
+        final long[][] wet = {null};
+        final int[] wetCount = {0};
+        this.rand.setSeed((long) x * 341873128712L + (long) z * 132897987541L);
+        specials(x, z, p.blocks, new Specials() {
+            private boolean kept(BlockPos pos) {
+                int y = pos.getY();
+                return y < 0 || changed != null && y < 256
+                        && changed.get(((pos.getX() & 15) * 16 + (pos.getZ() & 15)) * 256 + y);
+            }
+
+            @Override
+            public void tile(BlockPos pos, net.minecraft.tileentity.TileEntity te) {
+                if (kept(pos)) {
+                    chunk.addTileEntity(pos, te);
+                }
+            }
+
+            @Override
+            public void water(long pos) {
+                if (!kept(BlockPos.fromLong(pos))) {
+                    return;
+                }
+                if (wet[0] == null) {
+                    wet[0] = new long[16];
+                } else if (wetCount[0] == wet[0].length) {
+                    wet[0] = java.util.Arrays.copyOf(wet[0], wetCount[0] * 2);
+                }
+                wet[0][wetCount[0]++] = pos;
+            }
+        });
+        if (wet[0] != null) {
+            synchronized (this.water) {
+                this.water.put(ChunkPos.asLong(x, z), java.util.Arrays.copyOf(wet[0], wetCount[0]));
+            }
+        }
+        int[] updates = this.modern == null || !all ? p.updates : ModernFeatures.withVegetation(p.updates);
+        int n = 0;
+        int[] kept = new int[updates.length];
+        for (int e : updates) {
+            if (all || com.exiledradio.cavesandcliffsbackport.terrain.core.Marks.y(e) < 0
+                    && com.exiledradio.cavesandcliffsbackport.terrain.core.Marks.kind(e)
+                    < com.exiledradio.cavesandcliffsbackport.terrain.core.Marks.REQUEST) {
+                kept[n++] = e;
+            }
+        }
+        FluidUpdates.put(chunk, java.util.Arrays.copyOf(kept, n));
+        this.biomes3d.put(x, z, p.quarts.clone());
+        if (all) {
+            chunk.generateSkylightMap();
+        }
+        // Lava, lichen and the rest below 0 give light: 1.12 checks the chunk's light again once its neighbors load.
+        chunk.setLightPopulated(false);
+        chunk.markDirty();
+        u.upgrade.markDone(x, z);
+        writeNanos += System.nanoTime() - t;
+        upgradedChunks++;
+        return true;
     }
 
     /** Blocks that need more than their state: water kept in them, a chest's loot, a spawner's mob, a nest's bees. */

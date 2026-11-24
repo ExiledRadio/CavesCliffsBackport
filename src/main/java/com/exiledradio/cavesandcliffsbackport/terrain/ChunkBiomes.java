@@ -65,6 +65,11 @@ final class ChunkBiomes implements BiomeZoom.Quarts {
         lastKey = Long.MIN_VALUE;
     }
 
+    /** The stored biomes kept for a chunk (not computed), or null. */
+    synchronized byte[] kept(int cx, int cz) {
+        return chunks.get(key(cx, cz));
+    }
+
     synchronized void remove(int cx, int cz) {
         chunks.remove(key(cx, cz));
         lastKey = Long.MIN_VALUE;

@@ -64,6 +64,11 @@ public final class Region {
     int[] ops = new int[4096];
     int opCount;
     boolean recording;
+    /**
+     * Writes at or above this y are dropped: 0 while an old chunk being upgraded is decorated (WorldGenRegion's
+     * ensureCanWrite for a center that isUpgrading: only its new part, y -64..-1, in any of the 3x3 chunks).
+     */
+    int writeTop = Integer.MAX_VALUE;
 
     /**
      * Center chunk cx, cz; for the CHUNKS chunks (index (dx + READ) * SIDE + dz + READ) the blocks, the OCEAN_FLOOR_WG snapshot
@@ -203,6 +208,9 @@ public final class Region {
 
     /** A section write (BulkSectionAccess / LevelChunkSection.setBlockState): no heightmap moves. */
     public void setRaw(int x, int y, int z, int code) {
+        if (y >= writeTop) {
+            return;
+        }
         int k = chunk(x, z);
         int col = (x & 15) * 16 + (z & 15);
         blocks[k][col * HEIGHT + y - MIN_Y] = (char) code;
@@ -246,7 +254,7 @@ public final class Region {
      * (ProtoChunk.setBlockState), then Heightmap.update for the four POST_FEATURES heightmaps.
      */
     public boolean set(int x, int y, int z, int code) {
-        if (!canWrite(x, z) || outsideBuildHeight(y)) {
+        if (!canWrite(x, z) || outsideBuildHeight(y) || y >= writeTop) {
             return false;
         }
         int k = chunk(x, z);
@@ -294,7 +302,7 @@ public final class Region {
      * overworld features make is at or next to a block they write; one that lands a chunk further out is dropped).
      */
     public void mark(int x, int y, int z, int kind) {
-        if (!canWrite(x, z) || outsideBuildHeight(y)) {
+        if (!canWrite(x, z) || outsideBuildHeight(y) || y >= writeTop) {
             return;
         }
         int k = chunk(x, z);

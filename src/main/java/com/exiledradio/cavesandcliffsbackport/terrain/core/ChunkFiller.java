@@ -95,6 +95,27 @@ public final class ChunkFiller {
      * to the final density of every block, as vanilla's NoiseChunk adds the beardifier.
      */
     public void fill(int cx, int cz, char[] out, Beardifier beard) {
+        fill(cx, cz, out, beard, null);
+    }
+
+    /** The current fill's Blender (an upgraded world's chunk near old ones), or null. */
+    private Blending.Blender blender;
+
+    /**
+     * fill with 1.18's blending: blender (Blending.Blender for this chunk, or null) moves the main density at each
+     * noise corner toward the old chunks' (DensityFunctions.blendDensity, before the interpolation). The column
+     * values come blended from the column cache ({@link ColumnCache#setBlender}).
+     */
+    public void fill(int cx, int cz, char[] out, Beardifier beard, Blending.Blender blender) {
+        this.blender = blender;
+        try {
+            fillChunk(cx, cz, out, beard);
+        } finally {
+            this.blender = null;
+        }
+    }
+
+    private void fillChunk(int cx, int cz, char[] out, Beardifier beard) {
         this.beard = beard;
         baseX = cx << 4;
         baseZ = cz << 4;
@@ -132,6 +153,12 @@ public final class ChunkFiller {
             done[at + yi] = 0;
             // From y -40 up the bottom slide leaves the density alone, and the top slide only pulls it
             // toward a negative value, so a negative sloped cheese means a negative main density.
+            if (blender != null) {
+                // Blending can make any corner solid: nothing is known from the sloped cheese alone.
+                sloped[at + yi] = noise.slopedCheese(x, y, z, offset, factor, jaggedness);
+                known[at + yi] = GROUND;
+                continue;
+            }
             if (y >= -40 && OverworldNoise.slopedCheeseWithoutNoise(y, offset, factor, jaggedness * jaggedMax)
                     + BASE_3D_BOUND < 0.0D) {
                 known[at + yi] = SKY;
@@ -233,7 +260,8 @@ public final class ChunkFiller {
                         double v = known[c] == SKY
                             ? noise.slopedCheese(x, y, z, columnOffset[column], columnFactor[column], columnJaggedness[column])
                             : sloped[c];
-                        corners[F_MAIN][c] = noise.mainDensity(x, y, z, v);
+                        double main = noise.mainDensity(x, y, z, v);
+                        corners[F_MAIN][c] = blender == null ? main : blender.blendDensity(x, y, z, main);
                         break;
                     }
                     case DONE_NOODLE_TOGGLE:

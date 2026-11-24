@@ -105,6 +105,7 @@ public final class CavesAndCliffsBackport {
 
     @Mod.EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
+        event.registerServerCommand(new com.exiledradio.cavesandcliffsbackport.upgrade.UpgradeCommand());
     }
 
     /**
