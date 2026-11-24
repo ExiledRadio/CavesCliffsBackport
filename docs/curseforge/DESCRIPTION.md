@@ -85,7 +85,7 @@ Every feature can be turned off in Backport Core's settings screen, under Mod Op
 
 **Quark**: its marble, limestone, jasper and slate, its underground biomes and its varied dungeons all generate in Caves & Cliffs worlds. 1.18's granite, diorite and andesite blobs step aside where Quark places its own. Quark's candles, speleothems and crystals live beside ours.
 
-**Dynamic Trees**: its trees replace the 1.18 trees, so they don't grow twice.
+**Dynamic Trees**: its trees replace the 1.18 trees, tree by tree by the biome each stands in, so they don't grow twice.
 
 **Cubic Chunks**: the Caves & Cliffs world type becomes a cubic world with the same 1.18 terrain, block for block, from y -64 to 319.
 

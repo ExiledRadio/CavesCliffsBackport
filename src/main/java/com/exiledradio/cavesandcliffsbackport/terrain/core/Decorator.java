@@ -42,6 +42,8 @@ public final class Decorator {
     private Set<String> only;
     private final PaleGarden pale;
     private TreeGate treeGate;
+    /** While a TREES or CACTUS feature runs under a gate: its kind, asked per column ({@link TreeGate#allowsAt}). */
+    private int positionKind;
     private final int[] gateAnswers = new int[TreeGate.KINDS];
     private final byte[] stored = new byte[1536];
     private final boolean[] present = new boolean[256];
@@ -306,6 +308,15 @@ public final class Decorator {
         int KINDS = 7;
 
         boolean allows(int cx, int cz, int kind);
+
+        /**
+         * Asked for each {@link #TREES} or {@link #CACTUS} feature at the column it is placed in, once
+         * {@link #allows} let the chunk have them: false leaves that one out (Dynamic Trees, by the biome there, as
+         * its own trees pick theirs). The feature's later draws in the chunk are then not the same as without it.
+         */
+        default boolean allowsAt(int x, int z, int kind) {
+            return true;
+        }
     }
 
     public void treeGate(TreeGate gate) {
@@ -419,7 +430,9 @@ public final class Decorator {
                         }
                     }
                     random.setFeatureSeed(decorationSeed, i, k);
+                    positionKind = treeGate != null && (p.kind == TreeGate.TREES || p.kind == TreeGate.CACTUS) ? p.kind : 0;
                     run(p, 0, ox, MIN_Y, oz);
+                    positionKind = 0;
                 }
             }
         }
@@ -523,7 +536,7 @@ public final class Decorator {
     private void run(Placed p, int at, int x, int y, int z) {
         int[] ops = p.ops;
         if (at == ops.length) {
-            if (region.canWrite(x, z)) {
+            if (region.canWrite(x, z) && (positionKind == 0 || treeGate.allowsAt(x, z, positionKind))) {
                 p.feature.place(region, random, x, y, z);
             }
             return;
