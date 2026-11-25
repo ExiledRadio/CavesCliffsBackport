@@ -15,7 +15,7 @@ JARDIR=/g/VBPTest/ccrender/jars
 declare -A JARS=(
   [optifine]="OptiFine_1.12.2_HD_U_G5.jar"
   [celeritas]="01-celeritas-forge-mc12.2-2.5.0-dev.jar"
-  [nothirium]="Nothirium-1.12.2-0.4.9-beta.jar"
+  [nothirium]="Nothirium-1.12.2-0.4.9-beta.jar RenderLib-1.12.2-1.4.5.jar"
 )
 for spec in "$@"; do
   name=${spec%%:*}; mods=${spec#*:}
@@ -35,7 +35,7 @@ for spec in "$@"; do
   cp "$JARDIR/OTG-Core.jar" "$D/minecraft/mods/1.12.2/"
   cp "$CC" "$D/minecraft/mods/"
   if [ "$mods" != "-" ]; then
-    for m in ${mods//,/ }; do cp "$JARDIR/${JARS[$m]}" "$D/minecraft/mods/"; done
+    for m in ${mods//,/ }; do for j in ${JARS[$m]}; do cp "$JARDIR/$j" "$D/minecraft/mods/"; done; done
   fi
   if [[ ",$mods," == *",optifine,"* ]]; then
     cp -r "$JARDIR/shaderpacks/." "$D/minecraft/shaderpacks/"
