@@ -387,7 +387,36 @@ public final class HeightClientSelfTest {
                 return;
             }
             case 4: {
+                // The top render chunk's compile can lag the teleport by seconds (a busy chunk queue after the flight,
+                // a shader reload): up to 20 more seconds before it is checked.
+                if (!compiledNow(mc, new BlockPos(this.px + 3, 319, this.pz)) && ++this.compileWait < 400) {
+                    return;
+                }
+                CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST the render chunk at y 304: waited {} ticks after the 200", this.compileWait);
                 ok(mc.player.posY > 319, "the camera is above the world (y " + mc.player.posY + ")");
+                {
+                    // Where the culling walk starts: no render chunk at the camera above the world (vanilla's start
+                    // is then the top layer); and what is drawn, looking down.
+                    ViewFrustum vf = ObfuscationReflectionHelper.getPrivateValue(RenderGlobal.class, mc.renderGlobal, "field_175008_n");
+                    Object atCamera = null;
+                    if (vf != null) {
+                        java.lang.reflect.Method get;
+                        try {
+                            get = ViewFrustum.class.getDeclaredMethod("func_178161_a", BlockPos.class);
+                        } catch (NoSuchMethodException e) {
+                            get = ViewFrustum.class.getDeclaredMethod("getRenderChunk", BlockPos.class);
+                        }
+                        get.setAccessible(true);
+                        RenderChunk rc = (RenderChunk) get.invoke(vf, new BlockPos(mc.getRenderViewEntity().posX,
+                                mc.getRenderViewEntity().posY + mc.getRenderViewEntity().getEyeHeight(), mc.getRenderViewEntity().posZ));
+                        atCamera = rc == null ? "none" : rc.getPosition();
+                    }
+                    List<?> infos = ObfuscationReflectionHelper.getPrivateValue(RenderGlobal.class, mc.renderGlobal, "field_72755_R");
+                    CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST above the world: camera {} (eyes {}), render chunk at the camera {}, "
+                            + "{} render infos {}", mc.getRenderViewEntity().getPosition(),
+                            mc.getRenderViewEntity().posY + mc.getRenderViewEntity().getEyeHeight(), atCamera, infos.size(), range(infos));
+                    screenshot(mc, "cc-height-above-world");
+                }
                 compiled(mc, new BlockPos(this.px + 3, 319, this.pz), "the render chunk at y 304 (camera above the world)");
                 if (optifine()) {
                     rendered(mc, new BlockPos(this.px + 3, 319, this.pz), "y 304", "shaders " + shaderName());
@@ -917,6 +946,24 @@ public final class HeightClientSelfTest {
         }
         eq(lowest, low, "the lowest render chunk's y");
         eq(highest, top, "the highest render chunk's y");
+    }
+
+    private int compileWait;
+
+    /** Whether vanilla's render chunk holding pos is compiled with blocks in it now (true with another renderer). */
+    private boolean compiledNow(Minecraft mc, BlockPos pos) {
+        ViewFrustum frustum = ObfuscationReflectionHelper.getPrivateValue(RenderGlobal.class, mc.renderGlobal, "field_175008_n");
+        if (frustum == null || celeritasManager() != null || nothiriumPresent()) {
+            return true;
+        }
+        BlockPos base = new BlockPos(pos.getX() & ~15, pos.getY() & ~15, pos.getZ() & ~15);
+        for (RenderChunk r : frustum.renderChunks) {
+            if (r.getPosition().equals(base)) {
+                CompiledChunk c = r.getCompiledChunk();
+                return c != CompiledChunk.DUMMY && !c.isEmpty();
+            }
+        }
+        return false;
     }
 
     private void compiled(Minecraft mc, BlockPos pos, String what) {
