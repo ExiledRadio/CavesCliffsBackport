@@ -70,6 +70,8 @@ public final class HeightContent {
                 CavesAndCliffsBackport.LOGGER.error("CLIENT SELFTEST DONE pass=0 fail=1: the test classes are not in this build.", e);
             }
         }
+        // Roughly Enough IDs / Just Enough IDs: their palette in our section list, their int biomes (IdsCompat).
+        IdsCompat.init();
         String why = decide(client);
         refusal = why;
         if (why != null) {
@@ -188,6 +190,10 @@ public final class HeightContent {
         String paperFixes = PaperFixesCheck.unpatched(loader);
         if (paperFixes != null) {
             return paperFixes;
+        }
+        String ids = IdsCompat.refusal();
+        if (ids != null) {
+            return ids;
         }
         String valkyrie = ValkyrieCheck.unpatched();
         if (valkyrie != null) {

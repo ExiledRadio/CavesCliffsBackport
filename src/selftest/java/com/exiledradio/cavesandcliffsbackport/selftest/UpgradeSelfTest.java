@@ -7,6 +7,7 @@ import com.exiledradio.cavesandcliffsbackport.terrain.ModernTerrain;
 import com.exiledradio.cavesandcliffsbackport.upgrade.OldChunks;
 import com.exiledradio.cavesandcliffsbackport.upgrade.StructureGuard;
 import com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade;
+import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.command.ICommandSender;
@@ -590,9 +591,16 @@ public final class UpgradeSelfTest implements SelfTest {
                 net.minecraft.world.chunk.NibbleArray data = new net.minecraft.world.chunk.NibbleArray(s.getByteArray("Data"));
                 net.minecraft.world.chunk.NibbleArray add = s.hasKey("Add", 7)
                         ? new net.minecraft.world.chunk.NibbleArray(s.getByteArray("Add")) : null;
+                // Roughly Enough IDs / Just Enough IDs: palette indices, and the palette's state ids.
+                int[] palette = s.hasKey("Palette", 11) ? s.getIntArray("Palette") : null;
                 for (int j = 0; j < 4096; j++) {
-                    int id = (add == null ? 0 : add.getFromIndex(j)) << 8 | blocks[j] & 255;
                     int y = (sy << 4) + (j >> 8) + 64;
+                    if (palette != null) {
+                        IBlockState state = Block.BLOCK_STATE_IDS.getByValue(palette[(blocks[j] & 255) << 4 | data.getFromIndex(j)]);
+                        ids[((j & 15) * 16 + (j >> 4 & 15)) * 384 + y] = (char) (state == null ? 0 : OldChunks.stateId(state));
+                        continue;
+                    }
+                    int id = (add == null ? 0 : add.getFromIndex(j)) << 8 | blocks[j] & 255;
                     ids[((j & 15) * 16 + (j >> 4 & 15)) * 384 + y] = (char) (id << 4 | data.getFromIndex(j));
                 }
             }

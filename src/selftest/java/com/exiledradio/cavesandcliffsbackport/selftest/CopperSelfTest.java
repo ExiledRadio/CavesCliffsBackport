@@ -217,6 +217,8 @@ public final class CopperSelfTest implements SelfTest {
         c.ok(c.world.getTileEntity(rod) instanceof BlockLightningRod.TileEntityLightningRod, "the rod has its marker");
         // Rain over the test area: the rod must have rain on it, so its column is made plains.
         java.util.Arrays.fill(c.world.getChunk(rod).getBiomeArray(), (byte) 1);
+        // With Roughly Enough IDs the line above fills a throwaway copy; this fills its live int array.
+        java.util.Arrays.fill(com.exiledradio.cavesandcliffsbackport.height.IdsCompat.intBiomes(c.world.getChunk(rod)), 1);
         c.world.getWorldInfo().setRaining(true);
         c.world.getWorldInfo().setThundering(true);
         for (int i = 0; i < 400; i++) {

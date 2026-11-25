@@ -128,7 +128,7 @@ public final class TerrainSelfTest implements SelfTest {
         check.ok(lichen < 16, "glow lichen differs in at most a few blocks (" + lichen + ")");
         check.eq(256, bedrock, "bedrock at y -64 in every column");
         check.ok(deepslate > 0, "deepslate below y 0 (" + deepslate + " columns at y -8)");
-        byte[] biomes = chunk.getBiomeArray();
+        byte[] biomes = com.exiledradio.cavesandcliffsbackport.height.IdsCompat.biomeBytes(chunk);
         int biomeWrong = 0;
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {

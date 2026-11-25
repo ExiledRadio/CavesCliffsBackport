@@ -573,6 +573,14 @@ public final class HeightSelfTest implements SelfTest {
         check.ok(packet.isFullChunk(), "65535 still means a full chunk");
         check.eq(0xFFFFFF, mask(packet), "the full chunk's section mask covers all 24 sections");
         int size = 256;
+        if (com.exiledradio.cavesandcliffsbackport.height.IdsCompat.present()) {
+            // Roughly Enough IDs / Just Enough IDs send the biomes as a VarInt array.
+            int[] ids = com.exiledradio.cavesandcliffsbackport.height.IdsCompat.intBiomes(chunk);
+            size = PacketBuffer.getVarIntSize(ids.length);
+            for (int id : ids) {
+                size += PacketBuffer.getVarIntSize(id);
+            }
+        }
         for (ExtendedBlockStorage s : chunk.getBlockStorageArray()) {
             size += s.getData().getSerializedSize() + s.getBlockLight().getData().length + s.getSkyLight().getData().length;
         }

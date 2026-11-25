@@ -74,6 +74,8 @@ public final class SelfTestRunner {
             new UpgradeSelfTest("upgrade1"),
             new UpgradeSelfTest("upgrade2"),
             new UpgradeSelfTest("upgrade3"),
+            new IdsSelfTest("ids"),
+            new IdsSelfTest("ids2"),
             new LightEngineSelfTest("alfheimlight1"),
             new LightEngineSelfTest("alfheimlight2"),
             new LightEngineSelfTest("alfheimdump"),
@@ -136,7 +138,7 @@ public final class SelfTestRunner {
             // world (tools/height/selftest.sh structsnow), the world upgrade three servers on one world
             // (tools/height/upgrade.sh): never part of "all".
             boolean all = this.wanted.contains("all") && !(test instanceof RestartSelfTest) && !(test instanceof LightEngineSelfTest)
-                    && !(test instanceof UpgradeSelfTest)
+                    && !(test instanceof UpgradeSelfTest) && !(test instanceof IdsSelfTest)
                     && !(test instanceof FlatSelfTest) && !(test instanceof StructSnowSelfTest);
             if (all || this.wanted.contains(test.name())) {
                 check.section(test.name());

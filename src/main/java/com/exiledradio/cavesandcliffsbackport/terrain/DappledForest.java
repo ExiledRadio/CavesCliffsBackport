@@ -71,7 +71,7 @@ final class DappledForest {
         if (c == null) {
             return false;
         }
-        for (byte b : c.getBiomeArray()) {
+        for (byte b : com.exiledradio.cavesandcliffsbackport.height.IdsCompat.biomeBytes(c)) {
             if (b == id) {
                 return true;
             }
