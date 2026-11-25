@@ -76,7 +76,20 @@ public final class HeightClientSelfTest {
      */
     private net.minecraft.world.WorldType otherType;
 
+    /** The world-type file says {@code existing}: play the save already in saves/ (see the client test's state 0). */
+    private static boolean existingWorld() {
+        java.io.File file = new java.io.File("selftest-client-world");
+        try {
+            return file.isFile() && "existing".equals(new String(java.nio.file.Files.readAllBytes(file.toPath()), "UTF-8").trim());
+        } catch (java.io.IOException e) {
+            return false;
+        }
+    }
+
     private static net.minecraft.world.WorldType otherType() {
+        if (existingWorld()) {
+            return null;
+        }
         String name = System.getProperty(CavesAndCliffsBackport.MOD_ID + ".clienttest.world");
         java.io.File file = new java.io.File("selftest-client-world");
         if (name == null && file.isFile()) {
@@ -186,6 +199,14 @@ public final class HeightClientSelfTest {
                 if (!HeightContent.allowed()) {
                     // No Caves & Cliffs world type to make a world with.
                     finish(mc);
+                    return;
+                }
+                if (existingWorld()) {
+                    // A world made beforehand (OTG makes its single-player worlds only through its own screen: the
+                    // harness copies in one a dedicated server made, with its preset).
+                    CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST existing world {}", WORLD);
+                    mc.launchIntegratedServer(WORLD, WORLD, null);
+                    this.state = 1;
                     return;
                 }
                 mc.getSaveLoader().deleteWorldDirectory(WORLD);

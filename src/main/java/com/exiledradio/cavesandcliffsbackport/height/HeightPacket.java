@@ -79,6 +79,11 @@ public class HeightPacket implements IMessage {
     }
 
     private static void send(EntityPlayerMP player, World overworld) {
+        // A player with no FML connection behind it (another mod's bot or fake player) gets nothing: FML would throw.
+        if (player.connection == null || player.connection.netManager == null
+                || net.minecraftforge.fml.common.network.handshake.NetworkDispatcher.get(player.connection.netManager) == null) {
+            return;
+        }
         NetworkHandler.channel.sendTo(new HeightPacket(Heights.minY(overworld), Heights.maxY(overworld)), player);
     }
 

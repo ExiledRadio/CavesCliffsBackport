@@ -548,8 +548,13 @@ public final class HybridSelfTest implements SelfTest {
                     io.netty.util.concurrent.GenericFutureListener<? extends io.netty.util.concurrent.Future<? super Void>>... more) {
             }
         };
+        io.netty.channel.embedded.EmbeddedChannel channel = new io.netty.channel.embedded.EmbeddedChannel();
         net.minecraftforge.fml.relauncher.ReflectionHelper.setPrivateValue(net.minecraft.network.NetworkManager.class,
-                network, new io.netty.channel.embedded.EmbeddedChannel(), "channel", "field_150746_k");
+                network, channel, "channel", "field_150746_k");
+        // An FML dispatcher, as a real connection has after the handshake: mods that send their packets to every
+        // connecting player (OTG's PlayerTracker) throw without one. What it sends goes to the no-op network above.
+        channel.attr(net.minecraftforge.fml.common.network.handshake.NetworkDispatcher.FML_DISPATCHER).set(
+                new net.minecraftforge.fml.common.network.handshake.NetworkDispatcher(network, server.getPlayerList()));
         net.minecraft.network.NetHandlerPlayServer handler = new net.minecraft.network.NetHandlerPlayServer(server, network, player);
         server.getPlayerList().initializeConnectionToPlayer(network, player, handler);
         return player;
