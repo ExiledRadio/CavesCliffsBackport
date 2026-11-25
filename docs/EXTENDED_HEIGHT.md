@@ -342,12 +342,20 @@ caves and aquifers from their surface down, was not built.
   as before the upgrade and start where they always did.
 * **The client.** It decides extended height from the world type, which here is RTG's or OTG's. `height.HeightPacket`
   (id 66) tells it the overworld is extended, and `height.client.ClientHeight` extends the client world and lays out
-  the render chunks again (`RenderGlobal.loadRenderers`). It is sent from `EntityJoinWorldEvent` for the player. On
-  login and through a portal, PlayerList adds the player to the world before sending chunks, so the packet arrives
-  first. A respawn sends the chunks first (`recreatePlayerEntity`), so after one the player's chunks are sent again
-  (`PlayerChunkMap` remove and add).
+  the render chunks again (`RenderGlobal.loadRenderers`), remaking the chunk provider's `EmptyChunk` (built with
+  16 sections of entity lists: `RenderGlobal.renderEntities` crashed with index 20 next to unloaded chunks).
+  - It is sent once per connection, as the connection starts (FML's `ServerConnectionFromClientEvent`, before the
+    join packet). The client keeps it until it disconnects (`HeightHooks.serverOverworldExtended`, cleared on
+    connect and disconnect), so every overworld client world (login, portal, respawn) is extended when it is made.
+  - It is not enough to send it when the player joins the world: a respawn from another dimension sends the chunks
+    near the spawn before the player joins (`recreatePlayerEntity`, when another player keeps them sent). Measured
+    with `RespawnProbe`: 72-81 of 81 chunks.
+  - It is also sent from `EntityJoinWorldEvent`, as a fallback (the client then extends its current world).
+  - No packet goes to a player with no FML dispatcher (another mod's fake player): FML would throw.
 * **Tests.** `sh tools/height/hybrid.sh <server dir> <RTG|OTG> <jar>` runs four servers (`HybridSelfTest`):
   - `hybridnew`: a fresh world;
   - `hybridreload`: a restart;
+  - `hybridrespawn`: over real ticks, with a witness at the spawn, a login and respawns from the Nether and the End
+    (`RespawnProbe`);
   - `hybridold1`: a 0-255 world of the type, then the command;
   - `hybridold2`: the upgrade.
