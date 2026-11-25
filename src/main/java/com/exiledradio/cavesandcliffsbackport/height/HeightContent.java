@@ -163,6 +163,9 @@ public final class HeightContent {
         }
         List<String> missed = PatchReport.missed();
         for (String site : missed) {
+            if (site.startsWith(PaperFixesCheck.LABEL_PREFIX)) {
+                return PaperFixesCheck.missed(missed);
+            }
             if (site.startsWith(ValkyrieCheck.LABEL_PREFIX)) {
                 return "Valkyrie " + ValkyrieCheck.version() + " is installed and its render chunk code could not be "
                         + "adjusted for y -64 to 319 (made for Valkyrie " + ValkyrieCheck.MADE_FOR + "; missed: " + missed
@@ -181,6 +184,10 @@ public final class HeightContent {
                             + " was not patched (not read through the transformers)";
                 }
             }
+        }
+        String paperFixes = PaperFixesCheck.unpatched(loader);
+        if (paperFixes != null) {
+            return paperFixes;
         }
         String valkyrie = ValkyrieCheck.unpatched();
         if (valkyrie != null) {

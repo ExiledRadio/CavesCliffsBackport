@@ -152,6 +152,7 @@ public final class HeightClientSelfTest {
                 eq(new ArrayList<String>(), PatchReport.missed(), "client patch sites not found");
                 optifineReport();
                 valkyrieReport();
+                paperFixesReport();
                 if (!HeightContent.allowed()) {
                     // No Caves & Cliffs world type to make a world with.
                     finish(mc);
@@ -241,8 +242,32 @@ public final class HeightClientSelfTest {
                 this.state = 86;
                 return;
             }
-            case 86:
+            case 86: {
                 compareClientSections(mc);
+                // A zombie walks up a step below 0 (HeightSelfTest.pathing), on the integrated server.
+                final int bx = (int) Math.floor(mc.player.posX) + 8;
+                final int bz = (int) Math.floor(mc.player.posZ) + 8;
+                server(mc, world -> {
+                    Check check = new Check(world);
+                    try {
+                        HeightSelfTest.pathing(check, world, bx, bz);
+                    } catch (RuntimeException e) {
+                        check.fail("pathing threw " + e);
+                    }
+                    this.serverPassed = check.passed();
+                    this.serverFailures.addAll(check.failures());
+                });
+                this.state = 87;
+                return;
+            }
+            case 87:
+                CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST server pathing below 0: {} passed, failures {}",
+                        this.serverPassed, this.serverFailures);
+                this.passed += this.serverPassed;
+                for (String f : this.serverFailures) {
+                    fail("server: " + f);
+                }
+                this.serverFailures.clear();
                 server(mc, world -> {
                     for (EntityPlayerMP p : world.getMinecraftServer().getPlayerList().getPlayers()) {
                         p.setGameType(GameType.CREATIVE);
@@ -814,6 +839,21 @@ public final class HeightClientSelfTest {
      * With Valkyrie (no OptiFine): its frustum mixins were patched as Mixin read them (height.asm.ValkyriePatches);
      * the frustum and natural-band checks that follow then show its render chunks span the world's height.
      */
+    /**
+     * With PaperFixes: its ChunkCache and WalkNodeProcessor mixins were patched as Mixin read them
+     * (height.asm.PaperFixesPatches) when their options are on; the natural-band checks then show sections below 0
+     * built, and the pathing check (on the integrated server, after the flight) a zombie walking up a step below 0.
+     */
+    private void paperFixesReport() {
+        if (!net.minecraftforge.fml.common.Loader.isModLoaded("paperfixes")) {
+            return;
+        }
+        CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST PaperFixes {} installed; patched: chunk cache {}, walk node processor {}",
+                net.minecraftforge.fml.common.Loader.instance().getIndexedModList().get("paperfixes").getVersion(),
+                PatchReport.classPatched("PaperFixesPathingChunkCache"), PatchReport.classPatched("PaperFixesWalkNodeProcessor"));
+        ok(PatchReport.classPatched("PaperFixesPathingChunkCache"), "PaperFixes: its pathing_chunk_cache ChunkCacheMixin is patched");
+    }
+
     private void valkyrieReport() {
         if (!net.minecraftforge.fml.common.Loader.isModLoaded("valkyrie")) {
             return;
@@ -1096,6 +1136,7 @@ public final class HeightClientSelfTest {
     /** The sky-light pit: the surface's height there, and how far down it is dug. */
     private volatile int pitTop;
     private int pitY;
+    private int serverPassed;
     private final List<String> serverFailures = java.util.Collections.synchronizedList(new ArrayList<String>());
 
     /**

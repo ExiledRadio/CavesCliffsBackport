@@ -71,6 +71,8 @@ public final class HeightTransformer implements IClassTransformer {
                 new PhosphorPatches.LightingHooksPatch(),
                 new PhosphorPatches.LightingEngineHelpersPatch(),
                 new PhosphorPatches.MixinChunkPatch(),
+                new PaperFixesPatches.PathingChunkCachePatch(),
+                new PaperFixesPatches.WalkNodeProcessorPatch(),
         };
         if (!client) {
             return common;
@@ -107,6 +109,7 @@ public final class HeightTransformer implements IClassTransformer {
         for (ClassPatch p : all(client)) {
             if (p.target.startsWith("org.embeddedt.vintagefix.") || p.target.startsWith("dev.redstudio.alfheim.mixin.")
                     || p.target.startsWith("dev.redstudio.valkyrie.mixin.")
+                    || p.target.startsWith("me.elephant1214.paperfixes.mixin.")
                     || p.target.startsWith("eaglemixins.mixin.")
                     || p.target.startsWith("me.jellysquid.mods.phosphor.mixins.")) {
                 // A mixin class: Mixin reads it (through the transformers) when it applies it; loading it directly

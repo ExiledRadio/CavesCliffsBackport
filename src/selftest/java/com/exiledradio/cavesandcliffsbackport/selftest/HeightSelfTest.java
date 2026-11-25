@@ -92,6 +92,7 @@ public final class HeightSelfTest implements SelfTest {
         packets(check, world);
         voidFall(check, world);
         entities(check, world);
+        pathing(check, world, X + 64, Z + 64);
         removalMarkers(check, world);
         portals(check, world);
         precipitation(check, world);
@@ -671,6 +672,70 @@ public final class HeightSelfTest implements SelfTest {
             check.ok(!away.contains(item), "an area query 40 blocks above y " + c[0] + " does not");
             world.removeEntityDangerously(item);
             check.ok(!chunk.getEntityLists()[index].contains(item), "the entity at y " + c[0] + " is removed from its list");
+        }
+    }
+
+    /**
+     * Below 0, ChunkCache (the view chunk rendering and pathfinding read; PaperFixes' pathingChunkCache overwrites it)
+     * sees the blocks, and a zombie finds a path along a stone corridor at y -40 and walks up a one-block step at its
+     * middle (PaperFixes' pathNodeCache overwrites WalkNodeProcessor's neighbor check). Also run on a client test's
+     * integrated server, with PaperFixes installed.
+     */
+    static void pathing(Check check, WorldServer world, int bx, int bz) {
+        int floor = -41;
+        net.minecraft.block.state.IBlockState stone = Blocks.STONE.getDefaultState();
+        for (int x = bx - 1; x <= bx + 12; x++) {
+            for (int z = bz - 1; z <= bz + 5; z++) {
+                for (int y = floor - 1; y <= floor + 7; y++) {
+                    world.setBlockState(new BlockPos(x, y, z), stone, 2);
+                }
+            }
+        }
+        for (int x = bx; x <= bx + 11; x++) {
+            int stand = x <= bx + 5 ? floor + 1 : floor + 2;
+            for (int z = bz + 1; z <= bz + 3; z++) {
+                for (int y = stand; y <= stand + 3; y++) {
+                    world.setBlockState(new BlockPos(x, y, z), Blocks.AIR.getDefaultState(), 2);
+                }
+            }
+        }
+        BlockPos step = new BlockPos(bx + 6, floor + 1, bz + 2);
+        net.minecraft.world.ChunkCache cache = new net.minecraft.world.ChunkCache(world, step.add(-8, -8, -8), step.add(8, 8, 8), 0);
+        check.eq(Blocks.STONE, cache.getBlockState(step).getBlock(), "ChunkCache below 0: the step block at y -40");
+        check.eq(Blocks.STONE, cache.getBlockState(step.add(-3, -1, 0)).getBlock(), "ChunkCache below 0: the floor at y -41");
+        check.eq(Blocks.AIR, cache.getBlockState(step.add(-3, 0, 0)).getBlock(), "ChunkCache below 0: the air over the floor");
+
+        net.minecraft.entity.monster.EntityZombie zombie = new net.minecraft.entity.monster.EntityZombie(world);
+        zombie.setLocationAndAngles(bx + 1.5D, floor + 1, bz + 2.5D, 0F, 0F);
+        zombie.tasks.taskEntries.clear();
+        zombie.targetTasks.taskEntries.clear();
+        zombie.enablePersistence();
+        world.spawnEntity(zombie);
+        try {
+            // Settle it on the floor first: PathNavigateGround plans only for an entity on the ground.
+            for (int i = 0; i < 10 && !zombie.onGround; i++) {
+                zombie.onUpdate();
+            }
+            check.ok(zombie.onGround && Math.abs(zombie.posY - (floor + 1)) < 0.01D, "the zombie stands on the floor at y -40 (y "
+                    + String.format("%.2f", zombie.posY) + ", on ground " + zombie.onGround + ")");
+            BlockPos target = new BlockPos(bx + 10, floor + 2, bz + 2);
+            net.minecraft.pathfinding.Path path = zombie.getNavigator().getPathToPos(target);
+            check.ok(path != null && path.getFinalPathPoint() != null
+                            && path.getFinalPathPoint().x == target.getX() && path.getFinalPathPoint().y == target.getY()
+                            && path.getFinalPathPoint().z == target.getZ(),
+                    "a zombie at y -40 finds a path up a one-block step to " + target + " (path end "
+                            + (path == null ? "none" : path.getFinalPathPoint()) + ")");
+            zombie.getNavigator().setPath(path, 1.0D);
+            int ticks = 0;
+            while (ticks < 400 && (zombie.posX < bx + 9.5D || zombie.posY < floor + 2 - 0.01D)) {
+                zombie.onUpdate();
+                ticks++;
+            }
+            check.ok(zombie.posX >= bx + 9.5D && zombie.posY >= floor + 2 - 0.01D && zombie.posY < floor + 3,
+                    "the zombie walked up the step below 0 (at " + (int) Math.floor(zombie.posX - bx) + " "
+                            + String.format("%.2f", zombie.posY) + " after " + ticks + " ticks)");
+        } finally {
+            world.removeEntityDangerously(zombie);
         }
     }
 
