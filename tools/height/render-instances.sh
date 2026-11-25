@@ -41,6 +41,8 @@ for spec in "$@"; do
     cp -r "$JARDIR/shaderpacks/." "$D/minecraft/shaderpacks/"
     cp "$JARDIR/optionsshaders.txt" "$D/minecraft/"
   fi
+  # Cleanroom's "Scalar is not installed" check waits for a key press: off (jars/forge_early.cfg has it true).
+  cp "$JARDIR/forge_early.cfg" "$D/minecraft/config/"
   # A small render distance and no pause on focus loss, as the client test expects.
   printf 'renderDistance:8\npauseOnLostFocus:false\nlang:en_us\n' > "$D/minecraft/options.txt"
   [ -e "$PRISM/ccrender-$name" ] || cmd //c mklink //J "$(cygpath -w "$PRISM/ccrender-$name")" "$(cygpath -w "$D")" > /dev/null
