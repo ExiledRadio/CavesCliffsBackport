@@ -259,7 +259,7 @@ final class ModernFeatures {
     /** Every patch of the biomes on the chunk's surface, once, in 1.21.5's order (see the class comment). */
     private void vegetation(World world, Random rand, Chunk chunk) throws ReflectiveOperationException {
         Set<String> names = new LinkedHashSet<>();
-        byte[] ids = chunk.getBiomeArray();
+        byte[] ids = com.exiledradio.cavesandcliffsbackport.height.IdsCompat.biomeBytes(chunk);
         Set<String> here = new HashSet<>();
         for (byte id : ids) {
             net.minecraft.world.biome.Biome b = net.minecraft.world.biome.Biome.getBiome(id & 255);

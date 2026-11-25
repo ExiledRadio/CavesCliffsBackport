@@ -381,6 +381,8 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
             // Pipeline columns are x * 16 + z; 1.12's biome array is z << 4 | x.
             biomes[(c & 15) << 4 | c >> 4] = map.id(p.surfaceBiomes[c], (x << 4) + (c >> 4), (z << 4) + (c & 15));
         }
+        // Roughly Enough IDs / Just Enough IDs: getBiomeArray() was a throwaway copy; the ids go to their int array.
+        com.exiledradio.cavesandcliffsbackport.height.IdsCompat.generated(chunk, biomes);
         if (this.features) {
             this.mineshaft.generate(this.world, x, z, null);
             this.villages.generate(this.world, x, z, null);

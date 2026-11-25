@@ -184,7 +184,8 @@ public final class OldChunks {
     }
 
     private static OldChunk read(Chunk chunk) {
-        OldChunk c = new OldChunk(chunk.x, chunk.z, chunk.getBiomeArray().clone(), chunk.isTerrainPopulated());
+        OldChunk c = new OldChunk(chunk.x, chunk.z, com.exiledradio.cavesandcliffsbackport.height.IdsCompat.biomeBytes(chunk).clone(),
+                chunk.isTerrainPopulated());
         net.minecraft.world.chunk.storage.ExtendedBlockStorage[] sections = chunk.getBlockStorageArray();
         for (int s = 0; s < 16 && s < sections.length; s++) {
             net.minecraft.world.chunk.storage.ExtendedBlockStorage section = sections[s];
@@ -238,8 +239,9 @@ public final class OldChunks {
             return null;
         }
         NBTTagCompound level = nbt.getCompoundTag("Level");
-        byte[] biomes = level.getByteArray("Biomes");
-        if (biomes.length != 256) {
+        // Bytes as vanilla saves them, or Roughly Enough IDs / Just Enough IDs' int array.
+        byte[] biomes = com.exiledradio.cavesandcliffsbackport.height.IdsCompat.biomeBytes(level);
+        if (biomes == null || biomes.length != 256) {
             biomes = new byte[256];
             Arrays.fill(biomes, (byte) Biome.getIdForBiome(net.minecraft.init.Biomes.PLAINS));
         }
@@ -255,6 +257,23 @@ public final class OldChunks {
             }
             NibbleArray data = new NibbleArray(dataBytes);
             NibbleArray add = s.hasKey("Add", 7) ? new NibbleArray(s.getByteArray("Add")) : null;
+            if (s.hasKey("Palette", 11)) {
+                // Roughly Enough IDs / Just Enough IDs: Blocks and Data are indices into the section's palette of
+                // state ids. A state whose id does not fit 16 bits (a block id over 4095) reads as stone here: only
+                // blending looks at these, for ground and surface.
+                int[] palette = s.getIntArray("Palette");
+                for (int j = 0; j < 4096; j++) {
+                    int index = (blocks[j] & 255) << 4 | data.getFromIndex(j);
+                    int id = index < palette.length ? palette[index] : 0;
+                    IBlockState state = id == 0 ? null : Block.BLOCK_STATE_IDS.getByValue(id);
+                    int packed = state == null ? AIR : stateId(state);
+                    if (packed > 0xFFFF) {
+                        packed = stateId(Blocks.STONE.getDefaultState());
+                    }
+                    c.ids[((j & 15) * 16 + (j >> 4 & 15)) * 256 + (sy << 4) + (j >> 8)] = (char) packed;
+                }
+                continue;
+            }
             for (int j = 0; j < 4096; j++) {
                 int id = (add == null ? 0 : add.getFromIndex(j)) << 8 | blocks[j] & 255;
                 int x = j & 15;

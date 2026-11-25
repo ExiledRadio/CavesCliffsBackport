@@ -198,6 +198,10 @@ public final class HeightHooks {
         }
     }
 
+    static void writeData(File file, NBTTagCompound tag) {
+        write(file, tag);
+    }
+
     private static void write(File file, NBTTagCompound tag) {
         try {
             file.getParentFile().mkdirs();
@@ -235,21 +239,31 @@ public final class HeightHooks {
             if (section == Chunk.NULL_BLOCK_STORAGE) {
                 continue;
             }
-            NBTTagCompound tag = new NBTTagCompound();
-            tag.setByte("Y", (byte) (section.getYLocation() >> 4));
-            byte[] blocks = new byte[4096];
-            NibbleArray data = new NibbleArray();
-            NibbleArray add = section.getData().getDataForNBT(blocks, data);
-            tag.setByteArray("Blocks", blocks);
-            tag.setByteArray("Data", data.getData());
-            if (add != null) {
-                tag.setByteArray("Add", add.getData());
-            }
-            tag.setByteArray("BlockLight", section.getBlockLight().getData());
-            tag.setByteArray("SkyLight", sky ? section.getSkyLight().getData() : new byte[section.getBlockLight().getData().length]);
-            list.appendTag(tag);
+            list.appendTag(writeSection(section, sky));
         }
         level.setTag(SECTIONS, list);
+    }
+
+    /**
+     * One section as vanilla's {@code writeChunkToNBT} writes it, with a signed {@code Y}. With Roughly Enough IDs or
+     * Just Enough IDs its {@code getDataForNBT} writes palette indices and keeps the palette in the container, which
+     * its own code then saves as {@code Palette}; so does this ({@link IdsCompat}).
+     */
+    static NBTTagCompound writeSection(ExtendedBlockStorage section, boolean sky) {
+        NBTTagCompound tag = new NBTTagCompound();
+        tag.setByte("Y", (byte) (section.getYLocation() >> 4));
+        byte[] blocks = new byte[4096];
+        NibbleArray data = new NibbleArray();
+        NibbleArray add = section.getData().getDataForNBT(blocks, data);
+        tag.setByteArray("Blocks", blocks);
+        tag.setByteArray("Data", data.getData());
+        if (add != null) {
+            tag.setByteArray("Add", add.getData());
+        }
+        IdsCompat.writePalette(section.getData(), tag);
+        tag.setByteArray("BlockLight", section.getBlockLight().getData());
+        tag.setByteArray("SkyLight", sky ? section.getSkyLight().getData() : new byte[section.getBlockLight().getData().length]);
+        return tag;
     }
 
     /** After vanilla set the chunk's sections from {@code Sections}: puts back the ones from our list. */
@@ -260,6 +274,7 @@ public final class HeightHooks {
         }
         boolean sky = chunk.getWorld().provider.hasSkyLight();
         NBTTagList list = level.getTagList(SECTIONS, 10);
+        NBTTagList lost = null;
         for (int i = 0; i < list.tagCount(); i++) {
             NBTTagCompound tag = list.getCompoundTagAt(i);
             int y = tag.getByte("Y");
@@ -267,17 +282,35 @@ public final class HeightHooks {
             if (slot < HeightLayout.VANILLA_SECTIONS || slot >= all.length) {
                 continue;
             }
-            ExtendedBlockStorage section = new ExtendedBlockStorage(y << 4, sky);
-            NibbleArray data = new NibbleArray(tag.getByteArray("Data"));
-            NibbleArray add = tag.hasKey("Add", 7) ? new NibbleArray(tag.getByteArray("Add")) : null;
-            section.getData().setDataFromNBT(tag.getByteArray("Blocks"), data, add);
-            section.setBlockLight(new NibbleArray(tag.getByteArray("BlockLight")));
-            if (sky) {
-                section.setSkyLight(new NibbleArray(tag.getByteArray("SkyLight")));
+            if (IdsCompat.paletteLost(level, tag)) {
+                // Written by 1.1.5 or older under Roughly Enough IDs: palette indices without their palette. Decoding
+                // them would make up blocks (and nulls); the section stays empty and its tag is kept aside.
+                if (lost == null) {
+                    lost = new NBTTagList();
+                }
+                lost.appendTag(tag.copy());
+                continue;
             }
-            section.recalculateRefCounts();
-            all[slot] = section;
+            all[slot] = readSection(tag, y, sky);
         }
+        if (lost != null) {
+            IdsCompat.keepLost(chunk, lost);
+        }
+    }
+
+    /** One section of our list, written by {@link #writeSection}. */
+    static ExtendedBlockStorage readSection(NBTTagCompound tag, int y, boolean sky) {
+        ExtendedBlockStorage section = new ExtendedBlockStorage(y << 4, sky);
+        NibbleArray data = new NibbleArray(tag.getByteArray("Data"));
+        NibbleArray add = tag.hasKey("Add", 7) ? new NibbleArray(tag.getByteArray("Add")) : null;
+        IdsCompat.readPalette(section.getData(), tag);
+        section.getData().setDataFromNBT(tag.getByteArray("Blocks"), data, add);
+        section.setBlockLight(new NibbleArray(tag.getByteArray("BlockLight")));
+        if (sky) {
+            section.setSkyLight(new NibbleArray(tag.getByteArray("SkyLight")));
+        }
+        section.recalculateRefCounts();
+        return section;
     }
 
     // ---------------------------------------------------------------------------------------------
