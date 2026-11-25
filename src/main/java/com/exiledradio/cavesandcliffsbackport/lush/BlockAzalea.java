@@ -59,6 +59,10 @@ public class BlockAzalea extends BlockLushPlant implements IGrowable {
 
     @Override
     public void grow(World world, Random rand, BlockPos pos, IBlockState state) {
+        // Forge's sapling event, as vanilla's saplings fire it: Dynamic Trees - Backport grows a dynamic azalea tree.
+        if (!net.minecraftforge.event.terraingen.TerrainGen.saplingGrowTree(world, rand, pos)) {
+            return;
+        }
         world.setBlockState(pos, Blocks.AIR.getDefaultState(), 4);
         if (!AzaleaTree.grow(world, rand, pos, Integer.MIN_VALUE, Integer.MIN_VALUE, 3, false)) {
             world.setBlockState(pos, state, 4);

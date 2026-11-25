@@ -294,7 +294,9 @@ public final class LushCaveGenerator implements IWorldGenerator {
                 return false;
             }
             BlockPos base = m.toImmutable();
-            if (!AzaleaTree.grow(world, random, base, minX, minZ, 2, true)) {
+            // With Dynamic Trees - Backport, a dynamic azalea tree grows in the static one's place.
+            if (!com.exiledradio.backportcore.compat.DynamicTrees.grow(world, base, random, "dtbackport:azalea")
+                    && !AzaleaTree.grow(world, random, base, minX, minZ, 2, true)) {
                 continue;
             }
             // placeDirt: from the origin up to (not including) the block under the tree, which the tree made rooted dirt.
