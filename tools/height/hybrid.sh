@@ -3,6 +3,7 @@
 # mod installed (RTG, OTG).
 #   1. fresh world, hybridnew:    extended, its own terrain from y 0 up exactly, 1.18's below
 #   2. same world,  hybridreload: after a restart every chunk loads as saved, none upgraded twice
+#      same world,  hybridrespawn: login and a respawn from the Nether and the End, over real ticks (RespawnProbe)
 #   3. fresh world, hybridold1:   the type taken out of height.otherWorldTypes (y 0-255), then /cavesandcliffs upgradeworld
 #   4. same world,  hybridold2:   the type back in: old chunks upgraded below 0, every block from y 0 up kept
 #
@@ -82,6 +83,7 @@ rm -rf "$dir/world"
 set_types "RTG,OTG"
 run hybridnew
 run hybridreload
+run hybridrespawn
 rm -rf "$dir/world"
 set_types ""
 run hybridold1

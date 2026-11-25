@@ -74,7 +74,8 @@ public final class HeightHooks {
         }
         boolean ours = info.getTerrainType() == HeightContent.worldType();
         if (world.isRemote) {
-            if (ours) {
+            // The server's overworld of another mod's type, extended: it said so when the connection started.
+            if (ours || serverOverworldExtended) {
                 extend(world);
             }
             return;
@@ -127,6 +128,13 @@ public final class HeightHooks {
                     file, min, max - 1, info.getTerrainType().getName());
         }
     }
+
+    /**
+     * Client: the server this client is connected to said its overworld runs from y -64 to 319 though its world type is
+     * another mod's ({@link HeightPacket}); every overworld client world made while connected is extended. Cleared on
+     * disconnect. Client thread.
+     */
+    public static volatile boolean serverOverworldExtended;
 
     /** Whether the world folder has region files (chunks saved): a world that existed before. */
     private static boolean hasRegions(File dir) {

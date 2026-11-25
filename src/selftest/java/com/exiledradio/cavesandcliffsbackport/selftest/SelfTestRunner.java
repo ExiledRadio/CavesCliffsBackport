@@ -116,6 +116,10 @@ public final class SelfTestRunner {
             PackProbe.start();
             return;
         }
+        if ("hybridrespawn".equals(which)) {
+            RespawnProbe.start();
+            return;
+        }
         MinecraftForge.EVENT_BUS.register(new SelfTestRunner(Arrays.asList(which.split(","))));
     }
 

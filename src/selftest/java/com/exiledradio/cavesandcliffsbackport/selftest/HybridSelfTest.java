@@ -441,6 +441,133 @@ public final class HybridSelfTest implements SelfTest {
     }
 
     // ---------------------------------------------------------------------------------------------
+    // The client's height on a dedicated server: login, and a respawn from the Nether and the End
+
+    /** What the server did for the test player, in order: "height" (joined the overworld: height.HeightPacket sent), "+x,z"
+     * and "-x,z" (a chunk sent and unloaded), "respawned". */
+    static final class Order {
+        final java.util.List<String> events = new java.util.ArrayList<>();
+        final String name;
+
+        Order(String name) {
+            this.name = name;
+        }
+
+        private boolean ours(net.minecraft.entity.Entity e) {
+            return e instanceof net.minecraft.entity.player.EntityPlayerMP && name.equals(((net.minecraft.entity.player.EntityPlayerMP) e).getName());
+        }
+
+        @SubscribeEvent(priority = EventPriority.LOWEST)
+        public void told(net.minecraftforge.fml.common.network.FMLNetworkEvent.ServerConnectionFromClientEvent e) {
+            if (e.getHandler() instanceof net.minecraft.network.NetHandlerPlayServer
+                    && ours(((net.minecraft.network.NetHandlerPlayServer) e.getHandler()).player)) {
+                events.add("told");
+            }
+        }
+
+        @SubscribeEvent(priority = EventPriority.LOWEST)
+        public void join(net.minecraftforge.event.entity.EntityJoinWorldEvent e) {
+            if (ours(e.getEntity()) && !e.getWorld().isRemote) {
+                events.add("join" + e.getWorld().provider.getDimension());
+            }
+        }
+
+        @SubscribeEvent
+        public void watch(net.minecraftforge.event.world.ChunkWatchEvent.Watch e) {
+            if (ours(e.getPlayer()) && e.getPlayer().dimension == 0) {
+                events.add("+" + e.getChunk().x + "," + e.getChunk().z);
+            }
+        }
+
+        @SubscribeEvent
+        public void unwatch(net.minecraftforge.event.world.ChunkWatchEvent.UnWatch e) {
+            if (ours(e.getPlayer()) && e.getPlayer().dimension == 0) {
+                events.add("-" + e.getChunk().x + "," + e.getChunk().z);
+            }
+        }
+
+        @SubscribeEvent(priority = EventPriority.LOWEST)
+        public void respawned(net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerRespawnEvent e) {
+            if (ours(e.player)) {
+                events.add("respawned");
+            }
+        }
+
+        /**
+         * From the last "join0" of the list on: every chunk sent before the client could know its height (between
+         * the start and the join) is unloaded and sent again after it; returns the ones that are not.
+         */
+        java.util.Set<String> stale(int from) {
+            java.util.Set<String> before = new java.util.LinkedHashSet<>();
+            int join = -1;
+            for (int i = from; i < events.size(); i++) {
+                String s = events.get(i);
+                if (s.equals("join0")) {
+                    join = i;
+                    break;
+                }
+                if (s.startsWith("+")) {
+                    before.add(s.substring(1));
+                }
+            }
+            if (join < 0) {
+                before.add("(no join0)");
+                return before;
+            }
+            java.util.Set<String> unloaded = new java.util.HashSet<>();
+            java.util.Set<String> stale = new java.util.LinkedHashSet<>();
+            for (int i = join; i < events.size(); i++) {
+                String s = events.get(i);
+                if (s.startsWith("-")) {
+                    unloaded.add(s.substring(1));
+                } else if (s.startsWith("+") && unloaded.contains(s.substring(1))) {
+                    before.remove(s.substring(1));
+                }
+            }
+            stale.addAll(before);
+            return stale;
+        }
+    }
+
+    /** A player logged in through PlayerList on a connection that drops every packet (FML's too). */
+    static net.minecraft.entity.player.EntityPlayerMP connect(net.minecraft.server.MinecraftServer server,
+            WorldServer world, String name) {
+        net.minecraft.entity.player.EntityPlayerMP player = new net.minecraft.entity.player.EntityPlayerMP(server, world,
+                new com.mojang.authlib.GameProfile(java.util.UUID.nameUUIDFromBytes(("selftest:" + name).getBytes()), name),
+                new net.minecraft.server.management.PlayerInteractionManager(world));
+        net.minecraft.network.NetworkManager network = new net.minecraft.network.NetworkManager(
+                net.minecraft.network.EnumPacketDirection.CLIENTBOUND) {
+            @Override
+            public void sendPacket(net.minecraft.network.Packet<?> packet) {
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public void sendPacket(net.minecraft.network.Packet<?> packet,
+                    io.netty.util.concurrent.GenericFutureListener<? extends io.netty.util.concurrent.Future<? super Void>> listener,
+                    io.netty.util.concurrent.GenericFutureListener<? extends io.netty.util.concurrent.Future<? super Void>>... more) {
+            }
+        };
+        net.minecraftforge.fml.relauncher.ReflectionHelper.setPrivateValue(net.minecraft.network.NetworkManager.class,
+                network, new io.netty.channel.embedded.EmbeddedChannel(), "channel", "field_150746_k");
+        net.minecraft.network.NetHandlerPlayServer handler = new net.minecraft.network.NetHandlerPlayServer(server, network, player);
+        server.getPlayerList().initializeConnectionToPlayer(network, player, handler);
+        return player;
+    }
+
+    private static String first(java.util.Set<String> s) {
+        StringBuilder b = new StringBuilder();
+        int n = 0;
+        for (String x : s) {
+            if (n++ == 5) {
+                break;
+            }
+            b.append(x).append(' ');
+        }
+        return b.toString().trim();
+    }
+
+    // ---------------------------------------------------------------------------------------------
     // hybridold1 / hybridold2
 
     private static final int OX0 = -120;
