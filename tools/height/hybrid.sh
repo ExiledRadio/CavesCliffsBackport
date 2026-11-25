@@ -39,7 +39,7 @@ run() {
     phase=$1
     rm -f "$dir/selftest-report.txt"
     log="$dir/hybrid-$phase.log"
-    (cd "$dir" && "$java" -Xmx4G -Dfml.queryResult=confirm -Dcavesandcliffsbackport.selftest="$phase" \
+    (cd "$dir" && "$java" -Xmx4G -Dfml.queryResult=confirm ${JVM_ARGS:-} -Dcavesandcliffsbackport.selftest="$phase" \
         -jar "$(basename "$forge")" nogui < /dev/null > "$log" 2>&1) &
     pid=$!
     n=0

@@ -372,6 +372,7 @@ public final class HybridSelfTest implements SelfTest {
         below.check(check, "new chunks");
         biomes(check, world, host, X0, Z0, SIDE);
         check.eq(emptied, StructureGuard.emptied, "no structure start was emptied (the generator's own structures stand)");
+        otgAbove255(check, world);
         // For the restart: every block of the area.
         world.getMinecraftServer().getPlayerList().saveAllPlayerData();
         world.saveAllChunks(true, null);
@@ -383,6 +384,65 @@ public final class HybridSelfTest implements SelfTest {
                     out.writeInt(host.biome3d((x << 4) + 6, -30, (z << 4) + 6));
                 }
             }
+        }
+    }
+
+    /**
+     * OTG only: a chunk with blocks above y 255 that OTG then populates in a cold biome. Its snow and ice pass walks
+     * down each column from the height map; OTG's getMaterial answered null above 255 and the server crashed
+     * ({@code height.compat.OtgHooks}).
+     */
+    private static void otgAbove255(Check check, WorldServer world) {
+        if (!net.minecraftforge.fml.common.Loader.isModLoaded("openterraingenerator")) {
+            return;
+        }
+        int found = Integer.MIN_VALUE;
+        int fz = 0;
+        search:
+        for (int r = 30; r < 400; r += 3) {
+            for (int a = 0; a < 16; a++) {
+                int cx = (int) Math.round(r * Math.cos(a * Math.PI / 8));
+                int cz = (int) Math.round(r * Math.sin(a * Math.PI / 8));
+                boolean fresh = true;
+                for (int dx = -1; dx <= 2 && fresh; dx++) {
+                    for (int dz = -1; dz <= 2 && fresh; dz++) {
+                        fresh = !world.getChunkProvider().isChunkGeneratedAt(cx + dx, cz + dz);
+                    }
+                }
+                net.minecraft.util.math.BlockPos p = new net.minecraft.util.math.BlockPos((cx << 4) + 8, 64, (cz << 4) + 8);
+                if (fresh && world.getBiomeProvider().getBiome(p).getTemperature(p) < 0.15F) {
+                    found = cx;
+                    fz = cz;
+                    break search;
+                }
+            }
+        }
+        if (!check.ok(found != Integer.MIN_VALUE, "OTG: a cold biome with fresh land around it, for the test above y 255")) {
+            return;
+        }
+        int cx = found;
+        int cz = fz;
+        try {
+            Chunk c = world.getChunkProvider().provideChunk(cx, cz);
+            check.ok(!c.isTerrainPopulated(), "OTG: the chunk is not populated yet");
+            for (int x = 0; x < 16; x++) {
+                for (int z = 0; z < 16; z++) {
+                    world.setBlockState(new net.minecraft.util.math.BlockPos((cx << 4) + x, 280, (cz << 4) + z),
+                            Blocks.STONE.getDefaultState(), 2);
+                }
+            }
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    world.getChunkProvider().provideChunk(cx + dx, cz + dz);
+                }
+            }
+            check.ok(world.getChunk(cx, cz).isTerrainPopulated() && world.getChunk(cx - 1, cz - 1).isTerrainPopulated(),
+                    "OTG populated chunks under and beside blocks at y 280 (snow and ice pass) without a crash");
+            info("OTG above 255: chunk " + cx + ", " + cz + " (" + world.getBiome(new net.minecraft.util.math.BlockPos(cx << 4, 64, cz << 4)).getRegistryName()
+                    + "), populated with a platform at y 280");
+        } catch (RuntimeException e) {
+            com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.LOGGER.error("OTG above 255 threw", e);
+            check.fail("OTG: populating beside blocks above y 255 threw " + e);
         }
     }
 

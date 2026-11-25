@@ -338,6 +338,12 @@ caves and aquifers from their surface down, was not built.
   upgrades now do too). A biome 1.18 has no counterpart of (OTG's own, other mods') is plains there, not the noise's.
   `ModernTerrain.biomeAt` answers only below 0 in these worlds, so from y 0 up this mod's 1.17 cave regions decide
   lush and dripstone as before.
+* **OTG above y 255** (`height.compat.OtgHooks`, patch `ModCompatPatches.OtgMaterialPatch`): OTG's
+  `ForgeWorld.getMaterial` answers null for y 256 and up, and its snow and ice pass (`FrozenSurfaceHelper`) walks down
+  from the height map without expecting one. So anything built above 255 beside a chunk OTG then populated crashed the
+  server (found by the client test's room at y 300). Above 255 it now gets the block there (air where not loaded).
+  `HybridSelfTest.otgAbove255`: a platform at y 280 in a cold biome, then its neighbors. It crashes with
+  `-Dcavesandcliffsbackport.height.skipOtgPatch=true` and passes without it.
 * **Structures.** The structure guard does nothing in a hybrid world. The generator's structures are the same ones
   as before the upgrade and start where they always did.
 * **The client.** It decides extended height from the world type, which here is RTG's or OTG's. `height.HeightPacket`
