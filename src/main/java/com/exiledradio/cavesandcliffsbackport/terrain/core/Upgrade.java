@@ -62,20 +62,37 @@ public final class Upgrade {
                     }
                 }
                 if (oldBiomes != null) {
-                    int old = oldBiomes[(qx * 4) * 16 + qz * 4];
-                    if (old < 0) {
-                        continue;
-                    }
-                    for (int qy = 0; qy < BiomeSource.QUARTS_Y; qy++) {
-                        int y = (qy << 2) + MIN_Y;
-                        int b = quarts[at + qy];
-                        // Below 0, 1.18's lush and dripstone caves stay; everything else is the old chunk's biome.
-                        // An old chunk that is not upgrading (only read by its neighbors) keeps its biomes from 0 up.
-                        if (y >= 0 || upgrading && b != Biomes.LUSH_CAVES && b != Biomes.DRIPSTONE_CAVES) {
-                            quarts[at + qy] = (byte) old;
-                        }
-                    }
+                    column(quarts, at, oldBiomes[(qx * 4) * 16 + qz * 4], upgrading);
                 }
+            }
+        }
+    }
+
+    /**
+     * BelowZeroRetrogen.getBiomeResolver over a chunk's stored biomes (BiomeSource.fillChunk's layout), from its old
+     * biome per column (x * 16 + z, 1.18 ids, -1 for none: that column keeps the noise's): for a chunk whose fill ran
+     * before its old blocks were known (a hybrid world's neighbor, {@code terrain.ModernGenerator}).
+     */
+    public static void retrogenBiomes(byte[] quarts, byte[] oldBiomes) {
+        for (int qx = 0; qx < 4; qx++) {
+            for (int qz = 0; qz < 4; qz++) {
+                column(quarts, (qx * 4 + qz) * BiomeSource.QUARTS_Y, oldBiomes[(qx * 4) * 16 + qz * 4], true);
+            }
+        }
+    }
+
+    private static void column(byte[] quarts, int at, int old, boolean upgrading) {
+        if (old < 0) {
+            return;
+        }
+        for (int qy = 0; qy < BiomeSource.QUARTS_Y; qy++) {
+            int y = (qy << 2) + MIN_Y;
+            int b = quarts[at + qy];
+            // Below 0, 1.18's lush and dripstone caves stay (and the deep dark: 1.19's upgrade kept it too); everything
+            // else is the old chunk's biome. An old chunk that is not upgrading (only read by its neighbors) keeps its
+            // biomes from 0 up.
+            if (y >= 0 || upgrading && b != Biomes.LUSH_CAVES && b != Biomes.DRIPSTONE_CAVES && b != Biomes.DEEP_DARK) {
+                quarts[at + qy] = (byte) old;
             }
         }
     }

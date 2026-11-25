@@ -61,6 +61,10 @@ final class UpgradeTerrain implements Pipeline.Upgrades {
             return false;
         }
         OldChunks.OldChunk c = chunks.get(cx, cz);
+        if (c == null && upgrade.hybrid()) {
+            // A hybrid world's chunk its generator has not made yet: it gets its part below 0 once it is made.
+            return true;
+        }
         if (c == null || !c.eligible()) {
             upgrade.markDone(cx, cz);
             return false;
@@ -71,6 +75,9 @@ final class UpgradeTerrain implements Pipeline.Upgrades {
     @Nullable
     @Override
     public Upgrade forChunk(int cx, int cz, boolean blocks) {
+        if (upgrade.hybrid()) {
+            return hybrid(cx, cz, blocks);
+        }
         boolean old = upgrade.isOld(cx, cz);
         boolean upgrading = old && upgrades(cx, cz);
         int r = Blending.HEIGHT_RANGE_CHUNKS;
@@ -101,6 +108,22 @@ final class UpgradeTerrain implements Pipeline.Upgrades {
         boolean[] holes = upgrading ? c.holes() : null;
         byte[] biomes = c != null ? biomes(c) : null;
         return new Upgrade(upgrading, upgrading && !c.populated, blender, mask, oldCodes, holes, biomes);
+    }
+
+    /**
+     * A hybrid world's chunk ({@link WorldUpgrade#hybrid}): every chunk is old, so nothing blends (1.18's Blender
+     * inside old land changes nothing but the biomes), and 1.12's population, not 1.18's features, decorates from y 0
+     * up. A chunk not made yet upgrades once it is; until then its blocks from y 0 up are unknown (the features read
+     * the noise's there, and write only below 0).
+     */
+    private Upgrade hybrid(int cx, int cz, boolean blocks) {
+        boolean upgrading = upgrades(cx, cz);
+        OldChunks.OldChunk c = chunks.get(cx, cz);
+        Blending.CarveMask mask = upgrading ? Blending.CarveMask.of(true, 0xFF) : null;
+        char[] oldCodes = blocks && c != null ? codes(c) : null;
+        boolean[] holes = upgrading && c != null ? c.holes() : null;
+        byte[] biomes = c != null ? biomesOf(c) : null;
+        return new Upgrade(upgrading, false, null, mask, oldCodes, holes, biomes);
     }
 
     /** The Direction8 bits around cx, cz whose chunk is old. */
@@ -136,6 +159,22 @@ final class UpgradeTerrain implements Pipeline.Upgrades {
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 out[x * 16 + z] = (byte) BiomeMap.upgraded(c.biome(x, z));
+            }
+        }
+        return out;
+    }
+
+    /**
+     * {@link #biomes}, but in a hybrid world a biome 1.18 has no counterpart of (OTG's own, another mod's) is plains
+     * rather than the noise's: the noise there belongs to 1.18's terrain, not this generator's.
+     */
+    byte[] biomesOf(OldChunks.OldChunk c) {
+        byte[] out = biomes(c);
+        if (upgrade.hybrid()) {
+            for (int i = 0; i < out.length; i++) {
+                if (out[i] < 0) {
+                    out[i] = (byte) com.exiledradio.cavesandcliffsbackport.terrain.core.Biomes.PLAINS;
+                }
             }
         }
         return out;

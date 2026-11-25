@@ -56,7 +56,8 @@ public final class StructureGuard {
         }
         World world = world(gen);
         WorldUpgrade up = WorldUpgrade.of(world);
-        if (up == null) {
+        // Another mod's generator (RTG, OTG) still makes the chunks from y 0 up: its structures go where they always did.
+        if (up == null || up.hybrid()) {
             return start;
         }
         if (touchesOld(up, start)) {

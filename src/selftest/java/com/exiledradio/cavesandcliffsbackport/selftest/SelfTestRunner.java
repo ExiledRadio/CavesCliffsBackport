@@ -76,6 +76,10 @@ public final class SelfTestRunner {
             new UpgradeSelfTest("upgrade3"),
             new IdsSelfTest("ids"),
             new IdsSelfTest("ids2"),
+            new HybridSelfTest("hybridnew"),
+            new HybridSelfTest("hybridreload"),
+            new HybridSelfTest("hybridold1"),
+            new HybridSelfTest("hybridold2"),
             new LightEngineSelfTest("alfheimlight1"),
             new LightEngineSelfTest("alfheimlight2"),
             new LightEngineSelfTest("alfheimdump"),
@@ -114,6 +118,10 @@ public final class SelfTestRunner {
             PackProbe.start();
             return;
         }
+        if ("hybridrespawn".equals(which)) {
+            RespawnProbe.start();
+            return;
+        }
         MinecraftForge.EVENT_BUS.register(new SelfTestRunner(Arrays.asList(which.split(","))));
     }
 
@@ -139,6 +147,7 @@ public final class SelfTestRunner {
             // (tools/height/upgrade.sh): never part of "all".
             boolean all = this.wanted.contains("all") && !(test instanceof RestartSelfTest) && !(test instanceof LightEngineSelfTest)
                     && !(test instanceof UpgradeSelfTest) && !(test instanceof IdsSelfTest)
+                    && !(test instanceof HybridSelfTest)
                     && !(test instanceof FlatSelfTest) && !(test instanceof StructSnowSelfTest);
             if (all || this.wanted.contains(test.name())) {
                 check.section(test.name());

@@ -74,7 +74,8 @@ public final class HeightHooks {
         }
         boolean ours = info.getTerrainType() == HeightContent.worldType();
         if (world.isRemote) {
-            if (ours) {
+            // The server's overworld of another mod's type, extended: it said so when the connection started.
+            if (ours || serverOverworldExtended) {
                 extend(world);
             }
             return;
@@ -97,15 +98,25 @@ public final class HeightHooks {
             min = saved.getInteger("MinY");
             max = saved.getInteger("MaxY");
         } else {
-            min = ours ? HeightLayout.EXTENDED_MIN_Y : 0;
-            max = ours ? HeightLayout.EXTENDED_MAX_Y : 256;
+            // A new world of another mod's type (RTG, OTG) in height.otherWorldTypes: extended under its own terrain.
+            boolean other = !ours && com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade.of(world) == null
+                    && com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade.hybridType(info.getTerrainType())
+                    && !hasRegions(dir);
+            min = ours || other ? HeightLayout.EXTENDED_MIN_Y : 0;
+            max = ours || other ? HeightLayout.EXTENDED_MAX_Y : 256;
             NBTTagCompound tag = new NBTTagCompound();
             tag.setInteger("MinY", min);
             tag.setInteger("MaxY", max);
             write(file, tag);
+            if (other) {
+                com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade.startHybrid(world, dir);
+            }
         }
+        com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade up =
+                com.exiledradio.cavesandcliffsbackport.upgrade.WorldUpgrade.of(world);
+        boolean hybrid = up != null && up.hybrid();
         boolean extended = min == HeightLayout.EXTENDED_MIN_Y && max == HeightLayout.EXTENDED_MAX_Y;
-        if (extended && ours) {
+        if (extended && (ours || hybrid)) {
             extend(world);
             if (Heights.isExtended(world)) {
                 CavesAndCliffsBackport.LOGGER.info("Extended height: this world runs from y {} to {}.", min, max - 1);
@@ -116,6 +127,40 @@ public final class HeightHooks {
             CavesAndCliffsBackport.LOGGER.warn("Extended height: {} says y {}..{} but the world type is {}; the world keeps y 0-255.",
                     file, min, max - 1, info.getTerrainType().getName());
         }
+    }
+
+    /**
+     * Client: the server this client is connected to said its overworld runs from y -64 to 319 though its world type is
+     * another mod's ({@link HeightPacket}); every overworld client world made while connected is extended. Cleared on
+     * disconnect. Client thread.
+     */
+    public static volatile boolean serverOverworldExtended;
+
+    /** Whether the world folder has region files (chunks saved): a world that existed before. */
+    private static boolean hasRegions(File dir) {
+        String[] files = new File(dir, "region").list();
+        if (files != null) {
+            for (String f : files) {
+                if (f.endsWith(".mca")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The client's overworld of a server whose overworld is extended though its world type is another mod's (RTG,
+     * OTG; {@link HeightPacket}): it is extended now, before the first chunk arrives. Client thread.
+     *
+     * @return whether it was not extended before and is now
+     */
+    public static boolean extendClient(World world) {
+        if (!world.isRemote || world.provider.getDimension() != 0 || Heights.isExtended(world) || !HeightContent.allowed()) {
+            return false;
+        }
+        extend(world);
+        return Heights.isExtended(world);
     }
 
     /** Null until the first extended world; then whether the patched World methods answer the extended range. */

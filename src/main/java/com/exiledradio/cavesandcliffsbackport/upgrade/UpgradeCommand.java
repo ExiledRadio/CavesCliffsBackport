@@ -102,8 +102,14 @@ public final class UpgradeCommand extends CommandBase {
         say(sender, TextFormatting.WHITE, "- After the next restart, every chunk explored so far keeps its blocks from y 0 "
                 + "up. As each one loads it gets deepslate, caves, ores and aquifers below y 0, and its bedrock floor "
                 + "moves to y -64.");
-        say(sender, TextFormatting.WHITE, "- New chunks get the 1.18 terrain, up to y 319, and blend into the old "
-                + "ones at the border. No new structure starts in or reaches into an old chunk.");
+        WorldType own = overworld.getWorldInfo().getTerrainType();
+        if (WorldUpgrade.hybridType(own)) {
+            say(sender, TextFormatting.WHITE, "- New chunks keep " + own.getName() + "'s terrain and structures from y 0 "
+                    + "up, and get the same below y 0. The world stays a " + own.getName() + " world.");
+        } else {
+            say(sender, TextFormatting.WHITE, "- New chunks get the 1.18 terrain, up to y 319, and blend into the old "
+                    + "ones at the border. No new structure starts in or reaches into an old chunk.");
+        }
         say(sender, TextFormatting.WHITE, "- It can't be undone. Back up the whole world folder first.");
         say(sender, TextFormatting.GOLD, "Type /cavesandcliffs upgradeworld confirm within 60 seconds to go ahead.");
         this.askedBy = sender.getName();
@@ -127,9 +133,9 @@ public final class UpgradeCommand extends CommandBase {
             return "This world can't be upgraded: " + why + ".";
         }
         WorldType type = overworld.getWorldInfo().getTerrainType();
-        if (type != WorldType.DEFAULT) {
+        if (type != WorldType.DEFAULT && !WorldUpgrade.hybridType(type)) {
             return "This world can't be upgraded: its world type is " + type.getName() + ". Only Default worlds can "
-                    + "be, as in 1.18.";
+                    + "be, as in 1.18, and the world types in the config's height.otherWorldTypes.";
         }
         return null;
     }

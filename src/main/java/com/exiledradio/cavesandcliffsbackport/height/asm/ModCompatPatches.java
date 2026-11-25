@@ -333,6 +333,57 @@ final class ModCompatPatches {
      * chunk of an upgraded world (1.18 starts no structure in an old chunk). A miss only means no world can be
      * upgraded this session ({@code /cavesandcliffs upgradeworld} says so).
      */
+    /**
+     * Open Terrain Generator 1.12 (v9) {@code com.pg85.otg.forge.world.ForgeWorld.getMaterial}: it answers null for y
+     * 256 and up, which its snow and ice pass does not expect (anything built above 255 beside a chunk OTG populates
+     * crashed the server). At the method's start, y &gt;= 256 now returns {@code OtgHooks.above}: the block there as
+     * OTG's material, air where it is not loaded. A 0-255 world never builds there, so nothing changes for it. The
+     * inserted code reads only the method's own parameters and {@code this}.
+     */
+    static final class OtgMaterialPatch extends ModPatch {
+        static final String OTG_HOOKS = "com/exiledradio/cavesandcliffsbackport/height/compat/OtgHooks";
+
+        OtgMaterialPatch() {
+            super("com.pg85.otg.forge.world.ForgeWorld", "OtgMaterial");
+        }
+
+        @Override
+        protected void apply(ClassNode node) {
+            if (Boolean.getBoolean("cavesandcliffsbackport.height.skipOtgPatch")) {
+                // The self-test's control run: OTG as it ships.
+                return;
+            }
+            MethodNode m = method(node, "getMaterial", "getMaterial",
+                    "(IIILcom/pg85/otg/util/ChunkCoordinate;)Lcom/pg85/otg/common/LocalMaterialData;");
+            // if (y >= 256 || y < 0) return null;   (the method's first instructions)
+            for (AbstractInsnNode n : expect("getMaterial.top", m, 1, iload(2), icst(256), op(Opcodes.IF_ICMPGE))) {
+                if (n != m.instructions.getFirst() && !(m.instructions.getFirst() instanceof org.objectweb.asm.tree.LabelNode
+                        || m.instructions.getFirst() instanceof org.objectweb.asm.tree.LineNumberNode)) {
+                    // Not at the start: leave the class alone rather than guess its frames.
+                    continue;
+                }
+                org.objectweb.asm.tree.LabelNode below = new org.objectweb.asm.tree.LabelNode();
+                m.instructions.insert(list(
+                        new VarInsnNode(Opcodes.ILOAD, 2),
+                        new org.objectweb.asm.tree.IntInsnNode(Opcodes.SIPUSH, 256),
+                        new org.objectweb.asm.tree.JumpInsnNode(Opcodes.IF_ICMPLT, below),
+                        new VarInsnNode(Opcodes.ALOAD, 0),
+                        new FieldInsnNode(Opcodes.GETFIELD, "com/pg85/otg/forge/world/ForgeWorld", "world",
+                                "Lnet/minecraft/world/World;"),
+                        new VarInsnNode(Opcodes.ILOAD, 1),
+                        new VarInsnNode(Opcodes.ILOAD, 2),
+                        new VarInsnNode(Opcodes.ILOAD, 3),
+                        new MethodInsnNode(Opcodes.INVOKESTATIC, OTG_HOOKS, "above",
+                                "(Lnet/minecraft/world/World;III)Ljava/lang/Object;", false),
+                        // Null only if OTG's material class could not be reached: OTG's own answer above 255.
+                        new TypeInsnNode(Opcodes.CHECKCAST, "com/pg85/otg/common/LocalMaterialData"),
+                        new org.objectweb.asm.tree.InsnNode(Opcodes.ARETURN),
+                        below,
+                        new org.objectweb.asm.tree.FrameNode(Opcodes.F_SAME, 0, null, 0, null)));
+            }
+        }
+    }
+
     static final class StructureGuardPatch extends ModPatch {
         StructureGuardPatch() {
             super("net.minecraft.world.gen.structure.MapGenStructure", "StructureGuard");

@@ -68,6 +68,39 @@ public final class HeightClientSelfTest {
     /** A Default world instead of a Caves & Cliffs one. */
     private final boolean defaultWorld = "default".equals(System.getProperty(CavesAndCliffsBackport.MOD_ID + ".clienttest.world"))
             || new java.io.File("selftest-client-world-default").isFile();
+    /**
+     * {@code -Dcavesandcliffsbackport.clienttest.world=RTG} (any other world type by name): a new world of another mod's
+     * type in {@code height.otherWorldTypes}, extended under its own terrain; the client learns its height from the
+     * server's {@code height.HeightPacket}, and the rest of the test runs as in a Caves &amp; Cliffs world. Looked up when
+     * the world is made (the other mod registers its type after this test starts).
+     */
+    private net.minecraft.world.WorldType otherType;
+
+    /** The world-type file says {@code existing}: play the save already in saves/ (see the client test's state 0). */
+    private static boolean existingWorld() {
+        java.io.File file = new java.io.File("selftest-client-world");
+        try {
+            return file.isFile() && "existing".equals(new String(java.nio.file.Files.readAllBytes(file.toPath()), "UTF-8").trim());
+        } catch (java.io.IOException e) {
+            return false;
+        }
+    }
+
+    private static net.minecraft.world.WorldType otherType() {
+        if (existingWorld()) {
+            return null;
+        }
+        String name = System.getProperty(CavesAndCliffsBackport.MOD_ID + ".clienttest.world");
+        java.io.File file = new java.io.File("selftest-client-world");
+        if (name == null && file.isFile()) {
+            try {
+                name = new String(java.nio.file.Files.readAllBytes(file.toPath()), "UTF-8").trim();
+            } catch (java.io.IOException e) {
+                name = null;
+            }
+        }
+        return name == null || name.isEmpty() || "default".equals(name) ? null : net.minecraft.world.WorldType.byName(name);
+    }
 
     /** Frame-rate sampling: the state to go on to, and the samples (one a second). */
     private int fpsNext;
@@ -93,7 +126,18 @@ public final class HeightClientSelfTest {
         // A task on the integrated server first runs to its end (a busy pack's server can take many seconds to
         // get to it); the wait set with it counts from then.
         if (this.pending != null && !this.pending.get()) {
-            if (++this.pendingTicks > 6000) {
+            if (++this.pendingTicks == 1200) {
+                // A minute stuck: every thread's stack, to see what holds the server thread.
+                StringBuilder dump = new StringBuilder();
+                for (java.util.Map.Entry<Thread, StackTraceElement[]> e : Thread.getAllStackTraces().entrySet()) {
+                    dump.append("\n\"").append(e.getKey().getName()).append("\" ").append(e.getKey().getState());
+                    for (StackTraceElement s : e.getValue()) {
+                        dump.append("\n    at ").append(s);
+                    }
+                }
+                CavesAndCliffsBackport.LOGGER.error("CLIENT SELFTEST server task stuck for a minute; threads:{}", dump);
+            }
+            if (this.pendingTicks > 6000) {
                 fail("a task on the integrated server did not run within 5 minutes");
                 this.pending = null;
                 finish(mc);
@@ -158,8 +202,18 @@ public final class HeightClientSelfTest {
                     finish(mc);
                     return;
                 }
+                if (existingWorld()) {
+                    // A world made beforehand (OTG makes its single-player worlds only through its own screen: the
+                    // harness copies in one a dedicated server made, with its preset).
+                    CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST existing world {}", WORLD);
+                    mc.launchIntegratedServer(WORLD, WORLD, null);
+                    this.state = 1;
+                    return;
+                }
                 mc.getSaveLoader().deleteWorldDirectory(WORLD);
-                WorldSettings settings = new WorldSettings(1718L, GameType.CREATIVE, true, false, HeightContent.worldType());
+                WorldSettings settings = new WorldSettings(1718L, GameType.CREATIVE, true, false,
+                        (this.otherType = otherType()) != null ? this.otherType : HeightContent.worldType());
+                CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST world type {}", settings.getTerrainType().getName());
                 mc.launchIntegratedServer(WORLD, WORLD, settings);
                 this.state = 1;
                 return;
@@ -358,7 +412,36 @@ public final class HeightClientSelfTest {
                 return;
             }
             case 4: {
+                // The top render chunk's compile can lag the teleport by seconds (a busy chunk queue after the flight,
+                // a shader reload): up to 20 more seconds before it is checked.
+                if (!compiledNow(mc, new BlockPos(this.px + 3, 319, this.pz)) && ++this.compileWait < 400) {
+                    return;
+                }
+                CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST the render chunk at y 304: waited {} ticks after the 200", this.compileWait);
                 ok(mc.player.posY > 319, "the camera is above the world (y " + mc.player.posY + ")");
+                {
+                    // Where the culling walk starts: no render chunk at the camera above the world (vanilla's start
+                    // is then the top layer); and what is drawn, looking down.
+                    ViewFrustum vf = ObfuscationReflectionHelper.getPrivateValue(RenderGlobal.class, mc.renderGlobal, "field_175008_n");
+                    Object atCamera = null;
+                    if (vf != null) {
+                        java.lang.reflect.Method get;
+                        try {
+                            get = ViewFrustum.class.getDeclaredMethod("func_178161_a", BlockPos.class);
+                        } catch (NoSuchMethodException e) {
+                            get = ViewFrustum.class.getDeclaredMethod("getRenderChunk", BlockPos.class);
+                        }
+                        get.setAccessible(true);
+                        RenderChunk rc = (RenderChunk) get.invoke(vf, new BlockPos(mc.getRenderViewEntity().posX,
+                                mc.getRenderViewEntity().posY + mc.getRenderViewEntity().getEyeHeight(), mc.getRenderViewEntity().posZ));
+                        atCamera = rc == null ? "none" : rc.getPosition();
+                    }
+                    List<?> infos = ObfuscationReflectionHelper.getPrivateValue(RenderGlobal.class, mc.renderGlobal, "field_72755_R");
+                    CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST above the world: camera {} (eyes {}), render chunk at the camera {}, "
+                            + "{} render infos {}", mc.getRenderViewEntity().getPosition(),
+                            mc.getRenderViewEntity().posY + mc.getRenderViewEntity().getEyeHeight(), atCamera, infos.size(), range(infos));
+                    screenshot(mc, "cc-height-above-world");
+                }
                 compiled(mc, new BlockPos(this.px + 3, 319, this.pz), "the render chunk at y 304 (camera above the world)");
                 if (optifine()) {
                     rendered(mc, new BlockPos(this.px + 3, 319, this.pz), "y 304", "shaders " + shaderName());
@@ -386,7 +469,7 @@ public final class HeightClientSelfTest {
                     return;
                 }
                 if (!optifine()) {
-                    finish(mc);
+                    this.state = 90;
                     return;
                 }
                 // Where blocks are drawn, by pixels, with Render Regions on and shaders off (a plain sky and plain
@@ -681,6 +764,137 @@ public final class HeightClientSelfTest {
                 if (this.shaderPack != null && !"OFF".equals(this.shaderPack)) {
                     shaders(mc, this.shaderPack);
                 }
+                this.wait = 100;
+                this.state = 90;
+                return;
+            case 90:
+            case 94: {
+                // A respawn into the overworld from another dimension makes a new client world, and the server sends
+                // it chunks before the player joins it: the player dies in the Nether (90), then in the End (94).
+                final int dim = this.state == 90 ? -1 : 1;
+                final boolean first = this.state == 90;
+                server(mc, world -> {
+                    if (first) {
+                        // A second player at the spawn, staying: the chunks there are sent already, so the respawn
+                        // sends them at once, before this player joins the overworld (as on a busy server).
+                        this.witness = HybridSelfTest.connect(world.getMinecraftServer(), world, "Testwitness");
+                    }
+                    for (EntityPlayerMP p : world.getMinecraftServer().getPlayerList().getPlayers()) {
+                        if (p == this.witness) {
+                            continue;
+                        }
+                        p.setGameType(GameType.SURVIVAL);
+                        // Not vanilla's Teleporter: it reads the portal the player last stood in, and there is none.
+                        p.changeDimension(dim, (to, entity, yaw) -> {
+                            for (int dx = -1; dx <= 1; dx++) {
+                                for (int dz = -1; dz <= 1; dz++) {
+                                    to.setBlockState(new BlockPos(dx, 64, dz), Blocks.OBSIDIAN.getDefaultState(), 2);
+                                    for (int y = 65; y <= 67; y++) {
+                                        to.setBlockState(new BlockPos(dx, y, dz), Blocks.AIR.getDefaultState(), 2);
+                                    }
+                                }
+                            }
+                            entity.setLocationAndAngles(0.5, 65, 0.5, entity.rotationYaw, 0F);
+                            entity.motionX = entity.motionY = entity.motionZ = 0;
+                        });
+                    }
+                });
+                this.respawnDim = dim;
+                this.pendingTicks = 0;
+                this.wait = 100;
+                this.state = this.state + 1;
+                return;
+            }
+            case 91:
+            case 95: {
+                if (++this.pendingTicks < 600 && (mc.world == null || mc.player == null
+                        || mc.world.provider.getDimension() != this.respawnDim)) {
+                    return;
+                }
+                eq(this.respawnDim, mc.world == null ? null : mc.world.provider.getDimension(),
+                        "the client is in dimension " + this.respawnDim);
+                ok(!Heights.isExtended(mc.world), "the client's dimension " + this.respawnDim + " is not extended");
+                this.wait = 100;
+                server(mc, world -> {
+                    for (EntityPlayerMP p : world.getMinecraftServer().getPlayerList().getPlayers()) {
+                        if (p == this.witness) {
+                            continue;
+                        }
+                        p.setHealth(0F);
+                        p.onDeath(net.minecraft.util.DamageSource.OUT_OF_WORLD);
+                        CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST killed in dimension {}: health {}, dead {}",
+                                p.dimension, p.getHealth(), p.isDead);
+                    }
+                });
+                this.pendingTicks = 0;
+                this.state = this.state + 1;
+                return;
+            }
+            case 92:
+            case 96: {
+                if (mc.player != null && mc.player.isDead || mc.player != null && mc.player.getHealth() <= 0F) {
+                    mc.player.respawnPlayer();
+                    mc.displayGuiScreen(null);
+                    this.pendingTicks = 0;
+                    this.wait = 40;
+                    this.state = this.state + 1;
+                    return;
+                }
+                if (++this.pendingTicks > 600) {
+                    fail("the player did not die in dimension " + this.respawnDim);
+                    finish(mc);
+                }
+                return;
+            }
+            case 93:
+            case 97: {
+                if (++this.pendingTicks < 1200 && (mc.world == null || mc.player == null
+                        || mc.world.provider.getDimension() != 0
+                        || !mc.world.getChunk(mc.player.getPosition()).isLoaded()
+                        || mc.world.getChunk(mc.player.getPosition()).isEmpty())) {
+                    return;
+                }
+                if (this.pendingTicks < 1200 && this.settle-- > 0) {
+                    return;
+                }
+                this.settle = 200;
+                String from = this.respawnDim == -1 ? "the Nether" : "the End";
+                eq(0, mc.world == null ? null : mc.world.provider.getDimension(), "respawned into the overworld from " + from);
+                ok(Heights.isExtended(mc.world), "the client's overworld is extended after a respawn from " + from);
+                frustum(mc);
+                respawnSections(mc, from);
+                // Then down to y -30 as a spectator: the sections below 0 around it are drawn (naturalBelowZero).
+                final int x = (int) Math.floor(mc.player.posX);
+                final int z = (int) Math.floor(mc.player.posZ);
+                server(mc, world -> {
+                    for (EntityPlayerMP p : world.getMinecraftServer().getPlayerList().getPlayers()) {
+                        if (p == this.witness) {
+                            continue;
+                        }
+                        p.setGameType(GameType.SPECTATOR);
+                        p.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.init.MobEffects.NIGHT_VISION, 1000000, 0, false, false));
+                    }
+                    for (EntityPlayerMP p : world.getMinecraftServer().getPlayerList().getPlayers()) {
+                        if (p != this.witness) {
+                            p.capabilities.isFlying = true;
+                            p.sendPlayerAbilities();
+                            p.connection.setPlayerLocation(x + 0.5, -30, z + 0.5, 0F, -45F);
+                        }
+                    }
+                });
+                this.afterRespawn = this.state == 93 ? 94 : -1;
+                this.wait = 600;
+                this.state = 98;
+                return;
+            }
+            case 98:
+                naturalBelowZero(mc, true);
+                screenshot(mc, "cc-height-respawn-" + (this.afterRespawn == 94 ? "nether" : "end"));
+                if (this.afterRespawn == 94) {
+                    this.wait = 40;
+                    this.state = 94;
+                    return;
+                }
                 finish(mc);
                 return;
             default:
@@ -689,6 +903,55 @@ public final class HeightClientSelfTest {
 
     private void frustum(Minecraft mc) {
         frustum(mc, 24, -64, 304);
+    }
+
+    /** The dimension the respawn phase sends the player to; ticks left for the client's chunks to settle. */
+    private int respawnDim;
+    private int settle = 200;
+    private int afterRespawn;
+    private EntityPlayerMP witness;
+
+    /**
+     * After a respawn from another dimension: the client's blocks of the 5x5 chunks around the player, from y -64 to
+     * 319 at every eighth height, are the server's.
+     */
+    private void respawnSections(Minecraft mc, String from) {
+        net.minecraft.world.WorldServer server = mc.getIntegratedServer().getWorld(0);
+        int cx = (int) Math.floor(mc.player.posX) >> 4;
+        int cz = (int) Math.floor(mc.player.posZ) >> 4;
+        int checked = 0;
+        int differ = 0;
+        int chunks = 0;
+        int below = 0;
+        for (int x = cx - 2; x <= cx + 2; x++) {
+            for (int z = cz - 2; z <= cz + 2; z++) {
+                net.minecraft.world.chunk.Chunk c = mc.world.getChunkProvider().getLoadedChunk(x, z);
+                net.minecraft.world.chunk.Chunk s = server.getChunkProvider().getLoadedChunk(x, z);
+                if (c == null || s == null) {
+                    continue;
+                }
+                chunks++;
+                for (int y = -64; y < 320; y += 8) {
+                    for (int lx = 0; lx < 16; lx += 5) {
+                        for (int lz = 0; lz < 16; lz += 5) {
+                            checked++;
+                            Block cb = c.getBlockState(lx, y, lz).getBlock();
+                            if (cb != s.getBlockState(lx, y, lz).getBlock()) {
+                                differ++;
+                            }
+                            if (y < 0 && cb != Blocks.AIR) {
+                                below++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST respawn from {}: {} chunks, {} blocks compared, {} differ, {} below 0 not air",
+                from, chunks, checked, differ, below);
+        ok(chunks >= 20, "the client has the chunks around the player after a respawn from " + from + " (" + chunks + ")");
+        eq(0, differ, "client blocks y -64..319 are the server's after a respawn from " + from + " (" + checked + " compared)");
+        ok(below > checked / 8, "the client has blocks below y 0 after a respawn from " + from + " (" + below + ")");
     }
 
     private void frustum(Minecraft mc, int chunksHigh, int lowest, int highest) {
@@ -710,6 +973,24 @@ public final class HeightClientSelfTest {
         eq(highest, top, "the highest render chunk's y");
     }
 
+    private int compileWait;
+
+    /** Whether vanilla's render chunk holding pos is compiled with blocks in it now (true with another renderer). */
+    private boolean compiledNow(Minecraft mc, BlockPos pos) {
+        ViewFrustum frustum = ObfuscationReflectionHelper.getPrivateValue(RenderGlobal.class, mc.renderGlobal, "field_175008_n");
+        if (frustum == null || celeritasManager() != null || nothiriumPresent()) {
+            return true;
+        }
+        BlockPos base = new BlockPos(pos.getX() & ~15, pos.getY() & ~15, pos.getZ() & ~15);
+        for (RenderChunk r : frustum.renderChunks) {
+            if (r.getPosition().equals(base)) {
+                CompiledChunk c = r.getCompiledChunk();
+                return c != CompiledChunk.DUMMY && !c.isEmpty();
+            }
+        }
+        return false;
+    }
+
     private void compiled(Minecraft mc, BlockPos pos, String what) {
         if (celeritas(pos, what) || nothirium(pos, what)) {
             return;
@@ -726,7 +1007,20 @@ public final class HeightClientSelfTest {
             return;
         }
         CompiledChunk c = found.getCompiledChunk();
-        ok(c != CompiledChunk.DUMMY && !c.isEmpty(), what + " is compiled with blocks in it");
+        if (!ok(c != CompiledChunk.DUMMY && !c.isEmpty(), what + " is compiled with blocks in it")) {
+            net.minecraft.world.chunk.Chunk chunk = mc.world.getChunk(pos);
+            int blocks = 0;
+            for (BlockPos p : BlockPos.getAllInBox(base, base.add(15, 15, 15))) {
+                if (chunk.getBlockState(p).getMaterial() != net.minecraft.block.material.Material.AIR) {
+                    blocks++;
+                }
+            }
+            CavesAndCliffsBackport.LOGGER.error("CLIENT SELFTEST DIAG {}: compiled {}, needsUpdate {}, {} non-air "
+                    + "blocks in the client's section, chunk {} (empty {}), camera at {}", what,
+                    c == CompiledChunk.DUMMY ? "DUMMY" : "empty", found.needsUpdate(),
+                    blocks,
+                    chunk.getPos(), chunk.isEmpty(), mc.getRenderViewEntity() == null ? null : mc.getRenderViewEntity().getPosition());
+        }
     }
 
     /**
@@ -1004,6 +1298,33 @@ public final class HeightClientSelfTest {
      * The render chunk holding pos is in OptiFine's {@code renderInfos} (this frame's visible chunks), and, while a
      * shader pack with a shadow pass is loaded, in {@code renderInfosShadow}.
      */
+    /** OptiFine's shadow-pass render infos, whatever its visibility, or null if this RenderGlobal has no such field. */
+    private static List<?> shadowInfos(Minecraft mc) {
+        for (Class<?> c = RenderGlobal.class; c != null; c = c.getSuperclass()) {
+            for (java.lang.reflect.Field f : c.getDeclaredFields()) {
+                if (f.getName().equals("renderInfosShadow") && List.class.isAssignableFrom(f.getType())) {
+                    try {
+                        f.setAccessible(true);
+                        return (List<?>) f.get(mc.renderGlobal);
+                    } catch (ReflectiveOperationException | RuntimeException e) {
+                        return null;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static List<String> shadowFieldNames() {
+        List<String> out = new ArrayList<String>();
+        for (java.lang.reflect.Field f : RenderGlobal.class.getDeclaredFields()) {
+            if (f.getName().contains("hadow")) {
+                out.add(f.getName() + ":" + f.getType().getSimpleName());
+            }
+        }
+        return out;
+    }
+
     private void rendered(Minecraft mc, BlockPos pos, String what, String setup) {
         BlockPos base = new BlockPos(pos.getX() & ~15, pos.getY() & ~15, pos.getZ() & ~15);
         if (ObfuscationReflectionHelper.getPrivateValue(RenderGlobal.class, mc.renderGlobal, "field_175008_n") == null) {
@@ -1018,8 +1339,11 @@ public final class HeightClientSelfTest {
             ok(holds(infos, base), "OptiFine (" + setup + "): the render chunk at " + what + " is in renderInfos " + range(infos));
             Object loaded = optifineStatic("net.optifine.shaders.Shaders", "shaderPackLoaded");
             if (Boolean.TRUE.equals(loaded)) {
-                List<?> shadow = (List<?>) RenderGlobal.class.getField("renderInfosShadow").get(mc.renderGlobal);
-                if (shadow.isEmpty()) {
+                List<?> shadow = shadowInfos(mc);
+                if (shadow == null) {
+                    CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST ({}): no renderInfosShadow field in this OptiFine's "
+                            + "RenderGlobal (fields with 'hadow': {}); shadow pass not checked", setup, shadowFieldNames());
+                } else if (shadow.isEmpty()) {
                     CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST ({}): renderInfosShadow is empty (no shadow pass)", setup);
                 } else {
                     CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST OptiFine ({}): renderInfosShadow {}", setup, range(shadow));

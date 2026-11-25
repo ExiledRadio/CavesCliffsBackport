@@ -40,6 +40,7 @@ public final class HeightTransformer implements IClassTransformer {
                 new ModCompatPatches.ParasitesSpawnerPatch(),
                 new ModCompatPatches.ParasitesSpawner110Patch(),
                 new ModCompatPatches.StructureGuardPatch(),
+                new ModCompatPatches.OtgMaterialPatch(),
         };
     }
 
