@@ -1211,6 +1211,33 @@ public final class HeightClientSelfTest {
      * The render chunk holding pos is in OptiFine's {@code renderInfos} (this frame's visible chunks), and, while a
      * shader pack with a shadow pass is loaded, in {@code renderInfosShadow}.
      */
+    /** OptiFine's shadow-pass render infos, whatever its visibility, or null if this RenderGlobal has no such field. */
+    private static List<?> shadowInfos(Minecraft mc) {
+        for (Class<?> c = RenderGlobal.class; c != null; c = c.getSuperclass()) {
+            for (java.lang.reflect.Field f : c.getDeclaredFields()) {
+                if (f.getName().equals("renderInfosShadow") && List.class.isAssignableFrom(f.getType())) {
+                    try {
+                        f.setAccessible(true);
+                        return (List<?>) f.get(mc.renderGlobal);
+                    } catch (ReflectiveOperationException | RuntimeException e) {
+                        return null;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static List<String> shadowFieldNames() {
+        List<String> out = new ArrayList<String>();
+        for (java.lang.reflect.Field f : RenderGlobal.class.getDeclaredFields()) {
+            if (f.getName().contains("hadow")) {
+                out.add(f.getName() + ":" + f.getType().getSimpleName());
+            }
+        }
+        return out;
+    }
+
     private void rendered(Minecraft mc, BlockPos pos, String what, String setup) {
         BlockPos base = new BlockPos(pos.getX() & ~15, pos.getY() & ~15, pos.getZ() & ~15);
         if (ObfuscationReflectionHelper.getPrivateValue(RenderGlobal.class, mc.renderGlobal, "field_175008_n") == null) {
@@ -1225,8 +1252,11 @@ public final class HeightClientSelfTest {
             ok(holds(infos, base), "OptiFine (" + setup + "): the render chunk at " + what + " is in renderInfos " + range(infos));
             Object loaded = optifineStatic("net.optifine.shaders.Shaders", "shaderPackLoaded");
             if (Boolean.TRUE.equals(loaded)) {
-                List<?> shadow = (List<?>) RenderGlobal.class.getField("renderInfosShadow").get(mc.renderGlobal);
-                if (shadow.isEmpty()) {
+                List<?> shadow = shadowInfos(mc);
+                if (shadow == null) {
+                    CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST ({}): no renderInfosShadow field in this OptiFine's "
+                            + "RenderGlobal (fields with 'hadow': {}); shadow pass not checked", setup, shadowFieldNames());
+                } else if (shadow.isEmpty()) {
                     CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST ({}): renderInfosShadow is empty (no shadow pass)", setup);
                 } else {
                     CavesAndCliffsBackport.LOGGER.info("CLIENT SELFTEST OptiFine ({}): renderInfosShadow {}", setup, range(shadow));
