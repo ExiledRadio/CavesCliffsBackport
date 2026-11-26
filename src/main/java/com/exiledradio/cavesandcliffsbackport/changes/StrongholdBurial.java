@@ -53,7 +53,9 @@ public final class StrongholdBurial {
         @Override
         public void generate(World world, int chunkX, int chunkZ, ChunkPrimer primer) {
             super.generate(world, chunkX, chunkZ, primer);
-            if (ModConfig.changes.strongholdBurial) {
+            // A chunk loaded from the save asks again with no terrain (recreateStructures, vanilla's and RTG's): it was
+            // buried when it was made.
+            if (primer != null && ModConfig.changes.strongholdBurial) {
                 for (StructureStart start : this.structureMap.values()) {
                     bury(start, chunkX, chunkZ, primer);
                 }
@@ -66,7 +68,7 @@ public final class StrongholdBurial {
         int x0 = chunkX << 4;
         int z0 = chunkZ << 4;
         StructureBoundingBox chunk = new StructureBoundingBox(x0 - MARGIN, z0 - MARGIN, x0 + 15 + MARGIN, z0 + 15 + MARGIN);
-        if (start == null || !start.isSizeableStructure() || !start.getBoundingBox().intersectsWith(chunk)) {
+        if (primer == null || start == null || !start.isSizeableStructure() || !start.getBoundingBox().intersectsWith(chunk)) {
             return 0;
         }
         IBlockState stone = Blocks.STONE.getDefaultState();
