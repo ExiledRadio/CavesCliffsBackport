@@ -1,5 +1,7 @@
 # 1.1.6
 
+*   **Azalea trees grow as 1.17's do**: their bending trunk, its height and the leaf spread match vanilla's, so grown azaleas are no longer too small.
+*   With Dynamic Trees - Backport, lush caves' azalea trees and azalea bushes grown with bone meal are dynamic azalea trees.
 *   **RTG and OTG worlds run from y -64 to 319.** New Realistic Terrain Generation and Open Terrain Generator worlds keep their own terrain, biomes and structures from y 0 up. Below y 0 every chunk gets 1.18's deepslate, caves, aquifers, ores, lush caves, dripstone caves and, with Wild Update Backport, the deep dark, as 1.18 gave old worlds. The config's `otherWorldTypes` lists the world types. Existing worlds keep y 0-255.
 *   **`/cavesandcliffs upgradeworld` upgrades RTG and OTG worlds too.** They stay RTG and OTG worlds: old and new chunks keep their own terrain from y 0 up and get 1.18's below.
 *   Upgraded worlds keep the deep dark below y 0 (Wild Update Backport), as 1.19 does.
