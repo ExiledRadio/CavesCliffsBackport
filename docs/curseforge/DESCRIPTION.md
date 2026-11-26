@@ -127,7 +127,7 @@ Every feature can be turned off in Backport Core's settings screen, under Mod Op
 
 ## Requirements
 
-Minecraft 1.12.2 with Forge 14.23.5.2847 or newer, and [Backport Core](https://www.curseforge.com/minecraft/mc-mods/backport-core) 1.4.7 or newer. The CurseForge app installs Backport Core with it. [Fluidlogged API](https://www.curseforge.com/minecraft/mc-mods/fluidlogged-api) 3.3.3 or newer is optional, for waterlogged blocks. [Alfheim](https://www.curseforge.com/minecraft/mc-mods/alfheim-lighting-engine) 1.6 is optional and recommended, for faster world generation.
+Minecraft 1.12.2 with Forge 14.23.5.2847 or newer, and [Backport Core](https://www.curseforge.com/minecraft/mc-mods/backport-core) 1.4.9 or newer. The CurseForge app installs Backport Core with it. [Fluidlogged API](https://www.curseforge.com/minecraft/mc-mods/fluidlogged-api) 3.3.3 or newer is optional, for waterlogged blocks. [Alfheim](https://www.curseforge.com/minecraft/mc-mods/alfheim-lighting-engine) 1.6 is optional and recommended, for faster world generation.
 
 Removing this mod from a Caves & Cliffs world keeps everything from y 0 to 255. Everything below and above is lost, and the bottom of the world is open.
 
