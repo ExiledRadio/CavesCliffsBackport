@@ -1,7 +1,6 @@
 package com.exiledradio.cavesandcliffsbackport.lush;
 
 import net.minecraft.block.BlockLeaves;
-import net.minecraft.block.BlockLog;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
@@ -14,9 +13,9 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * The azalea tree, our own implementation of the one in 1.17: an oak trunk 4-6 tall that leans one way from
- * its third log up and then bends over for 1-2 more, rooted dirt under it, and loose clouds of leaves (50
- * tries each, within 2 across and 1 up or down) around the upper trunk and the bend; one leaf in four is
+ * The azalea tree, as 26.3's {@code azalea_tree}: an oak trunk of 4-6 upright logs that steps one way near its
+ * top and then 2-3 more logs along that way, rooted dirt under it, and loose clouds of leaves (50 tries each,
+ * within 2 across and 1 up or down) around every log from the fourth and the bend; one leaf in four is
  * flowering.
  */
 public final class AzaleaTree {
@@ -36,46 +35,55 @@ public final class AzaleaTree {
         if (base.getY() < 1 || base.getY() > 240 || !(anyGround || Soil.azalea(soil))) {
             return false;
         }
-        int height = 4 + rand.nextInt(3);
+        // TreeFeature.doPlace: BendingTrunkPlacer(4, 2, 0)'s height (4 + [0, 2] + [0, 0], both draws).
+        int height = 4 + rand.nextInt(3) + rand.nextInt(1);
         for (int i = 0; i < 3; i++) {
             if (!free(world.getBlockState(base.up(i)))) {
                 return false;
             }
         }
-        EnumFacing dir = EnumFacing.Plane.HORIZONTAL.random(rand);
+        // BendingTrunkPlacer.placeTrunk (26.3): a direction in Direction.Plane.HORIZONTAL's order, then logHeight + 1
+        // upright logs, each moved one along it from the second-to-last on (a coin flip earlier); foliage on every log
+        // from the fourth (minHeightForLeaves 3), then 1-2 + 1 more upright logs along the direction, each with foliage.
+        EnumFacing dir = HORIZONTAL[rand.nextInt(4)];
         IBlockState log = Blocks.LOG.getDefaultState();
+        int logHeight = height - 1;
         List<BlockPos> crowns = new ArrayList<BlockPos>();
         BlockPos p = base;
         world.setBlockState(base.down(), LushContent.rootedDirt.getDefaultState(), flags);
-        for (int i = 0; i < height - 1; i++) {
-            if (i + 1 >= 3 && rand.nextBoolean()) {
+        for (int i = 0; i <= logHeight; i++) {
+            if (i + 1 >= logHeight + rand.nextInt(2)) {
                 p = p.offset(dir);
             }
-            if (log(world, p, log, minX, minZ, flags) && i >= 2) {
+            log(world, p, log, minX, minZ, flags);
+            if (i >= 3) {
                 crowns.add(p);
             }
             p = p.up();
         }
         int bend = 1 + rand.nextInt(2);
-        IBlockState side = log.withProperty(BlockLog.LOG_AXIS, BlockLog.EnumAxis.fromFacingAxis(dir.getAxis()));
         for (int i = 0; i <= bend; i++) {
-            if (log(world, p, i == 0 ? log : side, minX, minZ, flags)) {
-                crowns.add(p);
-            }
+            log(world, p, log, minX, minZ, flags);
+            crowns.add(p);
             p = p.offset(dir);
         }
-        crowns.add(p);
+        // RandomSpreadFoliagePlacer(radius 3, offset 0, height 2, 50 tries): each try places a leaf (azalea 3 :
+        // flowering 1, drawn per placed leaf) wherever a tree may go, leaves included.
         for (BlockPos c : crowns) {
             for (int i = 0; i < 50; i++) {
                 BlockPos l = c.add(rand.nextInt(3) - rand.nextInt(3), rand.nextInt(2) - rand.nextInt(2), rand.nextInt(3) - rand.nextInt(3));
-                if (inside(l, minX, minZ) && world.isAirBlock(l)) {
-                    BlockLeaves leaves = rand.nextInt(4) == 0 ? LushContent.floweringLeaves : LushContent.leaves;
+                IBlockState here = world.getBlockState(l);
+                if (inside(l, minX, minZ) && (world.isAirBlock(l) || here.getMaterial() == Material.LEAVES)) {
+                    BlockLeaves leaves = rand.nextInt(4) == 3 ? LushContent.floweringLeaves : LushContent.leaves;
                     world.setBlockState(l, leaves.getDefaultState(), flags);
                 }
             }
         }
         return true;
     }
+
+    /** {@code Direction.Plane.HORIZONTAL}'s order. */
+    private static final EnumFacing[] HORIZONTAL = {EnumFacing.NORTH, EnumFacing.EAST, EnumFacing.SOUTH, EnumFacing.WEST};
 
     private static boolean inside(BlockPos p, int minX, int minZ) {
         return minX == Integer.MIN_VALUE || (p.getX() >= minX && p.getX() < minX + 32 && p.getZ() >= minZ && p.getZ() < minZ + 32);
