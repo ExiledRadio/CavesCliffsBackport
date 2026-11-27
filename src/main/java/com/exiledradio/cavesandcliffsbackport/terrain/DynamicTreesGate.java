@@ -80,7 +80,8 @@ final class DynamicTreesGate implements Decorator.TreeGate {
     /** Whether Dynamic Trees - Backport has this species: made only with the backport that owns the tree. */
     private static boolean installed(String name) {
         int colon = name.indexOf(':');
-        String family = name.substring(colon + 1).replace("tall", "");
+        // The species' tree family: the tall mangrove is a mangrove, the creaking pale oak a pale oak.
+        String family = name.substring(colon + 1).replace("tall", "").replace("creaking", "");
         net.minecraft.block.Block branch = net.minecraftforge.fml.common.registry.ForgeRegistries.BLOCKS.getValue(
                 new net.minecraft.util.ResourceLocation(name.substring(0, colon), family + "branch"));
         return branch != null && branch != net.minecraft.init.Blocks.AIR;
