@@ -220,6 +220,11 @@ public final class Decorator {
         // 1.21.4's pale garden (Editions.PALE): its features only appear in that edition's tables.
         pale = new PaleGarden(noise);
         for (Placed p : pale.placed()) {
+            // Its trees are trees to the gate: where Dynamic Trees grows the pale garden's own (Dynamic Trees - Backport's,
+            // spaced as its dark oak forests), these step aside.
+            if ("pale_garden_vegetation".equals(p.name)) {
+                p.kind = TreeGate.TREES;
+            }
             ported.put(p.name, p);
         }
         String[][] order = steps(noise.editions);
