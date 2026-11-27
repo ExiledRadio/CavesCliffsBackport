@@ -60,6 +60,7 @@ public final class SelfTestRunner {
             new LookFeelSelfTest(),
             new WaterlogSelfTest(),
             new HeightSelfTest(),
+            new DepthAiSelfTest(),
             new TerrainSelfTest(),
             new TerrainGapsSelfTest(),
             new TerrainOceanSelfTest(),

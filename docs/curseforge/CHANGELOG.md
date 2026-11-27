@@ -3,6 +3,8 @@
 *   **Dynamic Trees in 1.18 worlds**: with Dynamic Trees - Backport, cherry groves, mangrove swamps and pale gardens grow its dynamic trees in Caves & Cliffs worlds too. They had the static trees there.
 *   **Creaking hearts**: with Tricky Trials Backport 1.0.4, the pale garden's heart trees are Dynamic Trees - Backport's creaking pale oaks too.
 *   **Less lag**: axolotl spawning no longer builds an axolotl for every water block it tries; it checks the spot first. It took a fifth of every server tick.
+*   **Fixed: mobs below y 0 moved wrong.** Skeletons and other strafing mobs walked straight at you instead of strafing, mobs found no ground to path to, bats turned in place and got stuck in blocks, and endermen could not teleport there. Vanilla stops these checks at y 0 or 1; in a Caves & Cliffs world they go to the world's bottom.
+*   **Candles stand on furniture tables**: MrCrayfish's Furniture Mod and other furniture mods' tables, desks and counters hold candles, as any block with a full top does. A candle goes by the shape of the block's top, as current Java does.
 
 # 1.1.6
 

@@ -240,6 +240,7 @@ public final class CandleSelfTest implements SelfTest {
             c.world.setBlockState(post, (IBlockState) b[0], 2 | 16);
             c.eq(b[1], candle.canPlaceBlockAt(c.world, post.up()), b[2] + " under a candle");
         }
+        furniture(c, candle, post);
         c.world.setBlockState(post, Blocks.AIR.getDefaultState(), 2 | 16);
 
         // Placing in mid-air by hand fails; taking the floor away drops every candle.
@@ -255,6 +256,35 @@ public final class CandleSelfTest implements SelfTest {
         c.ok(c.world.isAirBlock(o), "a candle with nothing under it breaks");
         c.eq(3, Drops.count(c.world, o, Item.getItemFromBlock(candle)), "and drops its candles");
         c.world.setBlockState(floor, Blocks.STONE.getDefaultState(), 3);
+    }
+
+    /**
+     * MrCrayfish's Furniture Mod (cfm in eclipse/mods): its tables answer UNDEFINED for every face, so a candle
+     * is held by their full-height top's collision box. The coffee table's top is lower than a full block.
+     */
+    private static void furniture(Check c, Block candle, BlockPos post) {
+        if (!net.minecraftforge.fml.common.Loader.isModLoaded("cfm")) {
+            return;
+        }
+        Object[][] below = {
+                {"cfm:table_oak", true}, {"cfm:desk_oak", true}, {"cfm:modern_table", true},
+                {"cfm:counter", true}, {"cfm:coffee_table_oak", false}, {"cfm:chair_oak", false},
+        };
+        for (Object[] b : below) {
+            Block block = Block.getBlockFromName((String) b[0]);
+            if (block == null) {
+                c.fail(b[0] + " is not registered");
+                continue;
+            }
+            c.world.setBlockState(post, block.getDefaultState(), 2 | 16);
+            c.eq(b[1], candle.canPlaceBlockAt(c.world, post.up()), b[0] + " under a candle");
+            if ((Boolean) b[1]) {
+                c.world.setBlockState(post.up(), candle.getDefaultState(), 2 | 16);
+                c.world.neighborChanged(post.up(), Blocks.STONE, post);
+                c.ok(c.world.getBlockState(post.up()).getBlock() == candle, "a candle stays on " + b[0]);
+                c.world.setBlockState(post.up(), Blocks.AIR.getDefaultState(), 2 | 16);
+            }
+        }
     }
 
     private void cakes(Check c) {

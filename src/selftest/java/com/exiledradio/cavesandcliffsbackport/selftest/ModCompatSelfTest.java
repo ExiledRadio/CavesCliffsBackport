@@ -106,7 +106,14 @@ public final class ModCompatSelfTest implements SelfTest {
         // The world upgrade's structure guard is patched the mod-compat way in a vanilla class: always there.
         check.ok(PatchReport.compatPatched("StructureGuard"), "StructureGuard patched");
         if (!bc && !kagic && !srp) {
-            check.eq(Arrays.asList("StructureGuard.recursiveGenerate.start: found"), PatchReport.compatLines(),
+            // Mob movement below 0 (AiPatches) is patched the mod-compat way in vanilla classes too, as each loads.
+            java.util.List<String> lines = new java.util.ArrayList<String>();
+            for (String line : PatchReport.compatLines()) {
+                if (!line.matches("(WalkNodeProcessor|FlyingNodeProcessor|PathNavigateGround|EntityBat|EntityLivingBaseTeleport)\\..*: found")) {
+                    lines.add(line);
+                }
+            }
+            check.eq(Arrays.asList("StructureGuard.recursiveGenerate.start: found"), lines,
                     "mod-compat sites without the mods");
         }
     }
