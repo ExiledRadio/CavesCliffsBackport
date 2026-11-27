@@ -318,6 +318,24 @@ public final class Decorator {
         default boolean allowsAt(int x, int z, int biome, int kind) {
             return true;
         }
+
+        /**
+         * Asked by a tree that a mod grows its own version of ({@link Trees.Handed}: the cherry, mangrove and pale oak,
+         * Dynamic Trees - Backport's species) where it would be placed: true takes it over (the mod grows its own
+         * there later), and the 1.18 tree is not placed. Called from the pipeline's threads.
+         *
+         * @param species the mod's species ({@code dtbackport:cherry})
+         */
+        default boolean hand(String species, int x, int y, int z) {
+            return false;
+        }
+    }
+
+    /** The decorator running on this thread, for the trees that ask its gate ({@link Trees.Handed}). */
+    static final ThreadLocal<Decorator> CURRENT = new ThreadLocal<Decorator>();
+
+    TreeGate gate() {
+        return treeGate;
     }
 
     public void treeGate(TreeGate gate) {
@@ -386,6 +404,15 @@ public final class Decorator {
 
     /** Decorates the region's center chunk. */
     public void decorate(Region region) {
+        CURRENT.set(this);
+        try {
+            decorateNow(region);
+        } finally {
+            CURRENT.remove();
+        }
+    }
+
+    private void decorateNow(Region region) {
         this.region = region;
         region.rules = rules;
         int cx = region.centerX;

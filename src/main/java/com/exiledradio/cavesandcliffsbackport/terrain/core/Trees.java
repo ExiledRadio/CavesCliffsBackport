@@ -230,8 +230,9 @@ final class Trees {
                 COUNT_EXTRA, 10, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME),
             // 1.19.2: Count 25, in square, surface water depth 5, ocean floor, biome, wouldSurvive(propagule); a
             // RANDOM_SELECTOR of tall_mangrove_checked (0.85) and mangrove_checked, each wouldSurvive(propagule) too.
-            new Placed("trees_mangrove", new Selector(new float[]{0.85F}, new Feature[]{new PropaguleChecked(mangrove(true))},
-                new PropaguleChecked(mangrove(false))), COUNT, 25, IN_SQUARE, WATER_DEPTH, 5, HEIGHTMAP, of, BIOME, CUSTOM, 0)
+            new Placed("trees_mangrove", new Selector(new float[]{0.85F},
+                new Feature[]{new Handed("dtbackport:tallmangrove", new PropaguleChecked(mangrove(true)))},
+                new Handed("dtbackport:mangrove", new PropaguleChecked(mangrove(false)))), COUNT, 25, IN_SQUARE, WATER_DEPTH, 5, HEIGHTMAP, of, BIOME, CUSTOM, 0)
                 .mods((level, random, next, x, y, z) -> {
                     // 1.21 dropped this filter (mangrove_checked still asks).
                     if (level.rules >= Rules.V121 || propaguleSurvives(level, x, y, z)) {
@@ -239,7 +240,7 @@ final class Trees {
                     }
                 }),
             // 1.20.1: treePlacement(countExtra(10, 0.1F, 1), cherry sapling) of cherry_bees_005.
-            new Placed("trees_cherry", cherry(0.05F), COUNT_EXTRA, 10, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME,
+            new Placed("trees_cherry", new Handed("dtbackport:cherry", cherry(0.05F)), COUNT_EXTRA, 10, 10, 1, IN_SQUARE, WATER_DEPTH, 0, HEIGHTMAP, of, BIOME,
                 CUSTOM, 0).mods(sapling));
     }
 
@@ -272,6 +273,30 @@ final class Trees {
     }
 
     /** mangrove_checked / tall_mangrove_checked: wouldSurvive(propagule), then the tree. */
+    /**
+     * A tree another mod grows its own version of: the decorator's gate is asked first ({@link Decorator.TreeGate#hand})
+     * and, when it takes the tree, the 1.18 one is not placed (its own draws are not made).
+     */
+    static final class Handed implements Feature {
+        private final String species;
+        private final Feature own;
+
+        Handed(String species, Feature own) {
+            this.species = species;
+            this.own = own;
+        }
+
+        @Override
+        public boolean place(Region region, XoroRandom random, int x, int y, int z) {
+            Decorator d = Decorator.CURRENT.get();
+            Decorator.TreeGate gate = d == null ? null : d.gate();
+            if (gate != null && region.canWrite(x, z) && gate.hand(this.species, x, y, z)) {
+                return true;
+            }
+            return this.own.place(region, random, x, y, z);
+        }
+    }
+
     static final class PropaguleChecked implements Feature {
         final Feature tree;
 

@@ -148,6 +148,7 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         // Dynamic Trees grows its own trees where it cancels vanilla's; the 1.18 trees step aside there. Asked on the
         // server thread, which finishes chunks.
         com.exiledradio.cavesandcliffsbackport.terrain.core.Decorator.TreeGate trees = DynamicTreesGate.of(world, terrain.map);
+        this.dynamicTrees = trees instanceof DynamicTreesGate ? (DynamicTreesGate) trees : null;
         com.exiledradio.cavesandcliffsbackport.terrain.core.Decorator.TreeGate gate = ModDecoration.gate(trees, ModDecoration.quarkStones());
         // Tricky Trials' 1.21.5 spring plants: its tree selectors, its cactus patches (see ModernFeatures).
         this.modern = ModernFeatures.of(trees);
@@ -303,6 +304,10 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
 
     // ---------------------------------------------------------------------------------------------
     // Generation
+
+    /** Dynamic Trees' gate, which grows the add-on's trees the 1.18 terrain hands it ({@link DynamicTreesGate#growHanded}). */
+    @javax.annotation.Nullable
+    private DynamicTreesGate dynamicTrees;
 
     @Override
     public Chunk generateChunk(int x, int z) {
@@ -850,6 +855,10 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
         boolean village = false;
         ChunkPos chunkpos = new ChunkPos(x, z);
         ForgeEventFactory.onChunkPopulate(true, this, this.world, this.rand, x, z, false);
+        if (this.dynamicTrees != null) {
+            // Dynamic Trees - Backport's cherries, mangroves and pale oaks where the 1.18 terrain put its own.
+            this.dynamicTrees.growHanded(x, z, this.rand);
+        }
         if (this.features) {
             this.mineshaft.generateStructure(this.world, this.rand, chunkpos);
             village = this.villages.generateStructure(this.world, this.rand, chunkpos);

@@ -165,6 +165,11 @@ final class ModDecoration {
             public boolean allowsAt(int x, int z, int biome, int kind) {
                 return a.allowsAt(x, z, biome, kind) && b.allowsAt(x, z, biome, kind);
             }
+
+            @Override
+            public boolean hand(String species, int x, int y, int z) {
+                return a.hand(species, x, y, z) || b.hand(species, x, y, z);
+            }
         };
     }
 
