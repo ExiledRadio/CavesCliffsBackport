@@ -119,7 +119,8 @@ public class BlockCandle extends BlockAbstractCandle implements Waterloggable {
             case MIDDLE_POLE_THICK:
                 return true;
             default:
-                return false;
+                // Furniture tables and other modded blocks with a full top but no face shape.
+                return CenterSupport.byShape(world, below, EnumFacing.UP);
         }
     }
 

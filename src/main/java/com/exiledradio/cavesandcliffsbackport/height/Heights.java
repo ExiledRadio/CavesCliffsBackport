@@ -138,6 +138,42 @@ public final class Heights {
         return minY(world) + 1;
     }
 
+    /**
+     * The lowest block y of what pathfinding reads: a world, or the {@code ChunkCache} it builds over one (its world's);
+     * 0 for anything else, as vanilla.
+     */
+    public static int minYOf(net.minecraft.world.IBlockAccess access) {
+        if (access instanceof World) {
+            return minY((World) access);
+        }
+        if (access instanceof net.minecraft.world.ChunkCache) {
+            return minY(cacheWorld((net.minecraft.world.ChunkCache) access));
+        }
+        return 0;
+    }
+
+    /** {@code WalkNodeProcessor.getPathNodeType}'s floor check: one above the bottom (vanilla's 1). */
+    public static int aboveBottomOf(net.minecraft.world.IBlockAccess access) {
+        return minYOf(access) + 1;
+    }
+
+    private static volatile java.lang.invoke.MethodHandle cacheWorld;
+
+    private static World cacheWorld(net.minecraft.world.ChunkCache cache) {
+        try {
+            java.lang.invoke.MethodHandle h = cacheWorld;
+            if (h == null) {
+                java.lang.reflect.Field f = net.minecraftforge.fml.relauncher.ReflectionHelper.findField(
+                        net.minecraft.world.ChunkCache.class, "world", "field_72815_e");
+                h = java.lang.invoke.MethodHandles.lookup().unreflectGetter(f);
+                cacheWorld = h;
+            }
+            return (World) h.invoke(cache);
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
     /** A chunk's relight round-robin length: 256 columns per section ({@code 4096} in a vanilla chunk). */
     public static int relightChecks(Chunk chunk) {
         return chunk.getBlockStorageArray().length << 8;
