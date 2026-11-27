@@ -411,6 +411,32 @@ final class ModCompatPatches {
      * {@code getRandomChunkPosition}, a copy of vanilla's that draws from 0, so parasites never spawned below y 0. The
      * draw becomes {@code ParasitesHooks.spawnY}, the same change as vanilla's spawner gets (S1).
      */
+    static final String GC_HOOKS = "micdoodle8/mods/galacticraft/core/TransformerHooks";
+
+    /**
+     * Galacticraft Legacy 4.0.x: its coremod swaps {@code Chunk.populate}'s {@code GameRegistry.generateWorld} for
+     * {@code TransformerHooks.otherModGenerate} (same arguments), which skips space stations and logs a failing
+     * generator, then calls {@code GameRegistry.generateWorld} itself. That inner call goes to {@code OreHeights}, as
+     * {@code Chunk.populate}'s own does without Galacticraft ({@code ChunkPatch.oreHeights}). A miss leaves other mods'
+     * ores in y 0-255 only.
+     */
+    static final class GalacticraftGeneratePatch extends ModPatch {
+        GalacticraftGeneratePatch() {
+            super("micdoodle8.mods.galacticraft.core.TransformerHooks", "GalacticraftOtherModGenerate");
+        }
+
+        @Override
+        protected void apply(ClassNode node) {
+            MethodNode m = method(node, "otherModGenerate", "otherModGenerate", ChunkPatch.GENERATE_WORLD_DESC);
+            for (AbstractInsnNode n : expect("otherModGenerate.generateWorld", m, 1,
+                    p -> p.getOpcode() == Opcodes.INVOKESTATIC && ChunkPatch.GAME_REGISTRY.equals(((MethodInsnNode) p).owner)
+                            && "generateWorld".equals(((MethodInsnNode) p).name)
+                            && ChunkPatch.GENERATE_WORLD_DESC.equals(((MethodInsnNode) p).desc))) {
+                ((MethodInsnNode) n).owner = WorldPatch.ORE_HEIGHTS;
+            }
+        }
+    }
+
     static class ParasitesSpawnerPatch extends ModPatch {
         ParasitesSpawnerPatch() {
             this("com.dhanantry.scapeandrunparasites.world.SRPWorldEntitySpawner", "ParasitesSpawner");

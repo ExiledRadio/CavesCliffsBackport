@@ -30,7 +30,10 @@ final class ChunkPatch extends ClassPatch {
     /** Forge's own static field (not obfuscated): the chunk being populated, else null. */
     private static final String POPULATING = "populating";
     private static final String POS_DESC = "Lnet/minecraft/util/math/ChunkPos;";
-    private static final String GAME_REGISTRY = "net/minecraftforge/fml/common/registry/GameRegistry";
+    static final String GAME_REGISTRY = "net/minecraftforge/fml/common/registry/GameRegistry";
+    /** {@code GameRegistry.generateWorld(int, int, World, IChunkGenerator, IChunkProvider)}. */
+    static final String GENERATE_WORLD_DESC = "(IILnet/minecraft/world/World;Lnet/minecraft/world/gen/IChunkGenerator;"
+            + "Lnet/minecraft/world/chunk/IChunkProvider;)V";
 
     private final boolean client;
 
@@ -229,6 +232,9 @@ final class ChunkPatch extends ClassPatch {
     /**
      * Stream O2: {@code Chunk.populate} runs other mods' world generators through {@code ores.OreHeights.generateWorld}
      * (same arguments), which calls Forge's own {@code GameRegistry.generateWorld} outside a Caves &amp; Cliffs world.
+     * Galacticraft's coremod has already swapped that call for its own {@code TransformerHooks.otherModGenerate}
+     * (same arguments): that call stays, and {@link ModCompatPatches.GalacticraftGeneratePatch} points the
+     * {@code GameRegistry.generateWorld} inside it at {@code OreHeights} instead.
      */
     private void oreHeights(ClassNode node) {
         int found = 0;
@@ -238,6 +244,9 @@ final class ChunkPatch extends ClassPatch {
                     org.objectweb.asm.tree.MethodInsnNode call = (org.objectweb.asm.tree.MethodInsnNode) n;
                     if (GAME_REGISTRY.equals(call.owner) && "generateWorld".equals(call.name)) {
                         call.owner = WorldPatch.ORE_HEIGHTS;
+                        found++;
+                    } else if (ModCompatPatches.GC_HOOKS.equals(call.owner) && "otherModGenerate".equals(call.name)
+                            && call.desc.equals(GENERATE_WORLD_DESC)) {
                         found++;
                     }
                 }
