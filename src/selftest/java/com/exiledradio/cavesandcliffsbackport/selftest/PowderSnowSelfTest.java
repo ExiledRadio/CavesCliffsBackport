@@ -6,6 +6,8 @@ import com.exiledradio.cavesandcliffsbackport.common.Advancements;
 import com.exiledradio.cavesandcliffsbackport.powdersnow.BlockPowderSnow;
 import com.exiledradio.cavesandcliffsbackport.powdersnow.BlockPowderSnowCauldron;
 import com.exiledradio.cavesandcliffsbackport.powdersnow.Freezing;
+import com.exiledradio.backportcore.CoreConfig;
+import com.exiledradio.backportcore.freeze.FreezeTicks;
 import com.exiledradio.cavesandcliffsbackport.powdersnow.PacketFreeze;
 import com.exiledradio.cavesandcliffsbackport.powdersnow.PowderSnowContent;
 import com.exiledradio.cavesandcliffsbackport.powdersnow.PowderSnowEvents;
@@ -33,6 +35,7 @@ import net.minecraft.entity.monster.EntityStray;
 import net.minecraft.entity.monster.EntityWitherSkeleton;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.passive.EntityPig;
+import net.minecraft.entity.passive.EntityVillager;
 import net.minecraft.entity.passive.EntityRabbit;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Biomes;
@@ -293,11 +296,13 @@ public final class PowderSnowSelfTest implements SelfTest {
         // Out of the snow: two ticks back a tick, then no trace is left on the entity.
         c.fill(o, o.up(), AIR);
         pig.getEntityData().getCompoundTag(Freezing.TAG).setLong("Seen", c.world.getTotalWorldTime() - 10);
+        // The test ticks within one world tick: Core's hold goes by world time too.
+        pig.getEntityData().getCompoundTag(FreezeTicks.TAG).setLong("Held", c.world.getTotalWorldTime() - 10);
         tick(pig, 10);
         c.eq(Freezing.FREEZE_TICKS - 20, Freezing.ticks(pig), "thaws two ticks a tick");
         tick(pig, 70);
         c.eq(0, Freezing.ticks(pig), "thawed");
-        c.ok(!pig.getEntityData().hasKey(Freezing.TAG), "no freeze data left");
+        c.ok(!pig.getEntityData().hasKey(Freezing.TAG) && !pig.getEntityData().hasKey(FreezeTicks.TAG), "no freeze data left");
         c.ok(pig.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).getModifier(Freezing.SLOW) == null, "no longer slowed");
         pig.setDead();
 
@@ -318,28 +323,31 @@ public final class PowderSnowSelfTest implements SelfTest {
         c.ok(!Freezing.canFreeze(new EntityStray(c.world)) && !Freezing.canFreeze(new EntityPolarBear(c.world))
                 && !Freezing.canFreeze(new EntitySnowman(c.world)), "strays, polar bears and snow golems never freeze");
         c.ok(!Freezing.canFreeze(new EntitySkeleton(c.world)), "skeletons do not freeze (they convert)");
-        c.ok(Freezing.canFreeze(new EntityWitherSkeleton(c.world)), "wither skeletons do");
-        EntityZombie zombie = new EntityZombie(c.world);
-        c.ok(Freezing.canFreeze(zombie), "a zombie freezes");
+        // 26.4 put #undead in #immune_to_freezing.
+        c.ok(!Freezing.canFreeze(new EntityWitherSkeleton(c.world)) && !Freezing.canFreeze(new EntityZombie(c.world)),
+                "undead mobs do not freeze (26.4)");
+        EntityVillager villager = new EntityVillager(c.world);
+        c.ok(Freezing.canFreeze(villager), "a villager freezes");
         for (EntityEquipmentSlot slot : new EntityEquipmentSlot[] {EntityEquipmentSlot.HEAD, EntityEquipmentSlot.CHEST,
                 EntityEquipmentSlot.LEGS, EntityEquipmentSlot.FEET}) {
             Item[] leather = {Items.LEATHER_BOOTS, Items.LEATHER_LEGGINGS, Items.LEATHER_CHESTPLATE, Items.LEATHER_HELMET};
-            zombie.setItemStackToSlot(slot, new ItemStack(leather[slot.getIndex()]));
-            c.ok(!Freezing.canFreeze(zombie), "leather in the " + slot.getName() + " slot prevents freezing");
-            zombie.setItemStackToSlot(slot, ItemStack.EMPTY);
+            villager.setItemStackToSlot(slot, new ItemStack(leather[slot.getIndex()]));
+            c.ok(!Freezing.canFreeze(villager), "leather in the " + slot.getName() + " slot prevents freezing");
+            villager.setItemStackToSlot(slot, ItemStack.EMPTY);
         }
-        zombie.setItemStackToSlot(EntityEquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
-        c.ok(Freezing.canFreeze(zombie), "iron armor does not");
+        villager.setItemStackToSlot(EntityEquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
+        c.ok(Freezing.canFreeze(villager) && !Freezing.canWalkOn(villager), "iron boots do not keep it warm or hold it up");
 
-        // The config's extra lists.
-        String[] wear = ModConfig.powderSnow.freezeImmuneWearables, immune = ModConfig.powderSnow.freezeImmuneMobs;
-        ModConfig.powderSnow.freezeImmuneWearables = new String[] {"minecraft:iron_chestplate"};
-        ModConfig.powderSnow.freezeImmuneMobs = new String[] {"minecraft:pig"};
-        c.ok(!Freezing.canFreeze(zombie), "config: a listed item prevents freezing");
-        c.ok(!Freezing.canFreeze(new EntityPig(c.world)), "config: a listed mob never freezes");
-        ModConfig.powderSnow.freezeImmuneWearables = wear;
-        ModConfig.powderSnow.freezeImmuneMobs = immune;
-        c.ok(Freezing.canFreeze(zombie) && Freezing.canFreeze(new EntityPig(c.world)), "config lists restored");
+        // The lists are Backport Core's Freezing settings now: a listed wearable keeps warm and, as boots, walks.
+        String[] wear = CoreConfig.freezing.freezeImmuneWearables;
+        CoreConfig.freezing.freezeImmuneWearables = new String[] {"minecraft:iron_boots"};
+        c.ok(!Freezing.canFreeze(villager) && Freezing.canWalkOn(villager), "Core's list: iron boots keep warm and walk on powder snow");
+        CoreConfig.freezing.freezeImmuneWearables = wear;
+        c.ok(Freezing.canFreeze(villager), "Core's list restored");
+
+        // Mobs that may spawn in powder snow keep vanilla's immuneTo list, not 26.4's freeze immunity.
+        c.ok(Freezing.spawnsInPowderSnow(new EntityStray(c.world)) && !Freezing.spawnsInPowderSnow(new EntityZombie(c.world)),
+                "strays spawn in powder snow, zombies do not");
         c.fill(o.add(-1, 0, -1), o.add(1, 1, 1), AIR);
     }
 

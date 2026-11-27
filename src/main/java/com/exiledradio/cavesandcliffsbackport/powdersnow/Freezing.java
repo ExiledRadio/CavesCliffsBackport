@@ -1,5 +1,6 @@
 package com.exiledradio.cavesandcliffsbackport.powdersnow;
 
+import com.exiledradio.backportcore.freeze.FreezeTicks;
 import com.exiledradio.cavesandcliffsbackport.ModConfig;
 import com.exiledradio.cavesandcliffsbackport.common.Owners;
 import com.exiledradio.cavesandcliffsbackport.network.NetworkHandler;
@@ -8,13 +9,8 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.SharedMonsterAttributes;
-import net.minecraft.entity.ai.attributes.AttributeModifier;
-import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.entity.boss.EntityWither;
-import net.minecraft.entity.monster.EntityBlaze;
 import net.minecraft.entity.monster.EntityEndermite;
-import net.minecraft.entity.monster.EntityMagmaCube;
 import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.monster.EntityPolarBear;
 import net.minecraft.entity.monster.EntitySilverfish;
@@ -26,9 +22,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.EntityEquipmentSlot;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemArmor;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
@@ -46,52 +39,52 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Freezing, kept on our own entity data so it works for every mob.
+ * Powder snow's hold on entities. The freeze counter itself is Backport Core's ({@link FreezeTicks}, Core 1.5.0),
+ * shared with Game Drops' Freezing effect as vanilla shares it.
  *
- * <h2>The rules (current Java)</h2>
- * A living entity touching powder snow gains one freeze tick a tick, up to 140; outside it loses two. At 140
- * it takes 1 damage every 40 ticks (5 for blazes and magma cubes). Wearing any piece of leather armor,
- * being a stray, polar bear, snow golem or wither, or being a spectator prevents all of it. Frozen entities
- * are slowed by up to 0.05 while they stand on something. Skeletons do not freeze: after 140 ticks in
- * powder snow they shake for 300 more and become strays.
+ * <h2>What is Core's</h2>
+ * The ticks (140), the thaw, the damage every 40 ticks, the slowness, who can freeze (leather, polar bears, snow
+ * golems, the undead, Core's Freezing settings), the frost overlay and the shaking of a frozen mob. Powder snow only
+ * tells Core an entity is in it: {@link #markInSnow} calls {@link FreezeTicks#markInFreezingBlock}.
+ *
+ * <h2>What stays here</h2>
+ * Walking on powder snow (rabbits, endermites, silverfish, foxes, anything in leather boots), climbing out of it, the
+ * climb-on-top hop, and skeletons turning into strays: after 140 ticks in powder snow they shake for 300 more.
  *
  * <h2>Where the state lives</h2>
- * In the compound {@value #TAG} of the entity's Forge data: {@code Ticks} (freeze ticks), {@code Seen} (the
- * world time powder snow last touched it), and for skeletons {@code SnowTime} and {@code Convert}. The
- * compound exists only while one of them matters, and an entity that never met powder snow is never given
- * Forge data: the tick handler looks without creating it.
+ * In the compound {@value #TAG} of the entity's Forge data: {@code Seen} (the world time powder snow last touched it),
+ * and for skeletons {@code SnowTime} and {@code Convert}. It exists only while one of them matters.
  *
  * <h2>The client</h2>
- * Gets {@link PacketFreeze} when an entity starts or stops freezing or shaking, and counts the ticks up and
- * down itself by the same rule, for the frost overlay and the shaking.
+ * Gets {@link PacketFreeze} when a skeleton starts or stops shaking. Core sends the freezing.
  */
 public final class Freezing {
 
     public static final String TAG = "CCBFreeze";
-    public static final int FREEZE_TICKS = 140;
-    public static final int HURT_EVERY = 40;
+    public static final int FREEZE_TICKS = FreezeTicks.REQUIRED;
+    public static final int HURT_EVERY = FreezeTicks.HURT_EVERY;
     public static final int SKELETON_SNOW_TICKS = 140;
     public static final int SKELETON_CONVERT_TICKS = 300;
-    public static final String GAME_RULE = "freezeDamage";
+    public static final String GAME_RULE = FreezeTicks.GAME_RULE;
 
-    /** Java's {@code freeze} damage: ignores armor. Its death messages are {@code death.attack.freeze}. */
-    public static final DamageSource FREEZE = new DamageSource("freeze").setDamageBypassesArmor();
+    /** Core's {@code freeze} damage. */
+    public static final DamageSource FREEZE = FreezeTicks.FREEZE;
+    public static final UUID SLOW = FreezeTicks.SLOW;
 
-    static final int FLAG_FREEZING = 1, FLAG_SHAKING = 2;
+    static final int FLAG_SHAKING = 2;
 
-    public static final UUID SLOW = UUID.fromString("1eaf83ff-7207-4596-b37a-d7a07b3ec4ce");
     /** Forge's per-entity data, null until something asks for it. */
     private static final Field DATA = ReflectionHelper.findField(Entity.class, "customEntityData");
     private static final Field JUMPING = ReflectionHelper.findField(EntityLivingBase.class, "isJumping", "field_70703_bu");
 
-    private static final Ids WEARABLES = new Ids(), IMMUNE = new Ids(), EXTRA = new Ids(), WALKERS = new Ids();
+    private static final Ids WALKERS = new Ids();
 
     private Freezing() {
     }
 
     // ---- state -------------------------------------------------------------------------------
 
-    /** @return the entity's freeze data, or null if it has none; never creates any */
+    /** @return the entity's powder snow data, or null if it has none; never creates any */
     @Nullable
     static NBTTagCompound peek(Entity entity) {
         try {
@@ -110,9 +103,16 @@ public final class Freezing {
         return data.getCompoundTag(TAG);
     }
 
-    /** Powder snow touched this entity this tick. */
+    /** Powder snow touched this entity this tick: it is held, and freezes by Core's rules. */
     public static void markInSnow(EntityLivingBase entity) {
-        state(entity).setLong("Seen", entity.world.getTotalWorldTime());
+        NBTTagCompound f = state(entity);
+        f.setLong("Seen", entity.world.getTotalWorldTime());
+        // Several powder snow blocks touched in one update freeze once (vanilla collects the effect per tick).
+        boolean first = !f.hasKey("Froze") || f.getInteger("Froze") != entity.ticksExisted;
+        f.setInteger("Froze", entity.ticksExisted);
+        if (first && !entity.world.isRemote && ModConfig.powderSnow.freezing) {
+            FreezeTicks.markInFreezingBlock(entity);
+        }
     }
 
     private static boolean seen(Entity entity, @Nullable NBTTagCompound f, int within) {
@@ -129,30 +129,31 @@ public final class Freezing {
     }
 
     public static int ticks(Entity entity) {
-        NBTTagCompound f = peek(entity);
-        return f == null ? 0 : f.getInteger("Ticks");
+        return FreezeTicks.ticks(entity);
     }
 
-    /** For tests and commands: sets the freeze ticks outright. */
+    /** For tests and commands: sets Core's freeze ticks outright. */
     public static void setTicks(EntityLivingBase entity, int ticks) {
-        state(entity).setInteger("Ticks", Math.max(0, Math.min(FREEZE_TICKS, ticks)));
+        FreezeTicks.setTicks(entity, ticks);
     }
 
     public static float percent(Entity entity) {
-        return Math.min(ticks(entity), FREEZE_TICKS) / (float) FREEZE_TICKS;
+        return FreezeTicks.percent(entity);
     }
 
     public static boolean fullyFrozen(Entity entity) {
-        return ticks(entity) >= FREEZE_TICKS;
+        return FreezeTicks.fullyFrozen(entity);
     }
 
-    /** @return whether the entity shakes: fully frozen, or a skeleton turning into a stray */
+    /** @return whether the entity shakes: fully frozen (Core), or a skeleton turning into a stray */
     public static boolean shaking(Entity entity) {
+        return FreezeTicks.fullyFrozen(entity) || converting(entity);
+    }
+
+    /** @return whether a skeleton is turning into a stray, the shaking this mod draws */
+    public static boolean converting(Entity entity) {
         NBTTagCompound f = peek(entity);
-        if (f == null) {
-            return false;
-        }
-        return f.getInteger("Ticks") >= FREEZE_TICKS || f.hasKey("Convert") || (f.getByte("Flags") & FLAG_SHAKING) != 0;
+        return f != null && (f.hasKey("Convert") || (f.getByte("Flags") & FLAG_SHAKING) != 0);
     }
 
     // ---- who ---------------------------------------------------------------------------------
@@ -177,31 +178,29 @@ public final class Freezing {
         }
     }
 
-    private static boolean warm(ItemStack stack) {
-        if (stack.isEmpty()) {
-            return false;
-        }
-        Item item = stack.getItem();
-        if (item instanceof ItemArmor && ((ItemArmor) item).getArmorMaterial() == ItemArmor.ArmorMaterial.LEATHER) {
-            return true;
-        }
-        return WEARABLES.has(ModConfig.powderSnow.freezeImmuneWearables, item.getRegistryName());
-    }
-
+    /** Core's {@code #immune_to_freezing}. */
     public static boolean freezeImmune(Entity entity) {
-        return entity instanceof EntityStray || entity instanceof EntityPolarBear || entity instanceof EntitySnowman
-                || entity instanceof EntityWither
-                || IMMUNE.has(ModConfig.powderSnow.freezeImmuneMobs, EntityList.getKey(entity));
+        return FreezeTicks.immune(entity);
     }
 
+    /**
+     * Mobs that may spawn inside powder snow: vanilla's {@code immuneTo(POWDER_SNOW)} (strays, polar bears, snow
+     * golems) and the wither, as before Core's freezing. Not Core's {@link #freezeImmune}, which since 26.4 takes in
+     * every undead mob.
+     */
+    public static boolean spawnsInPowderSnow(Entity entity) {
+        return entity instanceof EntityStray || entity instanceof EntityPolarBear || entity instanceof EntitySnowman
+                || entity instanceof EntityWither;
+    }
+
+    /** Core's {@code #freeze_hurts_extra_types}. */
     public static boolean hurtsExtra(Entity entity) {
-        if (entity instanceof EntityBlaze || entity instanceof EntityMagmaCube) {
-            return true;
-        }
-        ResourceLocation id = EntityList.getKey(entity);
-        // The strider is another update's mob; it is known here only by its name.
-        return id != null && (id.equals(new ResourceLocation(Owners.NETHER_UPDATE, "strider"))
-                || EXTRA.has(ModConfig.powderSnow.freezeHurtsExtraMobs, id));
+        return FreezeTicks.hurtsExtra(entity);
+    }
+
+    /** Core's {@code canFreeze}. */
+    public static boolean canFreeze(EntityLivingBase e) {
+        return FreezeTicks.canFreeze(e);
     }
 
     public static boolean walkableMob(Entity entity) {
@@ -216,24 +215,15 @@ public final class Freezing {
                 || WALKERS.has(ModConfig.powderSnow.walkableMobs, id));
     }
 
-    /** @return whether powder snow holds this entity up: a mob that walks on it, or anything in leather boots */
+    /**
+     * @return whether powder snow holds this entity up: a mob that walks on it, or anything with boots that keep it
+     *         from freezing (leather, or Core's Freezing settings' list)
+     */
     public static boolean canWalkOn(Entity entity) {
         if (walkableMob(entity)) {
             return true;
         }
-        return entity instanceof EntityLivingBase && warm(((EntityLivingBase) entity).getItemStackFromSlot(EntityEquipmentSlot.FEET));
-    }
-
-    public static boolean canFreeze(EntityLivingBase e) {
-        if (e instanceof EntityPlayer && ((EntityPlayer) e).isSpectator()) {
-            return false;
-        }
-        // Skeletons turn into strays instead.
-        if (e.getClass() == EntitySkeleton.class || freezeImmune(e)) {
-            return false;
-        }
-        return !warm(e.getItemStackFromSlot(EntityEquipmentSlot.HEAD)) && !warm(e.getItemStackFromSlot(EntityEquipmentSlot.CHEST))
-                && !warm(e.getItemStackFromSlot(EntityEquipmentSlot.LEGS)) && !warm(e.getItemStackFromSlot(EntityEquipmentSlot.FEET));
+        return entity instanceof EntityLivingBase && FreezeTicks.warm(((EntityLivingBase) entity).getItemStackFromSlot(EntityEquipmentSlot.FEET));
     }
 
     static SoundEvent smallFall(Entity e) {
@@ -260,74 +250,25 @@ public final class Freezing {
             climb(e);
         }
         if (world.isRemote) {
-            int flags = f.getByte("Flags");
-            int t = f.getInteger("Ticks");
-            int n = (flags & FLAG_FREEZING) != 0 ? Math.min(FREEZE_TICKS, t + 1) : Math.max(0, t - 2);
-            if (n != t) {
-                f.setInteger("Ticks", n);
-            }
-            if (n == 0 && flags == 0 && !seen(e, f, 2)) {
+            if (f.getByte("Flags") == 0 && !seen(e, f, 2)) {
                 e.getEntityData().removeTag(TAG);
             }
             return;
         }
-
-        int t = f.getInteger("Ticks");
-        boolean freezing = false;
-        if (e.isEntityAlive()) {
-            freezing = in && ModConfig.powderSnow.freezing && canFreeze(e);
-            int n = freezing ? Math.min(FREEZE_TICKS, t + 1) : Math.max(0, t - 2);
-            if (n != t) {
-                f.setInteger("Ticks", n);
-                t = n;
-            }
-            if (in && e instanceof EntityLiving && walkableMob(e)) {
-                hop((EntityLiving) e);
-            }
-        }
-        slow(e, t);
-        if (t >= FREEZE_TICKS && e.ticksExisted % HURT_EVERY == 0 && canFreeze(e)
-                && (!(e instanceof EntityPlayer) || freezeDamage(world))) {
-            e.attackEntityFrom(FREEZE, hurtsExtra(e) ? 5.0F : 1.0F);
+        if (e.isEntityAlive() && in && e instanceof EntityLiving && walkableMob(e)) {
+            hop((EntityLiving) e);
         }
         boolean shaking = e.getClass() == EntitySkeleton.class && StrayConversion.tick((EntitySkeleton) e, f, in);
         if (e.isDead) {
             return;
         }
-        int flags = (freezing ? FLAG_FREEZING : 0) | (shaking ? FLAG_SHAKING : 0);
+        int flags = shaking ? FLAG_SHAKING : 0;
         if (!f.hasKey("Sent") || f.getByte("Sent") != flags) {
             f.setByte("Sent", (byte) flags);
-            send(e, t, flags);
+            send(e, flags);
         }
-        if (t == 0 && flags == 0 && !f.hasKey("SnowTime") && !seen(e, f, 2)) {
+        if (flags == 0 && !f.hasKey("SnowTime") && !seen(e, f, 2)) {
             e.getEntityData().removeTag(TAG);
-        }
-    }
-
-    /** The freezeDamage game rule (added by us to worlds that lack it): off, players take no freeze damage. */
-    private static boolean freezeDamage(World world) {
-        return !world.getGameRules().hasRule(GAME_RULE) || world.getGameRules().getBoolean(GAME_RULE);
-    }
-
-    /** Java slows a frozen entity by up to 0.05 while it stands on something. */
-    private static void slow(EntityLivingBase e, int t) {
-        IAttributeInstance speed = e.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED);
-        if (speed == null) {
-            return;
-        }
-        double want = 0.0D;
-        if (t > 0 && !e.world.isAirBlock(new BlockPos(e.posX, e.posY - 0.2D, e.posZ))) {
-            want = -0.05F * (Math.min(t, FREEZE_TICKS) / (float) FREEZE_TICKS);
-        }
-        AttributeModifier has = speed.getModifier(SLOW);
-        if (has != null) {
-            if (want != 0.0D && has.getAmount() == want) {
-                return;
-            }
-            speed.removeModifier(has);
-        }
-        if (want != 0.0D) {
-            speed.applyModifier(new AttributeModifier(SLOW, "Powder snow slow", want, 0).setSaved(false));
         }
     }
 
@@ -359,8 +300,8 @@ public final class Freezing {
 
     // ---- sync --------------------------------------------------------------------------------
 
-    static void send(EntityLivingBase e, int ticks, int flags) {
-        PacketFreeze msg = new PacketFreeze(e.getEntityId(), ticks, flags);
+    static void send(EntityLivingBase e, int flags) {
+        PacketFreeze msg = new PacketFreeze(e.getEntityId(), 0, flags);
         NetworkHandler.channel.sendToAllTracking(msg, e);
         if (e instanceof EntityPlayerMP) {
             sendTo((EntityPlayerMP) e, msg);
@@ -375,11 +316,11 @@ public final class Freezing {
         NetworkHandler.channel.sendTo(msg, player);
     }
 
-    /** A player starts seeing an entity: tell them if it is frozen or shaking. */
+    /** A player starts seeing an entity: tell them if it is converting. */
     static void startTracking(EntityPlayerMP watcher, Entity target) {
         NBTTagCompound f = peek(target);
-        if (f != null && (f.getInteger("Ticks") > 0 || f.getByte("Sent") != 0)) {
-            sendTo(watcher, new PacketFreeze(target.getEntityId(), f.getInteger("Ticks"), f.getByte("Sent")));
+        if (f != null && f.getByte("Sent") != 0) {
+            sendTo(watcher, new PacketFreeze(target.getEntityId(), 0, f.getByte("Sent")));
         }
     }
 
@@ -391,14 +332,12 @@ public final class Freezing {
         }
     }
 
-    /** Client side, from {@link PacketFreeze}. */
+    /** Client side, from {@link PacketFreeze}. The ticks are Core's and no longer sent here. */
     public static void received(Entity entity, int ticks, int flags) {
-        if (ticks == 0 && flags == 0 && peek(entity) == null) {
+        if (flags == 0 && peek(entity) == null) {
             return;
         }
-        NBTTagCompound f = state(entity);
-        f.setInteger("Ticks", ticks);
-        f.setByte("Flags", (byte) flags);
+        state(entity).setByte("Flags", (byte) (flags & FLAG_SHAKING));
     }
 
     static void converted(World world, BlockPos pos) {

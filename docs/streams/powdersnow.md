@@ -1,8 +1,8 @@
 # Stream Ps: powder snow and freezing
 
 Package `powdersnow` (client part in `powdersnow.client`). Config `powderSnow`: `enabled`, `freezing`,
-`strayConversion`, `cauldronSnow`, `patches`, `patchRarity` (2), `patchMinY` (80), and four id lists for packs:
-`freezeImmuneWearables`, `freezeImmuneMobs`, `freezeHurtsExtraMobs`, `walkableMobs`. Packet id 30
+`strayConversion`, `cauldronSnow`, `patches`, `patchRarity` (2), `patchMinY` (80), and `walkableMobs`. The three
+freeze id lists moved to Backport Core's `freezing` settings in 1.2.0. Packet id 30
 (`PacketFreeze`). Also changed outside the package: `tools/common/generate.py` read no tooltip for an option
 that carries a `@Setting` annotation (its pattern now allows them) and names `patchMinY`;
 `tools/lang/vanilla_keys.py` maps the two `death.attack.freeze` keys to Mojang's.
@@ -33,12 +33,14 @@ that carries a `@Setting` annotation (its pattern now allows them) and names `pa
     only for cobwebs, so after each move the velocity is reset to the value that makes the next fall Java's
     (0.1176 a tick for living entities, 0.06 for items). Sideways the velocity is cleared but the 0.9 is not
     applied, and a jump from the bottom rises 0.42 instead of 0.63: the two known differences.
-*   **Freezing** lives in the compound `CCBFreeze` of the entity's Forge data (`Ticks`, `Seen`, and for
-    skeletons `SnowTime`, `Convert`), only while it matters; an entity that never met powder snow is never
-    given Forge data (the tick handler peeks without creating it). +1 a tick in snow up to 140, -2 outside.
-    The client gets `PacketFreeze` when an entity starts or stops freezing or shaking and counts in between.
-*   **Client** (`PowderSnowClient`): frost overlay after the helmet layer, linear white fog with the camera in
-    the block, Java's body shake for frozen entities and converting skeletons. A fully frozen player's hurt
+*   **Freezing** is Backport Core's since 1.2.0 (`backportcore.freeze.FreezeTicks`, Core 1.5.0), shared with Game
+    Drops' Freezing effect: the counter, thaw, damage, slowness, who can freeze (26.4: the undead too), the frost
+    overlay and the frozen shake. `Freezing.markInSnow` calls `FreezeTicks.markInFreezingBlock` once per tick
+    (several blocks touched in a tick count once). This mod keeps the compound `CCBFreeze` (`Seen`, and for
+    skeletons `SnowTime`, `Convert`) and sends `PacketFreeze` only for a converting skeleton's shake. Spawning
+    inside powder snow keeps vanilla's `immuneTo(POWDER_SNOW)` list (`Freezing.spawnsInPowderSnow`).
+*   **Client** (`PowderSnowClient`): linear white fog with the camera in the block, and the shake of converting
+    skeletons (Core shakes frozen ones). A fully frozen player's hurt
     sound is swapped for the freezing one through `PlaySoundAtEntityEvent`.
 *   **Bucket** is a plain item, not an `ItemBlock`, so powder snow has no item (nothing from Silk Touch).
     Picking up goes through `FillBucketEvent`.

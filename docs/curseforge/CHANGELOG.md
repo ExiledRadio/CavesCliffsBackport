@@ -1,3 +1,10 @@
+# 1.2.0
+
+*   **Freezing is Backport Core's.** Powder snow freezes with the counter Core 1.5.0 shares with Game Drops' Freezing effect, so the two add up and show one frost overlay. Core follows 26.4: undead mobs no longer freeze, and slowness applies in the air too.
+*   The freeze-immune wearables, freeze-immune mobs and freeze-hurts-extra mobs settings moved to Backport Core's Freezing page. Set lists need entering again there.
+
+Needs Backport Core 1.5.0 or newer.
+
 # 1.1.7
 
 *   **Dynamic Trees in 1.18 worlds**: with Dynamic Trees - Backport, cherry groves, mangrove swamps and pale gardens grow its dynamic trees in Caves & Cliffs worlds too. They had the static trees there.

@@ -32,7 +32,7 @@ import org.apache.logging.log4j.Logger;
         // Loads before the later updates of the family, so this mod's ownership declarations come first.
         // Newer releases, read by Forge's update check and Backport Core's settings screen.
         updateJSON = "https://raw.githubusercontent.com/ExiledRadio/BackportCore/main/updates/cavesandcliffsbackport.json",
-        dependencies = "required-after:backportcore@[1.4.9,);before:wildupdatebackport;before:trailsandtalesbackport;before:trickytrialsbackport"
+        dependencies = "required-after:backportcore@[1.5.0,);before:wildupdatebackport;before:trailsandtalesbackport;before:trickytrialsbackport"
 )
 public final class CavesAndCliffsBackport {
 
