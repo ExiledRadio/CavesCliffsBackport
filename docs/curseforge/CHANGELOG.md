@@ -1,6 +1,7 @@
 # 1.1.7
 
 *   **Dynamic Trees in 1.18 worlds**: with Dynamic Trees - Backport, cherry groves, mangrove swamps and pale gardens grow its dynamic trees in Caves & Cliffs worlds too. They had the static trees there.
+*   **Creaking hearts**: with Tricky Trials Backport 1.0.4, the pale garden's heart trees are Dynamic Trees - Backport's creaking pale oaks too.
 *   **Less lag**: axolotl spawning no longer builds an axolotl for every water block it tries; it checks the spot first. It took a fifth of every server tick.
 
 # 1.1.6
