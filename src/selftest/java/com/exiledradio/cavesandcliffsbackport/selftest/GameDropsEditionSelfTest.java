@@ -1,6 +1,7 @@
 package com.exiledradio.cavesandcliffsbackport.selftest;
 
 import com.exiledradio.cavesandcliffsbackport.terrain.ModernGenerator;
+import com.exiledradio.cavesandcliffsbackport.terrain.ModernLocate;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.BiomeSource;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.Biomes;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.BlockCodes;
@@ -18,7 +19,9 @@ import java.util.List;
 
 /**
  * The Game Drops edition ({@link Editions#GAME_DROPS}, part of {@code terrain}): 26.3's dappled forest and 26.2's
- * sulfur caves in the biome builder, their surface rules, and the edition's saved names. The core's part runs in any
+ * sulfur caves in the biome builder, their surface rules, and the edition's saved names; and 26.4's
+ * ({@link Editions#DEEP_FREEZE}): the ice caves' leaf, the caves' humidity, Climate.Parameter.distance's half-open
+ * ranges, the ice caves' bands and /locate. The core's part runs in any
  * world (a pipeline of its own with the edition); with Game Drops Backport installed the world itself is checked too.
  */
 final class GameDropsEditionSelfTest {
@@ -31,13 +34,17 @@ final class GameDropsEditionSelfTest {
     static void run(Check check, WorldServer world, ModernGenerator generator) {
         names(check);
         leaves(check);
+        deepFreezeLeaves(check);
+        distance(check);
+        check.ok(ModernLocate.cave(Biomes.ICE_CAVES), "/locate biome answers the ice caves from the 3D noise biome");
         int e = (generator.editions() & ~Editions.GAME_DROPS) | Editions.GAME_DROPS;
         OverworldNoise noise = new OverworldNoise(world.getSeed(), e);
         BiomeSource source = new BiomeSource(noise, new ColumnCache(noise), new Climate(e));
         Pipeline own = new Pipeline(noise, new Climate(e), 0, 1024);
         own.setBeards(generator.beards());
-        OverworldNoise plainNoise = new OverworldNoise(world.getSeed(), e & ~Editions.GAME_DROPS);
-        Pipeline plain = new Pipeline(plainNoise, new Climate(e & ~Editions.GAME_DROPS), 0, 1024);
+        int without = e & ~(Editions.GAME_DROPS | Editions.DEEP_FREEZE);
+        OverworldNoise plainNoise = new OverworldNoise(world.getSeed(), without);
+        Pipeline plain = new Pipeline(plainNoise, new Climate(without), 0, 1024);
         plain.setBeards(generator.beards());
         try {
             dappled(check, source, own);
@@ -49,13 +56,18 @@ final class GameDropsEditionSelfTest {
         if ((generator.editions() & Editions.GAME_DROPS) != 0) {
             inWorld(check, world, generator, source);
         }
+        iceCaves(check, generator);
+        if ((generator.editions() & Editions.DEEP_FREEZE) != 0) {
+            iceCavesInWorld(check, world, generator, source);
+        }
     }
 
     /** Every edition set's saved name reads back as itself. */
     private static void names(Check check) {
         int bad = 0;
         for (int e = 0; e <= Editions.ALL; e++) {
-            if ((e & Editions.SPRING) != 0 && (e & Editions.PALE) == 0) {
+            if ((e & Editions.SPRING) != 0 && (e & Editions.PALE) == 0
+                    || (e & Editions.DEEP_FREEZE) != 0 && (e & Editions.GAME_DROPS) == 0) {
                 continue;
             }
             if (Editions.byName(Editions.name(e)) != e) {
@@ -63,8 +75,12 @@ final class GameDropsEditionSelfTest {
             }
         }
         check.eq(0, bad, "every edition set's saved name reads back as itself");
-        check.eq("26.3", Editions.name(Editions.ALL), "every edition is 26.3");
+        check.eq("26.4", Editions.name(Editions.ALL), "every edition is 26.4");
+        check.eq("26.3", Editions.name(Editions.ALL & ~Editions.DEEP_FREEZE), "every edition but 26.4's is 26.3");
+        check.eq(Editions.ALL & ~Editions.DEEP_FREEZE, Editions.byName("26.3"), "a world saved as 26.3 keeps 26.3's biomes");
         check.eq("1.18-26.3", Editions.name(Editions.GAME_DROPS), "Game Drops alone is 1.18-26.3");
+        check.eq("1.18-26.4", Editions.name(Editions.GAME_DROPS | Editions.DEEP_FREEZE), "Game Drops 1.1.0 alone is 1.18-26.4");
+        check.eq(-1, Editions.byName("1.18-26.3-26.4"), "a name with both Game Drops editions is not one this version makes");
     }
 
     /**
@@ -72,8 +88,8 @@ final class GameDropsEditionSelfTest {
      * (weirdness above 0), the sulfur caves after the lush caves at 26.2's box; nothing else moved.
      */
     private static void leaves(Check check) {
-        Climate with = new Climate(Editions.ALL);
-        Climate without = new Climate(Editions.ALL & ~Editions.GAME_DROPS);
+        Climate with = new Climate(Editions.ALL & ~Editions.DEEP_FREEZE);
+        Climate without = new Climate(Editions.ALL & ~(Editions.GAME_DROPS | Editions.DEEP_FREEZE));
         List<String> rest = new ArrayList<>();
         int dappled = 0;
         int dappledWrong = 0;
@@ -109,6 +125,170 @@ final class GameDropsEditionSelfTest {
         check.eq(0, sulfurWrong, "the sulfur caves' leaf is 26.2's box (continentalness -0.19..0.55, erosion 0.45..1, "
             + "depth 0.2..0.9, weirdness -1.1..-0.85)");
         check.ok(old.equals(rest), "with the dappled forest as plains and no sulfur caves, the leaves are the edition's without Game Drops");
+    }
+
+    /**
+     * 26.4's leaves (DEEP_FREEZE): the ice caves last (after the deep dark) at 26.4's box, the dripstone and sulfur caves'
+     * humidity -1 to 0.7; nothing else moved. 7595 leaves, as 26.4-pre-2's OverworldBiomeBuilder.addBiomes.
+     */
+    private static void deepFreezeLeaves(Check check) {
+        Climate with = new Climate(Editions.ALL);
+        Climate without = new Climate(Editions.ALL & ~Editions.DEEP_FREEZE);
+        check.eq(7595, with.leafCount(), "26.4's 7595 leaves");
+        check.eq("ice_caves -10000 -8000 -10000 7000 -10500 -1900 -10000 10000 2000 9000 5000 11000 0",
+            with.describeLeaf(with.leafCount() - 1), "the ice caves' leaf is 26.4's box, last (temperature -1..-0.8, "
+                + "humidity -1..0.7, deep ocean to ocean, any erosion, depth 0.2..0.9, weirdness 0.5..1.1)");
+        List<String> rest = new ArrayList<>();
+        int humid = 0;
+        for (int i = 0; i < with.leafCount() - 1; i++) {
+            String l = with.describeLeaf(i);
+            if (l.startsWith("dripstone_caves ") || l.startsWith("sulfur_caves ")) {
+                String[] f = l.split(" ");
+                if (f[3].equals("-10000") && f[4].equals("7000")) {
+                    humid++;
+                    f[4] = "10000";
+                }
+                l = String.join(" ", f);
+            }
+            rest.add(l);
+        }
+        List<String> old = new ArrayList<>();
+        for (int i = 0; i < without.leafCount(); i++) {
+            old.add(without.describeLeaf(i));
+        }
+        check.eq(2, humid, "the dripstone and sulfur caves' humidity is 26.4's -1..0.7");
+        check.ok(old.equals(rest), "with their humidity back and no ice caves, the leaves are 26.3's");
+    }
+
+    /**
+     * 26.4's Climate.Parameter.distance (a value at a range's max is 1 away): vanilla 26.4-pre-2's RTree answers at three
+     * targets on range bounds, where 26.3's distance gives the sulfur caves, the warm ocean and the mushroom fields; and
+     * the tree, the shortcut and every leaf agree on 20000 targets on and off the bounds.
+     */
+    private static void distance(Check check) {
+        Climate c = new Climate(Editions.ALL);
+        long[][] t = {{-9135, -3501, -1900, 9999, 9999, -10999, 0}, {11710, -782, -10480, -7798, 10615, -10999, 0},
+            {-8956, 9342, -12001, 10057, 2000, 5094, 0}};
+        int[] vanilla = {Biomes.SNOWY_BEACH, Biomes.DEEP_DARK, Biomes.LUSH_CAVES};
+        Climate.Column col = c.newColumn();
+        for (int i = 0; i < t.length; i++) {
+            c.column(col, t[i][0], t[i][1], t[i][2], t[i][3], t[i][5]);
+            check.ok(c.searchTree(t[i]) == vanilla[i] && c.searchBruteForce(t[i]) == vanilla[i]
+                && c.biome(col, t[i][4]) == vanilla[i], "26.4's distance at a range's max: " + Biomes.name(vanilla[i]));
+        }
+        long[] bounds = {-10500, -10000, -8000, -4500, -1900, 0, 2000, 3000, 5000, 7000, 9000, 10000, 11000};
+        java.util.Random r = new java.util.Random(264L);
+        int bad = 0;
+        for (int i = 0; i < 20000; i++) {
+            long[] p = new long[7];
+            for (int d = 0; d < 6; d++) {
+                p[d] = r.nextBoolean() ? bounds[r.nextInt(bounds.length)] + r.nextInt(3) - 1 : r.nextInt(24000) - 12000;
+            }
+            int tree = c.searchTree(p);
+            c.column(col, p[0], p[1], p[2], p[3], p[5]);
+            if (tree != c.searchBruteForce(p) || tree != c.biome(col, p[4])) {
+                bad++;
+            }
+        }
+        check.eq(0, bad, "26.4's tree, shortcut and brute force agree on 20000 targets");
+    }
+
+    /**
+     * 26.4's ice caves in seed 871158479824512549's terrain, where 26.4-pre-2's /locate biome minecraft:ice_caves
+     * answers -3408 -1 352: the biome there, and the bands (calcite and packed ice) only where the ice caves are and
+     * only with the edition.
+     */
+    private static void iceCaves(Check check, ModernGenerator generator) {
+        long seed = 871158479824512549L;
+        int e = Editions.ALL;
+        OverworldNoise noise = new OverworldNoise(seed, e);
+        BiomeSource source = new BiomeSource(noise, new ColumnCache(noise), new Climate(e));
+        check.eq(Biomes.ICE_CAVES, source.biome(-3408 >> 2, -1 >> 2, 352 >> 2), "the ice caves where 26.4-pre-2's /locate finds them");
+        int without = e & ~Editions.DEEP_FREEZE;
+        Pipeline own = new Pipeline(noise, new Climate(e), 0, 1024);
+        own.setBeards(generator.beards());
+        OverworldNoise plainNoise = new OverworldNoise(seed, without);
+        Pipeline plain = new Pipeline(plainNoise, new Climate(without), 0, 1024);
+        plain.setBeards(generator.beards());
+        int calcite = 0;
+        int packed = 0;
+        int outside = 0;
+        try {
+            for (int cx = (-3408 >> 4) - 1; cx <= (-3408 >> 4) + 1; cx++) {
+                for (int cz = (352 >> 4) - 1; cz <= (352 >> 4) + 1; cz++) {
+                    char[] b = own.finish(cx, cz).blocks;
+                    char[] p = plain.finish(cx, cz).blocks;
+                    for (int i = 0; i < b.length; i++) {
+                        boolean band = b[i] == BlockCodes.CALCITE || b[i] == BlockCodes.PACKED_ICE;
+                        if (!band || p[i] == b[i]) {
+                            continue;
+                        }
+                        calcite += b[i] == BlockCodes.CALCITE ? 1 : 0;
+                        packed += b[i] == BlockCodes.PACKED_ICE ? 1 : 0;
+                        int col = i / Pipeline.HEIGHT;
+                        int y = Pipeline.MIN_Y + i % Pipeline.HEIGHT;
+                        int x = (cx << 4) + (col >> 4);
+                        int z = (cz << 4) + (col & 15);
+                        boolean near = false;
+                        for (int qx = (x - 2) >> 2; qx <= ((x - 2) >> 2) + 1 && !near; qx++) {
+                            for (int qy = (y - 2) >> 2; qy <= ((y - 2) >> 2) + 1 && !near; qy++) {
+                                for (int qz = (z - 2) >> 2; qz <= ((z - 2) >> 2) + 1 && !near; qz++) {
+                                    near = source.biome(qx, qy, qz) == Biomes.ICE_CAVES;
+                                }
+                            }
+                        }
+                        if (!near) {
+                            outside++;
+                        }
+                    }
+                }
+            }
+        } finally {
+            own.shutdown();
+            plain.shutdown();
+        }
+        check.ok(packed > 500 && calcite > 50, "ice caves: packed ice and calcite bands (" + packed + " packed ice, " + calcite
+            + " calcite in 3x3 chunks)");
+        check.eq(0, outside, "the ice caves' bands are only where the ice caves are");
+        com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.LOGGER.info("SELFTEST INFO ice caves at -3408 -1 352"
+            + " (seed 871158479824512549): {} packed ice, {} calcite in their bands, {} outside", packed, calcite, outside);
+    }
+
+    /**
+     * With Game Drops 1.1.0 installed (the world has DEEP_FREEZE): the nearest ice caves' chunks generated in the world,
+     * with the 3D biome id, the bands in the saved blocks and Game Drops' own ice cave features at population.
+     */
+    private static void iceCavesInWorld(Check check, WorldServer world, ModernGenerator generator, BiomeSource source) {
+        int[] c = find(source, Biomes.ICE_CAVES, -1);
+        if (!check.ok(c != null, "ice caves within 300 chunks (quart y -1)")) {
+            return;
+        }
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                world.getChunkProvider().provideChunk(c[0] + dx, c[1] + dz);
+            }
+        }
+        check.eq("minecraft:ice_caves", generator.biomeId(c[0] * 16 + 10, -2, c[1] * 16 + 10), "the 3D biome id of the ice caves");
+        int bands = 0;
+        int ours = 0;
+        BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
+        for (int x = (c[0] - 1) * 16; x < (c[0] + 2) * 16; x++) {
+            for (int z = (c[1] - 1) * 16; z < (c[1] + 2) * 16; z++) {
+                for (int y = -64; y < 64; y++) {
+                    ResourceLocation id = world.getBlockState(p.setPos(x, y, z)).getBlock().getRegistryName();
+                    if (id == null) {
+                        continue;
+                    }
+                    String n = id.toString();
+                    bands += n.equals("minecraft:packed_ice") || n.equals("cavesandcliffsbackport:calcite") ? 1 : 0;
+                    ours += id.getNamespace().equals("gamedropsbackport") ? 1 : 0;
+                }
+            }
+        }
+        com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport.LOGGER.info("SELFTEST INFO ice caves in the world at"
+            + " chunk {} {}: {} packed ice and calcite, {} Game Drops blocks in 3x3 chunks", c[0], c[1], bands, ours);
+        check.ok(bands > 500, "ice caves: their bands in the world's blocks (" + bands + ")");
+        check.ok(ours > 0, "ice caves: Game Drops' features at population (" + ours + " blocks)");
     }
 
     private static void dappled(Check check, BiomeSource source, Pipeline own) {

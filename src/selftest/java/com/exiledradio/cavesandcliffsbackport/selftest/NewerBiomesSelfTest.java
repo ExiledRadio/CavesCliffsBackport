@@ -41,8 +41,10 @@ final class NewerBiomesSelfTest {
         boolean gameDrops = net.minecraftforge.fml.common.Loader.isModLoaded("gamedropsbackport")
                 && net.minecraftforge.fml.common.registry.ForgeRegistries.BIOMES.containsKey(new ResourceLocation("gamedropsbackport", "sulfur_caves"))
                 && net.minecraftforge.fml.common.registry.ForgeRegistries.BIOMES.containsKey(new ResourceLocation("gamedropsbackport", "dappled_forest"));
+        boolean deepFreeze = gameDrops
+                && net.minecraftforge.fml.common.registry.ForgeRegistries.BIOMES.containsKey(new ResourceLocation("gamedropsbackport", "ice_caves"));
         check.eq((wild ? Editions.WILD : 0) | (cherry ? Editions.CHERRY : 0) | (pale ? (com.exiledradio.cavesandcliffsbackport.ModConfig.height.paleGarden1214 ? Editions.PALE
-                : Editions.PALE | Editions.SPRING) : 0) | (gameDrops ? Editions.GAME_DROPS : 0), e,
+                : Editions.PALE | Editions.SPRING) : 0) | (gameDrops ? Editions.GAME_DROPS : 0) | (deepFreeze ? Editions.DEEP_FREEZE : 0), e,
                 "the world's newer biomes are the ones the installed backports have blocks for (" + Editions.name(e) + ")");
         int rules = net.minecraftforge.fml.common.Loader.isModLoaded("trickytrialsbackport") ? Rules.V121
                 : net.minecraftforge.fml.common.Loader.isModLoaded("trailsandtalesbackport") ? Rules.V120

@@ -61,6 +61,8 @@ public final class SurfaceBuilder {
     /** 26.x's small_patch and sulfur_cave_gradient ({@link Editions#GAME_DROPS}), else null. */
     private final ModernNoise smallPatchNoise;
     private final ModernNoise sulfurGradientNoise;
+    /** 26.4's ice_cave_gradient ({@link Editions#DEEP_FREEZE}), else null. */
+    private final ModernNoise iceGradientNoise;
 
     // ---- the chunk ----
     private char[] blocks;
@@ -94,7 +96,10 @@ public final class SurfaceBuilder {
     private boolean swampDone;
     private double smallPatch;
     private boolean smallPatchDone;
-    /** Whether the column's four zoom quart columns hold the sulfur caves at any height (else no block asks). */
+    /**
+     * Whether the column's four zoom quart columns hold the sulfur caves or the ice caves at any height (else no block
+     * asks for their bands).
+     */
     private boolean sulfurColumn;
     private int preliminaryCellX = Integer.MIN_VALUE;
     private int preliminaryCellZ = Integer.MIN_VALUE;
@@ -138,6 +143,10 @@ public final class SurfaceBuilder {
             smallPatchNoise = null;
             sulfurGradientNoise = null;
         }
+        // 26.4's worldgen/noise/ice_cave_gradient.json.
+        iceGradientNoise = (noise.editions & Editions.DEEP_FREEZE) != 0
+            ? new ModernNoise(p.fromHashOf("minecraft:ice_cave_gradient"), 1.1817507833955654D, -4, 3, 1.0D, 0.0D, 1.0D)
+            : null;
         bands = generateBands(p.fromHashOf("minecraft:clay_bands"));
         bedrockFloor = p.fromHashOf("minecraft:bedrock_floor").forkPositional();
         deepslate = p.fromHashOf("minecraft:deepslate").forkPositional();
@@ -431,10 +440,15 @@ public final class SurfaceBuilder {
 
     /**
      * 26.3's material rule overworld/underground's first line (Editions.GAME_DROPS): in the sulfur caves,
-     * sulfur_cave_bands (cinnabar, sulfur, cinnabar up the 3D gradient), else NONE (deepslate's gradient next).
+     * sulfur_cave_bands (cinnabar, sulfur, cinnabar up the 3D gradient); 26.4's second (Editions.DEEP_FREEZE): in the
+     * ice caves, ice_cave_bands; else NONE (deepslate's gradient next).
      */
     private int sulfurBand() {
-        if (biome() != Biomes.SULFUR_CAVES) {
+        int b = biome();
+        if (b == Biomes.ICE_CAVES) {
+            return iceGradientNoise != null ? iceBand() : NONE;
+        }
+        if (b != Biomes.SULFUR_CAVES) {
             return NONE;
         }
         double v = sulfurGradientNoise.get((double) bx, (double) y, (double) bz);
@@ -445,6 +459,27 @@ public final class SurfaceBuilder {
             return SULFUR;
         }
         return v >= (double) 0.4F ? CINNABAR : NONE;
+    }
+
+    /**
+     * 26.4's ice_cave_bands: calcite from -0.6 to -0.5 of the 3D ice_cave_gradient, packed ice to 0.2, calcite to 0.3,
+     * packed ice to 0.5, calcite to 0.7, else NONE.
+     */
+    private int iceBand() {
+        double v = iceGradientNoise.get((double) bx, (double) y, (double) bz);
+        if (v >= (double) -0.6F && v <= -0.5D) {
+            return BlockCodes.CALCITE;
+        }
+        if (v >= -0.5D && v <= (double) 0.2F) {
+            return BlockCodes.PACKED_ICE;
+        }
+        if (v >= (double) 0.2F && v <= (double) 0.3F) {
+            return BlockCodes.CALCITE;
+        }
+        if (v >= (double) 0.3F && v <= 0.5D) {
+            return BlockCodes.PACKED_ICE;
+        }
+        return v >= 0.5D && v <= (double) 0.7F ? BlockCodes.CALCITE : NONE;
     }
 
     /** small_patch at the column (26.3's noise_threshold, 2D). */
@@ -760,6 +795,11 @@ public final class SurfaceBuilder {
         }
         if (b == Biomes.SULFUR_CAVES) {
             // 26.2: biome_surface/sulfur_caves, the bands then stone.
+            int r = sulfurBand();
+            return r != NONE ? r : STONE;
+        }
+        if (b == Biomes.ICE_CAVES) {
+            // 26.4: biome_surface/ice_caves, the bands then stone.
             int r = sulfurBand();
             return r != NONE ? r : STONE;
         }
@@ -1085,13 +1125,14 @@ public final class SurfaceBuilder {
         slot10 = biomes.slotOf(l + 1, j1);
         slot01 = biomes.slotOf(l, j1 + 1);
         slot11 = biomes.slotOf(l + 1, j1 + 1);
-        sulfurColumn = sulfurGradientNoise != null
+        sulfurColumn = (sulfurGradientNoise != null || iceGradientNoise != null)
             && (sulfurIn(slot00) || sulfurIn(slot10) || sulfurIn(slot01) || sulfurIn(slot11));
     }
 
     private boolean sulfurIn(int slot) {
         for (int qy = MIN_QUART_Y; qy <= MAX_QUART_Y; qy++) {
-            if (biomes.storedInSlot(slot, qy) == Biomes.SULFUR_CAVES) {
+            int b = biomes.storedInSlot(slot, qy);
+            if (b == Biomes.SULFUR_CAVES || b == Biomes.ICE_CAVES) {
                 return true;
             }
         }

@@ -43,19 +43,22 @@ public final class Climate {
         int biome = -1;
         int rank = -1;
 
-        long distance(long[] t) {
+        long distance(long[] t, boolean halfOpen) {
             long s = 0L;
             for (int d = 0; d < DIMS; d++) {
-                long v = dist(min[d], max[d], t[d]);
+                long v = dist(min[d], max[d], t[d], halfOpen);
                 s += v * v;
             }
             return s;
         }
     }
 
-    /** Climate.Parameter.distance. */
-    static long dist(long min, long max, long v) {
-        long i = v - max;
+    /**
+     * Climate.Parameter.distance. 26.4 ({@link Editions#from264}, halfOpen) counts a value at the max as 1 away (target
+     * - max + 1), so a range holds min to max - 1 and a point is never at distance 0.
+     */
+    static long dist(long min, long max, long v, boolean halfOpen) {
+        long i = halfOpen ? v - max + 1L : v - max;
         long j = min - v;
         return i > 0L ? i : Math.max(j, 0L);
     }
@@ -68,6 +71,8 @@ public final class Climate {
 
     /** The newer versions' additions this table has ({@link Editions} flags). */
     public final int editions;
+    /** 26.4's Climate.Parameter.distance ({@link Editions#from264}). */
+    private final boolean halfOpen;
 
     public Climate() {
         this(Editions.NONE);
@@ -75,11 +80,12 @@ public final class Climate {
 
     public Climate(int editions) {
         this.editions = editions;
+        this.halfOpen = Editions.from264(editions);
         List<Node> list = new ArrayList<>();
         new Builder(list, editions).addBiomes();
         leaves = list.toArray(new Node[0]);
-        // Climate.RTree.CHILDREN_PER_NODE: 10 in 1.18.2 and 1.19, 6 from 1.20 (which moves ties).
-        root = build(new ArrayList<>(list), Editions.from120(editions) ? 6 : 10);
+        // Climate.RTree.CHILDREN_PER_NODE: 10 in 1.18.2 and 1.19, 6 from 1.20 (which moves ties), 19 in 26.4.
+        root = build(new ArrayList<>(list), Editions.from264(editions) ? 19 : Editions.from120(editions) ? 6 : 10);
         List<Node> order = new ArrayList<>();
         rank(root, order);
         byRank = order.toArray(new Node[0]);
@@ -224,17 +230,17 @@ public final class Climate {
     // ---- searches ----
 
     /** RTree.SubTree.search, Mojang's code: the closest leaf, keeping last when nothing is strictly closer. */
-    static Node search(Node node, long[] t, Node last) {
+    static Node search(Node node, long[] t, Node last, boolean halfOpen) {
         if (node.children == null) {
             return node;
         }
-        long i = last == null ? Long.MAX_VALUE : last.distance(t);
+        long i = last == null ? Long.MAX_VALUE : last.distance(t, halfOpen);
         Node leaf = last;
         for (Node child : node.children) {
-            long j = child.distance(t);
+            long j = child.distance(t, halfOpen);
             if (i > j) {
-                Node found = search(child, t, leaf);
-                long k = child == found ? j : found.distance(t);
+                Node found = search(child, t, leaf, halfOpen);
+                long k = child == found ? j : found.distance(t, halfOpen);
                 if (i > k) {
                     i = k;
                     leaf = found;
@@ -246,7 +252,7 @@ public final class Climate {
 
     /** The biome vanilla's tree search finds from a cold start. target: 7 quantized values (offset 0). */
     public int searchTree(long[] target) {
-        return search(root, target, null).biome;
+        return search(root, target, null, halfOpen).biome;
     }
 
     /** The same by trying every leaf: the closest, ties to the lowest depth-first rank. */
@@ -254,7 +260,7 @@ public final class Climate {
         Node best = null;
         long bestDistance = Long.MAX_VALUE;
         for (Node n : leaves) {
-            long d = n.distance(target);
+            long d = n.distance(target, halfOpen);
             if (d < bestDistance || d == bestDistance && n.rank < best.rank) {
                 best = n;
                 bestDistance = d;
@@ -289,7 +295,7 @@ public final class Climate {
         int rank0;
         long distance1;
         int rank1;
-        final long[] otherDistance = new long[4];
+        final long[] otherDistance = new long[5];
         long[] target5 = new long[DIMS];
     }
 
@@ -317,6 +323,8 @@ public final class Climate {
         private final long[][] lines = new long[5][];
         private final int[] cells = new int[5];
         private final int[][] cellRank = new int[2][];
+        /** The squared offset distance of the surface leaves (all at offset 0) from a target's 0. */
+        private final long offsetTerm;
 
         Fast() {
             List<Node> c0 = new ArrayList<>();
@@ -333,10 +341,12 @@ public final class Climate {
                     other.add(n);
                 }
             }
+            long o = dist(0L, 0L, 0L, halfOpen);
+            offsetTerm = o * o;
             classes[0] = c0.toArray(new Node[0]);
             classes[1] = c1.toArray(new Node[0]);
             others = other.toArray(new Node[0]);
-            if (others.length > 4) {
+            if (others.length > 5) {
                 throw new IllegalStateException("too many underground leaves: " + others.length);
             }
             othersDepthMin = new long[others.length];
@@ -446,6 +456,8 @@ public final class Climate {
                         }
                     }
                 }
+                // The offset (0 for every leaf, so the same term for all; 1 with 26.4's distance), as the others'.
+                distance += offsetTerm;
                 if (k == 0) {
                     col.distance0 = distance;
                     col.rank0 = rank;
@@ -459,7 +471,7 @@ public final class Climate {
                 long s = 0L;
                 for (int d = 0; d < DIMS; d++) {
                     if (d != DEPTH) {
-                        long v = dist(n.min[d], n.max[d], target[d]);
+                        long v = dist(n.min[d], n.max[d], target[d], halfOpen);
                         s += v * v;
                     }
                 }
@@ -471,15 +483,15 @@ public final class Climate {
             long s = 0L;
             for (int g = 0; g < 5; g++) {
                 int d = GRID_DIMS[g];
-                long v = dist(n.min[d], n.max[d], target[d]);
+                long v = dist(n.min[d], n.max[d], target[d], halfOpen);
                 s += v * v;
             }
             return s;
         }
 
         int biome(Column col, long depth) {
-            long d0 = depth > 0L ? depth : -depth;
-            long d1 = depth > 10000L ? depth - 10000L : 10000L - depth;
+            long d0 = dist(0L, 0L, depth, halfOpen);
+            long d1 = dist(10000L, 10000L, depth, halfOpen);
             long best = col.distance0 + d0 * d0;
             int rank = col.rank0;
             long c1 = col.distance1 + d1 * d1;
@@ -488,7 +500,7 @@ public final class Climate {
                 rank = col.rank1;
             }
             for (int i = 0; i < others.length; i++) {
-                long v = dist(othersDepthMin[i], othersDepthMax[i], depth);
+                long v = dist(othersDepthMin[i], othersDepthMax[i], depth, halfOpen);
                 long c = col.otherDistance[i] + v * v;
                 if (c < best || c == best && others[i].rank < rank) {
                     best = c;
@@ -807,16 +819,26 @@ public final class Climate {
         }
 
         private void addUndergroundBiomes() {
-            addUndergroundBiome(FULL_RANGE, FULL_RANGE, P.span(0.8F, 1.0F), FULL_RANGE, FULL_RANGE, 0.0F, Biomes.DRIPSTONE_CAVES);
+            // 26.4 (DEEP_FREEZE): the dripstone and sulfur caves' humidity -1 to 0.7 (the lush caves' range above it).
+            boolean v264 = Editions.from264(editions);
+            P caveHumidity = v264 ? P.span(-1.0F, 0.7F) : FULL_RANGE;
+            addUndergroundBiome(FULL_RANGE, caveHumidity, P.span(0.8F, 1.0F), FULL_RANGE, FULL_RANGE, 0.0F, Biomes.DRIPSTONE_CAVES);
             addUndergroundBiome(FULL_RANGE, P.span(0.7F, 1.0F), FULL_RANGE, FULL_RANGE, FULL_RANGE, 0.0F, Biomes.LUSH_CAVES);
             if ((editions & Editions.GAME_DROPS) != 0) {
                 // 26.2: coast to inland continentalness, the two highest erosions, weirdness -1.1 to -0.85.
-                addUndergroundBiome(FULL_RANGE, FULL_RANGE, P.span(coastContinentalness, inlandContinentalness),
+                addUndergroundBiome(FULL_RANGE, caveHumidity, P.span(coastContinentalness, inlandContinentalness),
                     P.span(erosions[5], erosions[6]), P.span(-1.1F, -0.85F), 0.0F, Biomes.SULFUR_CAVES);
             }
             if ((editions & Editions.WILD) != 0) {
                 // 1.19: addBottomBiome, depth the point 1.1.
                 add(FULL_RANGE, FULL_RANGE, FULL_RANGE, P.span(erosions[0], erosions[1]), P.point(1.1F), FULL_RANGE, 0.0F, Biomes.DEEP_DARK);
+            }
+            if (v264) {
+                // 26.4: after the deep dark, temperature -1 to -0.8, humidity -1 to 0.7, deep ocean to ocean
+                // continentalness, any erosion, weirdness 0.5 to 1.1.
+                addUndergroundBiome(P.span(-1.0F, -0.8F), P.span(-1.0F, 0.7F),
+                    P.span(deepOceanContinentalness, oceanContinentalness), FULL_RANGE, P.span(0.5F, 1.1F), 0.0F,
+                    Biomes.ICE_CAVES);
             }
         }
 

@@ -127,6 +127,11 @@ public final class Structures {
                 allowed[RUINED_PORTALS][0][b] = true;
             }
         }
+        if ((noise.editions & Editions.DEEP_FREEZE) != 0) {
+            // 26.4's tags: mineshafts and standard ruined portals in the ice caves too.
+            allowed[MINESHAFTS][0][Biomes.ICE_CAVES] = true;
+            allowed[RUINED_PORTALS][0][Biomes.ICE_CAVES] = true;
+        }
         poolEntries = new int[StructureTables.START_POOLS.length][];
         for (int p = 0; p < poolEntries.length; p++) {
             int[] runs = StructureTables.START_POOLS[p];

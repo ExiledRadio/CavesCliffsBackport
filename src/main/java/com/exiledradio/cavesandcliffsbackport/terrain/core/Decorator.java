@@ -93,15 +93,35 @@ public final class Decorator {
         {"glow_lichen", "patch_tall_grass_2"},
         {"freeze_top_layer"}};
 
-    /** The bit of a biome in a chunk's biome mask: 64 on the void's, 65 and 66 on two nether biomes' (never stored). */
+    /**
+     * 26.4's ice caves' features per step (Editions.DEEP_FREEZE). Its large icicles, ice_cave_ore_* ores, snow layers,
+     * crystals, icicle clusters and crevasses are Game Drops' own, placed at population; here they are names no step
+     * order holds, so they are left out.
+     */
+    private static final String[][] ICE_CAVES = {
+        {},
+        {"lake_lava_underground", "lake_lava_surface"},
+        {"amethyst_geode", "large_icicle"},
+        {"monster_room", "monster_room_deep"},
+        {},
+        {},
+        {"ore_tuff", "ice_cave_ore_coal_upper", "ice_cave_ore_coal_lower", "ice_cave_ore_iron_upper", "ice_cave_ore_iron_middle", "ice_cave_ore_iron_small", "ice_cave_ore_gold", "ice_cave_ore_gold_lower", "ice_cave_ore_redstone", "ice_cave_ore_redstone_lower", "ice_cave_ore_diamond", "ice_cave_ore_diamond_medium", "ice_cave_ore_diamond_large", "ice_cave_ore_diamond_buried", "ice_cave_ore_lapis", "ice_cave_ore_lapis_buried", "ice_cave_ore_copper", "ice_cave_ore_gravel", "ice_cave_ore_diorite_upper", "ice_cave_ore_diorite_lower", "ice_cave_ore_andesite_upper", "ice_cave_ore_andesite_lower", "disk_sand", "disk_clay", "disk_gravel"},
+        {"snow_layers", "ice_crystals", "icicle_cluster", "ice_crevasse"},
+        {"spring_water", "spring_lava"},
+        {},
+        {"freeze_top_layer"}};
+
+    /**
+     * The bit of a biome in a chunk's biome mask: 64 on the void's, 65 to 67 on three nether biomes' (never stored).
+     */
     private static int bit(int biome) {
         return biome < 64 ? biome : biome == 64 ? 0 : Biomes.NETHER_WASTES + biome - 65;
     }
 
     /** FeatureSorter's per-step order for the editions' biomes. */
     static String[][] steps(int editions) {
-        // Game Drops' two biomes bring no step order of their own (see biomeFeatures).
-        editions &= ~Editions.GAME_DROPS;
+        // Game Drops' biomes bring no step order of their own (see biomeFeatures).
+        editions &= ~(Editions.GAME_DROPS | Editions.DEEP_FREEZE);
         if ((editions & Editions.SPRING) != 0) {
             switch (editions & ~Editions.SPRING) {
                 case Editions.PALE | Editions.WILD | Editions.CHERRY:
@@ -144,6 +164,9 @@ public final class Decorator {
         }
         if (biome == Biomes.DAPPLED_FOREST) {
             return DAPPLED_FOREST;
+        }
+        if (biome == Biomes.ICE_CAVES) {
+            return ICE_CAVES;
         }
         if ((editions & Editions.SPRING) != 0) {
             return FeatureTables12111.BIOMES[biome];
@@ -433,8 +456,8 @@ public final class Decorator {
                 mask |= storedBiomes(cx + dx, cz + dz);
             }
         }
-        // bit(b): the pale garden (64) shares the void's bit, the sulfur caves and the dappled forest two nether
-        // biomes'; none of those lists an overworld feature.
+        // bit(b): the pale garden (64) shares the void's bit, the sulfur caves, the dappled forest and the ice caves
+        // three nether biomes'; none of those lists an overworld feature.
         for (int b = 0; b < Biomes.COUNT; b++) {
             present[b] = (mask >>> bit(b) & 1L) != 0L;
         }

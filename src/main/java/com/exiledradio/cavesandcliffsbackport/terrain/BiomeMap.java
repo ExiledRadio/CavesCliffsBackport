@@ -91,6 +91,8 @@ public final class BiomeMap {
         // Game Drops' (always its own when a world has them): plains, as the deep dark and the meadow.
         m(Biomes.SULFUR_CAVES, "plains");
         m(Biomes.DAPPLED_FOREST, "plains");
+        // 26.4's ice caves (always Game Drops' when a world has them): 1.12's snowy plains otherwise.
+        m(Biomes.ICE_CAVES, "ice_flats");
     }
 
     private final Biome[] biomes = new Biome[Biomes.COUNT];

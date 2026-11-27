@@ -11,7 +11,7 @@ import javax.annotation.Nullable;
 
 /**
  * {@code /locate biome} in the 1.18 terrain, through Backport Core's biome search: the cave biomes (dripstone caves,
- * lush caves, the deep dark, sulfur caves) where 1.18's noise puts them in three dimensions, as 26.x's
+ * lush caves, the deep dark, sulfur caves, ice caves) where 1.18's noise puts them in three dimensions, as 26.x's
  * {@code findClosestBiome3d} reads {@code getNoiseBiome} at each quart it asks; every other biome from the world's own
  * biome provider (the surface map, other mods' biomes in it included), through the sources before this one.
  *
@@ -51,8 +51,8 @@ public final class ModernLocate {
     }
 
     /** @return whether 1.18's noise biome is one under the ground, which the surface map never shows */
-    static boolean cave(int biome) {
+    public static boolean cave(int biome) {
         return biome == Biomes.DRIPSTONE_CAVES || biome == Biomes.LUSH_CAVES || biome == Biomes.DEEP_DARK
-                || biome == Biomes.SULFUR_CAVES;
+                || biome == Biomes.SULFUR_CAVES || biome == Biomes.ICE_CAVES;
     }
 }

@@ -5,6 +5,10 @@
 *   **Pointed dripstone runs on Backport Core**, shared with Game Drops' icicles: falling, damage, tridents and growth. As in 26.4, landing on a stalagmite counts as a fall half a block longer.
 *   Stalactites saved mid-fall in older worlds keep falling after the update.
 *   Game Drops' frostbites walk on powder snow, as in 26.4.
+*   **26.4's ice caves in new Caves & Cliffs worlds** with Game Drops Backport 1.1.0: under the coldest oceans, where 26.4 puts them, with their packed ice and calcite bands. `/locate biome minecraft:ice_caves` finds them where 26.4 does.
+*   New worlds get 26.4's other biome changes too: where dripstone caves or sulfur caves met lush caves, it is lush caves, and biome borders fall where 26.4's do.
+*   **`/locate biome` finds cave biomes** in Caves & Cliffs worlds: lush caves, dripstone caves, the deep dark, sulfur caves and ice caves.
+*   Existing worlds keep the biomes they were made with.
 
 Needs Backport Core 1.5.0 or newer.
 
