@@ -55,7 +55,7 @@ import java.util.List;
  */
 public class EntityAxolotl extends EntityAnimal {
 
-    private static final java.lang.reflect.Field LOOK_HELPER = net.minecraftforge.fml.relauncher.ReflectionHelper.findField(EntityLiving.class, "field_70749_g", "lookHelper");
+    private static final java.lang.reflect.Field LOOK_HELPER = net.minecraftforge.fml.relauncher.ReflectionHelper.findField(EntityLiving.class, "lookHelper", "field_70749_g"); // (dev name, obfuscated name): Forge picks by environment
 
     private static final DataParameter<Integer> VARIANT = EntityDataManager.createKey(EntityAxolotl.class, DataSerializers.VARINT);
     private static final DataParameter<Boolean> PLAYING_DEAD = EntityDataManager.createKey(EntityAxolotl.class, DataSerializers.BOOLEAN);
