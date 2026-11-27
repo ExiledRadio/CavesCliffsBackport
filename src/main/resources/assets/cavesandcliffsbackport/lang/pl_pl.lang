@@ -122,10 +122,6 @@ key.cavesandcliffsbackport.spyglassZoom=Przybliż lunetą
 key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
-death.attack.cavesandcliffsbackport.fallingStalactite.player=Spadający stalaktyt zrobił z gracza %1$s szaszłyk podczas walki z %2$s
-death.attack.cavesandcliffsbackport.fallingStalactite=Spadający stalaktyt zrobił z gracza %1$s szaszłyk
-death.attack.cavesandcliffsbackport.stalagmite.player=Gracz %1$s nadział się na stalagmit podczas walki z: %2$s
-death.attack.cavesandcliffsbackport.stalagmite=Gracz %1$s nadział się na stalagmit
 entity.cavesandcliffsbackport.falling_stalactite.name=Spiczasty naciek
 tile.cavesandcliffsbackport.dripstone_block.name=Blok nacieku
 tile.cavesandcliffsbackport.lava_cauldron.name=Kocioł lawy

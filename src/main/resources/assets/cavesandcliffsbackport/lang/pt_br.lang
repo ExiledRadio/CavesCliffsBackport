@@ -122,10 +122,6 @@ key.cavesandcliffsbackport.spyglassZoom=Aproximar com a luneta
 key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
-death.attack.cavesandcliffsbackport.fallingStalactite.player=Uma estalactite atingiu %1$s enquanto lutava com %2$s
-death.attack.cavesandcliffsbackport.fallingStalactite=Uma estalactite atingiu %1$s
-death.attack.cavesandcliffsbackport.stalagmite.player=Uma estalagmite atravessou %1$s enquanto lutava com %2$s
-death.attack.cavesandcliffsbackport.stalagmite=Uma estalagmite atravessou %1$s
 entity.cavesandcliffsbackport.falling_stalactite.name=Espeleotema pontiagudo
 tile.cavesandcliffsbackport.dripstone_block.name=Bloco de espeleotema
 tile.cavesandcliffsbackport.lava_cauldron.name=Caldeirão de lava

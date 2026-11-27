@@ -2,6 +2,9 @@
 
 *   **Freezing is Backport Core's.** Powder snow freezes with the counter Core 1.5.0 shares with Game Drops' Freezing effect, so the two add up and show one frost overlay. Core follows 26.4: undead mobs no longer freeze, and slowness applies in the air too.
 *   The freeze-immune wearables, freeze-immune mobs and freeze-hurts-extra mobs settings moved to Backport Core's Freezing page. Set lists need entering again there.
+*   **Pointed dripstone runs on Backport Core**, shared with Game Drops' icicles: falling, damage, tridents and growth. As in 26.4, landing on a stalagmite counts as a fall half a block longer.
+*   Stalactites saved mid-fall in older worlds keep falling after the update.
+*   Game Drops' frostbites walk on powder snow, as in 26.4.
 
 Needs Backport Core 1.5.0 or newer.
 

@@ -122,10 +122,6 @@ key.cavesandcliffsbackport.spyglassZoom=Hacer zoom con el catalejo
 key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
-death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s ha sido atravesado por una estalactita mientras luchaba contra %2$s
-death.attack.cavesandcliffsbackport.fallingStalactite=%1$s ha sido atravesado por una estalactita
-death.attack.cavesandcliffsbackport.stalagmite.player=%1$s fue empalado por una estalagmita mientras luchaba contra %2$s
-death.attack.cavesandcliffsbackport.stalagmite=%1$s fue empalado por una estalagmita
 entity.cavesandcliffsbackport.falling_stalactite.name=Espeleotema puntiagudo
 tile.cavesandcliffsbackport.dripstone_block.name=Bloque de espeleotema
 tile.cavesandcliffsbackport.lava_cauldron.name=Caldero con lava

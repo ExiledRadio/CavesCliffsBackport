@@ -122,10 +122,6 @@ key.cavesandcliffsbackport.spyglassZoom=Zoomer avec la longue-vue
 key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
-death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s s'est fait transpercer par une stalactite en tentant de combattre (un(e)) %2$s
-death.attack.cavesandcliffsbackport.fallingStalactite=%1$s s'est fait transpercer par une stalactite
-death.attack.cavesandcliffsbackport.stalagmite.player=%1$s s'est fait empaler sur une stalagmite en tentant de combattre (un(e)) %2$s
-death.attack.cavesandcliffsbackport.stalagmite=%1$s s'est fait empaler sur une stalagmite
 entity.cavesandcliffsbackport.falling_stalactite.name=Spéléothème pointu
 tile.cavesandcliffsbackport.dripstone_block.name=Bloc de spéléothème
 tile.cavesandcliffsbackport.lava_cauldron.name=Chaudron de lave

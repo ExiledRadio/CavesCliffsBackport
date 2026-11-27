@@ -1,8 +1,25 @@
 # Stream Dr: dripstone and new cauldrons
 
 Package `dripstone` (client part in `dripstone.client`). Config `dripstone`: `enabled`, `extraCopperVeins`
-(16); dripstone caves follow `caves.dripstoneRegions`. Entity id 1 (`falling_stalactite`; 2-4 unused). No
-packets (ids 20-24 unused).
+(16); dripstone caves follow `caves.dripstoneRegions`. Entity id 1 (`falling_stalactite`, kept only to convert
+old saves; 2-4 unused). No packets (ids 20-24 unused).
+
+## Backport Core's speleothem (1.2.0)
+
+Since 1.2.0 `BlockPointedDripstone` extends Backport Core 1.5.0's `speleothem.BlockSpeleothem` (26.4's
+`SpeleothemBlock`), which Game Drops' icicles share. Core owns the states and metadata, shapes, the column offset,
+support, thickness and tip merging, placement, falling as `backportcore:falling_speleothem` (Core's entity and
+renderer), the `stalagmite` and `fallingStalactite` damage sources with their death messages, tridents, and the
+growth roll (26.4 Pre-Release 1's numbers: a stalagmite tip is a fall 2.5 blocks longer, not 2). This mod keeps
+what only dripstone does, through Core's hooks: `canGrow` (a water source two above the topmost segment, over the
+dripstone block; water kept in a block counts, as 26.4's fluid state), `blocksStalagmiteScan` (anything a drip
+cannot pass), `onRandomTick` (the drip into a cauldron, then Core's growth), `landingSound`
+(`block.pointed_dripstone.land`), the drip particles, the lava cauldron and worldgen. The registry name, the ten
+states and their metadata are unchanged, so placed pointed dripstone loads as it was.
+
+Save compatibility: `cavesandcliffsbackport:falling_stalactite` stays registered (tracking range 0, so clients are
+never sent one). A segment saved mid-fall by 1.1.7 or older loads as `EntityFallingStalactite`, which on its first
+server tick turns into Core's segment in its place, with its motion, fall time and damage, under a new UUID.
 
 Outside the package: one line each in the mod class's pre-init and init, `ClientSetup.init` and
 `SelfTestRunner.TESTS`; the `extraCopperVeins` field in `ModConfig.Dripstone`; and three shared-tool edits the
@@ -52,30 +69,23 @@ the seed to clients for the music stream.
 ## How it works
 
 *   **States**: `pointed_dripstone` has `thickness` (tip_merge, tip, frustum, middle, base) and
-    `vertical_direction` (up, down), metadata `thickness | (down ? 8 : 0)`. Blockstate and models are 1.18's.
-    Each segment recomputes its thickness when a block above or below it changes (current Java's rule, in
-    `calculateThickness`). Shapes and the up-to-an-eighth sideways offset per column are current Java's
-    (`getOffset` is overridden; 1.12's own offset is a quarter).
-*   **Support**: a segment needs a solid face or a segment of its own direction behind it. A stalagmite that
-    loses it breaks a tick later, segment by segment; a stalactite falls two ticks later, all of it at once.
-*   **`EntityFallingStalactite`** is our own entity: 1.12's falling block has the anvil's damage built in and
-    needs its block still in place when it first ticks. Each segment falls on its own. Only the tip hurts:
-    per block fallen after the first, the stalactite's length (at least 6), 40 at most. Landing, a segment
-    stays a block only where a stalactite could hang; otherwise it crashes (sound) and drops its item.
-*   **Damage sources**: `cavesandcliffsbackport.stalagmite` and `.fallingStalactite`, with vanilla's death
-    messages. 1.12 ties Feather Falling to `DamageSource.FALL` and helmet wear to the anvil's source by
-    identity, so `DripstoneEvents` adds both back in `LivingHurtEvent`. Landing on a stalagmite tip runs the
-    entity's ordinary fall with 2 more blocks and double damage (so Jump Boost, flying players and
-    `LivingFallEvent` all apply), and the fall damage that results is re-issued as the stalagmite's.
+    `vertical_direction` (up, down), metadata `thickness | (down ? 8 : 0)` (Core's `BlockSpeleothem`).
+    Blockstate and models are 1.18's. Thickness, shapes and the up-to-two-pixel offset per column are Core's.
+*   **Support, falling, damage, tridents**: Core's (`BlockSpeleothem`, `EntityFallingSpeleothem`,
+    `SpeleothemEvents`). A stalagmite that loses its support breaks a tick later; a stalactite falls two ticks
+    later, all of it at once; only the tip hurts (its length per block fallen, at least 6, 40 at most); a helmet
+    takes a quarter; landing on a stalagmite tip is a fall 2.5 blocks longer with double damage, Feather
+    Falling counting. A falling segment that lands breaks with `block.pointed_dripstone.land`.
 *   **Dripping** (random ticks of a stalactite's topmost segment): the block it hangs from, up to 10 segments
     up, must have a water or lava source right above it. Chance 45/256 (water) or 15/256 (lava); the tip finds
     a cauldron up to 10 below with nothing in the drip's way (blocks that leave the middle of the column
     open, like torches, do not count). A drop shows at the tip and the cauldron changes when it lands, 50
     ticks plus one per block later. 1.12's cauldron cannot be given that tick, so the landings wait in a
     per-world list in `DripstoneEvents` (not saved: a drip in flight at shutdown is lost).
-*   **Growth**: chance 64/5625 a random tick, only hanging from a dripstone block with a water source above;
-    half the time the stalactite grows (to 8 at most), half the time the stalagmite under its tip does (its
-    floor within 10 blocks), and tips that meet merge.
+*   **Growth**: Core's roll (0.011377778, 64/5625) a random tick, only hanging from a dripstone block with a
+    water source above (`canGrow`); half the time the stalactite grows (to 8 at most), half the time the
+    stalagmite under its tip does (its floor within 10 blocks, the search stopped by anything a drip cannot
+    pass), and tips that meet merge. Growing into a water source keeps the water.
 *   **Particles**: tips drip client-side, more with a liquid above. The drop is 1.12's own drip particle
     plus current Java's landing sound.
 *   **Lava cauldron** is its own block (`lava_cauldron`, no item; drops and picks as a cauldron): 1.12's
@@ -95,6 +105,12 @@ the seed to clients for the music stream.
     emerald, 5 uses.
 
 ## Tested headlessly
+
+1.2.0 (Core's speleothem): `-Pselftest=dripstone` on a fresh world also checks that pointed dripstone is a Core
+speleothem with its registry name and metadata unchanged, that falling segments are
+`backportcore:falling_speleothem`, Core's damage sources, the 26.4 stalagmite fall (5 blocks: 9, not 8), growth
+through Core's `growIfPossible`, and an old `falling_stalactite` loaded from NBT turning into Core's segment with
+its state, damage, place and motion. The numbers below are 1.1.x's run.
 
 `./gradlew runServer -Pselftest=all` on a fresh world (port 25844), then `python tools/check_assets.py`:
 **`SELFTEST DONE pass=2228 fail=0`** (147 of them dripstone's); **91 blocks, 1260 states, 84 item models,
@@ -134,7 +150,7 @@ the seed to clients for the music stream.
 *   Everything client-side: models, the cutout layer, the column offset as drawn, the falling stalactite's
     renderer, drip particles and their landing sound, the lava cauldron's look.
 *   Sounds being heard (the calls run; nothing listens on a server).
-*   Tridents breaking pointed dripstone: the dev environment has no trident. The handler looks for a
+*   Tridents breaking pointed dripstone: the dev environment has no trident. Core's handler looks for a
     projectile whose entity name contains `trident`, faster than 0.6.
 *   Random ticks finding stalactites in play (growth and drips are called directly with chosen rolls), and
     the 50-tick wait through real world ticks (the test lands drips at once).
@@ -145,8 +161,6 @@ the seed to clients for the music stream.
 
 ## Not built
 
-*   **Waterlogging** (the plan's later pass): pointed dripstone is placed and generated in air only, never
-    grows into water, and stalagmites do not stand in pools as they do in 1.18.
 *   **Mud above a stalactite drying to clay**: mud is a later update's block.
 *   Lava cauldrons do not take another filling's bucket (powder snow is stream Ps's), and dispensers do not
     fill or empty them (they do not in current Java either).

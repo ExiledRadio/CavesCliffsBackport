@@ -6,12 +6,18 @@ import com.exiledradio.cavesandcliffsbackport.dripstone.DripstoneContent;
 import com.exiledradio.cavesandcliffsbackport.dripstone.DripstoneEvents;
 import com.exiledradio.cavesandcliffsbackport.dripstone.EntityFallingStalactite;
 import com.exiledradio.cavesandcliffsbackport.common.CaveRegions;
-import com.exiledradio.cavesandcliffsbackport.dripstone.Thickness;
+
+import com.exiledradio.backportcore.speleothem.BlockSpeleothem;
+import com.exiledradio.backportcore.speleothem.EntityFallingSpeleothem;
+import com.exiledradio.backportcore.speleothem.SpeleothemEvents;
+import com.exiledradio.backportcore.speleothem.Thickness;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockCauldron;
 import net.minecraft.block.material.EnumPushReaction;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityList;
 import net.minecraft.entity.monster.EntityIronGolem;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -21,6 +27,9 @@ import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagDouble;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -33,8 +42,10 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Stream Dr: thickness and merging, support (breaking and falling), both kinds of damage, growth, drips
- * into cauldrons, the lava cauldron, the recipe, regions, and the cave features placed by hand and generated.
+ * Stream Dr: pointed dripstone as Backport Core's speleothem (thickness and merging, support, breaking and falling
+ * as Core's segment, both kinds of Core damage, growth through Core's roll with dripstone's conditions), the old
+ * falling stalactite turning into Core's, drips into cauldrons, the lava cauldron, the recipe, regions, and the cave
+ * features placed by hand and generated.
  */
 public final class DripstoneSelfTest implements SelfTest {
 
@@ -50,6 +61,7 @@ public final class DripstoneSelfTest implements SelfTest {
         registration(c);
         thickness(c);
         support(c);
+        legacyFalling(c);
         damage(c);
         growth(c);
         drips(c);
@@ -100,6 +112,12 @@ public final class DripstoneSelfTest implements SelfTest {
         }
         c.eq(EnumPushReaction.DESTROY, pd().getPushReaction(pd().getDefaultState()), "pointed dripstone breaks when pushed");
         c.ok(pd().getTickRandomly(), "pointed dripstone ticks randomly");
+        c.ok(pd() instanceof BlockSpeleothem && BlockSpeleothem.isSpeleothem(pd().getDefaultState()), "pointed dripstone is a Core speleothem");
+        c.eq("cavesandcliffsbackport:pointed_dripstone", String.valueOf(pd().getRegistryName()), "registry name unchanged");
+        c.eq(9, pd().getMetaFromState(pd().state(DOWN, Thickness.TIP)), "meta of a stalactite tip unchanged (1 | 8)");
+        c.eq(4, pd().getMetaFromState(pd().state(UP, Thickness.BASE)), "meta of a stalagmite base unchanged (4)");
+        c.ok(pd().getStateFromMeta(8).getValue(BlockPointedDripstone.THICKNESS) == Thickness.TIP_MERGE
+                && pd().getStateFromMeta(8).getValue(BlockPointedDripstone.VERTICAL_DIRECTION) == DOWN, "meta 8 is a merged stalactite tip");
         c.eq(1.5F, pd().getDefaultState().getBlockHardness(c.world, BlockPos.ORIGIN), "pointed dripstone hardness");
         c.eq(1.5F, DripstoneContent.dripstone.getDefaultState().getBlockHardness(c.world, BlockPos.ORIGIN), "dripstone block hardness");
         c.eq(15, DripstoneContent.lavaCauldron.getDefaultState().getLightValue(c.world, BlockPos.ORIGIN), "lava cauldron light");
@@ -176,10 +194,14 @@ public final class DripstoneSelfTest implements SelfTest {
         c.ok(c.world.isUpdateScheduled(top.down(1), pd()), "losing its ceiling schedules the fall");
         Pools.settle(c.world);
         c.eq(0, count(c.world, top.down(4), top, pd()), "the stalactite has left");
-        List<EntityFallingStalactite> falling = c.world.getEntitiesWithinAABB(EntityFallingStalactite.class, new AxisAlignedBB(top).grow(1, 16, 1));
+        List<EntityFallingSpeleothem> falling = c.world.getEntitiesWithinAABB(EntityFallingSpeleothem.class, new AxisAlignedBB(top).grow(1, 16, 1));
         c.eq(3, falling.size(), "three falling segments");
+        if (!falling.isEmpty()) {
+            c.eq("backportcore:falling_speleothem", String.valueOf(EntityList.getKey(falling.get(0))), "as Core's falling speleothem");
+            c.ok(falling.get(0).getState().getBlock() == pd(), "carrying pointed dripstone");
+        }
         int hurting = 0;
-        for (EntityFallingStalactite e : falling) {
+        for (EntityFallingSpeleothem e : falling) {
             if (e.hurtPerBlock() > 0) {
                 hurting++;
                 c.eq(6.0F, e.hurtPerBlock(), "a short stalactite's tip does 6 per block");
@@ -197,10 +219,10 @@ public final class DripstoneSelfTest implements SelfTest {
         }
         c.world.scheduleUpdate(top.down(1), pd(), 1);
         Pools.settle(c.world);
-        falling = c.world.getEntitiesWithinAABB(EntityFallingStalactite.class, new AxisAlignedBB(top).grow(1, 16, 1));
+        falling = c.world.getEntitiesWithinAABB(EntityFallingSpeleothem.class, new AxisAlignedBB(top).grow(1, 16, 1));
         float most = 0;
         int alive = 0;
-        for (EntityFallingStalactite e : falling) {
+        for (EntityFallingSpeleothem e : falling) {
             if (!e.isDead) {
                 alive++;
                 most = Math.max(most, e.hurtPerBlock());
@@ -211,13 +233,50 @@ public final class DripstoneSelfTest implements SelfTest {
         c.eq(9.0F, most, "a stalactite of nine does 9 per block");
     }
 
-    private static void fall(List<EntityFallingStalactite> falling) {
+    private static void fall(List<EntityFallingSpeleothem> falling) {
         for (int t = 0; t < 300; t++) {
-            for (EntityFallingStalactite e : falling) {
+            for (EntityFallingSpeleothem e : falling) {
                 if (!e.isDead) {
                     e.onUpdate();
                 }
             }
+        }
+    }
+
+    /** A falling stalactite saved by 1.1.7 or older loads, and becomes Core's segment on its first tick. */
+    private void legacyFalling(Check c) {
+        BlockPos at = c.area().add(10, 20, 10);
+        NBTTagCompound tag = new NBTTagCompound();
+        tag.setString("id", "cavesandcliffsbackport:falling_stalactite");
+        NBTTagList pos = new NBTTagList();
+        pos.appendTag(new NBTTagDouble(at.getX() + 0.5));
+        pos.appendTag(new NBTTagDouble(at.getY() + 0.01));
+        pos.appendTag(new NBTTagDouble(at.getZ() + 0.5));
+        tag.setTag("Pos", pos);
+        NBTTagList motion = new NBTTagList();
+        motion.appendTag(new NBTTagDouble(0.0));
+        motion.appendTag(new NBTTagDouble(-0.5));
+        motion.appendTag(new NBTTagDouble(0.0));
+        tag.setTag("Motion", motion);
+        tag.setInteger("Thickness", pd().getMetaFromState(pd().state(DOWN, Thickness.TIP)));
+        tag.setInteger("Time", 7);
+        tag.setFloat("FallHurtAmount", 6.0F);
+        tag.setInteger("FallHurtMax", 40);
+        Entity old = EntityList.createEntityFromNBT(tag, c.world);
+        if (!c.ok(old instanceof EntityFallingStalactite, "the old falling stalactite id still loads: " + old)) {
+            return;
+        }
+        c.ok(c.world.spawnEntity(old), "and joins the world");
+        old.onUpdate();
+        c.ok(old.isDead, "its first tick removes it");
+        List<EntityFallingSpeleothem> now = c.world.getEntitiesWithinAABB(EntityFallingSpeleothem.class, new AxisAlignedBB(at).grow(1, 2, 1));
+        if (c.eq(1, now.size(), "and puts Core's falling segment in its place")) {
+            EntityFallingSpeleothem e = now.get(0);
+            c.ok(e.getState() == pd().state(DOWN, Thickness.TIP), "the same block state: " + e.getState());
+            c.eq(6.0F, e.hurtPerBlock(), "the same damage per block");
+            c.ok(Math.abs(e.posY - (at.getY() + 0.01)) < 1e-6 && Math.abs(e.motionY + 0.5) < 1e-6, "the same place and motion");
+            c.ok(!e.getUniqueID().equals(old.getUniqueID()), "with a new UUID");
+            e.setDead();
         }
     }
 
@@ -233,13 +292,13 @@ public final class DripstoneSelfTest implements SelfTest {
         place(c, top.down(), DOWN, true);
         c.world.setBlockToAir(top);
         Pools.settle(c.world);
-        List<EntityFallingStalactite> falling = c.world.getEntitiesWithinAABB(EntityFallingStalactite.class, new AxisAlignedBB(top).grow(1, 12, 1));
+        List<EntityFallingSpeleothem> falling = c.world.getEntitiesWithinAABB(EntityFallingSpeleothem.class, new AxisAlignedBB(top).grow(1, 12, 1));
         c.eq(1, falling.size(), "one falling tip");
         fall(falling);
         float taken = before - golem.getHealth();
         // It falls about 8 blocks: 6 a block after the first, 40 at most.
         c.ok(taken >= 36 && taken <= 40, "a falling stalactite hurts what it lands on, 6 per block up to 40: " + taken);
-        c.ok(golem.getLastDamageSource() == DripstoneEvents.FALLING_STALACTITE, "with its own damage source");
+        c.ok(golem.getLastDamageSource() == SpeleothemEvents.FALLING_STALACTITE, "with Core's falling stalactite damage");
         golem.setDead();
         Drops.count(c.world, o, Item.getItemFromBlock(pd()));
 
@@ -248,7 +307,7 @@ public final class DripstoneSelfTest implements SelfTest {
         guard.setPosition(o.getX() + 4.5, o.getY(), o.getZ() + 0.5);
         guard.setItemStackToSlot(EntityEquipmentSlot.HEAD, new ItemStack(Items.DIAMOND_HELMET));
         c.world.spawnEntity(guard);
-        EntityFallingStalactite one = new EntityFallingStalactite(c.world, o.getX() + 4.5, o.getY() + 0.5, o.getZ() + 0.5, pd().state(DOWN, Thickness.TIP));
+        EntityFallingSpeleothem one = new EntityFallingSpeleothem(c.world, o.getX() + 4.5, o.getY() + 0.5, o.getZ() + 0.5, pd().state(DOWN, Thickness.TIP));
         one.setHurts(1.0F, 40);
         c.world.spawnEntity(one);
         float hp = guard.getHealth();
@@ -260,15 +319,15 @@ public final class DripstoneSelfTest implements SelfTest {
         one.setDead();
         guard.setDead();
 
-        // Landing on a stalagmite tip: a fall two blocks longer, twice the damage.
+        // Landing on a stalagmite tip (26.4): a fall 2.5 blocks longer, twice the damage.
         BlockPos s = o.add(8, 0, 0);
         place(c, s, UP, true);
         EntityZombie zombie = new EntityZombie(c.world);
         zombie.setPosition(s.getX() + 0.5, s.getY() + 1, s.getZ() + 0.5);
         c.world.spawnEntity(zombie);
         pd().onFallenUpon(c.world, s, zombie, 5.0F);
-        c.eq(12.0F, zombie.getHealth(), "a 5-block fall onto a stalagmite does 8");
-        c.ok(zombie.getLastDamageSource() == DripstoneEvents.STALAGMITE, "as a stalagmite's damage");
+        c.eq(11.0F, zombie.getHealth(), "a 5-block fall onto a stalagmite does 9: ceil((5 + 2.5 - 3) x 2)");
+        c.ok(zombie.getLastDamageSource() == SpeleothemEvents.STALAGMITE, "as Core's stalagmite damage");
         zombie.setDead();
         // On its base instead it is an ordinary fall.
         place(c, s.up(), UP, true);
@@ -286,7 +345,7 @@ public final class DripstoneSelfTest implements SelfTest {
         third.setItemStackToSlot(EntityEquipmentSlot.FEET, boots);
         c.world.spawnEntity(third);
         pd().onFallenUpon(c.world, s.up(), third, 5.0F);
-        c.ok(Math.abs(third.getHealth() - (20 - 8 * 0.52F)) < 0.01F, "Feather Falling IV takes 48% off: " + third.getHealth());
+        c.ok(Math.abs(third.getHealth() - (20 - 9 * 0.52F)) < 0.01F, "Feather Falling IV takes 48% off: " + third.getHealth());
         third.setDead();
     }
 
@@ -300,16 +359,14 @@ public final class DripstoneSelfTest implements SelfTest {
         }
         BlockPos start = root.down();
         place(c, start, DOWN, true);
-        Method grow = BlockPointedDripstone.class.getDeclaredMethod("growIfPossible", IBlockState.class, net.minecraft.world.World.class, BlockPos.class, Random.class);
-        grow.setAccessible(true);
         Random r = new Random(17);
         for (int i = 0; i < 50; i++) {
-            grow.invoke(null, c.world.getBlockState(start), c.world, start, r);
+            pd().growIfPossible(c.world.getBlockState(start), c.world, start, r);
         }
         c.eq(1, count(c.world, floor.up(), start, pd()), "no growth without water above the dripstone block");
         c.world.setBlockState(root.up(), Blocks.WATER.getDefaultState(), 2);
         for (int i = 0; i < 400; i++) {
-            grow.invoke(null, c.world.getBlockState(start), c.world, start, r);
+            pd().growIfPossible(c.world.getBlockState(start), c.world, start, r);
         }
         int down = 0;
         while (dir(c, start.down(down)) == DOWN) {
@@ -338,7 +395,7 @@ public final class DripstoneSelfTest implements SelfTest {
         }
         place(c, stone.down(), DOWN, true);
         for (int i = 0; i < 100; i++) {
-            grow.invoke(null, c.world.getBlockState(stone.down()), c.world, stone.down(), r);
+            pd().growIfPossible(c.world.getBlockState(stone.down()), c.world, stone.down(), r);
         }
         c.eq(1, count(c.world, stone.down(12), stone.down(), pd()), "no growth from stone");
         c.world.setBlockToAir(root.up());

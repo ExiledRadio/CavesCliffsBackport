@@ -121,10 +121,6 @@ key.cavesandcliffsbackport.spyglassZoom=Zoom with Spyglass
 key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
-death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s was skewered by a falling stalactite whilst fighting %2$s
-death.attack.cavesandcliffsbackport.fallingStalactite=%1$s was skewered by a falling stalactite
-death.attack.cavesandcliffsbackport.stalagmite.player=%1$s was impaled on a stalagmite whilst fighting %2$s
-death.attack.cavesandcliffsbackport.stalagmite=%1$s was impaled on a stalagmite
 entity.cavesandcliffsbackport.falling_stalactite.name=Pointed Dripstone
 tile.cavesandcliffsbackport.dripstone_block.name=Dripstone Block
 tile.cavesandcliffsbackport.lava_cauldron.name=Lava Cauldron

@@ -122,10 +122,6 @@ key.cavesandcliffsbackport.spyglassZoom=Приблизить подзорной 
 key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
-death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s был пронзён обрушившимся сталактитом, пока боролся с %2$s
-death.attack.cavesandcliffsbackport.fallingStalactite=%1$s был пронзён обрушившимся сталактитом
-death.attack.cavesandcliffsbackport.stalagmite.player=%1$s был пронзён сталагмитом, пока боролся с %2$s
-death.attack.cavesandcliffsbackport.stalagmite=%1$s пронзён сталагмитом
 entity.cavesandcliffsbackport.falling_stalactite.name=Капельник
 tile.cavesandcliffsbackport.dripstone_block.name=Натёчный камень
 tile.cavesandcliffsbackport.lava_cauldron.name=Котёл с лавой

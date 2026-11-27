@@ -122,10 +122,6 @@ key.cavesandcliffsbackport.spyglassZoom=망원경으로 확대
 key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
-death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s이(가) %2$s과(와) 싸우다가 떨어지는 종유석에 찔렸습니다
-death.attack.cavesandcliffsbackport.fallingStalactite=%1$s이(가) 떨어지는 종유석에 찔렸습니다
-death.attack.cavesandcliffsbackport.stalagmite.player=%1$s이(가) %2$s과(와) 싸우다가 석순에 찔렸습니다
-death.attack.cavesandcliffsbackport.stalagmite=%1$s이(가) 석순에 찔렸습니다
 entity.cavesandcliffsbackport.falling_stalactite.name=뾰족한 점적석
 tile.cavesandcliffsbackport.dripstone_block.name=점적석 블록
 tile.cavesandcliffsbackport.lava_cauldron.name=용암 가마솥

@@ -28,9 +28,7 @@ assets.write_json("blockstates/lava_cauldron.json", {"variants": {"normal": {"mo
 lang.append("tile.%s.lava_cauldron.name=%s" % (M, assets.name("block.minecraft.lava_cauldron")))
 
 lang.append("entity.%s.falling_stalactite.name=%s" % (M, assets.name("block.minecraft.pointed_dripstone")))
-for ours, vanilla in (("stalagmite", "stalagmite"), ("fallingStalactite", "fallingStalactite")):
-    for suffix in ("", ".player"):
-        lang.append("death.attack.%s.%s%s=%s" % (M, ours, suffix, assets.name("death.attack.%s%s" % (vanilla, suffix))))
+# The stalagmite and falling stalactite death messages are Backport Core's (1.2.0).
 
 events = {}
 assets.copy_sound_group("block.dripstone_block", events)

@@ -205,6 +205,11 @@ public final class PowderSnowSelfTest implements SelfTest {
         c.eq(PathNodeType.DAMAGE_OTHER, snow().getBlock().getAiPathNodeType(snow(), c.world, o, zombie), "mobs do not path into it");
         c.eq(PathNodeType.BLOCKED, snow().getBlock().getAiPathNodeType(snow(), c.world, o, rabbit), "a rabbit paths over it");
         c.ok(Freezing.walkableMob(rabbit) && !Freezing.walkableMob(zombie), "walkable mobs");
+        // 26.4's #powder_snow_walkable_mobs, other backports' mobs by id: Village & Pillage's fox, Game Drops' frostbite.
+        c.ok(Freezing.walkableId(new net.minecraft.util.ResourceLocation("villagerbackport", "fox")), "a fox walks on it");
+        c.ok(Freezing.walkableId(new net.minecraft.util.ResourceLocation("gamedropsbackport", "frostbite")), "a frostbite walks on it (26.4)");
+        c.ok(!Freezing.walkableId(new net.minecraft.util.ResourceLocation("gamedropsbackport", "ice_ball"))
+                && !Freezing.walkableId(new net.minecraft.util.ResourceLocation("minecraft", "zombie")), "other ids do not");
         c.world.setBlockState(o, AIR, 2);
     }
 
