@@ -100,8 +100,14 @@ public final class Freezing {
 
     /** Powder snow touched this entity this tick: it is held, and freezes while {@code powderSnow.freezing} is on. */
     public static void markInSnow(EntityLivingBase entity) {
-        state(entity).setLong("Seen", entity.world.getTotalWorldTime());
-        if (ModConfig.powderSnow.freezing && !entity.world.isRemote) {
+        NBTTagCompound f = state(entity);
+        long now = entity.world.getTotalWorldTime();
+        // Once a tick, however many powder snow blocks it touches (1.17's isInPowderSnow is a flag): a tall mob in two
+        // blocks of it freezes no faster.
+        boolean first = !f.hasKey("Seen") || f.getLong("Seen") != now || f.getInteger("SeenTick") != entity.ticksExisted;
+        f.setLong("Seen", now);
+        f.setInteger("SeenTick", entity.ticksExisted);
+        if (first && ModConfig.powderSnow.freezing && !entity.world.isRemote) {
             FreezeTicks.markInFreezingBlock(entity);
         }
     }

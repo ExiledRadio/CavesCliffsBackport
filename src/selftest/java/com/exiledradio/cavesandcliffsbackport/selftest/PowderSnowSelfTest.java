@@ -319,13 +319,11 @@ public final class PowderSnowSelfTest implements SelfTest {
         // Who cannot freeze.
         c.ok(!Freezing.canFreeze(new EntityStray(c.world)) && !Freezing.canFreeze(new EntityPolarBear(c.world))
                 && !Freezing.canFreeze(new EntitySnowman(c.world)), "strays, polar bears and snow golems never freeze");
-        c.ok(!Freezing.canFreeze(new EntitySkeleton(c.world)), "skeletons do not freeze (they convert)");
-        // Backport Core 1.5.0's freezing has 26.4's #immune_to_freezing, which takes in the undead: with 1.17's list wither
-        // skeletons and zombies froze. (Changed with the move to Core's freeze ticks.)
-        c.ok(!Freezing.canFreeze(new EntityWitherSkeleton(c.world)), "wither skeletons do not (Core: undead)");
-        c.ok(!Freezing.canFreeze(new EntityZombie(c.world)), "nor do zombies (Core: undead)");
-        EntityPig zombie = new EntityPig(c.world);
-        c.ok(Freezing.canFreeze(zombie), "a pig freezes");
+        // 1.17's freeze_immune_entity_types, with this mod as the newest backport (Core gates the 26.4 undead rule).
+        c.ok(Freezing.canFreeze(new EntitySkeleton(c.world)), "skeletons freeze (and turn into strays)");
+        c.ok(Freezing.canFreeze(new EntityWitherSkeleton(c.world)), "wither skeletons do");
+        EntityZombie zombie = new EntityZombie(c.world);
+        c.ok(Freezing.canFreeze(zombie), "a zombie freezes");
         for (EntityEquipmentSlot slot : new EntityEquipmentSlot[] {EntityEquipmentSlot.HEAD, EntityEquipmentSlot.CHEST,
                 EntityEquipmentSlot.LEGS, EntityEquipmentSlot.FEET}) {
             Item[] leather = {Items.LEATHER_BOOTS, Items.LEATHER_LEGGINGS, Items.LEATHER_CHESTPLATE, Items.LEATHER_HELMET};
@@ -414,10 +412,11 @@ public final class PowderSnowSelfTest implements SelfTest {
         skeleton.setItemStackToSlot(EntityEquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
         skeleton.setCustomNameTag("Frosty");
         skeleton.enablePersistence();
-        skeleton.setHealth(7.0F);
+        skeleton.setHealth(15.0F);
         tick(skeleton, 100);
         c.ok(!Freezing.shaking(skeleton) && !skeleton.isDead, "100 ticks in: still a skeleton, not shaking");
-        c.eq(0, Freezing.ticks(skeleton), "a skeleton gains no freeze ticks");
+        int frozen = Freezing.ticks(skeleton);
+        c.ok(frozen >= 97 && frozen <= 100, "a skeleton freezes as any mob, once a tick in two blocks of snow (1.18.2 Skeleton has no canFreeze): " + frozen);
         tick(skeleton, 45);
         c.ok(Freezing.shaking(skeleton), "after 140 it shakes");
         // It finishes even out of the snow.
@@ -443,7 +442,7 @@ public final class PowderSnowSelfTest implements SelfTest {
         ModConfig.powderSnow.strayConversion = false;
         EntitySkeleton second = spawn(c, new EntitySkeleton(c.world), o.getX() + 0.5, o.getY(), o.getZ() + 0.5);
         tick(second, 200);
-        c.ok(!Freezing.shaking(second) && !second.isDead, "config off: no conversion");
+        c.ok(!Freezing.converting(second) && !second.isDead, "config off: no conversion");
         ModConfig.powderSnow.strayConversion = true;
         second.setDead();
         c.fill(o.add(-1, 0, -1), o.add(1, 3, 1), AIR);

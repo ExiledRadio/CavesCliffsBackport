@@ -35,7 +35,7 @@ that carries a `@Setting` annotation (its pattern now allows them) and names `pa
     applied, and a jump from the bottom rises 0.42 instead of 0.63: the two known differences.
 *   **Freezing** (1.1.8): Backport Core's freeze ticks. Each tick powder snow touches a living entity it calls
     `FreezeTicks.markInFreezingBlock` (while `freezing` is on); Core keeps the counter, damage, slowdown, frost
-    overlay and frozen shaking. Core applies 26.4's immunity (all undead), not 1.17's list. Powder snow's own
+    overlay and frozen shaking. Core follows the newest backport installed: 1.17's immune list here, 26.4's (all undead) with a 26.4 backport. Powder snow's own
     state stays in `CCBFreeze` (`Seen`, and for skeletons `SnowTime`, `Convert`); `PacketFreeze` carries only a
     converting skeleton's shaking. Spawning inside powder snow keeps 1.17's immune types (`Freezing.spawnsInSnow`).
 *   **Client** (`PowderSnowClient`): linear white fog with the camera in the block, Java's body shake for

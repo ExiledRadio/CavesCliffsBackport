@@ -268,9 +268,8 @@ public final class DripstoneSelfTest implements SelfTest {
         zombie.setPosition(s.getX() + 0.5, s.getY() + 1, s.getZ() + 0.5);
         c.world.spawnEntity(zombie);
         pd().onFallenUpon(c.world, s, zombie, 5.0F);
-        // Backport Core 1.5.0's speleothem: 26.4's 2.5 blocks longer (1.18.2: 2), so 9 where 1.1.7 did 8. (Changed with the
-        // move to Core.)
-        c.eq(11.0F, zombie.getHealth(), "a 5-block fall onto a stalagmite does 9 (Core: 26.4's offset)");
+        // 1.18.2's 2 blocks longer (Core uses 26.4's 2.5 only once a 26.4 backport is installed).
+        c.eq(12.0F, zombie.getHealth(), "a 5-block fall onto a stalagmite does 8");
         c.ok(zombie.getLastDamageSource() == SpeleothemEvents.STALAGMITE, "as a stalagmite's damage");
         zombie.setDead();
         // On its base instead it is an ordinary fall.
@@ -289,7 +288,7 @@ public final class DripstoneSelfTest implements SelfTest {
         third.setItemStackToSlot(EntityEquipmentSlot.FEET, boots);
         c.world.spawnEntity(third);
         pd().onFallenUpon(c.world, s.up(), third, 5.0F);
-        c.ok(Math.abs(third.getHealth() - (20 - 9 * 0.52F)) < 0.01F, "Feather Falling IV takes 48% off: " + third.getHealth());
+        c.ok(Math.abs(third.getHealth() - (20 - 8 * 0.52F)) < 0.01F, "Feather Falling IV takes 48% off: " + third.getHealth());
         third.setDead();
     }
 
