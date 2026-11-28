@@ -179,6 +179,39 @@ mod (Dregora without it still has Core, which V&P needs).
     *   The setting is now `moddedBiomeAreaSize` (default 1024, the area that keeps one modded biome): the old
         `moddedBiomeRegionSize=512` stays in installed configs, so it is a new key.
 
+7b. **Biomes O' Plenty placed as Biomes O' Plenty places itself** (same branch, after 7a; the user: "implement it
+    exactly as bop did themselves"). From 1.18 on Biomes O' Plenty places its biomes through TerraBlender. Read from
+    TerraBlender's `TB-1.18.2-1.x.x` branch and Biomes O' Plenty's last 1.18.2 commit (c3252ad8), now here:
+    *   `core/RegionLayer`: TerraBlender's region layer, which is 1.17's layered noise (LCG contexts seeded from the
+        world seed, cached areas): a region drawn by weight, one fuzzy zoom (context 2000), three normal (2001-2003)
+        and `overworld_region_size` more (1001...), per quart column. Defaults: region size 3, vanilla 10, Biomes O'
+        Plenty 13, its rare region 2 (`height.terraBlenderRegionSize`, `vanillaRegionWeight`, `bopRegionWeight`,
+        `bopRareRegionWeight`).
+    *   `core/BopRegionBuilder`: Biomes O' Plenty 1.18.2's two overworld regions, 1.18's OverworldBiomeBuilder
+        slots with its biome tables in vanilla's places and its own fallback (`BiomeUtil.biomeOrFallback`); the rare
+        region swaps the middle picks for muskeg, ominous woods, mystic grove and fungal jungle. Written here from
+        the tables, not copied: Biomes O' Plenty's source is "All rights reserved" (TerraBlender's is LGPL-3.0).
+    *   `core/RegionTree`: each region's own parameter list and 1.18.2's RTree search over it, with the column's
+        surface climate (`BiomeSource.target`). A region answering a 1.18 biome defers to the 1.18 terrain's own
+        answer (TerraBlender's deferred placeholder), so the family's biomes, the cave biomes and vanilla's layout
+        stay as they are.
+    *   1.12 biomes by 1.18 name: 34 by the same name or a rename (lavender_fields, moor, bamboo_forest,
+        tropical_island, origin_island, flower_island, white_beach); 1.18 names 1.12 never had take a 1.12 biome the
+        tables have no slot for, by the host matching, when it fits the slot's 1.18 biome (in the rig: field →
+        shield, dryland → outback, mediterranean_forest → brushland, pumpkin_patch → steppe, 14 in all); the rest
+        fall back as Biomes O' Plenty does. 20 1.12 biomes get no slot (alps, mangrove, tropical_rainforest,
+        land_of_lakes, ...): Biomes O' Plenty 1.18 dropped them. The log lists all of it.
+    *   Defiled Lands, Traverse and other BiomeManager mods: one more region (`otherModsRegionWeight`, 3), vanilla's
+        parameter list with each modded biome in the slots of the 1.18 biomes it fits.
+    Probe (8192 blocks square, seeds 2026/42, no stand-ins): regions vanilla 42%/38%, Biomes O' Plenty 52%/55%,
+    rare 6%/6.5%; Biomes O' Plenty holds 24% of the columns; patches (Σs²/Σs, blocks): 1.18 land 68k/80k (107k/128k
+    without it: TerraBlender's region borders cut 1.18's patches, as in 1.18 with Biomes O' Plenty), Biomes O'
+    Plenty 81k/86k; family biomes unchanged. Server, seed 2026, 160x160 chunks (family set and Biomes O' Plenty
+    7.0.1): Biomes O' Plenty 30.8% of the columns, its 256+-column patches 11.3k columns on average, 1.18 land's
+    14.1k (21.7k without Biomes O' Plenty), the cherry grove identical; 59.5 chunks/s. Defiled Lands alone, seed 42,
+    80x80 chunks: 7 biomes in 8 hosts' slots, 20.4% of the columns (tenebra forest 12.9%), its surface, corruption,
+    tenebra trees and vilespine. No exception but a vanilla advancement naming a recipe Biomes O' Plenty removes.
+
 ## OptiFine (branch `cc-optifine`)
 
 **Extended height works with OptiFine HD U G5** (Dregora's Shaders instances), shaders and their shadow pass

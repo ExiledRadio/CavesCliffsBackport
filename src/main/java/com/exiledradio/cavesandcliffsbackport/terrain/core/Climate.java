@@ -93,6 +93,16 @@ public final class Climate {
         return leaves.length;
     }
 
+    /** Leaf i's biome, in OverworldBiomeBuilder's order. */
+    public int leafBiome(int i) {
+        return leaves[i].biome;
+    }
+
+    /** Leaf i's quantized bounds (Mojang's parameter order, offset last), copied. */
+    public long[][] leafBounds(int i) {
+        return new long[][]{leaves[i].min.clone(), leaves[i].max.clone()};
+    }
+
     /** Leaf i in the oracles' format: biome name, then min and max of the six parameters, then the offset. */
     public String describeLeaf(int i) {
         Node n = leaves[i];
@@ -113,7 +123,7 @@ public final class Climate {
         return s;
     }
 
-    private static Node build(List<Node> nodes, int perNode) {
+    static Node build(List<Node> nodes, int perNode) {
         if (nodes.isEmpty()) {
             throw new IllegalStateException("Need at least one child to build a node");
         } else if (nodes.size() == 1) {

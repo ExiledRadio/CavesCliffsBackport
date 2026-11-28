@@ -22,6 +22,8 @@ public final class BiomeSource {
     private final boolean[] present = new boolean[SIZE * SIZE];
     private final Climate.Column[] cached = new Climate.Column[SIZE * SIZE];
     private final double[] offsets = new double[SIZE * SIZE];
+    /** Per column, its five quantized climate values (temperature, humidity, continents, erosion, weirdness). */
+    private final long[] climates = new long[SIZE * SIZE * 5];
     /** Per column, the biome at each quart y of the world (-16..79), or -1 until asked. */
     private final byte[] stored = new byte[SIZE * SIZE * QUARTS_Y];
     private final double[] column = new double[OverworldNoise.COL_SIZE];
@@ -66,12 +68,34 @@ public final class BiomeSource {
                 cached[slot] = col;
             }
             climate.column(col, t, h, c, e, w);
+            int at = slot * 5;
+            climates[at] = t;
+            climates[at + 1] = h;
+            climates[at + 2] = c;
+            climates[at + 3] = e;
+            climates[at + 4] = w;
             offsets[slot] = column[OverworldNoise.COL_OFFSET];
             java.util.Arrays.fill(stored, slot * QUARTS_Y, (slot + 1) * QUARTS_Y, (byte) -1);
             keys[slot] = key;
             present[slot] = true;
         }
         return slot;
+    }
+
+    /**
+     * The climate target at a quart position (Climate.Sampler.sample: the six quantized values in Mojang's order and
+     * offset 0), into out (7 longs): what a TerraBlender region's own parameter list is searched with.
+     */
+    public void target(int qx, int qy, int qz, long[] out) {
+        int slot = slot(qx, qz);
+        int at = slot * 5;
+        out[Climate.TEMPERATURE] = climates[at];
+        out[Climate.HUMIDITY] = climates[at + 1];
+        out[Climate.CONTINENTALNESS] = climates[at + 2];
+        out[Climate.EROSION] = climates[at + 3];
+        out[Climate.DEPTH] = Climate.quantize((float) OverworldNoise.depth(qy << 2, offsets[slot]));
+        out[Climate.WEIRDNESS] = climates[at + 4];
+        out[Climate.OFFSET] = 0L;
     }
 
     /** The biome id at a quart position (any y: the depth function goes on past the world's height). */
