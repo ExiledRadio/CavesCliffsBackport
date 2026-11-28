@@ -7,6 +7,7 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.IEntityLivingData;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.WorldServer;
@@ -164,6 +165,12 @@ public final class AxolotlSpawning {
                 }
                 IBlockState state = world.getBlockState(pos);
                 if (state.getMaterial() != Material.WATER || world.getBlockState(pos.up()).isNormalCube()) {
+                    continue;
+                }
+                // The axolotl's own spawn rule (clay below, the habitat) before it is built: nearly every water
+                // block the spawner finds is a river, ocean or lake, and building an axolotl there only to throw it
+                // away cost a fifth of a server tick.
+                if (world.getBlockState(pos.down()).getBlock() != Blocks.CLAY || !habitat.canSpawnAt(world, pos)) {
                     continue;
                 }
                 EntityAxolotl axolotl = new EntityAxolotl(world);

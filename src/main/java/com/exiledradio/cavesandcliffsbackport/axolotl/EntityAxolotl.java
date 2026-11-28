@@ -34,7 +34,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -55,6 +54,8 @@ import java.util.List;
  * </ul>
  */
 public class EntityAxolotl extends EntityAnimal {
+
+    private static final java.lang.reflect.Field LOOK_HELPER = net.minecraftforge.fml.relauncher.ReflectionHelper.findField(EntityLiving.class, "field_70749_g", "lookHelper");
 
     private static final DataParameter<Integer> VARIANT = EntityDataManager.createKey(EntityAxolotl.class, DataSerializers.VARINT);
     private static final DataParameter<Boolean> PLAYING_DEAD = EntityDataManager.createKey(EntityAxolotl.class, DataSerializers.BOOLEAN);
@@ -88,8 +89,12 @@ public class EntityAxolotl extends EntityAnimal {
         this.stepHeight = 1.0F;
         this.setPathPriority(PathNodeType.WATER, 0.0F);
         this.moveHelper = new MoveHelper(this);
-        // 1.12.2 keeps the look helper in a private final field.
-        ObfuscationReflectionHelper.setPrivateValue(EntityLiving.class, this, new LookHelper(this, 20), "field_70749_g");
+        // 1.12.2 keeps the look helper in a private final field, found once (a lookup per axolotl was slow).
+        try {
+            LOOK_HELPER.set(this, new LookHelper(this, 20));
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Override

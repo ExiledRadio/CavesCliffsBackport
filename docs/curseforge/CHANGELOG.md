@@ -1,3 +1,7 @@
+# 1.1.7
+
+*   **Less lag**: axolotl spawning no longer builds an axolotl for every water block it tries; it checks the spot first. It took a fifth of every server tick.
+
 # 1.1.6
 
 *   **Fixed: a crash loading saved chunks near a stronghold** ("Exception ticking world", in `StrongholdBurial`), in any world type, since 1.1.3.
