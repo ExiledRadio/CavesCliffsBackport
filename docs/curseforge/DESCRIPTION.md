@@ -69,7 +69,7 @@ Copper ore drops raw copper. Copper blocks age from orange to green. Wax them wi
 
 ## Other mods' ores
 
-Every other mod's stone ore gets a deepslate form, as 1.18 gave vanilla's ores: the same drops, experience, Fortune, ore dictionary names and smelting, 1.5 times as hard, with the mod's own texture drawn on deepslate. In Caves & Cliffs worlds, other mods' ores also generate lower, down into the deepslate, as 1.18 moved vanilla's.
+Every other mod's stone ore gets a deepslate form, as 1.18 gave vanilla's ores: the same drops, experience, Fortune, ore dictionary names and smelting, 1.5 times as hard, with the mod's own texture drawn on deepslate. In Caves & Cliffs worlds, other mods' ores also generate lower, down into the deepslate, as 1.18 moved vanilla's. An ore its mod gives no ore dictionary name can be added by name with the `moddedOresInclude` setting.
 
 ![Thermal Foundation, Immersive Engineering and NuclearCraft ores beside their deepslate forms](https://media.forgecdn.net/attachments/2268/934/cc-modded-deepslate-ores-jpg.jpg)
 
