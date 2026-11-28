@@ -527,18 +527,40 @@ public final class ModConfig {
 
         @Config.RequiresWorldRestart
         @Setting.NewChunks
-        @Config.Comment({"At most this percent of a 1.18 biome's regions go to the modded biomes that may take its place. Fewer when",
-                "their BiomeManager weights are low against a vanilla biome's 10 (a rare modded biome stays rare)."})
-        @Config.LangKey("config.cavesandcliffsbackport.height.moddedBiomesMaxShare")
-        @Config.RangeInt(min = 0, max = 100)
-        public int moddedBiomesMaxShare = 50;
+        @Config.Comment({"The size of the regions modded biomes come in, as TerraBlender's overworld_region_size: each step",
+                "doubles them. Biomes O' Plenty places its biomes through TerraBlender's regions from 1.18 on."})
+        @Config.LangKey("config.cavesandcliffsbackport.height.terraBlenderRegionSize")
+        @Config.RangeInt(min = 2, max = 6)
+        public int terraBlenderRegionSize = 3;
 
         @Config.RequiresWorldRestart
         @Setting.NewChunks
-        @Config.Comment("The size in blocks of the areas where the same modded biome takes a 1.18 biome's place.")
-        @Config.LangKey("config.cavesandcliffsbackport.height.moddedBiomeAreaSize")
-        @Config.RangeInt(min = 64, max = 8192)
-        public int moddedBiomeAreaSize = 1024;
+        @Config.Comment("The weight of vanilla's regions, as TerraBlender's vanilla_overworld_region_weight.")
+        @Config.LangKey("config.cavesandcliffsbackport.height.vanillaRegionWeight")
+        @Config.RangeInt(min = 0, max = 1000)
+        public int vanillaRegionWeight = 10;
+
+        @Config.RequiresWorldRestart
+        @Setting.NewChunks
+        @Config.Comment("The weight of Biomes O' Plenty's regions, as its bop_overworld_region_weight.")
+        @Config.LangKey("config.cavesandcliffsbackport.height.bopRegionWeight")
+        @Config.RangeInt(min = 0, max = 1000)
+        public int bopRegionWeight = 13;
+
+        @Config.RequiresWorldRestart
+        @Setting.NewChunks
+        @Config.Comment("The weight of Biomes O' Plenty's rare regions, as its bop_overworld_rare_region_weight.")
+        @Config.LangKey("config.cavesandcliffsbackport.height.bopRareRegionWeight")
+        @Config.RangeInt(min = 0, max = 1000)
+        public int bopRareRegionWeight = 2;
+
+        @Config.RequiresWorldRestart
+        @Setting.NewChunks
+        @Config.Comment({"The weight of the region every other mod's biomes share (Defiled Lands, Traverse, any in Forge's",
+                "BiomeManager), each in the place of the 1.18 biomes it fits."})
+        @Config.LangKey("config.cavesandcliffsbackport.height.otherModsRegionWeight")
+        @Config.RangeInt(min = 0, max = 1000)
+        public int otherModsRegionWeight = 3;
 
         @Setting.NewChunks
         @Config.Comment({"Other mods' overworld ores move down in Caves & Cliffs worlds with 1.18 terrain, as 1.18 moved vanilla's:",

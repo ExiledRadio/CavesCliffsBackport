@@ -3,8 +3,13 @@ package com.exiledradio.cavesandcliffsbackport.terrain;
 import com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport;
 import com.exiledradio.cavesandcliffsbackport.ModConfig;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.Biomes;
-import com.exiledradio.cavesandcliffsbackport.terrain.core.DoubleNoise;
-import com.exiledradio.cavesandcliffsbackport.terrain.core.Xoroshiro;
+import com.exiledradio.cavesandcliffsbackport.terrain.core.BiomeSource;
+import com.exiledradio.cavesandcliffsbackport.terrain.core.BopRegionBuilder;
+import com.exiledradio.cavesandcliffsbackport.terrain.core.Climate;
+import com.exiledradio.cavesandcliffsbackport.terrain.core.ColumnCache;
+import com.exiledradio.cavesandcliffsbackport.terrain.core.OverworldNoise;
+import com.exiledradio.cavesandcliffsbackport.terrain.core.RegionLayer;
+import com.exiledradio.cavesandcliffsbackport.terrain.core.RegionTree;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.biome.Biome;
@@ -18,7 +23,6 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.IdentityHashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -26,25 +30,24 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * Other mods' overworld biomes in the 1.18 terrain, the way TerraBlender adds them to 1.18: each modded biome takes the
- * place of the 1.18 biome closest to it (its host: BiomeDictionary types, temperature and rainfall), in some regions
- * of the world. The terrain, caves and structures stay 1.18's; a column whose 1.18 biome is replaced holds the modded
- * biome (spawns, grass and water colors, weather), gets its top and filler blocks, and is decorated by it.
+ * Other mods' overworld biomes in the 1.18 terrain, placed the way Biomes O' Plenty places its own from 1.18 on:
+ * through TerraBlender's regions. 1.17's layered noise ({@link RegionLayer}) puts each quart column in a region drawn
+ * by weight (vanilla's 10, Biomes O' Plenty's 13 and its rare one's 2, TerraBlender's and Biomes O' Plenty's defaults,
+ * region size 3); each region has its own climate parameter list, searched with the 1.18 terrain's own climate, so
+ * its biomes follow 1.18's climate noise as 1.18's own do.
+ * <ul>
+ *   <li>Biomes O' Plenty's regions are its 1.18.2 tables ({@link BopRegionBuilder}) over the 1.12 biomes by name;
+ *       a 1.18 name 1.12 never had takes a 1.12 biome with no 1.18 slot, by host matching, else falls back as
+ *       Biomes O' Plenty does.</li>
+ *   <li>Every other mod's biomes (Forge's {@code BiomeManager} lists: Defiled Lands, Traverse) share one more region,
+ *       vanilla's parameter list with them in the slots of the 1.18 biomes they fit.</li>
+ * </ul>
+ * Where a region names a 1.18 biome, the 1.18 terrain's own answer stands (TerraBlender's deferred placeholder), so
+ * the family's newer biomes, the cave biomes and vanilla's own layout are kept. A column a modded biome holds gets
+ * its biome (spawns, colors, weather), its top and filler blocks and its decoration. With no such mod the world is
+ * exactly 1.18's.
  *
- * <p>The candidates: every biome in Forge's {@code BiomeManager} lists (the ones a Default world places, Defiled Lands,
- * Traverse) and Biomes O' Plenty's (its own world type's, with their climate weights), not vanilla's, not the family's
- * (those are placed by their 1.18 names, {@link BiomeMap}), not ones the config excludes.
- *
- * <p>Where: a climate noise of 1.18's temperature scale ({@link #variant}) decides, per host, whether a column is the
- * 1.18 biome or a modded one: the modded biomes get their weight's share of its range against a vanilla biome's 10, at
- * most {@code moddedBiomesMaxShare} percent. Its borders are smooth contours, as between 1.18's own variant biomes
- * (plains and sunflower plains), so a 1.18 biome's patch is split the way 1.18 splits its biomes, not cut straight
- * by regions, and modded patches come out about as large as 1.18's. Which modded biome: Voronoi cells of
- * {@code moddedBiomeAreaSize} blocks with noise-warped borders, each drawing one by weight. The same noise for every
- * host, so a place that keeps one host keeps its neighbors too.
- * With no candidate there is nothing to place and the world is exactly 1.18's.
- *
- * <p>Immutable once built; any thread.
+ * <p>Immutable once built; any thread (each thread has its own sampler and layer).
  */
 public final class ModdedBiomes {
 
@@ -159,8 +162,6 @@ public final class ModdedBiomes {
         /** Its floor under water when it names one other than dirt (Biomes O' Plenty's seaFloorBlock), or null. */
         @Nullable
         final IBlockState seaFloor;
-        /** The 1.18 biomes it may take the place of. */
-        final boolean[] hosts = new boolean[Biomes.COUNT];
 
         Entry(Biome biome, ResourceLocation id, int weight) {
             this.biome = biome;
@@ -175,76 +176,99 @@ public final class ModdedBiomes {
         }
     }
 
+    /** Every modded biome a region names. */
     private final Entry[] entries;
-    /** Per host: the entries that may take its place, in rank order, or null. */
-    private final int[][] hostEntries = new int[Biomes.COUNT][];
-    /** Per host: the rank each of its entries ends at (the rest is the 1.18 biome's). */
-    private final float[][] hostEnds = new float[Biomes.COUNT][];
     private final Map<Biome, Entry> byBiome = new IdentityHashMap<>();
 
-    private final long salt;
-    private final double cell;
-    private final double warp;
-    private final DoubleNoise warpX;
-    private final DoubleNoise warpZ;
+    // ---- the regions (TerraBlender's)
 
-    /**
-     * Modded or 1.18: a noise at 1.18's temperature scale (first octave -10), with its own seed. At this scale its
-     * borders cross few 1.18 patches, so 1.18's biomes keep their sizes and the modded ones get theirs (the patch
-     * probe, packcompat.md item 7: -8 halved both, as 512-block regions did).
-     */
-    private final DoubleNoise variant;
-    /** The variant noise's sorted sample values, to turn a value into its rank in [0, 1). */
-    private final double[] quantiles;
+    /** Region 0, vanilla's: its answers are the 1.18 terrain's own. */
+    static final int VANILLA = 0;
+    /** Biomes O' Plenty 1.18.2's regions, registered after vanilla's in TerraBlender's order. */
+    static final int BOP = 1;
+    static final int BOP_RARE = 2;
+    /** Every other mod's biomes: vanilla's parameter list with them in their hosts' slots. */
+    static final int OTHERS = 3;
 
-    /** A vanilla biome's BiomeManager weight. */
-    private static final int VANILLA_WEIGHT = 10;
+    private final long seed;
+    private final OverworldNoise noise;
+    private final Climate climate;
+    /** Per region, its parameter list, or null (vanilla's, or a region without biomes). */
+    private final RegionTree[] trees;
+    private final int[] regionIds;
+    private final int[] regionWeights;
+    private final int regionSize;
+    private final String plan;
 
-    private ModdedBiomes(long seed, List<Entry> list, int maxShare, int regionSize) {
+    private final ThreadLocal<Kit> kits = new ThreadLocal<Kit>() {
+        @Override
+        protected Kit initialValue() {
+            return new Kit();
+        }
+    };
+
+    /** A thread's climate sampler, region layer and per-quart answers. */
+    private final class Kit {
+        final ColumnCache columns = new ColumnCache(noise);
+        final BiomeSource source = new BiomeSource(noise, columns, climate);
+        final RegionLayer layer = new RegionLayer(seed, regionIds, regionWeights, regionSize);
+        final long[] target = new long[7];
+        final long[] keys = new long[4096];
+        final int[] values = new int[4096];
+
+        Kit() {
+            java.util.Arrays.fill(keys, Long.MIN_VALUE);
+        }
+
+        /** The entry a region's parameter list names at a quart column's surface, or -1 (the 1.18 biome). */
+        int answer(int qx, int qz) {
+            long key = (long) qx << 32 | (qz & 0xFFFFFFFFL);
+            int slot = (qx & 63) << 6 | (qz & 63);
+            if (keys[slot] == key) {
+                return values[slot];
+            }
+            int v = -1;
+            int region = layer.region(qx, qz);
+            RegionTree tree = region >= 0 && region < trees.length ? trees[region] : null;
+            if (tree != null) {
+                int y = columns.preliminarySurfaceLevel(qx << 2, qz << 2);
+                source.target(qx, y >> 2, qz, target);
+                int found = tree.search(target);
+                v = found < 0 ? -1 - found : -1;
+            }
+            keys[slot] = key;
+            values[slot] = v;
+            return v;
+        }
+    }
+
+    private ModdedBiomes(long seed, OverworldNoise noise, Climate climate, List<Entry> list, RegionTree[] trees,
+                         int[] regionIds, int[] regionWeights, int regionSize, String plan) {
+        this.seed = seed;
+        this.noise = noise;
+        this.climate = climate;
         this.entries = list.toArray(new Entry[0]);
-        Xoroshiro.Positional positional = Xoroshiro.ofSeed(seed).forkPositional();
-        Xoroshiro r = positional.fromHashOf(CavesAndCliffsBackport.MOD_ID + ":modded_biome_regions");
-        this.salt = r.nextLong();
-        this.warpX = new DoubleNoise(positional.fromHashOf(CavesAndCliffsBackport.MOD_ID + ":modded_biome_warp_x"), -6, 1, 1, 1);
-        this.warpZ = new DoubleNoise(positional.fromHashOf(CavesAndCliffsBackport.MOD_ID + ":modded_biome_warp_z"), -6, 1, 1, 1);
-        this.cell = regionSize;
-        this.warp = regionSize * 0.5D;
-        this.variant = new DoubleNoise(positional.fromHashOf(CavesAndCliffsBackport.MOD_ID + ":modded_biome_variant"), -10,
-                1, 1, 0, 0, 0, 0);
-        java.util.Random sample = new java.util.Random(seed ^ 0x6D6F64646564L);
-        this.quantiles = new double[8192];
-        for (int i = 0; i < quantiles.length; i++) {
-            quantiles[i] = variantValue(sample.nextInt(200000) - 100000, sample.nextInt(200000) - 100000);
-        }
-        java.util.Arrays.sort(quantiles);
-        for (int host = 0; host < Biomes.COUNT; host++) {
-            List<Integer> mine = new ArrayList<>();
-            int weights = 0;
-            for (int i = 0; i < entries.length; i++) {
-                if (entries[i].hosts[host]) {
-                    mine.add(i);
-                    weights += entries[i].weight;
-                }
-            }
-            if (mine.isEmpty() || weights <= 0 || maxShare <= 0) {
-                continue;
-            }
-            // The modded biomes' share of the host's regions: their weight against a vanilla biome's 10, at most maxShare.
-            float share = Math.min((float) weights / (weights + VANILLA_WEIGHT), maxShare / 100.0F);
-            int[] idx = new int[mine.size()];
-            float[] ends = new float[mine.size()];
-            int sum = 0;
-            for (int k = 0; k < idx.length; k++) {
-                idx[k] = mine.get(k);
-                sum += entries[idx[k]].weight;
-                ends[k] = share * sum / weights;
-            }
-            hostEntries[host] = idx;
-            hostEnds[host] = ends;
-        }
+        this.trees = trees;
+        this.regionIds = regionIds;
+        this.regionWeights = regionWeights;
+        this.regionSize = regionSize;
+        this.plan = plan;
         for (Entry e : entries) {
             byBiome.put(e.biome, e);
         }
+    }
+
+    /** Biomes O' Plenty 1.18 names whose 1.12 biome has another name. */
+    private static final Map<String, String> BOP_ALIASES = new java.util.HashMap<>();
+
+    static {
+        BOP_ALIASES.put("lavender_field", "lavender_fields");
+        BOP_ALIASES.put("highland_moor", "moor");
+        BOP_ALIASES.put("bamboo_grove", "bamboo_forest");
+        BOP_ALIASES.put("tropics", "tropical_island");
+        BOP_ALIASES.put("origin_valley", "origin_island");
+        BOP_ALIASES.put("rainbow_hills", "flower_island");
+        BOP_ALIASES.put("dune_beach", "white_beach");
     }
 
     /**
@@ -252,30 +276,158 @@ public final class ModdedBiomes {
      * then the world is 1.18's.
      */
     @Nullable
-    static ModdedBiomes create(long seed) {
+    static ModdedBiomes create(long seed, OverworldNoise noise, Climate climate) {
         if (!ModConfig.height.moddedBiomes) {
             return null;
         }
-        Map<ResourceLocation, Entry> found = new TreeMap<>((a, b) -> a.toString().compareTo(b.toString()));
         Set<String> excluded = new java.util.HashSet<>();
         for (String s : ModConfig.height.moddedBiomesExcluded) {
             if (s != null && !s.trim().isEmpty()) {
                 excluded.add(s.trim().toLowerCase(Locale.ROOT));
             }
         }
+        Map<ResourceLocation, Entry> others = new TreeMap<>((a, b) -> a.toString().compareTo(b.toString()));
         for (BiomeManager.BiomeType type : BiomeManager.BiomeType.values()) {
             Collection<BiomeManager.BiomeEntry> list = BiomeManager.getBiomes(type);
             if (list == null) {
                 continue;
             }
             for (BiomeManager.BiomeEntry e : list) {
-                offer(found, excluded, e.biome, e.itemWeight);
+                if (e.biome != null && e.biome.getRegistryName() != null
+                        && !"biomesoplenty".equals(e.biome.getRegistryName().getNamespace())) {
+                    offer(others, excluded, e.biome, e.itemWeight);
+                }
             }
         }
-        biomesOPlenty(found, excluded);
-        if (found.isEmpty()) {
+        Map<String, Biome> bop = biomesOPlenty(excluded);
+        if (others.isEmpty() && bop.isEmpty()) {
             return null;
         }
+        List<Entry> entries = new ArrayList<>();
+        Map<Biome, Integer> index = new IdentityHashMap<>();
+        StringBuilder plan = new StringBuilder();
+        RegionTree[] trees = new RegionTree[4];
+        if (!bop.isEmpty()) {
+            bopRegions(bop, entries, index, trees, plan);
+        }
+        if (!others.isEmpty()) {
+            trees[OTHERS] = othersRegion(climate, others, entries, index, plan);
+        }
+        int[] weights = {ModConfig.height.vanillaRegionWeight, ModConfig.height.bopRegionWeight,
+                ModConfig.height.bopRareRegionWeight, ModConfig.height.otherModsRegionWeight};
+        List<Integer> ids = new ArrayList<>();
+        List<Integer> ws = new ArrayList<>();
+        for (int r = 0; r < 4; r++) {
+            // InitialLayer leaves out the regions without biomes; vanilla's is always there.
+            if ((r == VANILLA || trees[r] != null) && weights[r] > 0) {
+                ids.add(r);
+                ws.add(weights[r]);
+            }
+        }
+        if (ids.size() < 2 || entries.isEmpty()) {
+            return null;
+        }
+        int[] regionIds = new int[ids.size()];
+        int[] regionWeights = new int[ids.size()];
+        for (int i = 0; i < regionIds.length; i++) {
+            regionIds[i] = ids.get(i);
+            regionWeights[i] = ws.get(i);
+        }
+        ModdedBiomes m = new ModdedBiomes(seed, noise, climate, entries, trees, regionIds, regionWeights,
+                ModConfig.height.terraBlenderRegionSize, plan.toString());
+        m.log();
+        return m;
+    }
+
+    private static int entry(Biome b, List<Entry> entries, Map<Biome, Integer> index) {
+        Integer i = index.get(b);
+        if (i == null) {
+            i = entries.size();
+            entries.add(new Entry(b, b.getRegistryName(), 10));
+            index.put(b, i);
+        }
+        return i;
+    }
+
+    /**
+     * Biomes O' Plenty 1.18.2's common and rare regions ({@link BopRegionBuilder}) over the 1.12 biomes: a 1.18 name
+     * takes the 1.12 biome of that name (or its {@link #BOP_ALIASES 1.12 name}); a 1.18 name 1.12 never had takes a
+     * 1.12 biome the 1.18 tables have no slot for, the closest to the 1.18 biome the slot falls back to (as the host
+     * matching places other mods' biomes); one left over falls back as Biomes O' Plenty's own tables do.
+     */
+    private static void bopRegions(Map<String, Biome> bop, List<Entry> entries, Map<Biome, Integer> index,
+                                   RegionTree[] trees, StringBuilder plan) {
+        // Pass 1: which 1.18 names have their 1.12 biome, which do not (and the 1.18 biome each falls back to).
+        Set<String> used = new java.util.HashSet<>();
+        Map<String, Integer> missing = new TreeMap<>();
+        BopRegionBuilder.Resolver probe = (name, home) -> {
+            String path = bop.containsKey(name) ? name : BOP_ALIASES.get(name);
+            if (path != null && bop.containsKey(path)) {
+                used.add(path);
+                return -1;
+            }
+            missing.putIfAbsent(name, home);
+            return BopRegionBuilder.MISSING;
+        };
+        BopRegionBuilder.build(probe, false, new RegionTree.Builder());
+        BopRegionBuilder.build(probe, true, new RegionTree.Builder());
+        // The 1.12 biomes no 1.18 name is for, by how well each fits each 1.18 biome.
+        Map<String, double[]> spare = new TreeMap<>();
+        for (Map.Entry<String, Biome> e : bop.entrySet()) {
+            if (!used.contains(e.getKey())) {
+                spare.put(e.getKey(), scores(e.getValue()));
+            }
+        }
+        Map<String, String> standIn = new TreeMap<>();
+        for (Map.Entry<String, Integer> m : missing.entrySet()) {
+            String best = null;
+            double bestScore = Double.MAX_VALUE;
+            for (Map.Entry<String, double[]> s : spare.entrySet()) {
+                double sc = s.getValue()[m.getValue()];
+                if (sc < bestScore && sc <= min(s.getValue()) + 2 * MARGIN) {
+                    bestScore = sc;
+                    best = s.getKey();
+                }
+            }
+            if (best != null) {
+                standIn.put(m.getKey(), best);
+                spare.remove(best);
+            }
+        }
+        BopRegionBuilder.Resolver resolver = (name, home) -> {
+            String path = bop.containsKey(name) ? name : BOP_ALIASES.get(name);
+            if (path == null || !bop.containsKey(path)) {
+                path = standIn.get(name);
+            }
+            return path == null ? BopRegionBuilder.MISSING : -1 - entry(bop.get(path), entries, index);
+        };
+        RegionTree.Builder common = new RegionTree.Builder();
+        BopRegionBuilder.build(resolver, false, common);
+        trees[BOP] = common.build();
+        RegionTree.Builder rare = new RegionTree.Builder();
+        BopRegionBuilder.build(resolver, true, rare);
+        trees[BOP_RARE] = rare.build();
+        plan.append("Biomes O' Plenty's 1.18.2 regions: ").append(used.size()).append(" biomes by their 1.18 names");
+        if (!standIn.isEmpty()) {
+            plan.append("; 1.12 biomes in 1.18 slots: ").append(standIn.toString().replace("{", "").replace("}", ""));
+        }
+        missing.keySet().removeAll(standIn.keySet());
+        if (!missing.isEmpty()) {
+            plan.append("; falling back as Biomes O' Plenty does: ").append(String.join(", ", missing.keySet()));
+        }
+        if (!spare.isEmpty()) {
+            plan.append("; no slot: ").append(String.join(", ", spare.keySet()));
+        }
+        plan.append(". ");
+    }
+
+    /**
+     * The region for every other mod's biomes: vanilla's parameter list with each modded biome in the slots of the
+     * 1.18 biomes it fits ({@link #hosts}), a host's slots shared out among its modded biomes in turn.
+     */
+    @Nullable
+    private static RegionTree othersRegion(Climate climate, Map<ResourceLocation, Entry> others, List<Entry> entries,
+                                           Map<Biome, Integer> index, StringBuilder plan) {
         Map<String, Integer> forced = new java.util.HashMap<>();
         for (String s : ModConfig.height.moddedBiomeHosts) {
             int eq = s == null ? -1 : s.indexOf('=');
@@ -289,82 +441,94 @@ public final class ModdedBiomes {
                 forced.put(s.substring(0, eq).trim().toLowerCase(Locale.ROOT), host);
             }
         }
-        List<Entry> placed = new ArrayList<>();
-        for (Entry e : found.values()) {
+        List<List<Integer>> perHost = new ArrayList<>();
+        for (int h = 0; h < Biomes.COUNT; h++) {
+            perHost.add(new ArrayList<Integer>());
+        }
+        Map<String, List<String>> shown = new TreeMap<>();
+        for (Entry e : others.values()) {
+            boolean[] hosts = new boolean[Biomes.COUNT];
             Integer f = forced.get(e.id.toString());
             if (f != null) {
-                e.hosts[f] = true;
+                hosts[f] = true;
             } else {
-                hosts(e.biome, e.hosts);
+                hosts(e.biome, hosts);
             }
-            for (boolean h : e.hosts) {
-                if (h) {
-                    placed.add(e);
-                    break;
+            for (int h = 0; h < Biomes.COUNT; h++) {
+                if (hosts[h]) {
+                    perHost.get(h).add(entry(e.biome, entries, index));
+                    shown.computeIfAbsent(Biomes.name(h), k -> new ArrayList<>()).add(e.id.toString());
                 }
             }
         }
-        if (placed.isEmpty()) {
+        if (shown.isEmpty()) {
             return null;
         }
-        ModdedBiomes m = new ModdedBiomes(seed, placed, ModConfig.height.moddedBiomesMaxShare,
-                ModConfig.height.moddedBiomeAreaSize);
-        m.log();
-        return m;
+        int[] turn = new int[Biomes.COUNT];
+        RegionTree.Builder b = new RegionTree.Builder();
+        for (int i = 0; i < climate.leafCount(); i++) {
+            int biome = climate.leafBiome(i);
+            long[][] bounds = climate.leafBounds(i);
+            List<Integer> mine = biome >= 0 && biome < Biomes.COUNT && HOST[biome] ? perHost.get(biome) : null;
+            int value = biome;
+            if (mine != null && !mine.isEmpty()) {
+                value = -1 - mine.get(turn[biome]++ % mine.size());
+            }
+            b.add(bounds[0], bounds[1], value);
+        }
+        plan.append("Other mods' region: ");
+        boolean first = true;
+        for (Map.Entry<String, List<String>> s : shown.entrySet()) {
+            plan.append(first ? "" : "; ").append(s.getKey()).append(" -> ").append(String.join(", ", s.getValue()));
+            first = false;
+        }
+        plan.append(". ");
+        return b.build();
     }
 
     private static void offer(Map<ResourceLocation, Entry> found, Set<String> excluded, @Nullable Biome biome, int weight) {
-        if (biome == null || weight <= 0) {
+        if (biome == null || weight <= 0 || !placeable(biome, excluded)) {
             return;
         }
         ResourceLocation id = biome.getRegistryName();
-        if (id == null || FAMILY.contains(id.getNamespace()) || excluded.contains(id.getNamespace())
-                || excluded.contains(id.toString()) || ForgeRegistries.BIOMES.getValue(id) != biome) {
-            return;
-        }
-        if (BiomeDictionary.hasType(biome, BiomeDictionary.Type.NETHER) || BiomeDictionary.hasType(biome, BiomeDictionary.Type.END)
-                || BiomeDictionary.hasType(biome, BiomeDictionary.Type.VOID)) {
-            return;
-        }
         Entry old = found.get(id);
         if (old == null || old.weight < weight) {
             found.put(id, new Entry(biome, id, weight));
         }
     }
 
-    /**
-     * Biomes O' Plenty places its biomes only in its own world type, from its climates (not BiomeManager): each
-     * present overworld biome, weighted by its largest climate weight.
-     */
-    private static void biomesOPlenty(Map<ResourceLocation, Entry> found, Set<String> excluded) {
+    private static boolean placeable(Biome biome, Set<String> excluded) {
+        ResourceLocation id = biome.getRegistryName();
+        if (id == null || FAMILY.contains(id.getNamespace()) || excluded.contains(id.getNamespace())
+                || excluded.contains(id.toString()) || ForgeRegistries.BIOMES.getValue(id) != biome) {
+            return false;
+        }
+        return !BiomeDictionary.hasType(biome, BiomeDictionary.Type.NETHER) && !BiomeDictionary.hasType(biome, BiomeDictionary.Type.END)
+                && !BiomeDictionary.hasType(biome, BiomeDictionary.Type.VOID);
+    }
+
+    /** Biomes O' Plenty's present overworld biomes (its config decides which), by registry path. */
+    private static Map<String, Biome> biomesOPlenty(Set<String> excluded) {
+        Map<String, Biome> out = new TreeMap<>();
         if (!Loader.isModLoaded("biomesoplenty")) {
-            return;
+            return out;
         }
         try {
             Class<?> api = Class.forName("biomesoplenty.api.biome.BOPBiomes");
             Object registry = api.getField("REG_INSTANCE").get(null);
             Class<?> registryClass = Class.forName("biomesoplenty.api.biome.BOPBiomes$IBiomeRegistry");
             Collection<?> present = (Collection<?>) registryClass.getMethod("getPresentBiomes").invoke(registry);
-            java.lang.reflect.Method extended = registryClass.getMethod("getExtendedBiome", Biome.class);
-            Class<?> extendedClass = Class.forName("biomesoplenty.api.biome.IExtendedBiome");
-            java.lang.reflect.Method weights = extendedClass.getMethod("getWeightMap");
             for (Object o : present) {
                 Biome b = (Biome) o;
-                Object ext = extended.invoke(registry, b);
-                if (ext == null) {
-                    continue;
+                ResourceLocation id = b.getRegistryName();
+                if (id != null && "biomesoplenty".equals(id.getNamespace()) && placeable(b, excluded)) {
+                    out.put(id.getPath(), b);
                 }
-                int weight = 0;
-                for (Map.Entry<?, ?> w : ((Map<?, ?>) weights.invoke(ext)).entrySet()) {
-                    if (!"HELL".equals(String.valueOf(w.getKey())) && w.getValue() instanceof Integer) {
-                        weight = Math.max(weight, (Integer) w.getValue());
-                    }
-                }
-                offer(found, excluded, b, weight);
             }
         } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
-            CavesAndCliffsBackport.LOGGER.warn("Could not read Biomes O' Plenty's biomes; only BiomeManager's join the 1.18 terrain.", e);
+            CavesAndCliffsBackport.LOGGER.warn("Could not read Biomes O' Plenty's biomes; it gets no region.", e);
         }
+        return out;
     }
 
     @Nullable
@@ -402,12 +566,28 @@ public final class ModdedBiomes {
     /** How much worse than its best host a host may score and still get the modded biome. */
     private static final double MARGIN = 0.15D;
 
-    /**
-     * The 1.18 biomes a modded biome takes the place of: of the same kind (land, mountain, river, beach, ocean,
-     * mushroom), those that score within {@link #MARGIN} of the best on kind tags, temperature, rainfall and the
-     * other tags.
-     */
+    private static double min(double[] a) {
+        double m = Double.MAX_VALUE;
+        for (double v : a) {
+            m = Math.min(m, v);
+        }
+        return m;
+    }
+
+    /** The 1.18 biomes a modded biome takes the place of: those that score within {@link #MARGIN} of its best. */
     static void hosts(Biome biome, boolean[] out) {
+        double[] score = scores(biome);
+        double best = min(score);
+        for (int h = 0; h < Biomes.COUNT; h++) {
+            out[h] = score[h] <= best + MARGIN;
+        }
+    }
+
+    /**
+     * How well a modded biome fits each 1.18 biome (lower is better; MAX_VALUE where it is of another kind: land,
+     * mountain, river, beach, ocean, mushroom): kind tags, temperature, rainfall and the other tags.
+     */
+    static double[] scores(Biome biome) {
         int tags = 0;
         for (BiomeDictionary.Type t : BiomeDictionary.getTypes(biome)) {
             tags |= mask(t.getName().toUpperCase(Locale.ROOT));
@@ -429,7 +609,6 @@ public final class ModdedBiomes {
         float temp = Math.min(biome.getDefaultTemperature(), 2.0F);
         float rain = Math.min(biome.getRainfall(), 1.0F);
         double[] score = new double[Biomes.COUNT];
-        double best = Double.MAX_VALUE;
         for (int h = 0; h < Biomes.COUNT; h++) {
             score[h] = Double.MAX_VALUE;
             if (!HOST[h]) {
@@ -456,110 +635,38 @@ public final class ModdedBiomes {
             int any = Integer.bitCount(tags | HOST_TAGS[h]);
             double similarity = any == 0 ? 1.0D : (double) both / any;
             int kindDiff = Integer.bitCount((tags ^ HOST_TAGS[h]) & KIND & ~mask("MOUNTAIN"));
-            sc += 0.8D * Math.abs(temp - TEMP[h]) + 0.3D * Math.abs(rain - RAIN[h]) + 0.35D * kindDiff
+            score[h] = sc + 0.8D * Math.abs(temp - TEMP[h]) + 0.3D * Math.abs(rain - RAIN[h]) + 0.35D * kindDiff
                     + 0.4D * (1.0D - similarity);
-            score[h] = sc;
-            best = Math.min(best, sc);
         }
-        for (int h = 0; h < Biomes.COUNT; h++) {
-            out[h] = score[h] <= best + MARGIN;
-        }
+        return score;
     }
 
     private void log() {
-        Map<String, Integer> mods = new TreeMap<>();
-        for (Entry e : entries) {
-            mods.merge(e.id.getNamespace(), 1, Integer::sum);
+        StringBuilder w = new StringBuilder();
+        String[] names = {"vanilla", "Biomes O' Plenty", "Biomes O' Plenty rare", "other mods"};
+        for (int i = 0; i < regionIds.length; i++) {
+            w.append(i == 0 ? "" : ", ").append(names[regionIds[i]]).append(' ').append(regionWeights[i]);
         }
-        CavesAndCliffsBackport.LOGGER.info("Other mods' biomes join the 1.18 terrain: {} biomes ({}), each modded biome kept over areas of {} blocks.",
-                entries.length, mods.toString().replace("{", "").replace("}", ""), (int) cell);
-        for (int h = 0; h < Biomes.COUNT; h++) {
-            int[] idx = hostEntries[h];
-            if (idx == null) {
-                continue;
-            }
-            StringBuilder sb = new StringBuilder();
-            float from = 0.0F;
-            for (int k = 0; k < idx.length; k++) {
-                sb.append(k == 0 ? "" : ", ").append(entries[idx[k]].id).append(' ')
-                        .append(Math.round((hostEnds[h][k] - from) * 100.0F)).append('%');
-                from = hostEnds[h][k];
-            }
-            CavesAndCliffsBackport.LOGGER.info("  in place of {}: {}", Biomes.name(h), sb);
-        }
-    }
-
-    // ---- the regions
-
-    private static long mix(long z) {
-        z = (z ^ (z >>> 33)) * 0xFF51AFD7ED558CCDL;
-        z = (z ^ (z >>> 33)) * 0xC4CEB9FE1A85EC53L;
-        return z ^ (z >>> 33);
-    }
-
-    private double hash01(long cx, long cz, long k) {
-        long h = mix(salt ^ cx * 0x9E3779B97F4A7C15L ^ cz * 0xC2B2AE3D27D4EB4FL ^ k * 0x165667B19E3779F9L);
-        return (double) (h >>> 11) * 0x1.0p-53;
-    }
-
-    /** The rank of the region holding block x, z, in [0, 1). */
-    double rank(int x, int z) {
-        double qx = x * 0.25D;
-        double qz = z * 0.25D;
-        double wx = (x + warp * warpX.getValue(qx, 0.0D, qz)) / cell;
-        double wz = (z + warp * warpZ.getValue(qx, 0.0D, qz)) / cell;
-        long ix = (long) Math.floor(wx);
-        long iz = (long) Math.floor(wz);
-        double best = Double.MAX_VALUE;
-        long bx = ix;
-        long bz = iz;
-        for (long i = ix - 1; i <= ix + 1; i++) {
-            for (long j = iz - 1; j <= iz + 1; j++) {
-                double px = i + 0.15D + 0.7D * hash01(i, j, 1);
-                double pz = j + 0.15D + 0.7D * hash01(i, j, 2);
-                double d = (px - wx) * (px - wx) + (pz - wz) * (pz - wz);
-                if (d < best) {
-                    best = d;
-                    bx = i;
-                    bz = j;
-                }
-            }
-        }
-        return hash01(bx, bz, 3);
-    }
-
-    private double variantValue(int x, int z) {
-        return variant.getValue(x * 0.25D, 0.0D, z * 0.25D);
-    }
-
-    /** The variant noise's rank at block x, z, in [0, 1): uniform over the world. */
-    double variant(int x, int z) {
-        int i = java.util.Arrays.binarySearch(quantiles, variantValue(x, z));
-        return (i < 0 ? -i - 1 : i) / (double) (quantiles.length + 1);
+        CavesAndCliffsBackport.LOGGER.info("Other mods' biomes join the 1.18 terrain in TerraBlender's regions (size {}; "
+                + "weights {}): {} biomes.", regionSize, w, entries.length);
+        CavesAndCliffsBackport.LOGGER.info("  {}", plan.trim());
     }
 
     /** The modded biome in place of 1.18 biome {@code host} at block x, z, or null for the 1.18 biome itself. */
     @Nullable
     Entry at(int x, int z, int host) {
-        if (host < 0 || host >= Biomes.COUNT) {
+        // Only 1.18.2's own surface biomes give way: the family's (cherry groves, mangrove swamps, pale gardens,
+        // dappled forests) and the cave biomes stay as the 1.18 terrain has them.
+        if (host < 0 || host >= Biomes.COUNT || !HOST[host]) {
             return null;
         }
-        int[] idx = hostEntries[host];
-        if (idx == null) {
-            return null;
-        }
-        float[] ends = hostEnds[host];
-        float share = ends[ends.length - 1];
-        if (variant(x, z) >= share) {
-            return null;
-        }
-        float r = (float) rank(x, z) * share;
-        for (int k = 0; k < idx.length; k++) {
-            if (r < ends[k]) {
-                return entries[idx[k]];
-            }
-        }
-        return entries[idx[idx.length - 1]];
+        int i = kits.get().answer(x >> 2, z >> 2);
+        return i < 0 ? null : entries[i];
+    }
+
+    /** The region at block x, z (for the probe). */
+    int region(int x, int z) {
+        return kits.get().layer.region(x >> 2, z >> 2);
     }
 
     /**
@@ -579,9 +686,9 @@ public final class ModdedBiomes {
         };
     }
 
-    /** Whether this 1.18 biome has modded biomes that may take its place. */
+    /** Whether a modded biome may take this 1.18 biome's place (a 1.18.2 surface biome). */
     boolean hosts(int host) {
-        return host >= 0 && host < Biomes.COUNT && hostEntries[host] != null;
+        return host >= 0 && host < Biomes.COUNT && HOST[host];
     }
 
     /** The entry of a modded biome placed here, or null for any other biome. */
@@ -590,12 +697,4 @@ public final class ModdedBiomes {
         return biome == null ? null : byBiome.get(biome);
     }
 
-    /** The modded biomes placed, by id (for the self-test and the census). */
-    Map<ResourceLocation, boolean[]> hostsById() {
-        Map<ResourceLocation, boolean[]> m = new LinkedHashMap<>();
-        for (Entry e : entries) {
-            m.put(e.id, e.hosts.clone());
-        }
-        return m;
-    }
 }
