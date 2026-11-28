@@ -170,7 +170,12 @@ mod (Dregora without it still has Core, which V&P needs).
         | the same with 512 cells | 21% / 32% | 102k / 100k | 78k / 83k |
 
         Server census, seed 2026 (large patches, 256+ columns, mean in columns): no BoP 21.7k for 1.18 land; with
-        BoP before, 15.5k for 1.18 land and 10.7k for BoP; AFTER_SERVER.
+        BoP before, 15.5k for 1.18 land and 10.7k for BoP; after, the 2512-block square around spawn is all 1.18 (its
+        biomes identical to the world without BoP in all 24,611 shared chunks). Seed 42: 15.0k without BoP, 10.8k
+        before (BoP 9.1k, 22% of the columns), 15.9k after (BoP 3.3% of that square).
+    *   **The cost: BoP comes in zones** of a few thousand blocks, as 1.18's temperature bands do, so one spawn area
+        holds little or none and another a lot (21% and 32% over 8192 blocks square). A noise at -9 would be a
+        middle way (probe: 1.18 land 95k/111k, modded 79k/85k, BoP zones about half as wide).
     *   The setting is now `moddedBiomeAreaSize` (default 1024, the area that keeps one modded biome): the old
         `moddedBiomeRegionSize=512` stays in installed configs, so it is a new key.
 
