@@ -129,10 +129,6 @@ key.cavesandcliffsbackport.spyglassZoom=Mit Fernrohr zoomen
 key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
-death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s wurde während des Kampfes mit %2$s von einem fallenden Stalaktiten aufgespießt
-death.attack.cavesandcliffsbackport.fallingStalactite=%1$s wurde von einem fallenden Stalaktiten aufgespießt
-death.attack.cavesandcliffsbackport.stalagmite.player=%1$s wurde während des Kampfes mit %2$s von einem Stalagmiten aufgespießt
-death.attack.cavesandcliffsbackport.stalagmite=%1$s wurde von einem Stalagmiten aufgespießt
 entity.cavesandcliffsbackport.falling_stalactite.name=Spitzer Tropfstein
 tile.cavesandcliffsbackport.dripstone_block.name=Tropfsteinblock
 tile.cavesandcliffsbackport.lava_cauldron.name=Lavakessel

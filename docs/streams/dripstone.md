@@ -56,6 +56,13 @@ the seed to clients for the music stream.
     Each segment recomputes its thickness when a block above or below it changes (current Java's rule, in
     `calculateThickness`). Shapes and the up-to-an-eighth sideways offset per column are current Java's
     (`getOffset` is overridden; 1.12's own offset is a quarter).
+*   **Since 1.1.8** `BlockPointedDripstone` is Backport Core 1.5.0's `speleothem.BlockSpeleothem` (states, support,
+    thickness, merging, growth, falling as `backportcore:falling_speleothem`, impaling, tridents, the two damage
+    types), shared with Game Drops' icicles. Kept here: drips into cauldrons and their particles, `canGrow` (a
+    dripstone block with a water source above), the stalagmite search stopping where a drip cannot pass. Same
+    registry name, states and metadata, so 1.1.7 worlds load as they were; 1.1.7's `falling_stalactite` entity is
+    still registered only to turn into Core's on its first tick (`LegacyLoadSelfTest`). The points below describe
+    1.1.7 and still hold, except the stalagmite's fall: Core's 26.4 offset of 2.5 blocks (1.18.2: 2).
 *   **Support**: a segment needs a solid face or a segment of its own direction behind it. A stalagmite that
     loses it breaks a tick later, segment by segment; a stalactite falls two ticks later, all of it at once.
 *   **`EntityFallingStalactite`** is our own entity: 1.12's falling block has the anvil's damage built in and

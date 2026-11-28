@@ -129,10 +129,6 @@ key.cavesandcliffsbackport.spyglassZoom=望遠鏡でズーム
 key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
-death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$sは%2$sと戦いながら落ちてきた鍾乳石に串刺しにされた
-death.attack.cavesandcliffsbackport.fallingStalactite=%1$sは落ちてきた鍾乳石に串刺しにされた
-death.attack.cavesandcliffsbackport.stalagmite.player=%1$sは%2$sと戦いながら鍾乳石に突き刺さった
-death.attack.cavesandcliffsbackport.stalagmite=%1$sは鍾乳石に突き刺さった
 entity.cavesandcliffsbackport.falling_stalactite.name=鍾乳石
 tile.cavesandcliffsbackport.dripstone_block.name=鍾乳石ブロック
 tile.cavesandcliffsbackport.lava_cauldron.name=溶岩入りの大釜

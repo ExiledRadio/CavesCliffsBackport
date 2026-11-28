@@ -9,7 +9,7 @@ import com.exiledradio.cavesandcliffsbackport.candle.CandleContent;
 import com.exiledradio.cavesandcliffsbackport.common.Owners;
 import com.exiledradio.cavesandcliffsbackport.dripstone.BlockPointedDripstone;
 import com.exiledradio.cavesandcliffsbackport.dripstone.DripstoneContent;
-import com.exiledradio.cavesandcliffsbackport.dripstone.Thickness;
+import com.exiledradio.backportcore.speleothem.Thickness;
 import com.exiledradio.cavesandcliffsbackport.lush.BlockBigDripleaf;
 import com.exiledradio.cavesandcliffsbackport.lush.BlockGlowLichen;
 import com.exiledradio.cavesandcliffsbackport.lush.LushContent;

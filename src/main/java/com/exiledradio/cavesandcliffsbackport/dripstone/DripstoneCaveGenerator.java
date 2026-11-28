@@ -1,5 +1,6 @@
 package com.exiledradio.cavesandcliffsbackport.dripstone;
 
+import com.exiledradio.backportcore.speleothem.Thickness;
 import com.exiledradio.backportcore.waterlog.Waterlogging;
 import com.exiledradio.cavesandcliffsbackport.ModConfig;
 import com.exiledradio.cavesandcliffsbackport.common.CaveRegions;

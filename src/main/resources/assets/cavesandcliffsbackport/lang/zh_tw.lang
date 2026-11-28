@@ -129,10 +129,6 @@ key.cavesandcliffsbackport.spyglassZoom=使用望遠鏡縮放
 key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
-death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s 在與 %2$s 戰鬥時被落下的鐘乳石刺穿
-death.attack.cavesandcliffsbackport.fallingStalactite=%1$s 被墜落的鐘乳石刺穿了
-death.attack.cavesandcliffsbackport.stalagmite.player=%1$s 在與 %2$s 戰鬥時在石筍上被刺穿
-death.attack.cavesandcliffsbackport.stalagmite=%1$s 在石筍上被刺穿
 entity.cavesandcliffsbackport.falling_stalactite.name=鐘乳石
 tile.cavesandcliffsbackport.dripstone_block.name=鐘乳石方塊
 tile.cavesandcliffsbackport.lava_cauldron.name=裝熔岩的鍋釜

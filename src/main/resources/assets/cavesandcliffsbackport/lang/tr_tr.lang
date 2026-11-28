@@ -129,10 +129,6 @@ key.cavesandcliffsbackport.spyglassZoom=Dürbünle yakınlaştır
 key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
-death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s, %2$s ile savaşırken düşen bir sarkıt tarafından şişlendi
-death.attack.cavesandcliffsbackport.fallingStalactite=%1$s düşen bir sarkıt tarafından şişlendi
-death.attack.cavesandcliffsbackport.stalagmite.player=%1$s, %2$s ile savaşırken bir dikit tarafından şişlendi
-death.attack.cavesandcliffsbackport.stalagmite=%1$s bir dikit tarafından şişlendi
 entity.cavesandcliffsbackport.falling_stalactite.name=Sivri Damla Taş
 tile.cavesandcliffsbackport.dripstone_block.name=Damla Taş Bloğu
 tile.cavesandcliffsbackport.lava_cauldron.name=Lav Kazanı

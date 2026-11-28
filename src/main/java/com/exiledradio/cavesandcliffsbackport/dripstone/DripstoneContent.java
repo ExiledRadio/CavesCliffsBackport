@@ -31,8 +31,7 @@ import net.minecraftforge.registries.IForgeRegistry;
 import java.util.Random;
 
 /**
- * Stream Dr: the dripstone block, pointed dripstone ({@link BlockPointedDripstone}, falling as
- * {@link EntityFallingStalactite}), the lava cauldron, and dripstone caves ({@link DripstoneCaveGenerator}
+ * Stream Dr: the dripstone block, pointed dripstone ({@link BlockPointedDripstone}, Backport Core's speleothem), the lava cauldron, and dripstone caves ({@link DripstoneCaveGenerator}
  * in the {@link com.exiledradio.cavesandcliffsbackport.common.CaveRegions}).
  */
 @Mod.EventBusSubscriber(modid = CavesAndCliffsBackport.MOD_ID)
@@ -56,12 +55,15 @@ public final class DripstoneContent {
         return ModConfig.dripstone.enabled;
     }
 
-    /** From the mod's pre-init: block ownership, and the falling stalactite. */
+    /**
+     * From the mod's pre-init: block ownership, and 1.1.7's falling stalactite entity, kept only so one saved in flight
+     * loads and turns into Backport Core's falling segment ({@link EntityFallingStalactite}); never sent to clients.
+     */
     public static void preInit() {
         Owners.declare(enabled(), BLOCK_NAMES);
         if (enabled()) {
             EntityRegistry.registerModEntity(Content.id("falling_stalactite"), EntityFallingStalactite.class,
-                    CavesAndCliffsBackport.MOD_ID + ".falling_stalactite", FALLING_STALACTITE_ID, CavesAndCliffsBackport.instance, 160, 20, true);
+                    CavesAndCliffsBackport.MOD_ID + ".falling_stalactite", FALLING_STALACTITE_ID, CavesAndCliffsBackport.instance, 1, 20, false);
         }
     }
 
@@ -79,7 +81,7 @@ public final class DripstoneContent {
 
         dripstone = Content.block(r, "dripstone_block", new BlockBasic(Material.ROCK, MapColor.BROWN_STAINED_HARDENED_CLAY,
                 ModSounds.type("block.dripstone_block"), 1.5F, 1.0F), "pickaxe");
-        pointed = Content.block(r, "pointed_dripstone", new BlockPointedDripstone(ModSounds.type("block.pointed_dripstone")), "pickaxe");
+        pointed = Content.block(r, "pointed_dripstone", new BlockPointedDripstone(ModSounds.type("block.pointed_dripstone"), dripstone.getDefaultState()), "pickaxe");
         lavaCauldron = Content.block(r, "lava_cauldron", new BlockLavaCauldron(), "pickaxe");
     }
 

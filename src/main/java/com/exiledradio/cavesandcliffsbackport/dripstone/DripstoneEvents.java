@@ -40,97 +40,14 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
- * What dripstone does outside its own blocks: the two kinds of damage, tridents, drips landing in cauldrons
- * and lava buckets on vanilla's cauldron. Registered on the event bus only when the stream is on.
+ * What dripstone does outside its own blocks: drips landing in cauldrons and lava buckets on vanilla's cauldron. The
+ * stalagmite and falling stalactite damage and tridents breaking pointed dripstone are Backport Core's
+ * ({@code speleothem.SpeleothemEvents}). Registered on the event bus only when the stream is on.
  */
 public final class DripstoneEvents {
 
-    /** Landing on a stalagmite. A fall in everything but its death message: it ignores armor, and Feather Falling counts. */
-    public static final DamageSource STALAGMITE =
-            new DamageSource(CavesAndCliffsBackport.MOD_ID + ".stalagmite").setDamageBypassesArmor();
-
-    /** A falling stalactite. As an anvil: a helmet takes a quarter of it, and wears for it. */
-    public static final DamageSource FALLING_STALACTITE = new DamageSource(CavesAndCliffsBackport.MOD_ID + ".fallingStalactite");
-
-    private static boolean impaling;
-
     /** Drips on their way down, per world: {cauldron position, world time they land}. Server thread only; lost on a restart. */
     private static final Map<World, List<long[]>> DRIPS = new WeakHashMap<World, List<long[]>>();
-
-    // ------------------------------------------------------------------------------- stalagmites
-
-    /**
-     * Makes an entity fall on a stalagmite: its usual fall (events, Jump Boost, flying players, sounds), but
-     * the damage arrives as {@link #STALAGMITE}.
-     */
-    static void impale(Entity entity, float distance, float multiplier) {
-        boolean was = impaling;
-        impaling = true;
-        try {
-            entity.fall(distance, multiplier);
-        } finally {
-            impaling = was;
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public void onAttack(LivingAttackEvent event) {
-        if (impaling && event.getSource() == DamageSource.FALL) {
-            event.setCanceled(true);
-            impaling = false;
-            try {
-                event.getEntityLiving().attackEntityFrom(STALAGMITE, event.getAmount());
-            } finally {
-                impaling = true;
-            }
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public void onHurt(LivingHurtEvent event) {
-        EntityLivingBase entity = event.getEntityLiving();
-        if (event.getSource() == STALAGMITE) {
-            // 1.12 gives Feather Falling its effect only for DamageSource.FALL itself, so add it here: the
-            // damage is scaled so that vanilla's own enchantment step ends where it would with it.
-            int featherFalling = 0;
-            for (ItemStack armor : entity.getArmorInventoryList()) {
-                featherFalling += 3 * EnchantmentHelper.getEnchantmentLevel(Enchantments.FEATHER_FALLING, armor);
-            }
-            if (featherFalling > 0) {
-                int have = Math.min(20, Math.max(0, EnchantmentHelper.getEnchantmentModifierDamage(entity.getArmorInventoryList(), STALAGMITE)));
-                int want = Math.min(20, have + featherFalling);
-                event.setAmount(event.getAmount() * (1 - want / 25.0F) / (1 - have / 25.0F));
-            }
-        } else if (event.getSource() == FALLING_STALACTITE) {
-            ItemStack helmet = entity.getItemStackFromSlot(EntityEquipmentSlot.HEAD);
-            if (!helmet.isEmpty()) {
-                float amount = event.getAmount();
-                helmet.damageItem((int) (amount * 4.0F + entity.getRNG().nextFloat() * amount * 2.0F), entity);
-                event.setAmount(amount * 0.75F);
-            }
-        }
-    }
-
-    // ------------------------------------------------------------------------------- tridents
-
-    /** A thrown trident moving faster than 0.6 breaks the pointed dripstone it hits. Any mod's trident, by its entity name. */
-    @SubscribeEvent
-    public void onProjectile(ProjectileImpactEvent event) {
-        RayTraceResult hit = event.getRayTraceResult();
-        Entity projectile = event.getEntity();
-        if (hit == null || hit.typeOfHit != RayTraceResult.Type.BLOCK || projectile == null || projectile.world.isRemote) {
-            return;
-        }
-        BlockPos pos = hit.getBlockPos();
-        if (!BlockPointedDripstone.isPointed(projectile.world.getBlockState(pos))) {
-            return;
-        }
-        ResourceLocation id = EntityList.getKey(projectile);
-        double speed = Math.sqrt(projectile.motionX * projectile.motionX + projectile.motionY * projectile.motionY + projectile.motionZ * projectile.motionZ);
-        if (id != null && id.getPath().contains("trident") && speed > 0.6) {
-            projectile.world.destroyBlock(pos, true);
-        }
-    }
 
     // ------------------------------------------------------------------------------- drips
 

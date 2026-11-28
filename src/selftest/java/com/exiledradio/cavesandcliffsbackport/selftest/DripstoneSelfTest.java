@@ -4,9 +4,10 @@ import com.exiledradio.cavesandcliffsbackport.dripstone.BlockPointedDripstone;
 import com.exiledradio.cavesandcliffsbackport.dripstone.DripstoneCaveGenerator;
 import com.exiledradio.cavesandcliffsbackport.dripstone.DripstoneContent;
 import com.exiledradio.cavesandcliffsbackport.dripstone.DripstoneEvents;
-import com.exiledradio.cavesandcliffsbackport.dripstone.EntityFallingStalactite;
+import com.exiledradio.backportcore.speleothem.EntityFallingSpeleothem;
+import com.exiledradio.backportcore.speleothem.SpeleothemEvents;
 import com.exiledradio.cavesandcliffsbackport.common.CaveRegions;
-import com.exiledradio.cavesandcliffsbackport.dripstone.Thickness;
+import com.exiledradio.backportcore.speleothem.Thickness;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockCauldron;
@@ -176,10 +177,10 @@ public final class DripstoneSelfTest implements SelfTest {
         c.ok(c.world.isUpdateScheduled(top.down(1), pd()), "losing its ceiling schedules the fall");
         Pools.settle(c.world);
         c.eq(0, count(c.world, top.down(4), top, pd()), "the stalactite has left");
-        List<EntityFallingStalactite> falling = c.world.getEntitiesWithinAABB(EntityFallingStalactite.class, new AxisAlignedBB(top).grow(1, 16, 1));
+        List<EntityFallingSpeleothem> falling = c.world.getEntitiesWithinAABB(EntityFallingSpeleothem.class, new AxisAlignedBB(top).grow(1, 16, 1));
         c.eq(3, falling.size(), "three falling segments");
         int hurting = 0;
-        for (EntityFallingStalactite e : falling) {
+        for (EntityFallingSpeleothem e : falling) {
             if (e.hurtPerBlock() > 0) {
                 hurting++;
                 c.eq(6.0F, e.hurtPerBlock(), "a short stalactite's tip does 6 per block");
@@ -197,10 +198,10 @@ public final class DripstoneSelfTest implements SelfTest {
         }
         c.world.scheduleUpdate(top.down(1), pd(), 1);
         Pools.settle(c.world);
-        falling = c.world.getEntitiesWithinAABB(EntityFallingStalactite.class, new AxisAlignedBB(top).grow(1, 16, 1));
+        falling = c.world.getEntitiesWithinAABB(EntityFallingSpeleothem.class, new AxisAlignedBB(top).grow(1, 16, 1));
         float most = 0;
         int alive = 0;
-        for (EntityFallingStalactite e : falling) {
+        for (EntityFallingSpeleothem e : falling) {
             if (!e.isDead) {
                 alive++;
                 most = Math.max(most, e.hurtPerBlock());
@@ -211,9 +212,9 @@ public final class DripstoneSelfTest implements SelfTest {
         c.eq(9.0F, most, "a stalactite of nine does 9 per block");
     }
 
-    private static void fall(List<EntityFallingStalactite> falling) {
+    private static void fall(List<EntityFallingSpeleothem> falling) {
         for (int t = 0; t < 300; t++) {
-            for (EntityFallingStalactite e : falling) {
+            for (EntityFallingSpeleothem e : falling) {
                 if (!e.isDead) {
                     e.onUpdate();
                 }
@@ -233,13 +234,13 @@ public final class DripstoneSelfTest implements SelfTest {
         place(c, top.down(), DOWN, true);
         c.world.setBlockToAir(top);
         Pools.settle(c.world);
-        List<EntityFallingStalactite> falling = c.world.getEntitiesWithinAABB(EntityFallingStalactite.class, new AxisAlignedBB(top).grow(1, 12, 1));
+        List<EntityFallingSpeleothem> falling = c.world.getEntitiesWithinAABB(EntityFallingSpeleothem.class, new AxisAlignedBB(top).grow(1, 12, 1));
         c.eq(1, falling.size(), "one falling tip");
         fall(falling);
         float taken = before - golem.getHealth();
         // It falls about 8 blocks: 6 a block after the first, 40 at most.
         c.ok(taken >= 36 && taken <= 40, "a falling stalactite hurts what it lands on, 6 per block up to 40: " + taken);
-        c.ok(golem.getLastDamageSource() == DripstoneEvents.FALLING_STALACTITE, "with its own damage source");
+        c.ok(golem.getLastDamageSource() == SpeleothemEvents.FALLING_STALACTITE, "with its own damage source");
         golem.setDead();
         Drops.count(c.world, o, Item.getItemFromBlock(pd()));
 
@@ -248,7 +249,7 @@ public final class DripstoneSelfTest implements SelfTest {
         guard.setPosition(o.getX() + 4.5, o.getY(), o.getZ() + 0.5);
         guard.setItemStackToSlot(EntityEquipmentSlot.HEAD, new ItemStack(Items.DIAMOND_HELMET));
         c.world.spawnEntity(guard);
-        EntityFallingStalactite one = new EntityFallingStalactite(c.world, o.getX() + 4.5, o.getY() + 0.5, o.getZ() + 0.5, pd().state(DOWN, Thickness.TIP));
+        EntityFallingSpeleothem one = new EntityFallingSpeleothem(c.world, o.getX() + 4.5, o.getY() + 0.5, o.getZ() + 0.5, pd().state(DOWN, Thickness.TIP));
         one.setHurts(1.0F, 40);
         c.world.spawnEntity(one);
         float hp = guard.getHealth();
@@ -260,15 +261,17 @@ public final class DripstoneSelfTest implements SelfTest {
         one.setDead();
         guard.setDead();
 
-        // Landing on a stalagmite tip: a fall two blocks longer, twice the damage.
+        // Landing on a stalagmite tip: a longer fall, twice the damage.
         BlockPos s = o.add(8, 0, 0);
         place(c, s, UP, true);
         EntityZombie zombie = new EntityZombie(c.world);
         zombie.setPosition(s.getX() + 0.5, s.getY() + 1, s.getZ() + 0.5);
         c.world.spawnEntity(zombie);
         pd().onFallenUpon(c.world, s, zombie, 5.0F);
-        c.eq(12.0F, zombie.getHealth(), "a 5-block fall onto a stalagmite does 8");
-        c.ok(zombie.getLastDamageSource() == DripstoneEvents.STALAGMITE, "as a stalagmite's damage");
+        // Backport Core 1.5.0's speleothem: 26.4's 2.5 blocks longer (1.18.2: 2), so 9 where 1.1.7 did 8. (Changed with the
+        // move to Core.)
+        c.eq(11.0F, zombie.getHealth(), "a 5-block fall onto a stalagmite does 9 (Core: 26.4's offset)");
+        c.ok(zombie.getLastDamageSource() == SpeleothemEvents.STALAGMITE, "as a stalagmite's damage");
         zombie.setDead();
         // On its base instead it is an ordinary fall.
         place(c, s.up(), UP, true);
@@ -286,7 +289,7 @@ public final class DripstoneSelfTest implements SelfTest {
         third.setItemStackToSlot(EntityEquipmentSlot.FEET, boots);
         c.world.spawnEntity(third);
         pd().onFallenUpon(c.world, s.up(), third, 5.0F);
-        c.ok(Math.abs(third.getHealth() - (20 - 8 * 0.52F)) < 0.01F, "Feather Falling IV takes 48% off: " + third.getHealth());
+        c.ok(Math.abs(third.getHealth() - (20 - 9 * 0.52F)) < 0.01F, "Feather Falling IV takes 48% off: " + third.getHealth());
         third.setDead();
     }
 
@@ -300,16 +303,14 @@ public final class DripstoneSelfTest implements SelfTest {
         }
         BlockPos start = root.down();
         place(c, start, DOWN, true);
-        Method grow = BlockPointedDripstone.class.getDeclaredMethod("growIfPossible", IBlockState.class, net.minecraft.world.World.class, BlockPos.class, Random.class);
-        grow.setAccessible(true);
         Random r = new Random(17);
         for (int i = 0; i < 50; i++) {
-            grow.invoke(null, c.world.getBlockState(start), c.world, start, r);
+            pd().growIfPossible(c.world.getBlockState(start), c.world, start, r);
         }
         c.eq(1, count(c.world, floor.up(), start, pd()), "no growth without water above the dripstone block");
         c.world.setBlockState(root.up(), Blocks.WATER.getDefaultState(), 2);
         for (int i = 0; i < 400; i++) {
-            grow.invoke(null, c.world.getBlockState(start), c.world, start, r);
+            pd().growIfPossible(c.world.getBlockState(start), c.world, start, r);
         }
         int down = 0;
         while (dir(c, start.down(down)) == DOWN) {
@@ -338,7 +339,7 @@ public final class DripstoneSelfTest implements SelfTest {
         }
         place(c, stone.down(), DOWN, true);
         for (int i = 0; i < 100; i++) {
-            grow.invoke(null, c.world.getBlockState(stone.down()), c.world, stone.down(), r);
+            pd().growIfPossible(c.world.getBlockState(stone.down()), c.world, stone.down(), r);
         }
         c.eq(1, count(c.world, stone.down(12), stone.down(), pd()), "no growth from stone");
         c.world.setBlockToAir(root.up());

@@ -105,6 +105,7 @@ public final class SelfTestRunner {
             // Last, so the earlier streams' test areas stay where they were.
             new ModdedOresSelfTest(),
             new ParityGapsSelfTest(),
+            new LegacyLoadSelfTest(),
     };
 
     private final List<String> wanted;

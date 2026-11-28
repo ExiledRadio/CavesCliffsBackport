@@ -129,10 +129,6 @@ key.cavesandcliffsbackport.spyglassZoom=Zoom con il cannocchiale
 key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
-death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s è stato/a infilzato/a da una stalattite lottando con %2$s
-death.attack.cavesandcliffsbackport.fallingStalactite=%1$s è stato/a infilzato/a da una stalattite
-death.attack.cavesandcliffsbackport.stalagmite.player=%1$s è stato/a impalato/a su una stalagmite lottando con %2$s
-death.attack.cavesandcliffsbackport.stalagmite=%1$s è stato/a impalato/a su una stalagmite
 entity.cavesandcliffsbackport.falling_stalactite.name=Speleotema appuntito
 tile.cavesandcliffsbackport.dripstone_block.name=Blocco di speleotema
 tile.cavesandcliffsbackport.lava_cauldron.name=Calderone di lava

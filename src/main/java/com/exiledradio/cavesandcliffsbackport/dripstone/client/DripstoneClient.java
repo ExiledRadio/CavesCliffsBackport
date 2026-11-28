@@ -24,7 +24,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.fml.client.registry.IRenderFactory;
 import net.minecraftforge.fml.client.registry.RenderingRegistry;
 
-/** Stream Dr's client side: the falling stalactite's renderer and the drip particle with its landing sound. */
+/** Stream Dr's client side: the drip particle with its landing sound (Backport Core draws falling stalactites). */
 public final class DripstoneClient {
 
     private DripstoneClient() {
@@ -65,44 +65,15 @@ public final class DripstoneClient {
         }
     }
 
-    /** Draws the segment's block model at the entity, as vanilla draws a falling block. */
+    /** 1.1.7's falling stalactite, which turns into Core's on its first server tick: nothing to draw. */
     private static final class RenderFalling extends Render<EntityFallingStalactite> {
 
         RenderFalling(RenderManager manager) {
             super(manager);
-            this.shadowSize = 0.5F;
         }
 
         @Override
         public void doRender(EntityFallingStalactite entity, double x, double y, double z, float yaw, float partialTicks) {
-            IBlockState state = entity.getState();
-            World world = entity.world;
-            if (state.getRenderType() != EnumBlockRenderType.MODEL || state == world.getBlockState(new BlockPos(entity))) {
-                return;
-            }
-            bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
-            GlStateManager.pushMatrix();
-            GlStateManager.disableLighting();
-            Tessellator tessellator = Tessellator.getInstance();
-            BufferBuilder buffer = tessellator.getBuffer();
-            if (this.renderOutlines) {
-                GlStateManager.enableColorMaterial();
-                GlStateManager.enableOutlineMode(getTeamColor(entity));
-            }
-            buffer.begin(7, DefaultVertexFormats.BLOCK);
-            BlockPos pos = new BlockPos(entity.posX, entity.getEntityBoundingBox().maxY, entity.posZ);
-            GlStateManager.translate((float) (x - pos.getX() - 0.5), (float) (y - pos.getY()), (float) (z - pos.getZ() - 0.5));
-            BlockRendererDispatcher dispatcher = Minecraft.getMinecraft().getBlockRendererDispatcher();
-            dispatcher.getBlockModelRenderer().renderModel(world, dispatcher.getModelForState(state), state, pos, buffer, false,
-                    MathHelper.getPositionRandom(pos));
-            tessellator.draw();
-            if (this.renderOutlines) {
-                GlStateManager.disableOutlineMode();
-                GlStateManager.disableColorMaterial();
-            }
-            GlStateManager.enableLighting();
-            GlStateManager.popMatrix();
-            super.doRender(entity, x, y, z, yaw, partialTicks);
         }
 
         @Override

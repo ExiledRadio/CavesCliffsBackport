@@ -129,10 +129,6 @@ key.cavesandcliffsbackport.spyglassZoom=Inzoomen met verrekijker
 key.categories.cavesandcliffsbackport=Caves & Cliffs Backport
 
 # --- dripstone ---
-death.attack.cavesandcliffsbackport.fallingStalactite.player=%1$s werd gespietst door een vallende stalactiet tijdens het vechten tegen %2$s
-death.attack.cavesandcliffsbackport.fallingStalactite=%1$s werd gespietst door een vallende stalactiet
-death.attack.cavesandcliffsbackport.stalagmite.player=%1$s werd gespietst door een stalagmiet tijdens het vechten tegen %2$s
-death.attack.cavesandcliffsbackport.stalagmite=%1$s werd gespietst door een stalagmiet
 entity.cavesandcliffsbackport.falling_stalactite.name=Puntige druipsteen
 tile.cavesandcliffsbackport.dripstone_block.name=Druipsteenblok
 tile.cavesandcliffsbackport.lava_cauldron.name=Ketel met lava

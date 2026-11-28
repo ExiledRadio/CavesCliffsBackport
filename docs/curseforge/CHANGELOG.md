@@ -14,6 +14,7 @@
 *   **Zombies no longer pick up glow ink sacs**, as in 1.17.1.
 *   **Squid spawn from y 50 to sea level**, as in 1.18.
 *   The spyglass hides the pumpkin blur and the powder snow frost while zoomed, as in 1.17.
+*   **Freezing and pointed dripstone are Backport Core's now** (Core 1.5.0's freeze ticks and speleothems, shared with Game Drops Backport's freezing and icicles). Powder snow, stray conversion, drips into cauldrons and dripstone growth work as before, and saved pointed dripstone loads unchanged. Differences that come from Core's current rules: undead mobs (zombies, wither skeletons) no longer freeze, and landing on a stalagmite counts as a fall 2.5 blocks longer instead of 2. The lists of mobs and armor for freezing moved to Backport Core's Freezing settings.
 
 Needs Backport Core 1.5.0 or newer.
 
