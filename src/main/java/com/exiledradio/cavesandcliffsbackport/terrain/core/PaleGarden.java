@@ -171,8 +171,10 @@ final class PaleGarden {
     // ---- placements ----
 
     List<Placed> placed() {
-        Feature paleOak = new Trees.Checked(new Tree(false));
-        Feature creaking = new Trees.Checked(new Tree(true));
+        // Dynamic Trees - Backport grows its pale oak instead; the creaking heart's tree stays this one.
+        Feature paleOak = new Trees.Handed("dtbackport:paleoak", new Trees.Checked(new Tree(false)));
+        // Dynamic Trees - Backport's creaking pale oak, the heart in its dynamic trunk (Tricky Trials 1.0.4).
+        Feature creaking = new Trees.Handed("dtbackport:creakingpaleoak", new Trees.Checked(new Tree(true)));
         Feature eyeblossom = Vegetation.onlyInAir(this::placeEyeblossom);
         return Arrays.asList(
             new Placed("pale_garden_vegetation", new Trees.Selector(new float[]{0.1F, 0.9F}, new Feature[]{creaking, paleOak}, paleOak),
