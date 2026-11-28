@@ -84,9 +84,9 @@ build:
 | Experience orbs merge; no longer follow dead players | performance and a detail of `EntityXPOrb`; needs a patch |
 | Mineshafts (log pillars, chains, no floating pieces), strongholds buried under the seabed | vanilla structure generation; belongs with the terrain work (stream T) if anywhere |
 | Emerald ore in other stones, the new ore distribution | stream T |
-| Dispensers wax copper with honeycomb | done (1.1.8): `copper/CopperDispense` |
-| Glow berries in mineshaft chest carts, moss in shipwreck chests | done (1.1.8): `lush/LushLoot` |
-| *A Balanced Diet* needs glow berries; *Two by Two* needs goats and axolotls | done (1.1.8): `common/VanillaAdvancements` |
+| Dispensers wax copper with honeycomb | done (1.2.0): `copper/CopperDispense` |
+| Glow berries in mineshaft chest carts, moss in shipwreck chests | done (1.2.0): `lush/LushLoot` |
+| *A Balanced Diet* needs glow berries; *Two by Two* needs goats and axolotls | done (1.2.0): `common/VanillaAdvancements` |
 | Mason and wandering trader trades, composting, cauldrons as workstations, stonecutter recipes | already listed in PLAN under *Integrations* |
 | Names (Dirt Path, Block of Lapis Lazuli, *Cover Me with Diamonds*), new textures | Backport Core's packs (`CORE_REQUESTS.md`) |
 | Beacon beam distance, end portal underside, absorption hearts, glowing outlines, piston break particles, structure block screens, creative tab order, bone meal and dye sounds | client rendering, screens and sounds of vanilla things; out of scope (PLAN, *Scope at a glance*) |

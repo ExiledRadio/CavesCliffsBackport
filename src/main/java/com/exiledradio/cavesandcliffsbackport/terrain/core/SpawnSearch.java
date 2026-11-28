@@ -7,7 +7,8 @@ package com.exiledradio.cavesandcliffsbackport.terrain.core;
  * it, or of the chunks spiralling out from it (done on the real chunks, by the caller).
  *
  * <p>With {@link Editions#PALE} the fitness is 1.21.4's: the climate's fit times 2048 squared plus the squared
- * distance (1.18.2 adds a distance penalty that grows with the fourth power).
+ * distance (1.18.2 adds a distance penalty that grows with the fourth power). With {@link Editions#DEEP_FREEZE} the
+ * climate's fit takes 26.4's Climate.Parameter.distance (a value at a range's max is 1 away) over its five parameters.
  */
 public final class SpawnSearch {
 
@@ -93,11 +94,16 @@ public final class SpawnSearch {
             0L,
             Climate.quantize((float) column[OverworldNoise.COL_RIDGES])};
         long best = Long.MAX_VALUE;
+        // 26.4 (DEEP_FREEZE): Climate.Parameter.distance's half-open ranges; its targets have no depth.
+        boolean v264 = Editions.from264(noise.editions);
         for (long[] t : TARGETS) {
             long sum = 0L;
             for (int d = 0; d < 6; d++) {
+                if (v264 && d == 4) {
+                    continue;
+                }
                 long v = p[d];
-                long above = v - t[d * 2 + 1];
+                long above = v264 ? v - t[d * 2 + 1] + 1L : v - t[d * 2 + 1];
                 long below = t[d * 2] - v;
                 long dist = above > 0L ? above : Math.max(below, 0L);
                 sum += dist * dist;

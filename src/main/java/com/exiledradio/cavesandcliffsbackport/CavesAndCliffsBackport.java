@@ -94,6 +94,7 @@ public final class CavesAndCliffsBackport {
         }
         com.exiledradio.cavesandcliffsbackport.blocks.BlocksContent.init();
         com.exiledradio.cavesandcliffsbackport.terrain.ModernStructures.register();
+        com.exiledradio.cavesandcliffsbackport.terrain.ModernLocate.register();
     }
 
     @Mod.EventHandler

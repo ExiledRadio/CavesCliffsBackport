@@ -186,7 +186,8 @@ public final class ModernTerrain {
      * with a mod registering mud and the mangrove wood (Wild Update Backport), 1.20's cherry grove with one registering
      * the cherry wood and pink petals (Trails &amp; Tales Backport), 1.21.4's pale garden with Tricky Trials Backport
      * and its pale garden biome registered (its paleGarden.generateBiome), 26.2's sulfur caves and 26.3's dappled
-     * forest with Game Drops Backport and both its biomes registered. Read when a world is made.
+     * forest with Game Drops Backport and both its biomes registered, 26.4's ice caves with those and its ice caves
+     * registered (Game Drops 1.1.0). Read when a world is made.
      */
     static int installedEditions() {
         int e = Editions.NONE;
@@ -207,6 +208,10 @@ public final class ModernTerrain {
                     && biome("gamedropsbackport", "sulfur_caves") && biome("gamedropsbackport", "dappled_forest")) {
                 // 26.2's sulfur caves and 26.3's dappled forest.
                 e |= Editions.GAME_DROPS;
+                if (biome("gamedropsbackport", "ice_caves")) {
+                    // 26.4's ice caves (Game Drops 1.1.0).
+                    e |= Editions.DEEP_FREEZE;
+                }
             }
         }
         return e;

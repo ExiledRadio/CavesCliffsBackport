@@ -21,7 +21,7 @@ import java.io.File;
 import java.util.List;
 
 /**
- * 1.1.8's move of pointed dripstone onto Backport Core's speleothem, against worlds saved by 1.1.7.
+ * 1.2.0's move of pointed dripstone onto Backport Core's speleothem, against worlds saved by 1.1.7.
  *
  * <ul>
  *   <li>Always: a falling stalactite as 1.1.7 saved it ({@code cavesandcliffsbackport:falling_stalactite} with

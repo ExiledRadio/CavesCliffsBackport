@@ -28,6 +28,11 @@ package com.exiledradio.cavesandcliffsbackport.terrain.core;
  *       aquifer sampling are 1.20's, the aquifer marks and the spawn search 1.21.4's (as with PALE); the feature
  *       tables stay the other editions' (the two biomes' lists are 26.3's, filtered to those tables' names; their
  *       own features are Game Drops' at population). With all the others, the biomes are 26.3's.</li>
+ *   <li>{@link #DEEP_FREEZE}, always with GAME_DROPS: 26.4's ice caves (Game Drops Backport 1.1.0, with its ice caves
+ *       biome registered): last in addUndergroundBiomes (after the deep dark), with 26.4's humidity -1..0.7 on the
+ *       dripstone and sulfur caves; Climate.Parameter.distance's 26.4 rule (a value at a range's max is 1 away, so
+ *       every range is half open); the ice caves' bands (calcite and packed ice up the 3D ice_cave_gradient) after the
+ *       sulfur caves' in the surface rules. With all the others, the biomes are 26.4's.</li>
  * </ul>
  * With WILD and CHERRY, the tables are 1.20.1's; with WILD alone 1.19.2's; with CHERRY alone 1.20.1's without the
  * mangrove swamp's and the deep dark's features (and 1.18.2's swamp line in the biome builder). With PALE they are
@@ -45,8 +50,10 @@ public final class Editions {
     public static final int SPRING = 8;
     /** 26.2's sulfur caves and 26.3's dappled forest (Game Drops Backport). */
     public static final int GAME_DROPS = 16;
-    /** Every edition: 26.3's overworld biomes. */
-    public static final int ALL = WILD | CHERRY | PALE | SPRING | GAME_DROPS;
+    /** With GAME_DROPS: 26.4's ice caves, its cave humidity and its climate distance (Game Drops Backport 1.1.0). */
+    public static final int DEEP_FREEZE = 32;
+    /** Every edition: 26.4's overworld biomes. */
+    public static final int ALL = WILD | CHERRY | PALE | SPRING | GAME_DROPS | DEEP_FREEZE;
 
     /** 1.19's aquifers (and 1.20's): any newer edition. */
     public static boolean newerAquifers(int editions) {
@@ -63,16 +70,25 @@ public final class Editions {
         return (editions & (PALE | GAME_DROPS)) != 0;
     }
 
+    /** 26.4's climate: the ice caves, the caves' humidity and Climate.Parameter.distance's half-open ranges. */
+    public static boolean from264(int editions) {
+        return (editions & DEEP_FREEZE) != 0;
+    }
+
     /**
      * The world's saved name for the editions: "1.18", "1.19" (WILD), "1.20" (both), "1.20-cherry" (CHERRY); with the
      * pale garden "1.21.4" (all three), else "1.21.4-" and the others it has, "1.21.4-wild-pale", "1.21.4-cherry-pale",
      * "1.21.4-pale"; with SPRING the same with "1.21.11"; with GAME_DROPS "26.3" (every edition), else the others'
-     * name and "-26.3" ("1.18-26.3" with Game Drops alone).
+     * name and "-26.3" ("1.18-26.3" with Game Drops alone); with DEEP_FREEZE the same with "26.4".
      */
     public static String name(int editions) {
+        if ((editions & DEEP_FREEZE) != 0) {
+            // "26.4" with every edition, else the others' name and "-26.4" (always with GAME_DROPS).
+            return editions == ALL ? "26.4" : name(editions & ~(GAME_DROPS | DEEP_FREEZE)) + "-26.4";
+        }
         if ((editions & GAME_DROPS) != 0) {
             // "26.3" with every edition, else the others' name and "-26.3".
-            return editions == ALL ? "26.3" : name(editions & ~GAME_DROPS) + "-26.3";
+            return editions == (ALL & ~DEEP_FREEZE) ? "26.3" : name(editions & ~GAME_DROPS) + "-26.3";
         }
         if ((editions & PALE) != 0) {
             String v = (editions & SPRING) != 0 ? "1.21.11" : "1.21.4";
@@ -95,12 +111,19 @@ public final class Editions {
 
     /** The editions of a saved name, or -1 for one this version does not know. */
     public static int byName(String name) {
-        if ("26.3".equals(name)) {
+        if ("26.4".equals(name)) {
             return ALL;
+        }
+        if (name.endsWith("-26.4")) {
+            int e = byName(name.substring(0, name.length() - "-26.4".length()));
+            return e < 0 || (e & GAME_DROPS) != 0 ? -1 : e | GAME_DROPS | DEEP_FREEZE;
+        }
+        if ("26.3".equals(name)) {
+            return ALL & ~DEEP_FREEZE;
         }
         if (name.endsWith("-26.3")) {
             int e = byName(name.substring(0, name.length() - "-26.3".length()));
-            return e < 0 ? -1 : e | GAME_DROPS;
+            return e < 0 || (e & GAME_DROPS) != 0 ? -1 : e | GAME_DROPS;
         }
         if (name.startsWith("1.21.11")) {
             int e = byName("1.21.4" + name.substring("1.21.11".length()));

@@ -202,6 +202,11 @@ public final class PowderSnowSelfTest implements SelfTest {
         c.eq(PathNodeType.DAMAGE_OTHER, snow().getBlock().getAiPathNodeType(snow(), c.world, o, zombie), "mobs do not path into it");
         c.eq(PathNodeType.BLOCKED, snow().getBlock().getAiPathNodeType(snow(), c.world, o, rabbit), "a rabbit paths over it");
         c.ok(Freezing.walkableMob(rabbit) && !Freezing.walkableMob(zombie), "walkable mobs");
+        // 26.4's #powder_snow_walkable_mobs, other backports' mobs by id: Village & Pillage's fox, Game Drops' frostbite.
+        c.ok(Freezing.walkableId(new net.minecraft.util.ResourceLocation("villagerbackport", "fox")), "a fox walks on it");
+        c.ok(Freezing.walkableId(new net.minecraft.util.ResourceLocation("gamedropsbackport", "frostbite")), "a frostbite walks on it (26.4)");
+        c.ok(!Freezing.walkableId(new net.minecraft.util.ResourceLocation("gamedropsbackport", "ice_ball"))
+                && !Freezing.walkableId(new net.minecraft.util.ResourceLocation("minecraft", "zombie")), "other ids do not");
         c.world.setBlockState(o, AIR, 2);
     }
 
@@ -335,7 +340,7 @@ public final class PowderSnowSelfTest implements SelfTest {
         c.ok(Freezing.canFreeze(zombie), "iron armor does not");
 
         // The config's extra lists.
-        // Core's Freezing settings (they were this mod's until 1.1.8).
+        // Core's Freezing settings (they were this mod's until 1.2.0).
         com.exiledradio.backportcore.CoreConfig.Freezing cfg = com.exiledradio.backportcore.CoreConfig.freezing;
         String[] wear = cfg.freezeImmuneWearables, immune = cfg.freezeImmuneMobs;
         cfg.freezeImmuneWearables = new String[] {"minecraft:iron_chestplate"};
@@ -345,6 +350,9 @@ public final class PowderSnowSelfTest implements SelfTest {
         cfg.freezeImmuneWearables = wear;
         cfg.freezeImmuneMobs = immune;
         c.ok(Freezing.canFreeze(zombie) && Freezing.canFreeze(new net.minecraft.entity.passive.EntityCow(c.world)), "config lists restored");
+        // Mobs that may spawn in powder snow keep vanilla's immuneTo list, whichever freeze rules apply.
+        c.ok(Freezing.spawnsInSnow(new EntityStray(c.world)) && !Freezing.spawnsInSnow(new EntityZombie(c.world)),
+                "strays spawn in powder snow, zombies do not");
         c.fill(o.add(-1, 0, -1), o.add(1, 1, 1), AIR);
     }
 

@@ -8,7 +8,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 
 /**
- * A falling stalactite segment saved by 1.1.7 or older ({@code cavesandcliffsbackport:falling_stalactite}). Since 1.1.8
+ * A falling stalactite segment saved by 1.1.7 or older ({@code cavesandcliffsbackport:falling_stalactite}). Since 1.2.0
  * stalactites fall as Backport Core's {@link EntityFallingSpeleothem}; one of these loaded from an old world turns into
  * that on its first tick, with its segment, place, speed, fall time and damage, and nothing else ever makes one.
  */

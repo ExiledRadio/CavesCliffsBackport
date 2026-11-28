@@ -127,6 +127,11 @@ public final class ModernGenerator implements IChunkGenerator, TerrainSource, St
      */
     final boolean hybrid;
 
+    /** The terrain this generator makes ({@link ModernLocate}). */
+    ModernTerrain terrain() {
+        return terrain;
+    }
+
     ModernGenerator(World world, ModernTerrain terrain) {
         this(world, terrain, false);
     }

@@ -144,12 +144,12 @@ public final class TerrainSelfTest implements SelfTest {
 
     /** /locate's answers are starts the core confirms. */
     private static void structures(Check check, WorldServer world, ModernGenerator generator) {
-        ColumnCache columns = new ColumnCache(new com.exiledradio.cavesandcliffsbackport.terrain.core.OverworldNoise(world.getSeed()));
+        // The world's own editions: the strongholds' rings lean toward biomes, and the newer ones move them.
         com.exiledradio.cavesandcliffsbackport.terrain.core.OverworldNoise noise =
-                new com.exiledradio.cavesandcliffsbackport.terrain.core.OverworldNoise(world.getSeed());
-        columns = new ColumnCache(noise);
+                new com.exiledradio.cavesandcliffsbackport.terrain.core.OverworldNoise(world.getSeed(), generator.editions());
+        ColumnCache columns = new ColumnCache(noise);
         Structures core = new Structures(noise, columns,
-                new BiomeSource(noise, columns, new com.exiledradio.cavesandcliffsbackport.terrain.core.Climate()));
+                new BiomeSource(noise, columns, new com.exiledradio.cavesandcliffsbackport.terrain.core.Climate(generator.editions())));
         String[] names = {"Village", "Temple", "Monument", "Mansion", "Stronghold", "Mineshaft"};
         int[][] sets = {{Structures.VILLAGES}, {Structures.DESERT_PYRAMIDS, Structures.JUNGLE_TEMPLES, Structures.SWAMP_HUTS,
             Structures.IGLOOS}, {Structures.OCEAN_MONUMENTS}, {Structures.WOODLAND_MANSIONS}, {Structures.STRONGHOLDS},

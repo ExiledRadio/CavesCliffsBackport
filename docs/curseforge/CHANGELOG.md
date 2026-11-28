@@ -1,4 +1,4 @@
-# 1.1.8
+# 1.2.0
 
 *   **Lightning rods oxidize**, as in 1.21.9: exposed, weathered and oxidized lightning rods, and waxed ones of each. Honeycomb waxes them (in hand or in the crafting grid) and an axe scrapes them, as other copper. They work the same at every stage. Lightning cleans an unwaxed rod it strikes back to new and scrapes a stage off some of the copper around it.
 *   **Copper in the stonecutter** (Village & Pillage's): a block of copper cuts into 4 cut copper, 4 cut copper stairs or 8 cut copper slabs, and cut copper into 1 stairs or 2 slabs, at every oxidation stage and waxed, as in 1.17.
@@ -14,7 +14,11 @@
 *   **Zombies no longer pick up glow ink sacs**, as in 1.17.1.
 *   **Squid spawn from y 50 to sea level**, as in 1.18.
 *   The spyglass hides the pumpkin blur and the powder snow frost while zoomed, as in 1.17.
-*   **Freezing and pointed dripstone are Backport Core's now** (Core 1.5.0's freeze ticks and speleothems, shared with Game Drops Backport's freezing and icicles). Powder snow, stray conversion, drips into cauldrons and dripstone growth work as before, and saved pointed dripstone loads unchanged. The rules follow the newest backport installed: 1.17's with Caves & Cliffs alone, 26.4's (undead never freeze, stalagmites hurt a little more) with Game Drops Backport 26.4. The lists of mobs and armor for freezing moved to Backport Core's Freezing settings.
+*   **Freezing and pointed dripstone are Backport Core's now** (Core 1.5.0's freeze ticks and speleothems, shared with Game Drops Backport's freezing and icicles). Powder snow, stray conversion, drips into cauldrons and dripstone growth work as before, and saved pointed dripstone loads unchanged, even stalactites saved mid-fall. The rules follow the newest backport installed: 1.17's with Caves & Cliffs alone, 26.4's (undead never freeze, stalagmites hurt a little more) with Game Drops Backport 26.4. The lists of mobs and armor for freezing moved to Backport Core's Freezing settings; set lists need entering again there.
+*   Game Drops' frostbites walk on powder snow, as in 26.4.
+*   **26.4's ice caves in new Caves & Cliffs worlds** with Game Drops Backport 1.1.0: under the coldest oceans, where 26.4 puts them, with their packed ice and calcite bands. `/locate biome minecraft:ice_caves` finds them where 26.4 does.
+*   New worlds with Game Drops Backport 1.1.0 get 26.4's other biome changes too: where dripstone caves or sulfur caves met lush caves, it is lush caves, and biome borders fall where 26.4's do. Existing worlds keep the biomes they were made with.
+*   **`/locate biome` finds cave biomes** in Caves & Cliffs worlds: lush caves, dripstone caves, the deep dark, sulfur caves and ice caves.
 
 Needs Backport Core 1.5.0 or newer.
 

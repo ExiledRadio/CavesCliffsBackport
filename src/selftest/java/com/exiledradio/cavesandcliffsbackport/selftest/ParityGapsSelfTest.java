@@ -54,7 +54,7 @@ import java.util.Map;
 import java.util.Random;
 
 /**
- * The xisumavoid audit's medium Caves &amp; Cliffs gaps (1.1.8): vanilla advancements of 1.17 and 1.18, the wandering
+ * The xisumavoid audit's medium Caves &amp; Cliffs gaps (1.2.0): vanilla advancements of 1.17 and 1.18, the wandering
  * trader's lush caves items, azaleas as saplings and bee flowers, endermen and moss, the small dripleaf's offset,
  * generated cave vines' age, parrots and fireballs in powder snow, squid spawn heights, dispensers waxing copper and the
  * wax particles' packet, Channeling tridents on lightning rods. Last in the list, so no earlier test moves.

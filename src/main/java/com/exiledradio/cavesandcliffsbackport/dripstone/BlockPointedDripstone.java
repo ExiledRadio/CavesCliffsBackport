@@ -73,10 +73,10 @@ public class BlockPointedDripstone extends BlockSpeleothem {
         return DripstoneContent.land;
     }
 
-    /** 1.18.2's {@code canGrow}: hanging from a dripstone block with a water source above it. */
+    /** 1.18.2's {@code canGrow}: hanging from a dripstone block with a water source above it (water kept in a block counts). */
     @Override
     protected boolean canGrow(World world, BlockPos pos) {
-        return super.canGrow(world, pos) && sourceFluid(world.getBlockState(pos.up(2))) == Fluid.WATER;
+        return super.canGrow(world, pos) && Waterlogging.hasWaterSource(world, pos.up(2));
     }
 
     /** The stalagmite search stops where a drip could not fall on. */

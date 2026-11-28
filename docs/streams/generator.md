@@ -255,6 +255,26 @@ no seam through it:
   dappled forest's trees, mushrooms, shrubs and grass are Game Drops', the latter through
   `PoplarFeatures.vegetation` at population, `terrain/DappledForest`). RTree and aquifer sampling 1.20's, aquifer marks
   and spawn search 1.21.4's (`Editions.from1214`). Saved "26.3" with every edition, else the others' name and "-26.3".
+- **DEEP_FREEZE** (always with GAME_DROPS; Game Drops Backport 1.1.0 installed with `gamedropsbackport:ice_caves`
+  registered): 26.4's ice caves, last in `addUndergroundBiomes` after the deep dark (temperature -1 to -0.8, humidity
+  -1 to 0.7, deep ocean to ocean continentalness, any erosion, weirdness 0.5 to 1.1), and 26.4's other climate
+  changes: the dripstone and sulfur caves' humidity -1 to 0.7 (was the full range); `Climate.Parameter.distance` is
+  `target - max + 1` above a range (a value at the max is 1 away, so ranges are half open and a point is never at
+  distance 0), in the biome search and the spawn search (whose targets have no depth in 26.x); the RTree's 19 children
+  per node (26.3 has 19 too; GAME_DROPS keeps 1.20's 6, so 26.3 worlds keep their ties). Surface rules from 26.4's
+  material rules: `ice_cave_bands` (calcite -0.6..-0.5, packed ice to 0.2, calcite to 0.3, packed ice to 0.5, calcite
+  to 0.7 of the 3D `ice_cave_gradient`, a `ModernNoise` of octave -4) after the sulfur caves' in `underground`, and
+  `biome_surface/ice_caves` (bands, then stone) after the sulfur caves' surface. Id 67 (`Biomes.COUNT` 68): base
+  temperature 0, downfall 0, snow; the decorator's biome mask puts it on a nether biome's bit. Feature list 26.4's,
+  filtered to the step order (its icicles, ice_cave_ore_* ores, snow layers, crystals, clusters and crevasses are Game
+  Drops'); mineshafts and standard ruined portals. The biome map takes Game Drops' biome (else 1.12's snowy plains);
+  `ModernLocate` answers it. Saved "26.4" with every edition, else the others' name and "-26.4" ("1.18-26.4" with Game
+  Drops alone); a world saved "26.3" keeps 26.3's biomes. Game Drops steps aside (`IceCaves.terrainHasIceCaves`): no
+  climate box, bands, biome registration or /locate of its own; its features go where this biome is.
+  26.4-pre-2's other worldgen against 26.3: NoiseRouterData's `interpolated` is now `linearUpscale` (the density
+  functions were rewritten: not checked block for block); `Climate.ParameterList` validates that no two entries
+  overlap in every parameter; the overworld material rules end in `STONE` (the default block already); the spawn search
+  is 26.3's.
 - Features ported for them, from Mojang's code: `trees_mangrove` (UpwardsBranchingTrunkPlacer, MangroveRootPlacer with
   muddy roots and moss carpets, 70-try random spread leaves, 1.19's leave vines, AttachedToLeavesDecorator's hanging
   propagules, the beehive last), `disk_grass` (1.19's DiskFeature on mud), `trees_cherry` (CherryTrunkPlacer,
@@ -623,6 +643,18 @@ it failed the goat test's jump aim by 0.004 blocks, the known flaky goat test).
     where the sulfur caves are and none without the edition; with Game Drops' dev jar also the 3D biome id, the column
     biome and its poplars at population. `height,terrain` 110/0 without Game Drops, 113/0 with it ("1.18-26.3");
     whole suite (fresh Default world) 4762/0.
+*   **26.4's ice caves** (`Editions.DEEP_FREEZE`, 2026-11-27, cc-26-4): the builder's leaves with every edition (7595)
+    identical, in order, to 26.4-pre-2's `OverworldBiomeBuilder.addBiomes` (run from its server jar); 200,000 climate
+    targets (random and on every leaf bound, +-1) give vanilla's `ParameterList.findValue` from a cold start
+    (`lastResult` cleared) in the tree, the shortcut and the brute force, all identical; 26.3's distance differs at
+    11,645 of them. Dedicated server (Forge 2860, every family backport) against vanilla 26.4-pre-2, `/locate biome` from
+    0 0 0 (1.12's console searches from the origin; vanilla's from the world spawn, so vanilla ran it as `execute
+    positioned 0 0 0`), seeds 871158479824512549, 42 and 12345: ice caves, lush caves, dripstone caves, the deep dark
+    and sulfur caves, 15 of 15 identical. `GameDropsEditionSelfTest`: names, 26.4's leaves, the distance at three bound
+    targets vanilla answers, the bands at 26.4-pre-2's ice caves (-3408 -1 352: 19,383 packed ice and 3,970 calcite in
+    3x3 chunks, none outside the biome); with Game Drops' dev jar the world's own ice caves (3D biome id, 10,715 band
+    blocks and Game Drops' features in 3x3 chunks). `height,terrain` 464/0 without Game Drops, 471/0 with it
+    ("1.18-26.4"); whole suite (fresh Default world) 4860/0.
 
 ## Speed
 

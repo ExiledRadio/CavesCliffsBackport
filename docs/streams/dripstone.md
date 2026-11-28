@@ -56,10 +56,10 @@ the seed to clients for the music stream.
     Each segment recomputes its thickness when a block above or below it changes (current Java's rule, in
     `calculateThickness`). Shapes and the up-to-an-eighth sideways offset per column are current Java's
     (`getOffset` is overridden; 1.12's own offset is a quarter).
-*   **Since 1.1.8** `BlockPointedDripstone` is Backport Core 1.5.0's `speleothem.BlockSpeleothem` (states, support,
+*   **Since 1.2.0** `BlockPointedDripstone` is Backport Core 1.5.0's `speleothem.BlockSpeleothem` (states, support,
     thickness, merging, growth, falling as `backportcore:falling_speleothem`, impaling, tridents, the two damage
     types), shared with Game Drops' icicles. Kept here: drips into cauldrons and their particles, `canGrow` (a
-    dripstone block with a water source above), the stalagmite search stopping where a drip cannot pass. Same
+    dripstone block with a water source above; water kept in a block counts, as the fluid state does in Java), the stalagmite search stopping where a drip cannot pass. Same
     registry name, states and metadata, so 1.1.7 worlds load as they were; 1.1.7's `falling_stalactite` entity is
     still registered only to turn into Core's on its first tick (`LegacyLoadSelfTest`). The points below describe
     1.1.7 and still hold with this mod as the newest backport (Core switches to 26.4's rules with a 26.4 backport).

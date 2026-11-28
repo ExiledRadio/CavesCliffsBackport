@@ -1,7 +1,7 @@
 # Stream Ps: powder snow and freezing
 
 Package `powdersnow` (client part in `powdersnow.client`). Config `powderSnow`: `enabled`, `freezing`,
-`strayConversion`, `cauldronSnow`, `patches`, `patchRarity` (2), `patchMinY` (80), and `walkableMobs`. Since 1.1.8 the
+`strayConversion`, `cauldronSnow`, `patches`, `patchRarity` (2), `patchMinY` (80), and `walkableMobs`. Since 1.2.0 the
 freezing itself is Backport Core 1.5.0's (`freeze.FreezeTicks`), and its three id lists are in Core's Freezing settings. Packet id 30
 (`PacketFreeze`). Also changed outside the package: `tools/common/generate.py` read no tooltip for an option
 that carries a `@Setting` annotation (its pattern now allows them) and names `patchMinY`;
@@ -11,7 +11,8 @@ that carries a `@Setting` annotation (its pattern now allows them) and names `pa
 
 *   **Powder snow**: a block you fall into. Everything inside it sinks slowly and can barely move; falling into
     it never hurts. **Leather boots** walk on top of it (sneak to sink in, push against it or jump to climb
-    out). Rabbits, endermites and silverfish walk on it too.
+    out). Rabbits, endermites and silverfish walk on it too, and so do Village & Pillage's foxes and Game Drops'
+    frostbites (26.4's `#powder_snow_walkable_mobs`, by id in `Freezing.walkableId`).
 *   **Freezing**: staying in powder snow frosts over your screen, slows you, and after 7 seconds hurts every 2
     seconds. Blazes and magma cubes take five times as much; strays, polar bears, snow golems and the wither
     never freeze. Any piece of **leather armor** prevents it. The `freezeDamage` game rule turns the damage
@@ -33,7 +34,7 @@ that carries a `@Setting` annotation (its pattern now allows them) and names `pa
     only for cobwebs, so after each move the velocity is reset to the value that makes the next fall Java's
     (0.1176 a tick for living entities, 0.06 for items). Sideways the velocity is cleared but the 0.9 is not
     applied, and a jump from the bottom rises 0.42 instead of 0.63: the two known differences.
-*   **Freezing** (1.1.8): Backport Core's freeze ticks. Each tick powder snow touches a living entity it calls
+*   **Freezing** (1.2.0): Backport Core's freeze ticks. Each tick powder snow touches a living entity it calls
     `FreezeTicks.markInFreezingBlock` (while `freezing` is on); Core keeps the counter, damage, slowdown, frost
     overlay and frozen shaking. Core follows the newest backport installed: 1.17's immune list here, 26.4's (all undead) with a 26.4 backport. Powder snow's own
     state stays in `CCBFreeze` (`Seen`, and for skeletons `SnowTime`, `Convert`); `PacketFreeze` carries only a
@@ -60,7 +61,8 @@ that carries a `@Setting` annotation (its pattern now allows them) and names `pa
 
 *   Registration; no item for either block; material; the `freezeDamage` rule.
 *   Collision boxes for: no entity, a zombie, fallen 3 blocks (0.9), leather boots above / sneaking / inside,
-    iron boots, a leather helmet, a rabbit, a falling block, an item. Path node types.
+    iron boots, a leather helmet, a rabbit, a falling block, an item. Path node types. The fox's and frostbite's
+    ids are walkable mobs, other ids not.
 *   An armor stand sinks 0.1176 a tick to the floor, with no fall distance; with leather boots it stays on
     top; an item sinks 0.06 a tick. A pig dropped 20 blocks: hurt on stone, unhurt on powder snow.
 *   A pig in a snow-filled hole: one freeze tick a tick, capped at 140, slowed, 1 damage per 40 ticks; out of

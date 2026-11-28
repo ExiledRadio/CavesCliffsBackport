@@ -200,10 +200,17 @@ public final class Freezing {
         if (entity instanceof EntityPlayer) {
             return false;
         }
-        ResourceLocation id = EntityList.getKey(entity);
-        return id != null && (id.equals(new ResourceLocation(Owners.VILLAGE_AND_PILLAGE, "fox"))
-                || WALKERS.has(ModConfig.powderSnow.walkableMobs, id));
+        return walkableId(EntityList.getKey(entity));
     }
+
+    /** 26.4's {@code #powder_snow_walkable_mobs} by id: other backports' foxes and frostbites, and the config's list. */
+    public static boolean walkableId(ResourceLocation id) {
+        return id != null && (id.equals(FOX) || id.equals(FROSTBITE) || WALKERS.has(ModConfig.powderSnow.walkableMobs, id));
+    }
+
+    static final ResourceLocation FOX = new ResourceLocation(Owners.VILLAGE_AND_PILLAGE, "fox");
+    /** Game Drops' frostbite (26.4). */
+    static final ResourceLocation FROSTBITE = new ResourceLocation(Owners.GAME_DROPS, "frostbite");
 
     /** @return whether powder snow holds this entity up: a mob that walks on it, or anything in warm boots (Core's list) */
     public static boolean canWalkOn(Entity entity) {
