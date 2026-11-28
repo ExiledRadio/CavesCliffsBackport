@@ -7,7 +7,12 @@ import com.exiledradio.cavesandcliffsbackport.common.Content;
 import com.exiledradio.cavesandcliffsbackport.common.ModSounds;
 import com.exiledradio.cavesandcliffsbackport.common.Owners;
 
+import com.exiledradio.backportcore.trade.TradeRegistry;
+
 import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.init.Items;
+import net.minecraft.village.MerchantRecipe;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -28,6 +33,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Stream L: moss and moss carpet, azaleas, their leaves and tree, potted azaleas, rooted dirt, hanging roots,
@@ -142,6 +150,9 @@ public final class LushContent {
         glowBerries = Content.item(r, "glow_berries", new ItemGlowBerries());
         OreDictionary.registerOre("treeLeaves", leaves);
         OreDictionary.registerOre("treeLeaves", floweringLeaves);
+        // 1.17's saplings tag has both azaleas.
+        OreDictionary.registerOre("treeSapling", azalea);
+        OreDictionary.registerOre("treeSapling", floweringAzalea);
 
         // Current Java's composting chances.
         for (Block b : Arrays.asList(mossCarpet, smallDripleaf, hangingRoots, leaves)) {
@@ -201,5 +212,45 @@ public final class LushContent {
         }
         // After the ores and geodes (weight 0), so moss never ends up under a geode's shell.
         GameRegistry.registerWorldGenerator(new LushCaveGenerator(), 10);
+        traderTrades();
+        bees();
+        // 1.17's enderman_holdable takes #dirt, which has the moss block (rooted dirt is in blocks.VanillaChanges).
+        net.minecraft.entity.monster.EntityEnderman.setCarriable(moss, true);
+    }
+
+    /** 1.18.2's wandering trader: small dripleaf, rooted dirt and moss blocks, two for an emerald, five times each. */
+    static void traderTrades() {
+        for (final Block b : Arrays.asList(smallDripleaf, rootedDirt, moss)) {
+            TradeRegistry.addTraderTrade(TradeRegistry.TraderPool.ORDINARY, new TradeRegistry.TraderTrade() {
+                @Override
+                public MerchantRecipe offer(Random random) {
+                    return new MerchantRecipe(new ItemStack(Items.EMERALD), ItemStack.EMPTY, new ItemStack(b, 2), 0, 5);
+                }
+            });
+        }
+    }
+
+    /**
+     * Buzzy Bees Backport's bees (its {@code api.BeeFlowers}, by reflection): flowering azaleas and their leaves are
+     * flowers (1.17's {@code flowers} tag), and a pollinating bee gives cave vines berries (1.17's
+     * {@code bee_growables}; 1.18.2's bee bone-meals them).
+     */
+    static void bees() {
+        if (!net.minecraftforge.fml.common.Loader.isModLoaded("buzzybeesbackport")) {
+            return;
+        }
+        try {
+            Class<?> api = Class.forName("com.exiledradio.buzzybeesbackport.api.BeeFlowers");
+            Predicate<IBlockState> flower = s -> s.getBlock() == floweringAzalea || s.getBlock() == floweringLeaves;
+            Predicate<ItemStack> flowerItem = s -> !s.isEmpty()
+                    && (s.getItem() == Item.getItemFromBlock(floweringAzalea) || s.getItem() == Item.getItemFromBlock(floweringLeaves));
+            Function<IBlockState, IBlockState> grower = s -> s.getBlock() instanceof BlockCaveVines && !s.getValue(BlockCaveVines.BERRIES)
+                    ? s.withProperty(BlockCaveVines.BERRIES, true) : null;
+            api.getMethod("addFlower", Predicate.class).invoke(null, flower);
+            api.getMethod("addFlowerItem", Predicate.class).invoke(null, flowerItem);
+            api.getMethod("addGrower", Function.class).invoke(null, grower);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            CavesAndCliffsBackport.LOGGER.warn("Could not tell Buzzy Bees about flowering azaleas and cave vines.", e);
+        }
     }
 }

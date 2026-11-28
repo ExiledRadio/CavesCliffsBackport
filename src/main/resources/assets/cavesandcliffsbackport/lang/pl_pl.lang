@@ -271,6 +271,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Koza ryczy
 # --- blocks ---
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Przeżyj upadek ze szczytu świata (granicy budowania) na samo jego dno
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Z górki na pazurki!
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.description=Tchnij życie w górskie łąki dzięki muzyce z szafy grającej
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=I gra muzyka
+advancements.cavesandcliffsbackport.trade_at_world_height.description=Dobij targu z osadnikiem, będąc na szczycie świata
+advancements.cavesandcliffsbackport.trade_at_world_height.title=Kosmiczne ceny
 tile.cavesandcliffsbackport.light.name=Światło
 gamerule.playersSleepingPercentage=Odsetek śpiących
 gamerule.playersSleepingPercentage.description=Odsetek śpiących graczy potrzebnych, by pominąć noc.

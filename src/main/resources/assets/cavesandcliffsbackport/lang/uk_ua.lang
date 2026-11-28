@@ -271,6 +271,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Коза вола
 # --- blocks ---
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Впадіть із найвищої точки світу (ліміт будівництва) до самого низу і виживіть
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Печери та скелі
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.description=Оживіть луки звуками музики з програвача
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=Звуки музики
+advancements.cavesandcliffsbackport.trade_at_world_height.description=Поторгуйтесь із селянином на максимальній висоті будівництва
+advancements.cavesandcliffsbackport.trade_at_world_height.title=Зоряний торговець
 tile.cavesandcliffsbackport.light.name=Світло
 gamerule.playersSleepingPercentage=Відсоток сплячих гравців
 gamerule.playersSleepingPercentage.description=Відсоток гравців, які повинні спати, щоб пропустити ніч.

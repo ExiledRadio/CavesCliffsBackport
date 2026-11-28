@@ -271,6 +271,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Keçi bağırdı
 # --- blocks ---
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Dünyanın tepesinden (yapı sınırı) dünyanın dibine düş ve hayatta kal
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Mağaralar ve Uçurumlar
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.description=Çayırları bir müzik kutusundan gelen müziğin sesiyle canlandırın
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=Müziğin Sesi
+advancements.cavesandcliffsbackport.trade_at_world_height.description=Maksimum inşaat sınırında bir köylü ile takas yap
+advancements.cavesandcliffsbackport.trade_at_world_height.title=Yıldız Tüccarı
 tile.cavesandcliffsbackport.light.name=Işık
 gamerule.playersSleepingPercentage=Uyuma yüzdesi
 gamerule.playersSleepingPercentage.description=Geceyi atlamak için uyuması gereken oyuncuların yüzdesi.

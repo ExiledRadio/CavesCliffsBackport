@@ -73,9 +73,15 @@ public class BlockSmallDripleaf extends BlockLushPlant implements IGrowable, ISh
         return state.withProperty(FACING, mirror.mirror(state.getValue(FACING)));
     }
 
+    /** 1.17: a random offset, sideways and down, the same for both halves (it is drawn from x and z only). */
+    @Override
+    public EnumOffsetType getOffsetType() {
+        return EnumOffsetType.XYZ;
+    }
+
     @Override
     public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess world, BlockPos pos) {
-        return BOX;
+        return BOX.offset(state.getOffset(world, pos));
     }
 
     @Override

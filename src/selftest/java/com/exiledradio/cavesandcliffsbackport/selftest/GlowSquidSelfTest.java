@@ -53,13 +53,44 @@ public final class GlowSquidSelfTest implements SelfTest {
     }
 
     @Override
-    public void run(Check c) {
+    public void run(Check c) throws Exception {
         registration(c);
         spawning(c);
         squid(c);
         loot(c);
         frame(c);
         signs(c);
+        zombiesPickUp(c);
+    }
+
+    /** 1.17.1: zombies (and every kind of zombie) leave glow ink sacs on the ground; other items as before. */
+    private static void zombiesPickUp(Check c) throws Exception {
+        java.lang.reflect.Method update = net.minecraftforge.fml.common.ObfuscationReflectionHelper.findMethod(
+                net.minecraft.entity.EntityLiving.class, "func_175445_a", void.class, net.minecraft.entity.item.EntityItem.class);
+        // No new test area (later tests are placed by the count of areas): the spawn point, where nothing is built.
+        net.minecraft.util.math.BlockPos at = c.world.getSpawnPoint().up(3);
+        for (net.minecraft.entity.monster.EntityZombie zombie : new net.minecraft.entity.monster.EntityZombie[] {
+                new net.minecraft.entity.monster.EntityZombie(c.world), new net.minecraft.entity.monster.EntityHusk(c.world),
+                new net.minecraft.entity.monster.EntityZombieVillager(c.world), new net.minecraft.entity.monster.EntityPigZombie(c.world)}) {
+            zombie.setPosition(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+            zombie.setCanPickUpLoot(true);
+            net.minecraft.entity.item.EntityItem ink = new net.minecraft.entity.item.EntityItem(c.world, zombie.posX, zombie.posY, zombie.posZ,
+                    new net.minecraft.item.ItemStack(GlowSquidContent.glowInkSac));
+            update.invoke(zombie, ink);
+            String kind = zombie.getClass().getSimpleName();
+            c.ok(zombie.getHeldItemMainhand().isEmpty() && !ink.isDead, kind + " leaves a glow ink sac on the ground");
+            net.minecraft.entity.item.EntityItem paper = new net.minecraft.entity.item.EntityItem(c.world, zombie.posX, zombie.posY, zombie.posZ,
+                    new net.minecraft.item.ItemStack(net.minecraft.init.Items.PAPER));
+            update.invoke(zombie, paper);
+            c.eq(net.minecraft.init.Items.PAPER, zombie.getHeldItemMainhand().getItem(), kind + " still picks up other items");
+        }
+        net.minecraft.entity.monster.EntitySkeleton skeleton = new net.minecraft.entity.monster.EntitySkeleton(c.world);
+        skeleton.setPosition(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+        skeleton.setCanPickUpLoot(true);
+        skeleton.setItemStackToSlot(net.minecraft.inventory.EntityEquipmentSlot.MAINHAND, net.minecraft.item.ItemStack.EMPTY);
+        update.invoke(skeleton, new net.minecraft.entity.item.EntityItem(c.world, at.getX(), at.getY(), at.getZ(),
+                new net.minecraft.item.ItemStack(GlowSquidContent.glowInkSac)));
+        c.eq(GlowSquidContent.glowInkSac, skeleton.getHeldItemMainhand().getItem(), "a skeleton still takes one, as 1.17.1");
     }
 
     private static boolean spawns(Biome biome, EnumCreatureType group) {

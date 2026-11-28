@@ -270,6 +270,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Goat bellows
 # --- blocks ---
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Free fall from the top of the world (build limit) to the bottom of the world and survive
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Caves & Cliffs
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.description=Make the Meadows come alive with the sound of music from a jukebox
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=Sound of Music
+advancements.cavesandcliffsbackport.trade_at_world_height.description=Trade with a villager at the build height limit
+advancements.cavesandcliffsbackport.trade_at_world_height.title=Star Trader
 tile.cavesandcliffsbackport.light.name=Light
 gamerule.playersSleepingPercentage=Sleep percentage
 gamerule.playersSleepingPercentage.description=The percentage of players who must be sleeping to skip the night.

@@ -60,6 +60,16 @@ public final class ChangesHooks {
     }
 
     // ------------------------------------------------------------------------------------------
+    // Glow ink sacs (1.17.1): zombies (husks, zombie villagers, drowned, zombie pigmen: every Zombie in 1.17.1)
+    // do not pick them up. EntityLiving.updateEquipmentIfNeeded's canEquipItem answer comes through here.
+
+    public static boolean mayPickUp(boolean canEquip, net.minecraft.entity.EntityLiving mob, EntityItem item) {
+        return canEquip && !(mob instanceof net.minecraft.entity.monster.EntityZombie
+                && com.exiledradio.cavesandcliffsbackport.glowsquid.GlowSquidContent.glowInkSac != null
+                && item.getItem().getItem() == com.exiledradio.cavesandcliffsbackport.glowsquid.GlowSquidContent.glowInkSac);
+    }
+
+    // ------------------------------------------------------------------------------------------
     // Shulker box items: 1.18.2's BlockItem.onDestroyed (ItemUtils.onContainerDestroyed): the stacks of the item's
     // BlockEntityTag.Items each become an item where the destroyed item was.
 

@@ -271,6 +271,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=염소가 울부�
 # --- blocks ---
 advancements.cavesandcliffsbackport.fall_from_world_height.description=세계의 위쪽 끝(건축 제한)에서 아래쪽 끝까지 자유 낙하하고 살아남으세요
 advancements.cavesandcliffsbackport.fall_from_world_height.title=동굴과 절벽
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.description=주크박스로 음악을 틀어 목초지에 활기를 불어넣으세요
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=사운드 오브 뮤직
+advancements.cavesandcliffsbackport.trade_at_world_height.description=건축 높이 제한에서 주민과 거래하세요
+advancements.cavesandcliffsbackport.trade_at_world_height.title=최고의 거래
 tile.cavesandcliffsbackport.light.name=빛
 gamerule.playersSleepingPercentage=취침 비율
 gamerule.playersSleepingPercentage.description=밤을 건너뛰려면 잠들어야 하는 플레이어들의 비율.

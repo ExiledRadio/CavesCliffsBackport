@@ -107,6 +107,66 @@ public final class Lightning {
         strike(world, at, bolt);
     }
 
+    /**
+     * 1.17's {@code LightningRodBlock.onProjectileHit}: in a thunderstorm, a Channeling trident (Update Aquatic
+     * Backport's) that hits a lightning rod under open sky calls lightning down onto the rod, with the trident's thunder.
+     */
+    @SubscribeEvent
+    public static void tridentHit(net.minecraftforge.event.entity.ProjectileImpactEvent.Arrow event) {
+        net.minecraft.entity.projectile.EntityArrow arrow = event.getArrow();
+        net.minecraft.util.math.RayTraceResult hit = event.getRayTraceResult();
+        World world = arrow.world;
+        if (world.isRemote || hit == null || hit.typeOfHit != net.minecraft.util.math.RayTraceResult.Type.BLOCK
+                || !CopperContent.enabled() || !world.isThundering()) {
+            return;
+        }
+        BlockPos pos = hit.getBlockPos();
+        if (!(world.getBlockState(pos).getBlock() instanceof BlockLightningRod) || !world.canSeeSky(pos) || !channeling(arrow)) {
+            return;
+        }
+        EntityLightningBolt bolt = new EntityLightningBolt(world, pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5, false);
+        Entity owner = arrow.shootingEntity;
+        rememberCaster(bolt, owner);
+        world.addWeatherEffect(bolt);
+        net.minecraft.util.SoundEvent thunder = net.minecraftforge.fml.common.registry.ForgeRegistries.SOUND_EVENTS.getValue(
+                new net.minecraft.util.ResourceLocation("updateaquaticbackport", "item.trident.thunder"));
+        if (thunder != null) {
+            world.playSound(null, pos, thunder, net.minecraft.util.SoundCategory.WEATHER, 5.0F, 1.0F);
+        }
+    }
+
+    /** @return whether this is Update Aquatic Backport's trident with Channeling */
+    static boolean channeling(Entity projectile) {
+        net.minecraft.enchantment.Enchantment channeling = net.minecraftforge.fml.common.registry.ForgeRegistries.ENCHANTMENTS.getValue(
+                new net.minecraft.util.ResourceLocation("updateaquaticbackport", "channeling"));
+        if (channeling == null || !"updateaquaticbackport".equals(net.minecraft.entity.EntityList.getKey(projectile) == null ? null
+                : net.minecraft.entity.EntityList.getKey(projectile).getNamespace())) {
+            return false;
+        }
+        try {
+            Object stack = projectile.getClass().getMethod("thrownStack").invoke(projectile);
+            return stack instanceof net.minecraft.item.ItemStack
+                    && net.minecraft.enchantment.EnchantmentHelper.getEnchantmentLevel(channeling, (net.minecraft.item.ItemStack) stack) > 0;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return false;
+        }
+    }
+
+    /** Update Aquatic's record of who called a bolt (for Very Very Frightening), when it is there. */
+    private static void rememberCaster(EntityLightningBolt bolt, @Nullable Entity owner) {
+        if (!(owner instanceof net.minecraft.entity.player.EntityPlayerMP)) {
+            return;
+        }
+        try {
+            java.lang.reflect.Method remember = Class.forName("com.exiledradio.updateaquaticbackport.trident.Channeling")
+                    .getDeclaredMethod("remember", EntityLightningBolt.class, net.minecraft.entity.player.EntityPlayerMP.class);
+            remember.setAccessible(true);
+            remember.invoke(null, bolt, owner);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            // Not there: the bolt has no caster, as in 1.12.2.
+        }
+    }
+
     /** What a bolt does to the block it hits; {@code at} is that block. */
     static void strike(World world, BlockPos at, @Nullable Entity bolt) {
         IBlockState hit = world.getBlockState(at);

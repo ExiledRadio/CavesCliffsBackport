@@ -144,6 +144,14 @@ public abstract class BlockCaveVines extends BlockLushPlant implements IGrowable
             return state.getValue(AGE) | (state.getValue(BERRIES) ? 8 : 0);
         }
 
+        /**
+         * A generated tip: 1.18.2's cave_vine feature gives it age 23-25 of 25, so it grows a few times at most; here
+         * 5-7 of 7, as the 1.18 terrain maps it.
+         */
+        public IBlockState generated(Random rand) {
+            return getDefaultState().withProperty(AGE, MAX_AGE - rand.nextInt(3));
+        }
+
         /** A newly planted tip: a random age short of the last, as current Java. */
         public IBlockState planted(Random rand) {
             return getDefaultState().withProperty(AGE, rand.nextInt(MAX_AGE));

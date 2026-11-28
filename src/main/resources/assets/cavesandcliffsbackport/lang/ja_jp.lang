@@ -271,6 +271,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=ヤギが鳴く
 # --- blocks ---
 advancements.cavesandcliffsbackport.fall_from_world_height.description=ワールドの頂上（限界高度）からワールドの底へ落下し、生き残る
 advancements.cavesandcliffsbackport.fall_from_world_height.title=洞窟と崖
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.description=ジュークボックスの音楽で草地を盛り上げる
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=サウンド・オブ・ミュージック
+advancements.cavesandcliffsbackport.trade_at_world_height.description=限界高度で村人と取引をする
+advancements.cavesandcliffsbackport.trade_at_world_height.title=星の商人
 tile.cavesandcliffsbackport.light.name=ライトブロック
 gamerule.playersSleepingPercentage=就寝率
 gamerule.playersSleepingPercentage.description=夜をスキップするために必要なベッドで寝ているプレイヤーの割合を設定できます。

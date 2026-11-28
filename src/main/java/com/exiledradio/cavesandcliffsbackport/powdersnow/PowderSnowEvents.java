@@ -106,12 +106,53 @@ public final class PowderSnowEvents {
     @SubscribeEvent
     public void playerTick(TickEvent.PlayerTickEvent event) {
         EntityPlayer player = event.player;
+        if (event.phase == TickEvent.Phase.END && event.side == Side.SERVER) {
+            dropShoulderParrots(player);
+        }
         if (event.phase != TickEvent.Phase.END || event.side != Side.SERVER || player.ticksExisted % 5 != 0) {
             return;
         }
         if (onPowderSnowInBoots(player)) {
             Advancements.grant(player, ADVANCEMENT);
         }
+    }
+
+    private static java.lang.reflect.Method spawnShoulderEntities;
+
+    /** 1.17: parrots leave a player's shoulders in powder snow, as they do in water ({@code Player.aiStep}). */
+    public static void dropShoulderParrots(EntityPlayer player) {
+        if (!Freezing.inSnow(player) || (player.getLeftShoulderEntity().isEmpty() && player.getRightShoulderEntity().isEmpty())) {
+            return;
+        }
+        try {
+            if (spawnShoulderEntities == null) {
+                spawnShoulderEntities = net.minecraftforge.fml.common.ObfuscationReflectionHelper.findMethod(EntityPlayer.class,
+                        "func_192030_dh", void.class);
+            }
+            spawnShoulderEntities.invoke(player);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            // The parrots stay on, as in 1.12.2.
+        }
+    }
+
+    /**
+     * 1.17: a burning fireball (a fire charge or a blaze's, or a ghast's) flies through powder snow and melts it with
+     * {@code mobGriefing} on, as 1.18.2's {@code PowderSnowBlock.entityInside} with a projectile that has no
+     * collision with it. 1.12.2 would stop it on the block, so the impact is cancelled and it flies on.
+     */
+    @SubscribeEvent
+    public void fireballImpact(net.minecraftforge.event.entity.ProjectileImpactEvent.Fireball event) {
+        RayTraceResult hit = event.getRayTraceResult();
+        net.minecraft.entity.projectile.EntityFireball ball = event.getFireball();
+        if (hit == null || hit.typeOfHit != RayTraceResult.Type.BLOCK || ball.world.isRemote
+                || !(ball instanceof net.minecraft.entity.projectile.EntitySmallFireball || ball instanceof net.minecraft.entity.projectile.EntityLargeFireball)
+                || !(ball.world.getBlockState(hit.getBlockPos()).getBlock() instanceof BlockPowderSnow)) {
+            return;
+        }
+        if (ball.world.getGameRules().getBoolean("mobGriefing")) {
+            ball.world.destroyBlock(hit.getBlockPos(), false);
+        }
+        event.setCanceled(true);
     }
 
     public static boolean onPowderSnowInBoots(EntityPlayer player) {

@@ -100,7 +100,7 @@ public final class SmallChangesSelfTest implements SelfTest {
     private static void patches(Check c) throws java.io.IOException {
         // Loading each target makes sure the transformer saw it.
         Object[] load = {EntityMinecart.class, EntityItem.class, net.minecraft.block.BlockMycelium.class,
-                net.minecraft.network.NetHandlerPlayServer.class};
+                net.minecraft.network.NetHandlerPlayServer.class, net.minecraft.entity.EntityLiving.class};
         c.ok(load.length == ChangesTransformer.COMMON.length, "every server target loaded");
         for (String target : ChangesTransformer.COMMON) {
             c.ok(ChangesTransformer.APPLIED.containsKey(target), "patched: " + target);

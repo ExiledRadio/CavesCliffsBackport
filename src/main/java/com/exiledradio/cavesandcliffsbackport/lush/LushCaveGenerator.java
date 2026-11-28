@@ -262,7 +262,7 @@ public final class LushCaveGenerator implements IWorldGenerator {
         for (int i = 0; i < length; i++) {
             boolean berries = random.nextInt(5) == 0;
             IBlockState s = i == length - 1
-                    ? LushContent.caveVines.planted(random).withProperty(BlockCaveVines.BERRIES, berries)
+                    ? LushContent.caveVines.generated(random).withProperty(BlockCaveVines.BERRIES, berries)
                     : LushContent.caveVinesPlant.getDefaultState().withProperty(BlockCaveVines.BERRIES, berries);
             world.setBlockState(top.down(i), s, 2);
         }

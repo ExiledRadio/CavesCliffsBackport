@@ -34,6 +34,7 @@ import static com.exiledradio.cavesandcliffsbackport.height.asm.Asm.*;
  *   <li>{@code EntityItem.attackEntityFrom}: before {@code setDead}, a destroyed shulker box spills its contents.</li>
  *   <li>{@code BlockMycelium}: a {@code canSustainPlant} override (super's answer, then the hook).</li>
  *   <li>{@code NetHandlerPlayServer.processCustomPayload}: the anvil name limit 35 of {@code MC|ItemName}.</li>
+ *   <li>{@code EntityLiving.updateEquipmentIfNeeded}: zombies leave glow ink sacs on the ground (1.17.1).</li>
  *   <li>Client: {@code GuiIngameForge.renderHealth}'s absorption heart texture offsets ({@code MARGIN + 144} and
  *       {@code + 153}), {@code EntityPlayerSP.onLivingUpdate}'s {@code collidedHorizontally} in the sprint test, and
  *       {@code ModelBiped.setRotationAngles}'s head and returns for the spyglass's arm pose.</li>
@@ -51,13 +52,14 @@ public final class ChangesTransformer implements IClassTransformer {
     static final String ITEM = "net.minecraft.entity.item.EntityItem";
     static final String MYCELIUM = "net.minecraft.block.BlockMycelium";
     static final String NET = "net.minecraft.network.NetHandlerPlayServer";
+    static final String LIVING = "net.minecraft.entity.EntityLiving";
     static final String GUI = "net.minecraftforge.client.GuiIngameForge";
     static final String PLAYER_SP = "net.minecraft.client.entity.EntityPlayerSP";
     static final String BIPED = "net.minecraft.client.model.ModelBiped";
     static final String SPYGLASS_POSE = "com/exiledradio/cavesandcliffsbackport/amethyst/client/SpyglassPose";
 
     /** Every target with its side: true for client-only classes. */
-    public static final String[] COMMON = {CART, ITEM, MYCELIUM, NET};
+    public static final String[] COMMON = {CART, ITEM, MYCELIUM, NET, LIVING};
     public static final String[] CLIENT = {GUI, PLAYER_SP, BIPED};
 
     /** Each target class once patched in the running game; the self-test reads it. */
@@ -97,6 +99,9 @@ public final class ChangesTransformer implements IClassTransformer {
         }
         if (NET.equals(target)) {
             return net(bytes);
+        }
+        if (LIVING.equals(target)) {
+            return living(bytes);
         }
         if (GUI.equals(target)) {
             return gui(bytes);
@@ -221,6 +226,23 @@ public final class ChangesTransformer implements IClassTransformer {
             return null;
         }
         replace(m, next(limit.get(0)), list(hook("anvilNameLimit", "()I")));
+        return write(node);
+    }
+
+    /**
+     * Zombies leave glow ink sacs on the ground (1.17.1's {@code Zombie.wantsToPickUp}): in {@code
+     * updateEquipmentIfNeeded}, {@code canEquipItem}'s answer goes through a hook with the mob and the item entity.
+     */
+    private static byte[] living(byte[] bytes) {
+        ClassNode node = read(bytes);
+        MethodNode m = method(node, "updateEquipmentIfNeeded", "func_175445_a", "(Lnet/minecraft/entity/item/EntityItem;)V");
+        List<AbstractInsnNode> equip = sites("EntityLiving.updateEquipmentIfNeeded canEquipItem", m, 1,
+                invoke(Opcodes.INVOKEVIRTUAL, "canEquipItem", "func_175448_a", "(Lnet/minecraft/item/ItemStack;)Z"));
+        if (equip == null) {
+            return null;
+        }
+        m.instructions.insert(equip.get(0), list(new VarInsnNode(Opcodes.ALOAD, 0), new VarInsnNode(Opcodes.ALOAD, 1),
+                hook("mayPickUp", "(ZLnet/minecraft/entity/EntityLiving;Lnet/minecraft/entity/item/EntityItem;)Z")));
         return write(node);
     }
 

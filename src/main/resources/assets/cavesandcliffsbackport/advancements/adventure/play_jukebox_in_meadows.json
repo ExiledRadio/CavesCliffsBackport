@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:jukebox"
+    },
+    "title": {
+      "translate": "advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title"
+    },
+    "description": {
+      "translate": "advancements.cavesandcliffsbackport.play_jukebox_in_meadows.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "minecraft:adventure/sleep_in_bed",
+  "criteria": {
+    "code": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

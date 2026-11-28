@@ -271,6 +271,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Bramido de cabra
 # --- blocks ---
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Cae desde lo más alto del mundo (limite de altura) hasta lo más bajo y vive para contarlo.
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Cuevas y acantilados
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.description=Haz que los prados vibren con el dulce cantar de un tocadiscos.
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=El dulce cantar
+advancements.cavesandcliffsbackport.trade_at_world_height.description=Comercia con un aldeano en el límite de altura del mundo.
+advancements.cavesandcliffsbackport.trade_at_world_height.title=Vendedor estelar
 tile.cavesandcliffsbackport.light.name=Luz
 gamerule.playersSleepingPercentage=Porcentaje de jugadores dormidos
 gamerule.playersSleepingPercentage.description=El porcentaje necesario de jugadores que deben dormir para pasar la noche.

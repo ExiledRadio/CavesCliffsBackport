@@ -360,7 +360,8 @@ public final class SpyglassClient {
         if (!scoping()) {
             return;
         }
-        if (event.getType() == RenderGameOverlayEvent.ElementType.CROSSHAIRS) {
+        // 1.17 draws the spyglass instead of the pumpkin blur and the powder snow frost (both on HELMET here).
+        if (event.getType() == RenderGameOverlayEvent.ElementType.CROSSHAIRS || event.getType() == RenderGameOverlayEvent.ElementType.HELMET) {
             event.setCanceled(true);
             return;
         }

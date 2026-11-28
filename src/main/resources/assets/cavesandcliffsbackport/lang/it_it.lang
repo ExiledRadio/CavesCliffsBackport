@@ -271,6 +271,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Capra urla
 # --- blocks ---
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Buttati dalla cima del mondo (il limite di costruzione) fino al punto più basso senza morire
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Caduta libera
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.description=Dai vita alle praterie usando un giradischi
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=La musica va
+advancements.cavesandcliffsbackport.trade_at_world_height.description=Commercia con un villico al limite di altezza
+advancements.cavesandcliffsbackport.trade_at_world_height.title=Prezzi alle stelle
 tile.cavesandcliffsbackport.light.name=Luce
 gamerule.playersSleepingPercentage=Percentuale di giocatori addormentati
 gamerule.playersSleepingPercentage.description=La percentuale di giocatori che devono dormire per saltare la notte.

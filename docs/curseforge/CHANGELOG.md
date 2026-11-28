@@ -5,6 +5,15 @@
 *   **Glow berries in mineshaft chests and moss in shipwreck supply chests**, as in 1.17 (shipwrecks come with Update Aquatic Backport).
 *   **Dispensers with flint and steel light candles and candle cakes**, as in 1.17.
 *   **The `playersSleepingPercentage` game rule**, as in 1.17: the share of players who must sleep to skip the night (100 by default; above 100 nights are never skipped). In multiplayer the action bar shows how many players are sleeping.
+*   **Vanilla advancements of 1.17 and 1.18**: *Two by Two* needs an axolotl and a goat bred, *A Balanced Diet* needs glow berries, and the new *Sound of Music* (a disc in a jukebox in a meadow, in Caves & Cliffs worlds) and *Star Trader* (a trade at y 319 or higher).
+*   **Dispensers wax copper with honeycomb**, and waxing, taking wax off and scraping show 1.17's particles.
+*   **A Channeling trident striking a lightning rod in a thunderstorm calls lightning onto it** (tridents come with Update Aquatic Backport).
+*   **The wandering trader sells small dripleaves, rooted dirt and moss blocks**, as in 1.18.
+*   **Lush caves details**: endermen carry moss blocks; azaleas count as saplings for other mods' recipes; with Buzzy Bees Backport, flowering azaleas are bee flowers and bees give cave vines glow berries; small dripleaves sit at a random offset; generated cave vines start near their full length and grow little more, as 1.18's.
+*   **Powder snow**: parrots leave your shoulders in it, and fire charges and fireballs fly through it and melt it.
+*   **Zombies no longer pick up glow ink sacs**, as in 1.17.1.
+*   **Squid spawn from y 50 to sea level**, as in 1.18.
+*   The spyglass hides the pumpkin blur and the powder snow frost while zoomed, as in 1.17.
 
 # 1.1.7
 

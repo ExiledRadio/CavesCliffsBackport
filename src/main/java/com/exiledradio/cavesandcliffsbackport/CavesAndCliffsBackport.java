@@ -99,6 +99,9 @@ public final class CavesAndCliffsBackport {
     @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event) {
         com.exiledradio.cavesandcliffsbackport.deepslate.ModdedOres.postInit();
+        if (com.exiledradio.cavesandcliffsbackport.copper.CopperContent.enabled()) {
+            com.exiledradio.cavesandcliffsbackport.copper.CopperDispense.register();
+        }
     }
 
     @Mod.EventHandler

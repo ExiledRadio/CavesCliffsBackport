@@ -271,6 +271,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Geit brult
 # --- blocks ---
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Overleef een vrije val van de bovenkant van de wereld (bouwlimiet) tot de bodem van de wereld
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Met je neus op de bodem vallen
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.description=Breng de weide tot leven met het geluid van muziek uit een platenspeler
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=De bergen zingen
+advancements.cavesandcliffsbackport.trade_at_world_height.description=Handel met een dorpsbewoner op de bouwlimiet
+advancements.cavesandcliffsbackport.trade_at_world_height.title=Sterrenhandelaar
 tile.cavesandcliffsbackport.light.name=Licht
 gamerule.playersSleepingPercentage=Slaappercentage
 gamerule.playersSleepingPercentage.description=Het percentage spelers dat moet slapen om de nacht over te slaan.

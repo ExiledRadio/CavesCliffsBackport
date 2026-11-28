@@ -49,18 +49,22 @@ public final class CopperInteractions {
         Block to;
         SoundEvent sound;
         String advancement = null;
+        int particles;
         if (Weathering.isWax(held)) {
             to = Weathering.waxedOf(block);
             sound = CopperContent.waxOn;
             advancement = "husbandry/wax_on";
+            particles = PacketCopperParticles.WAX_ON;
         } else if (isAxe(held)) {
             to = Weathering.unwaxed(block);
             if (to != null) {
                 sound = CopperContent.waxOff;
                 advancement = "husbandry/wax_off";
+                particles = PacketCopperParticles.WAX_OFF;
             } else {
                 to = Weathering.previous(block);
                 sound = CopperContent.scrape;
+                particles = PacketCopperParticles.SCRAPE;
             }
         } else {
             return;
@@ -75,6 +79,7 @@ public final class CopperInteractions {
         }
         world.setBlockState(pos, Weathering.copy(state, to), 11);
         world.playSound(null, pos, sound, SoundCategory.BLOCKS, 1.0F, 1.0F);
+        PacketCopperParticles.send(world, pos, particles);
         if (!player.capabilities.isCreativeMode) {
             if (Weathering.isWax(held)) {
                 held.shrink(1);

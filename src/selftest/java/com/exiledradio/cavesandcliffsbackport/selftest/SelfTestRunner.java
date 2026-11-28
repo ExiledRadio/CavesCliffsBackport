@@ -104,6 +104,7 @@ public final class SelfTestRunner {
             new CubicSelfTest("cubicbench"),
             // Last, so the earlier streams' test areas stay where they were.
             new ModdedOresSelfTest(),
+            new ParityGapsSelfTest(),
     };
 
     private final List<String> wanted;

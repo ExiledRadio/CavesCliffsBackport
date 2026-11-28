@@ -271,6 +271,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Коза орёт
 # --- blocks ---
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Спрыгните с самой высокой точки мира (верхней границы), приземлившись живым на самом дне
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Пещеры и скалы
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.description=Оживите луга музыкой из проигрывателя
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=Играй, гармония!
+advancements.cavesandcliffsbackport.trade_at_world_height.description=Поторгуйтесь с крестьянином на самой высокой точке мира
+advancements.cavesandcliffsbackport.trade_at_world_height.title=Звёздный торговец
 tile.cavesandcliffsbackport.light.name=Свет
 gamerule.playersSleepingPercentage=Процент спящих
 gamerule.playersSleepingPercentage.description=Процент игроков, которым нужно спать для пропуска ночи.

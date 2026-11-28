@@ -271,6 +271,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Beuglement de ch�
 # --- blocks ---
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Survivez à une chute du point le plus haut du monde (à la limite de construction) au point le plus bas.
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Tombé du ciel
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.description=Donnez vie aux prairies avec la mélodie d'un jukebox.
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=La mélodie du bonheur
+advancements.cavesandcliffsbackport.trade_at_world_height.description=Commercez avec un villageois à la hauteur maximale de construction.
+advancements.cavesandcliffsbackport.trade_at_world_height.title=Un commerce à la hauteur
 tile.cavesandcliffsbackport.light.name=Lumière
 gamerule.playersSleepingPercentage=Pourcentage de joueurs endormis
 gamerule.playersSleepingPercentage.description=Le pourcentage de joueurs qui doivent dormir pour passer la nuit.

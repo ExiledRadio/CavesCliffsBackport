@@ -271,6 +271,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Ziege schreit
 # --- blocks ---
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Stürze im freien Fall von der Weltobergrenze (die maximale Bauhöhe) bis zur Weltuntergrenze und überlebe
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Höhlen & Klippen
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.description=Belebe die Alm mit dem Klang der Musik aus einem Plattenspieler
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=Deine Welt sind die Berge
+advancements.cavesandcliffsbackport.trade_at_world_height.description=Handle mit einem Dorfbewohner auf der maximalen Bauhöhe
+advancements.cavesandcliffsbackport.trade_at_world_height.title=Sternenhändler
 tile.cavesandcliffsbackport.light.name=Lichtblock
 gamerule.playersSleepingPercentage=Schlafquote
 gamerule.playersSleepingPercentage.description=Der Prozentsatz an Spielern, die im Bett liegen müssen, um die Nacht durchzuschlafen.

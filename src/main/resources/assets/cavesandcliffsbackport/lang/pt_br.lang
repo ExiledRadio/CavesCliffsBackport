@@ -271,6 +271,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Cabra berra
 # --- blocks ---
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Sobreviva a uma queda do ponto mais alto do mundo (altura limite) ao mais baixo
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Estrela cadente
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.description=Faça as pradarias ganharem vida ao som de um toca-discos
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=Valsa das flores
+advancements.cavesandcliffsbackport.trade_at_world_height.description=Faça uma troca com um aldeão na altura limite de construção
+advancements.cavesandcliffsbackport.trade_at_world_height.title=Preços nas alturas
 tile.cavesandcliffsbackport.light.name=Luz
 gamerule.playersSleepingPercentage=Porcentagem de sono
 gamerule.playersSleepingPercentage.description=A porcentagem de jogadores que devem dormir para passar a noite.

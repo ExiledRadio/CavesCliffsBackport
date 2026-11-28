@@ -271,6 +271,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=山羊吼叫聲
 # --- blocks ---
 advancements.cavesandcliffsbackport.fall_from_world_height.description=從世界的最高處（建築高度限制）落至底部並存活
 advancements.cavesandcliffsbackport.fall_from_world_height.title=洞穴與山崖
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.description=用唱片機的音樂為草甸注入生命力
+advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=真善美
+advancements.cavesandcliffsbackport.trade_at_world_height.description=在建築高度上限與村民交易
+advancements.cavesandcliffsbackport.trade_at_world_height.title=星際貿易
 tile.cavesandcliffsbackport.light.name=光源
 gamerule.playersSleepingPercentage=睡眠比例
 gamerule.playersSleepingPercentage.description=跳過夜晚所需的入睡玩家比例。

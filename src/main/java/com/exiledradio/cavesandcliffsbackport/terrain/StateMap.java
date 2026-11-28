@@ -335,7 +335,10 @@ public final class StateMap {
                 props.clear();
                 return BlockGlowLichen.of(mask);
             }
-            case "kelp": {
+            case "kelp":
+            case "cave_vines": {
+                // 1.18's cave vine tip has ages 0-25 and generates at 23-25, so a generated vine grows only a little
+                // more ("never more than 8 below where it generated"); ours has 0-7 and is mapped the same way.
                 // 1.18's kelp top has ages 0-25 (generated 20-23) and grows until 25. A backport's kelp with fewer
                 // ages (Update Aquatic's 0-15) gets the age that leaves it as many growth steps to its top.
                 Block block = byModernName(name);
