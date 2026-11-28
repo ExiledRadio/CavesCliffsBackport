@@ -293,11 +293,13 @@ public final class PowderSnowSelfTest implements SelfTest {
         // Out of the snow: two ticks back a tick, then no trace is left on the entity.
         c.fill(o, o.up(), AIR);
         pig.getEntityData().getCompoundTag(Freezing.TAG).setLong("Seen", c.world.getTotalWorldTime() - 10);
+        // The test world's time stands still: Core's "held this tick" is put in the past the same way.
+        pig.getEntityData().getCompoundTag(com.exiledradio.backportcore.freeze.FreezeTicks.TAG).setLong("Held", c.world.getTotalWorldTime() - 10);
         tick(pig, 10);
         c.eq(Freezing.FREEZE_TICKS - 20, Freezing.ticks(pig), "thaws two ticks a tick");
         tick(pig, 70);
         c.eq(0, Freezing.ticks(pig), "thawed");
-        c.ok(!pig.getEntityData().hasKey(Freezing.TAG), "no freeze data left");
+        c.ok(!pig.getEntityData().hasKey(Freezing.TAG) && !pig.getEntityData().hasKey(com.exiledradio.backportcore.freeze.FreezeTicks.TAG), "no freeze data left");
         c.ok(pig.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).getModifier(Freezing.SLOW) == null, "no longer slowed");
         pig.setDead();
 
@@ -318,9 +320,12 @@ public final class PowderSnowSelfTest implements SelfTest {
         c.ok(!Freezing.canFreeze(new EntityStray(c.world)) && !Freezing.canFreeze(new EntityPolarBear(c.world))
                 && !Freezing.canFreeze(new EntitySnowman(c.world)), "strays, polar bears and snow golems never freeze");
         c.ok(!Freezing.canFreeze(new EntitySkeleton(c.world)), "skeletons do not freeze (they convert)");
-        c.ok(Freezing.canFreeze(new EntityWitherSkeleton(c.world)), "wither skeletons do");
-        EntityZombie zombie = new EntityZombie(c.world);
-        c.ok(Freezing.canFreeze(zombie), "a zombie freezes");
+        // Backport Core 1.5.0's freezing has 26.4's #immune_to_freezing, which takes in the undead: with 1.17's list wither
+        // skeletons and zombies froze. (Changed with the move to Core's freeze ticks.)
+        c.ok(!Freezing.canFreeze(new EntityWitherSkeleton(c.world)), "wither skeletons do not (Core: undead)");
+        c.ok(!Freezing.canFreeze(new EntityZombie(c.world)), "nor do zombies (Core: undead)");
+        EntityPig zombie = new EntityPig(c.world);
+        c.ok(Freezing.canFreeze(zombie), "a pig freezes");
         for (EntityEquipmentSlot slot : new EntityEquipmentSlot[] {EntityEquipmentSlot.HEAD, EntityEquipmentSlot.CHEST,
                 EntityEquipmentSlot.LEGS, EntityEquipmentSlot.FEET}) {
             Item[] leather = {Items.LEATHER_BOOTS, Items.LEATHER_LEGGINGS, Items.LEATHER_CHESTPLATE, Items.LEATHER_HELMET};
@@ -332,14 +337,16 @@ public final class PowderSnowSelfTest implements SelfTest {
         c.ok(Freezing.canFreeze(zombie), "iron armor does not");
 
         // The config's extra lists.
-        String[] wear = ModConfig.powderSnow.freezeImmuneWearables, immune = ModConfig.powderSnow.freezeImmuneMobs;
-        ModConfig.powderSnow.freezeImmuneWearables = new String[] {"minecraft:iron_chestplate"};
-        ModConfig.powderSnow.freezeImmuneMobs = new String[] {"minecraft:pig"};
+        // Core's Freezing settings (they were this mod's until 1.1.8).
+        com.exiledradio.backportcore.CoreConfig.Freezing cfg = com.exiledradio.backportcore.CoreConfig.freezing;
+        String[] wear = cfg.freezeImmuneWearables, immune = cfg.freezeImmuneMobs;
+        cfg.freezeImmuneWearables = new String[] {"minecraft:iron_chestplate"};
+        cfg.freezeImmuneMobs = new String[] {"minecraft:cow"};
         c.ok(!Freezing.canFreeze(zombie), "config: a listed item prevents freezing");
-        c.ok(!Freezing.canFreeze(new EntityPig(c.world)), "config: a listed mob never freezes");
-        ModConfig.powderSnow.freezeImmuneWearables = wear;
-        ModConfig.powderSnow.freezeImmuneMobs = immune;
-        c.ok(Freezing.canFreeze(zombie) && Freezing.canFreeze(new EntityPig(c.world)), "config lists restored");
+        c.ok(!Freezing.canFreeze(new net.minecraft.entity.passive.EntityCow(c.world)), "config: a listed mob never freezes");
+        cfg.freezeImmuneWearables = wear;
+        cfg.freezeImmuneMobs = immune;
+        c.ok(Freezing.canFreeze(zombie) && Freezing.canFreeze(new net.minecraft.entity.passive.EntityCow(c.world)), "config lists restored");
         c.fill(o.add(-1, 0, -1), o.add(1, 1, 1), AIR);
     }
 

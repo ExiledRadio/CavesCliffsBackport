@@ -296,18 +296,6 @@ public final class ModConfig {
         @Config.RangeInt(min = 1, max = 255)
         public int patchMinY = 80;
 
-        @Config.Comment("More items that keep their wearer from freezing, besides leather armor, as item ids. Worn as boots they also walk on powder snow.")
-        @Config.LangKey("config.cavesandcliffsbackport.powderSnow.freezeImmuneWearables")
-        public String[] freezeImmuneWearables = {};
-
-        @Config.Comment("More mobs that never freeze, besides strays, polar bears, snow golems and the wither, as entity ids.")
-        @Config.LangKey("config.cavesandcliffsbackport.powderSnow.freezeImmuneMobs")
-        public String[] freezeImmuneMobs = {};
-
-        @Config.Comment("More mobs that freezing hurts five times as much, besides blazes and magma cubes, as entity ids.")
-        @Config.LangKey("config.cavesandcliffsbackport.powderSnow.freezeHurtsExtraMobs")
-        public String[] freezeHurtsExtraMobs = {};
-
         @Config.Comment("More mobs that walk on powder snow, besides rabbits, endermites and silverfish, as entity ids.")
         @Config.LangKey("config.cavesandcliffsbackport.powderSnow.walkableMobs")
         public String[] walkableMobs = {};

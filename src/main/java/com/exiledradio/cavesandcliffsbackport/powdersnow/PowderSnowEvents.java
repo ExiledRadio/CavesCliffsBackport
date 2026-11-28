@@ -91,7 +91,7 @@ public final class PowderSnowEvents {
     /** Mobs do not spawn inside powder snow, except those it cannot hurt. */
     @SubscribeEvent
     public void checkSpawn(LivingSpawnEvent.CheckSpawn event) {
-        if (event.isSpawner() || Freezing.freezeImmune(event.getEntity())) {
+        if (event.isSpawner() || Freezing.spawnsInSnow(event.getEntity())) {
             return;
         }
         BlockPos pos = new BlockPos(event.getX(), event.getY(), event.getZ());
