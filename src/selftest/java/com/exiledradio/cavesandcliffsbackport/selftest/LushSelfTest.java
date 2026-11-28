@@ -62,6 +62,60 @@ public final class LushSelfTest implements SelfTest {
         recipes(c);
         regions(c);
         caves(c);
+        loot(c);
+    }
+
+    /** 1.17's chest loot: glow berries in mineshaft carts, moss in shipwreck supply chests (Update Aquatic's table). */
+    private void loot(Check c) {
+        net.minecraft.world.storage.loot.LootTable mine = c.world.getLootTableManager()
+                .getLootTableFromLocation(net.minecraft.world.storage.loot.LootTableList.CHESTS_ABANDONED_MINESHAFT);
+        net.minecraft.world.storage.loot.LootPool pool = mine.getPool("pool1");
+        c.ok(pool != null && pool.getEntry(com.exiledradio.cavesandcliffsbackport.lush.LushLoot.GLOW_BERRIES_ENTRY) != null,
+                "glow berries are in the mineshaft chest's 2-4 roll pool");
+        c.ok(mine.getPool("main").getEntry(com.exiledradio.cavesandcliffsbackport.lush.LushLoot.GLOW_BERRIES_ENTRY) == null,
+                "and not in its other pools");
+        Random rand = new Random(17);
+        int chests = 0, withBerries = 0, berries = 0;
+        for (int i = 0; i < 400; i++) {
+            net.minecraft.world.storage.loot.LootContext ctx = new net.minecraft.world.storage.loot.LootContext.Builder(c.world).build();
+            chests++;
+            boolean any = false;
+            for (ItemStack s : mine.generateLootForPools(rand, ctx)) {
+                if (s.getItem() == LushContent.glowBerries) {
+                    c.ok(s.getCount() >= 3 && s.getCount() <= 6, "3-6 glow berries a stack: " + s.getCount());
+                    berries += s.getCount();
+                    any = true;
+                }
+            }
+            withBerries += any ? 1 : 0;
+        }
+        // Weight 15 of 98 in a pool rolled 2-4 times: about 39% of chests have some.
+        log("mineshaft chests with glow berries: {} of {}, {} berries", withBerries, chests, berries);
+        c.ok(withBerries > chests * 0.25 && withBerries < chests * 0.5, "about 39% of mineshaft chests have glow berries: " + withBerries);
+        // Update Aquatic's shipwreck supply table, as that mod ships it: its moss placeholder becomes moss.
+        net.minecraft.world.storage.loot.LootPool ship = new net.minecraft.world.storage.loot.LootPool(
+                new net.minecraft.world.storage.loot.LootEntry[] {
+                        new net.minecraft.world.storage.loot.LootEntryEmpty(7, 0, new net.minecraft.world.storage.loot.conditions.LootCondition[0], "minecraft:moss_block"),
+                        new net.minecraft.world.storage.loot.LootEntryItem(Items.PAPER, 8, 0, new net.minecraft.world.storage.loot.functions.LootFunction[0],
+                                new net.minecraft.world.storage.loot.conditions.LootCondition[0], "minecraft:paper")},
+                new net.minecraft.world.storage.loot.conditions.LootCondition[0], new net.minecraft.world.storage.loot.RandomValueRange(3, 10),
+                new net.minecraft.world.storage.loot.RandomValueRange(0), "pool0");
+        net.minecraft.world.storage.loot.LootTable supply = new net.minecraft.world.storage.loot.LootTable(
+                new net.minecraft.world.storage.loot.LootPool[] {ship});
+        com.exiledradio.cavesandcliffsbackport.lush.LushLoot.lootLoad(new net.minecraftforge.event.LootTableLoadEvent(
+                com.exiledradio.cavesandcliffsbackport.lush.LushLoot.SHIPWRECK_SUPPLY, supply, c.world.getLootTableManager()));
+        c.ok(ship.getEntry("minecraft:moss_block") == null, "the empty moss placeholder is gone");
+        c.ok(ship.getEntry(com.exiledradio.cavesandcliffsbackport.lush.LushLoot.MOSS_ENTRY) != null, "moss blocks are in the shipwreck supply chest");
+        boolean moss = false;
+        for (int i = 0; i < 50 && !moss; i++) {
+            for (ItemStack s : supply.generateLootForPools(rand, new net.minecraft.world.storage.loot.LootContext.Builder(c.world).build())) {
+                if (s.getItem() == Item.getItemFromBlock(LushContent.moss)) {
+                    c.ok(s.getCount() >= 1 && s.getCount() <= 4, "1-4 moss blocks a stack: " + s.getCount());
+                    moss = true;
+                }
+            }
+        }
+        c.ok(moss, "a shipwreck supply chest gives moss blocks");
     }
 
     private static void log(String what, Object... args) {

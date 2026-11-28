@@ -41,6 +41,8 @@ import java.util.TreeSet;
 /** Stream Ca: candles (stacking, lighting, putting out, drops, support), candle cakes, recipes. */
 public final class CandleSelfTest implements SelfTest {
 
+    private BlockPos cakeFloor;
+
     @Override
     public String name() {
         return "candle";
@@ -54,7 +56,36 @@ public final class CandleSelfTest implements SelfTest {
         projectiles(c);
         support(c);
         cakes(c);
+        dispensers(c);
         recipes(c);
+    }
+
+    /** 1.17: a dispenser's flint and steel lights the candle or candle cake in front of it; anything else as before. */
+    private void dispensers(Check c) {
+        // The cake test's area, far corner: a new area would move every later test's place.
+        BlockPos d = this.cakeFloor.add(26, 1, 26);
+        BlockPos front = d.east();
+        c.world.setBlockState(d.down(), Blocks.STONE.getDefaultState(), 2);
+        c.world.setBlockState(front.down(), Blocks.STONE.getDefaultState(), 2);
+        c.world.setBlockState(d, Blocks.DISPENSER.getDefaultState().withProperty(net.minecraft.block.BlockDispenser.FACING, EnumFacing.EAST), 2);
+        net.minecraft.dispenser.IBehaviorDispenseItem flint = net.minecraft.block.BlockDispenser.DISPENSE_BEHAVIOR_REGISTRY.getObject(Items.FLINT_AND_STEEL);
+        net.minecraft.dispenser.IBlockSource source = new net.minecraft.block.BlockSourceImpl(c.world, d);
+        ItemStack stack = new ItemStack(Items.FLINT_AND_STEEL);
+        c.world.setBlockState(front, candle(3, 2, false), 2);
+        flint.dispense(source, stack);
+        c.eq(true, c.world.getBlockState(front).getValue(BlockAbstractCandle.LIT), "a dispenser's flint and steel lights a candle");
+        c.eq(2, c.world.getBlockState(front).getValue(BlockCandle.CANDLES), "the candles stay two");
+        c.eq(1, stack.getItemDamage(), "using one durability");
+        flint.dispense(source, stack);
+        c.eq(1, stack.getItemDamage(), "a lit candle takes no more (and uses none)");
+        c.world.setBlockState(front, CandleContent.cakes[0].getDefaultState(), 2);
+        flint.dispense(source, stack);
+        c.eq(true, c.world.getBlockState(front).getValue(BlockAbstractCandle.LIT), "and a candle cake");
+        c.world.setBlockState(front, Blocks.AIR.getDefaultState(), 2);
+        flint.dispense(source, stack);
+        c.eq(Blocks.FIRE, c.world.getBlockState(front).getBlock(), "with air in front it still lights a fire");
+        c.world.setBlockState(front, Blocks.AIR.getDefaultState(), 2);
+        c.world.setBlockState(d, Blocks.AIR.getDefaultState(), 2);
     }
 
     private static IBlockState candle(int index, int count, boolean lit) {
@@ -289,6 +320,7 @@ public final class CandleSelfTest implements SelfTest {
 
     private void cakes(Check c) {
         BlockPos floor = c.area().down();
+        this.cakeFloor = floor;
         BlockPos o = floor.up();
         EntityPlayerMP p = player(c, "cake", o);
         BlockCandleCake red = CandleContent.cakes[15];

@@ -64,6 +64,13 @@ tile.cavesandcliffsbackport.exposed_cut_copper_double_slab.name=Потемнев
 tile.cavesandcliffsbackport.exposed_cut_copper_slab.name=Потемневшая резная медная плита
 tile.cavesandcliffsbackport.exposed_cut_copper_stairs.name=Потемневшие резные медные ступеньки
 tile.cavesandcliffsbackport.lightning_rod.name=Громоотвод
+tile.cavesandcliffsbackport.exposed_lightning_rod.name=Потемневший громоотвод
+tile.cavesandcliffsbackport.weathered_lightning_rod.name=Состаренный громоотвод
+tile.cavesandcliffsbackport.oxidized_lightning_rod.name=Окисленный громоотвод
+tile.cavesandcliffsbackport.waxed_lightning_rod.name=Вощёный громоотвод
+tile.cavesandcliffsbackport.waxed_exposed_lightning_rod.name=Вощёный потемневший громоотвод
+tile.cavesandcliffsbackport.waxed_weathered_lightning_rod.name=Вощёный состаренный громоотвод
+tile.cavesandcliffsbackport.waxed_oxidized_lightning_rod.name=Вощёный окисленный громоотвод
 tile.cavesandcliffsbackport.oxidized_copper.name=Окисленный медный блок
 tile.cavesandcliffsbackport.oxidized_cut_copper.name=Окисленный резной медный блок
 tile.cavesandcliffsbackport.oxidized_cut_copper_double_slab.name=Окисленная резная медная плита
@@ -265,6 +272,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Коза орёт
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Спрыгните с самой высокой точки мира (верхней границы), приземлившись живым на самом дне
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Пещеры и скалы
 tile.cavesandcliffsbackport.light.name=Свет
+gamerule.playersSleepingPercentage=Процент спящих
+gamerule.playersSleepingPercentage.description=Процент игроков, которым нужно спать для пропуска ночи.
+sleep.players_sleeping=%s из %s игроков спят
+sleep.skipping_night=Вы проспите всю ночь
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

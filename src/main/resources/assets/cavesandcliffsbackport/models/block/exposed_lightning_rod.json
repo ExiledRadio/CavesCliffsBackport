@@ -1,0 +1,7 @@
+{
+  "parent": "cavesandcliffsbackport:block/lightning_rod",
+  "textures": {
+    "texture": "cavesandcliffsbackport:block/exposed_lightning_rod",
+    "particle": "cavesandcliffsbackport:block/exposed_lightning_rod"
+  }
+}

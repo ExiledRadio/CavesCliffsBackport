@@ -1,7 +1,7 @@
 {
   "modid": "cavesandcliffsbackport",
   "lang_dir": "src/main/resources/assets/cavesandcliffsbackport/lang",
-  "mojang_versions": ["1.18.2"],
+  "mojang_versions": ["1.18.2", "1.21.11"],
   "config_classes": ["src/main/java/com/exiledradio/cavesandcliffsbackport/ModConfig.java"],
   "ours_prefixes": ["config.", "commands.", "gui.", "jei.", "itemGroup.", "generator.", "key."],
   "banned_words": ["Future MC", "FutureMC", "Raids Backport", "RAIDS_BACKPORT", "Crossbows Backport", "Oceanic Expanse", "Deeper Depths", "Aqua Acrobatics"],

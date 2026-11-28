@@ -64,6 +64,13 @@ tile.cavesandcliffsbackport.exposed_cut_copper_double_slab.name=Lastra di rame i
 tile.cavesandcliffsbackport.exposed_cut_copper_slab.name=Lastra di rame inciso esposto
 tile.cavesandcliffsbackport.exposed_cut_copper_stairs.name=Scalini di rame inciso esposto
 tile.cavesandcliffsbackport.lightning_rod.name=Parafulmine
+tile.cavesandcliffsbackport.exposed_lightning_rod.name=Parafulmine esposto
+tile.cavesandcliffsbackport.weathered_lightning_rod.name=Parafulmine corroso
+tile.cavesandcliffsbackport.oxidized_lightning_rod.name=Parafulmine ossidato
+tile.cavesandcliffsbackport.waxed_lightning_rod.name=Parafulmine cerato
+tile.cavesandcliffsbackport.waxed_exposed_lightning_rod.name=Parafulmine esposto cerato
+tile.cavesandcliffsbackport.waxed_weathered_lightning_rod.name=Parafulmine corroso cerato
+tile.cavesandcliffsbackport.waxed_oxidized_lightning_rod.name=Parafulmine ossidato cerato
 tile.cavesandcliffsbackport.oxidized_copper.name=Rame ossidato
 tile.cavesandcliffsbackport.oxidized_cut_copper.name=Rame inciso ossidato
 tile.cavesandcliffsbackport.oxidized_cut_copper_double_slab.name=Lastra di rame inciso ossidato
@@ -265,6 +272,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Capra urla
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Buttati dalla cima del mondo (il limite di costruzione) fino al punto più basso senza morire
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Caduta libera
 tile.cavesandcliffsbackport.light.name=Luce
+gamerule.playersSleepingPercentage=Percentuale di giocatori addormentati
+gamerule.playersSleepingPercentage.description=La percentuale di giocatori che devono dormire per saltare la notte.
+sleep.players_sleeping=%s/%s giocatori stanno dormendo
+sleep.skipping_night=Stai saltando la notte
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

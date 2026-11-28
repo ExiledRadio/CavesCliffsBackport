@@ -64,6 +64,13 @@ tile.cavesandcliffsbackport.exposed_cut_copper_double_slab.name=Blootgestelde ge
 tile.cavesandcliffsbackport.exposed_cut_copper_slab.name=Blootgestelde gesneden koperen plaat
 tile.cavesandcliffsbackport.exposed_cut_copper_stairs.name=Blootgestelde gesneden koperen trap
 tile.cavesandcliffsbackport.lightning_rod.name=Bliksemafleider
+tile.cavesandcliffsbackport.exposed_lightning_rod.name=Aangelopen bliksemafleider
+tile.cavesandcliffsbackport.weathered_lightning_rod.name=Verweerde bliksemafleider
+tile.cavesandcliffsbackport.oxidized_lightning_rod.name=Geoxideerde bliksemafleider
+tile.cavesandcliffsbackport.waxed_lightning_rod.name=Ingewassen bliksemafleider
+tile.cavesandcliffsbackport.waxed_exposed_lightning_rod.name=Ingewassen aangelopen bliksemafleider
+tile.cavesandcliffsbackport.waxed_weathered_lightning_rod.name=Ingewassen verweerde bliksemafleider
+tile.cavesandcliffsbackport.waxed_oxidized_lightning_rod.name=Ingewassen geoxideerde bliksemafleider
 tile.cavesandcliffsbackport.oxidized_copper.name=Geoxideerd koperblok
 tile.cavesandcliffsbackport.oxidized_cut_copper.name=Geoxideerd gesneden koperblok
 tile.cavesandcliffsbackport.oxidized_cut_copper_double_slab.name=Geoxideerde gesneden koperen plaat
@@ -265,6 +272,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Geit brult
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Overleef een vrije val van de bovenkant van de wereld (bouwlimiet) tot de bodem van de wereld
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Met je neus op de bodem vallen
 tile.cavesandcliffsbackport.light.name=Licht
+gamerule.playersSleepingPercentage=Slaappercentage
+gamerule.playersSleepingPercentage.description=Het percentage spelers dat moet slapen om de nacht over te slaan.
+sleep.players_sleeping=%s/%s spelers slapen
+sleep.skipping_night=Door de nacht slapen
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

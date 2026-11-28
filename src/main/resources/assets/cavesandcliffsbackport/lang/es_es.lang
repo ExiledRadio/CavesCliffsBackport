@@ -64,6 +64,13 @@ tile.cavesandcliffsbackport.exposed_cut_copper_double_slab.name=Losa de cobre co
 tile.cavesandcliffsbackport.exposed_cut_copper_slab.name=Losa de cobre cortado expuesto
 tile.cavesandcliffsbackport.exposed_cut_copper_stairs.name=Escaleras de cobre cortado expuesto
 tile.cavesandcliffsbackport.lightning_rod.name=Pararrayos
+tile.cavesandcliffsbackport.exposed_lightning_rod.name=Pararrayos expuesto
+tile.cavesandcliffsbackport.weathered_lightning_rod.name=Pararrayos degradado
+tile.cavesandcliffsbackport.oxidized_lightning_rod.name=Pararrayos oxidado
+tile.cavesandcliffsbackport.waxed_lightning_rod.name=Pararrayos encerado
+tile.cavesandcliffsbackport.waxed_exposed_lightning_rod.name=Pararrayos expuesto encerado
+tile.cavesandcliffsbackport.waxed_weathered_lightning_rod.name=Pararrayos degradado encerado
+tile.cavesandcliffsbackport.waxed_oxidized_lightning_rod.name=Pararrayos oxidado encerado
 tile.cavesandcliffsbackport.oxidized_copper.name=Cobre oxidado
 tile.cavesandcliffsbackport.oxidized_cut_copper.name=Cobre cortado oxidado
 tile.cavesandcliffsbackport.oxidized_cut_copper_double_slab.name=Losa de cobre cortado oxidado
@@ -265,6 +272,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Bramido de cabra
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Cae desde lo más alto del mundo (limite de altura) hasta lo más bajo y vive para contarlo.
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Cuevas y acantilados
 tile.cavesandcliffsbackport.light.name=Luz
+gamerule.playersSleepingPercentage=Porcentaje de jugadores dormidos
+gamerule.playersSleepingPercentage.description=El porcentaje necesario de jugadores que deben dormir para pasar la noche.
+sleep.players_sleeping=%s/%s jugadores durmiendo
+sleep.skipping_night=Saltando esta noche al dormir
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

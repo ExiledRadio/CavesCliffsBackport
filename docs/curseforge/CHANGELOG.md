@@ -1,3 +1,11 @@
+# 1.1.8
+
+*   **Lightning rods oxidize**, as in 1.21.9: exposed, weathered and oxidized lightning rods, and waxed ones of each. Honeycomb waxes them (in hand or in the crafting grid) and an axe scrapes them, as other copper. They work the same at every stage. Lightning cleans an unwaxed rod it strikes back to new and scrapes a stage off some of the copper around it.
+*   **Copper in the stonecutter** (Village & Pillage's): a block of copper cuts into 4 cut copper, 4 cut copper stairs or 8 cut copper slabs, and cut copper into 1 stairs or 2 slabs, at every oxidation stage and waxed, as in 1.17.
+*   **Glow berries in mineshaft chests and moss in shipwreck supply chests**, as in 1.17 (shipwrecks come with Update Aquatic Backport).
+*   **Dispensers with flint and steel light candles and candle cakes**, as in 1.17.
+*   **The `playersSleepingPercentage` game rule**, as in 1.17: the share of players who must sleep to skip the night (100 by default; above 100 nights are never skipped). In multiplayer the action bar shows how many players are sleeping.
+
 # 1.1.7
 
 *   **Less lag**: axolotl spawning no longer builds an axolotl for every water block it tries; it checks the spot first. It took a fifth of every server tick.

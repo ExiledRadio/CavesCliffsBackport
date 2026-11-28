@@ -85,7 +85,7 @@ build:
 | Mineshafts (log pillars, chains, no floating pieces), strongholds buried under the seabed | vanilla structure generation; belongs with the terrain work (stream T) if anywhere |
 | Emerald ore in other stones, the new ore distribution | stream T |
 | Dispensers wax copper with honeycomb | stream Cu's; not built there yet |
-| Glow berries in mineshaft chest carts, moss in shipwreck chests | stream L's loot |
+| Glow berries in mineshaft chest carts, moss in shipwreck chests | done (1.1.8): `lush/LushLoot` |
 | *A Balanced Diet* needs glow berries; *Two by Two* needs goats and axolotls | each needs a vanilla advancement file replaced; the owning streams' call |
 | Mason and wandering trader trades, composting, cauldrons as workstations, stonecutter recipes | already listed in PLAN under *Integrations* |
 | Names (Dirt Path, Block of Lapis Lazuli, *Cover Me with Diamonds*), new textures | Backport Core's packs (`CORE_REQUESTS.md`) |

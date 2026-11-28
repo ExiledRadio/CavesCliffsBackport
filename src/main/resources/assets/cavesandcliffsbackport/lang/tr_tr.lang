@@ -64,6 +64,13 @@ tile.cavesandcliffsbackport.exposed_cut_copper_double_slab.name=Açıkta Kalmı�
 tile.cavesandcliffsbackport.exposed_cut_copper_slab.name=Açıkta Kalmış Kesilmiş Bakır Basamak
 tile.cavesandcliffsbackport.exposed_cut_copper_stairs.name=Açıkta Kalmış Kesilmiş Bakır Merdiven
 tile.cavesandcliffsbackport.lightning_rod.name=Yıldırımsavar
+tile.cavesandcliffsbackport.exposed_lightning_rod.name=Açıkta Kalmış Paratoner
+tile.cavesandcliffsbackport.weathered_lightning_rod.name=Yıpranmış Paratoner
+tile.cavesandcliffsbackport.oxidized_lightning_rod.name=Oksitlenmiş Paratoner
+tile.cavesandcliffsbackport.waxed_lightning_rod.name=Cilalı Paratoner
+tile.cavesandcliffsbackport.waxed_exposed_lightning_rod.name=Cilalı Açıkta Kalmış Paratoner
+tile.cavesandcliffsbackport.waxed_weathered_lightning_rod.name=Cilalı Yıpranmış Paratoner
+tile.cavesandcliffsbackport.waxed_oxidized_lightning_rod.name=Cilalı Oksitlenmiş Paratoner
 tile.cavesandcliffsbackport.oxidized_copper.name=Oksitlenmiş Bakır
 tile.cavesandcliffsbackport.oxidized_cut_copper.name=Oksitlenmiş Kesilmiş Bakır
 tile.cavesandcliffsbackport.oxidized_cut_copper_double_slab.name=Oksitlenmiş Kesilmiş Bakır Basamak
@@ -265,6 +272,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Keçi bağırdı
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Dünyanın tepesinden (yapı sınırı) dünyanın dibine düş ve hayatta kal
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Mağaralar ve Uçurumlar
 tile.cavesandcliffsbackport.light.name=Işık
+gamerule.playersSleepingPercentage=Uyuma yüzdesi
+gamerule.playersSleepingPercentage.description=Geceyi atlamak için uyuması gereken oyuncuların yüzdesi.
+sleep.players_sleeping=%s/%s oyuncu uyuyor
+sleep.skipping_night=Bu gece boyunca uyunuyor
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

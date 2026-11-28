@@ -64,6 +64,13 @@ tile.cavesandcliffsbackport.exposed_cut_copper_double_slab.name=斑驳的切制�
 tile.cavesandcliffsbackport.exposed_cut_copper_slab.name=斑驳的切制铜台阶
 tile.cavesandcliffsbackport.exposed_cut_copper_stairs.name=斑驳的切制铜楼梯
 tile.cavesandcliffsbackport.lightning_rod.name=避雷针
+tile.cavesandcliffsbackport.exposed_lightning_rod.name=斑驳的避雷针
+tile.cavesandcliffsbackport.weathered_lightning_rod.name=锈蚀的避雷针
+tile.cavesandcliffsbackport.oxidized_lightning_rod.name=氧化的避雷针
+tile.cavesandcliffsbackport.waxed_lightning_rod.name=涂蜡的避雷针
+tile.cavesandcliffsbackport.waxed_exposed_lightning_rod.name=涂蜡的斑驳避雷针
+tile.cavesandcliffsbackport.waxed_weathered_lightning_rod.name=涂蜡的锈蚀避雷针
+tile.cavesandcliffsbackport.waxed_oxidized_lightning_rod.name=涂蜡的氧化避雷针
 tile.cavesandcliffsbackport.oxidized_copper.name=氧化的铜块
 tile.cavesandcliffsbackport.oxidized_cut_copper.name=氧化的切制铜块
 tile.cavesandcliffsbackport.oxidized_cut_copper_double_slab.name=氧化的切制铜台阶
@@ -265,6 +272,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=山羊：喊叫
 advancements.cavesandcliffsbackport.fall_from_world_height.description=从世界顶部（建筑高度限制处）自由落体，坠至世界底部并存活下来
 advancements.cavesandcliffsbackport.fall_from_world_height.title=上天入地
 tile.cavesandcliffsbackport.light.name=光源方块
+gamerule.playersSleepingPercentage=入睡比例
+gamerule.playersSleepingPercentage.description=跳过夜晚所需的入睡玩家占比。
+sleep.players_sleeping=%s/%s名玩家已入睡
+sleep.skipping_night=今夜将在睡梦中度过
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

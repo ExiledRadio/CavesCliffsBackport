@@ -37,6 +37,8 @@ import java.util.Random;
 /** Stream Cu: blocks, drops, oxidation, waxing, scraping, lightning, rods, recipes, ore generation. */
 public final class CopperSelfTest implements SelfTest {
 
+    private BlockPos lightningArea;
+
     @Override
     public String name() {
         return "copper";
@@ -53,13 +55,15 @@ public final class CopperSelfTest implements SelfTest {
         oxidation(c);
         waxAndScrape(c);
         lightning(c);
+        rods(c);
+        stonecutting(c);
         recipes(c);
         generation(c);
     }
 
     private void registration(Check c) {
-        // 3 ores/raw + 32 + 8 double slabs + rod
-        c.eq(44, CopperContent.all().size(), "block count");
+        // 3 ores/raw + 32 + 8 double slabs + 8 rods (1.21.9)
+        c.eq(51, CopperContent.all().size(), "block count");
         c.eq(new java.util.TreeSet<String>(CopperContent.BLOCKS.keySet()),
                 new java.util.TreeSet<String>(java.util.Arrays.asList(CopperContent.blockNames())), "pre-init name list matches registration");
         String[] expect = {"copper_block", "exposed_copper", "weathered_copper", "oxidized_copper", "cut_copper",
@@ -205,7 +209,8 @@ public final class CopperSelfTest implements SelfTest {
     }
 
     private void lightning(Check c) throws Exception {
-        BlockPos o = c.area().add(8, 1, 8);
+        this.lightningArea = c.area();
+        BlockPos o = this.lightningArea.add(8, 1, 8);
         // A rod on a weathered copper block with a patch of copper around.
         for (int dx = -3; dx <= 3; dx++) {
             for (int dz = -3; dz <= 3; dz++) {
@@ -249,7 +254,8 @@ public final class CopperSelfTest implements SelfTest {
         c.eq(15, c.world.getStrongPower(rod, EnumFacing.UP), "strong power into the block it stands on");
         c.eq(0, c.world.getStrongPower(rod, EnumFacing.EAST), "no strong power sideways");
         c.ok(c.world.isBlockPowered(o), "the copper under the rod is powered");
-        c.eq(b("copper_block"), c.world.getBlockState(o).getBlock(), "the copper under the rod is cleaned to unaffected");
+        // 1.21.9: the bolt cleans the rod it struck (copper now), and its walks reach the copper under it.
+        c.eq(b("lightning_rod"), c.world.getBlockState(rod).getBlock(), "the struck rod is unaffected");
         int cleaned = 0;
         for (int dx = -3; dx <= 3; dx++) {
             for (int dz = -3; dz <= 3; dz++) {
@@ -258,7 +264,7 @@ public final class CopperSelfTest implements SelfTest {
                 }
             }
         }
-        c.ok(cleaned > 1, "the random walk scraped more copper: " + cleaned);
+        c.ok(cleaned > 0, "the random walks from the rod scraped the copper around it: " + cleaned);
         boolean bolt = false;
         for (net.minecraft.entity.Entity e : c.world.weatherEffects) {
             if (e instanceof EntityLightningBolt && Math.abs(e.posX - (rod.getX() + 0.5)) < 0.01 && Math.abs(e.posZ - (rod.getZ() + 0.5)) < 0.01) {
@@ -285,6 +291,116 @@ public final class CopperSelfTest implements SelfTest {
         // Rod placement against a rod pointing the same way continues the other way.
         IBlockState placed = b("lightning_rod").getStateForPlacement(c.world, o.up(2), EnumFacing.UP, 0, 0, 0, 0, null);
         c.eq(EnumFacing.UP, placed.getValue(BlockDirectional.FACING), "placed on a floor it points up");
+    }
+
+    /** 1.21.9: lightning rods oxidize, take wax, scrape, and a bolt cleans an unwaxed one. */
+    private void rods(Check c) {
+        String[] stages = {"lightning_rod", "exposed_lightning_rod", "weathered_lightning_rod", "oxidized_lightning_rod"};
+        for (int i = 0; i < 4; i++) {
+            Block rod = b(stages[i]);
+            Block waxed = b("waxed_" + stages[i]);
+            c.ok(rod instanceof BlockLightningRod && waxed instanceof BlockLightningRod, "rods registered: " + stages[i]);
+            c.ok(Item.getItemFromBlock(rod) != Items.AIR && Item.getItemFromBlock(waxed) != Items.AIR, "rod items: " + stages[i]);
+            c.eq(waxed, Weathering.waxedOf(rod), "rod wax pair " + stages[i]);
+            c.eq(i, Weathering.stage(rod), "rod stage " + stages[i]);
+            c.eq(-1, Weathering.stage(waxed), "a waxed rod is not aging copper");
+            c.eq(i < 3 ? b(stages[i + 1]) : null, Weathering.next(rod), "rod chain after " + stages[i]);
+            c.eq(i < 3, rod.getTickRandomly(), "rod ticks while it can age: " + stages[i]);
+            c.eq(false, waxed.getTickRandomly(), "waxed rod does not tick");
+            c.eq(1, rod.getHarvestLevel(rod.getDefaultState()), "rods need a stone pickaxe");
+        }
+        // The lightning test's area, far side: a new area would move every later test's place.
+        BlockPos o = this.lightningArea.add(24, 1, 24);
+        ItemStack stone = new ItemStack(Items.STONE_PICKAXE);
+        c.eq(1, harvest(c, o, b("waxed_weathered_lightning_rod").getDefaultState(), stone,
+                Item.getItemFromBlock(b("waxed_weathered_lightning_rod"))), "a waxed weathered rod drops itself");
+        // A lone rod ages through its stages on random ticks, keeping its facing.
+        c.world.setBlockState(o, b("lightning_rod").getDefaultState().withProperty(BlockDirectional.FACING, EnumFacing.NORTH), 2);
+        Random rand = new Random(5);
+        for (int i = 0; i < 20000 && c.world.getBlockState(o).getBlock() != b("oxidized_lightning_rod"); i++) {
+            IBlockState s = c.world.getBlockState(o);
+            s.getBlock().randomTick(c.world, o, s, rand);
+        }
+        c.eq(b("oxidized_lightning_rod"), c.world.getBlockState(o).getBlock(), "a lone rod oxidizes fully");
+        c.eq(EnumFacing.NORTH, c.world.getBlockState(o).getValue(BlockDirectional.FACING), "an oxidized rod keeps its facing");
+        c.ok(c.world.getTileEntity(o) instanceof BlockLightningRod.TileEntityLightningRod, "an oxidized rod keeps a marker");
+        // A random tick never switches a powered rod off early (1.12's default random tick runs updateTick).
+        c.world.setBlockState(o, b("waxed_lightning_rod").getDefaultState().withProperty(BlockLightningRod.POWERED, true), 2);
+        b("waxed_lightning_rod").randomTick(c.world, o, c.world.getBlockState(o), rand);
+        c.eq(true, c.world.getBlockState(o).getValue(BlockLightningRod.POWERED), "a random tick leaves a powered rod on");
+        // Honeycomb and axes, as on other copper.
+        EntityPlayerMP p = Players.real(c.world, "rodwax");
+        p.interactionManager.setGameType(GameType.SURVIVAL);
+        OreDictionary.registerOre("honeycomb", Items.PAPER);
+        c.world.setBlockState(o, b("exposed_lightning_rod").getDefaultState().withProperty(BlockDirectional.FACING, EnumFacing.EAST), 2);
+        p.setHeldItem(EnumHand.MAIN_HAND, new ItemStack(Items.PAPER, 2));
+        click(c, p, o);
+        c.eq(b("waxed_exposed_lightning_rod"), c.world.getBlockState(o).getBlock(), "honeycomb waxes a rod");
+        c.eq(EnumFacing.EAST, c.world.getBlockState(o).getValue(BlockDirectional.FACING), "a waxed rod keeps its facing");
+        p.setHeldItem(EnumHand.MAIN_HAND, new ItemStack(Items.IRON_AXE));
+        click(c, p, o);
+        c.eq(b("exposed_lightning_rod"), c.world.getBlockState(o).getBlock(), "an axe takes a rod's wax off");
+        click(c, p, o);
+        c.eq(b("lightning_rod"), c.world.getBlockState(o).getBlock(), "then scrapes the rod a stage");
+        // A rod lit when it changes keeps its unpowering tick.
+        c.world.setBlockState(o, b("exposed_lightning_rod").getDefaultState().withProperty(BlockLightningRod.POWERED, true), 3);
+        c.ok(c.world.isUpdateScheduled(o, b("exposed_lightning_rod")), "a lit rod placed schedules its switch-off");
+        c.world.setBlockState(o, Weathering.copy(c.world.getBlockState(o), b("weathered_lightning_rod")), 3);
+        c.ok(c.world.isUpdateScheduled(o, b("weathered_lightning_rod")), "a lit rod that ages keeps its switch-off");
+        // Lightning: an unwaxed rod goes back to unaffected; a waxed one stays, but still powers.
+        c.fill(o.add(-2, -1, -2), o.add(2, -1, 2), Blocks.STONE.getDefaultState());
+        c.world.setBlockState(o, b("oxidized_lightning_rod").getDefaultState(), 3);
+        c.world.addWeatherEffect(new EntityLightningBolt(c.world, o.getX() + 0.5, o.getY() + 1, o.getZ() + 0.5, false));
+        c.eq(b("lightning_rod"), c.world.getBlockState(o).getBlock(), "a bolt cleans an oxidized rod to unaffected");
+        c.eq(true, c.world.getBlockState(o).getValue(BlockLightningRod.POWERED), "and powers it");
+        c.world.setBlockState(o, b("waxed_oxidized_lightning_rod").getDefaultState(), 3);
+        c.world.addWeatherEffect(new EntityLightningBolt(c.world, o.getX() + 0.5, o.getY() + 1, o.getZ() + 0.5, false));
+        c.eq(b("waxed_oxidized_lightning_rod"), c.world.getBlockState(o).getBlock(), "a bolt leaves a waxed rod as it is");
+        c.eq(true, c.world.getBlockState(o).getValue(BlockLightningRod.POWERED), "a waxed oxidized rod still powers");
+        for (net.minecraft.entity.Entity e : new java.util.ArrayList<net.minecraft.entity.Entity>(c.world.weatherEffects)) {
+            e.setDead();
+        }
+        c.fill(o.add(-2, -1, -2), o.add(2, 2, 2), Blocks.AIR.getDefaultState());
+        // Waxing a rod in the grid.
+        Crafting.expect(c, Crafting.grid(2, 1, new ItemStack(b("weathered_lightning_rod")), new ItemStack(Items.PAPER)),
+                new ItemStack(b("waxed_weathered_lightning_rod")), "waxing a rod in the grid");
+    }
+
+    /** 1.17's stonecutting: every stage, waxed and not, to its own cuts; through V&P's stonecutter when installed. */
+    private void stonecutting(Check c) throws Exception {
+        java.util.List<String> cuts = com.exiledradio.cavesandcliffsbackport.common.Compat.stonecutting();
+        String m = "cavesandcliffsbackport:";
+        c.eq(40, new java.util.HashSet<String>(cuts).size(), "5 cuts for each of 8 copper blocks");
+        for (String want : new String[] {"copper_block=" + m + "cut_copper*4", "copper_block=" + m + "cut_copper_slab*8",
+                "exposed_copper=" + m + "exposed_cut_copper_stairs*4", "waxed_oxidized_copper=" + m + "waxed_oxidized_cut_copper*4",
+                "weathered_cut_copper=" + m + "weathered_cut_copper_stairs", "waxed_exposed_cut_copper=" + m + "waxed_exposed_cut_copper_slab*2"}) {
+            c.ok(cuts.contains(m + want), "stonecutting " + want);
+        }
+        for (String cut : cuts) {
+            String[] io = cut.split("=");
+            c.ok(io[0].contains("waxed_") == io[1].contains("waxed_"), "waxed copper cuts to waxed copper: " + cut);
+            for (String s : new String[] {"exposed_", "weathered_", "oxidized_"}) {
+                c.ok(io[0].contains(s) == io[1].contains(s), "a stage cuts to the same stage: " + cut);
+            }
+            for (String side : io) {
+                String path = side.substring(m.length()).replaceAll("[*][0-9]+$", "");
+                c.ok(b(path) != null, "a cut names a block of ours: " + path);
+            }
+        }
+        if (net.minecraftforge.fml.common.Loader.isModLoaded("villagerbackport")) {
+            Class<?> kind = Class.forName("com.exiledradio.villagerbackport.block.CutterKind");
+            Object table = Class.forName("com.exiledradio.villagerbackport.block.StonecutterRecipes").getMethod("of", kind)
+                    .invoke(null, kind.getField("STONE").get(null));
+            java.lang.reflect.Method results = table.getClass().getMethod("resultsFor", ItemStack.class);
+            @SuppressWarnings("unchecked")
+            java.util.List<ItemStack> fromBlock = (java.util.List<ItemStack>) results.invoke(table, new ItemStack(b("waxed_weathered_copper")));
+            boolean four = false, eight = false;
+            for (ItemStack s : fromBlock) {
+                four |= s.getItem() == Item.getItemFromBlock(b("waxed_weathered_cut_copper")) && s.getCount() == 4;
+                eight |= s.getItem() == Item.getItemFromBlock(b("waxed_weathered_cut_copper_slab")) && s.getCount() == 8;
+            }
+            c.ok(four && eight, "V&P's stonecutter cuts waxed weathered copper into 4 cut copper and 8 slabs: " + fromBlock);
+        }
     }
 
     private void recipes(Check c) {

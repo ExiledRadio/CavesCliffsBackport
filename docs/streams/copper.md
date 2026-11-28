@@ -16,9 +16,14 @@ constructor) and `Advancements`.
 *   **Waxing**: use a honeycomb on copper, or craft them together, to keep it as it is (*Wax On*). An **axe**
     takes the wax off (*Wax Off*), or scrapes off one stage of oxidation.
 *   **Lightning rods** (three ingots): lightning from a storm strikes the nearest rod within 128 blocks
-    instead of the ground, players or animals around it. A struck rod sends out a redstone signal, and the
-    copper it stands on is cleaned back to new, with some of the copper around it. *Surge Protector* for
-    protecting a villager this way.
+    instead of the ground, players or animals around it. A struck rod sends out a redstone signal, is
+    cleaned back to new itself, and scrapes a stage off some of the copper around it (1.21.9). *Surge
+    Protector* for protecting a villager this way.
+*   **Lightning rods oxidize** (1.21.9): exposed, weathered and oxidized rods, all eight waxed or not, take
+    honeycomb and an axe as other copper does, and work the same at every stage.
+*   **The stonecutter** (Village & Pillage's): each copper block cuts into 4 cut copper, 4 stairs or 8
+    slabs, and cut copper into 1 stairs or 2 slabs, at the same stage and waxed or not, as 1.17's recipes.
+    Copper is metal, which V&P's derived cuts leave out, so these go into its extra cuts in memory.
 *   Lightning striking copper cleans it the same way.
 *   With the Update Aquatic backport, drowned killed by players sometimes drop a copper ingot.
 *   Honeycomb comes from the Buzzy Bees backport, or any mod whose honeycomb has the ore name `honeycomb`

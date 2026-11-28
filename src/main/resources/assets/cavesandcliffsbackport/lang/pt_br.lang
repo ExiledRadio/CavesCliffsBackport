@@ -64,6 +64,13 @@ tile.cavesandcliffsbackport.exposed_cut_copper_double_slab.name=Laje de cobre la
 tile.cavesandcliffsbackport.exposed_cut_copper_slab.name=Laje de cobre lapidado exposto
 tile.cavesandcliffsbackport.exposed_cut_copper_stairs.name=Escadas de cobre lapidado exposto
 tile.cavesandcliffsbackport.lightning_rod.name=Para-raios
+tile.cavesandcliffsbackport.exposed_lightning_rod.name=Para-Raios Exposto
+tile.cavesandcliffsbackport.weathered_lightning_rod.name=Para-Raios Desgastado
+tile.cavesandcliffsbackport.oxidized_lightning_rod.name=Para-Raios Oxidado
+tile.cavesandcliffsbackport.waxed_lightning_rod.name=Para-Raios Encerado
+tile.cavesandcliffsbackport.waxed_exposed_lightning_rod.name=Para-Raios Exposto Encerado
+tile.cavesandcliffsbackport.waxed_weathered_lightning_rod.name=Para-Raios Desgastado Encerado
+tile.cavesandcliffsbackport.waxed_oxidized_lightning_rod.name=Para-Raios Oxidado Encerado
 tile.cavesandcliffsbackport.oxidized_copper.name=Cobre oxidado
 tile.cavesandcliffsbackport.oxidized_cut_copper.name=Cobre lapidado oxidado
 tile.cavesandcliffsbackport.oxidized_cut_copper_double_slab.name=Laje de cobre lapidado oxidado
@@ -265,6 +272,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Cabra berra
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Sobreviva a uma queda do ponto mais alto do mundo (altura limite) ao mais baixo
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Estrela cadente
 tile.cavesandcliffsbackport.light.name=Luz
+gamerule.playersSleepingPercentage=Porcentagem de sono
+gamerule.playersSleepingPercentage.description=A porcentagem de jogadores que devem dormir para passar a noite.
+sleep.players_sleeping=%s/%s jogadores dormindo
+sleep.skipping_night=Passando essa noite
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

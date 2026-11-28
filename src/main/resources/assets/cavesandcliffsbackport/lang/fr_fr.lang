@@ -64,6 +64,13 @@ tile.cavesandcliffsbackport.exposed_cut_copper_double_slab.name=Dalle en cuivre 
 tile.cavesandcliffsbackport.exposed_cut_copper_slab.name=Dalle en cuivre taillé exposé
 tile.cavesandcliffsbackport.exposed_cut_copper_stairs.name=Escalier en cuivre taillé exposé
 tile.cavesandcliffsbackport.lightning_rod.name=Paratonnerre
+tile.cavesandcliffsbackport.exposed_lightning_rod.name=Paratonnerre exposé
+tile.cavesandcliffsbackport.weathered_lightning_rod.name=Paratonnerre érodé
+tile.cavesandcliffsbackport.oxidized_lightning_rod.name=Paratonnerre oxydé
+tile.cavesandcliffsbackport.waxed_lightning_rod.name=Paratonnerre ciré
+tile.cavesandcliffsbackport.waxed_exposed_lightning_rod.name=Paratonnerre exposé ciré
+tile.cavesandcliffsbackport.waxed_weathered_lightning_rod.name=Paratonnerre érodé ciré
+tile.cavesandcliffsbackport.waxed_oxidized_lightning_rod.name=Paratonnerre oxydé ciré
 tile.cavesandcliffsbackport.oxidized_copper.name=Cuivre oxydé
 tile.cavesandcliffsbackport.oxidized_cut_copper.name=Cuivre taillé oxydé
 tile.cavesandcliffsbackport.oxidized_cut_copper_double_slab.name=Dalle en cuivre taillé oxydé
@@ -265,6 +272,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Beuglement de ch�
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Survivez à une chute du point le plus haut du monde (à la limite de construction) au point le plus bas.
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Tombé du ciel
 tile.cavesandcliffsbackport.light.name=Lumière
+gamerule.playersSleepingPercentage=Pourcentage de joueurs endormis
+gamerule.playersSleepingPercentage.description=Le pourcentage de joueurs qui doivent dormir pour passer la nuit.
+sleep.players_sleeping=%s/%s joueurs endormis
+sleep.skipping_night=Vous passez la nuit
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

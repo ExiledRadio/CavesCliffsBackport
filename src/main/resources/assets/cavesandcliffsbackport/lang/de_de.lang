@@ -64,6 +64,13 @@ tile.cavesandcliffsbackport.exposed_cut_copper_double_slab.name=Angelaufene gesc
 tile.cavesandcliffsbackport.exposed_cut_copper_slab.name=Angelaufene geschnittene Kupferstufe
 tile.cavesandcliffsbackport.exposed_cut_copper_stairs.name=Angelaufene geschnittene Kupfertreppe
 tile.cavesandcliffsbackport.lightning_rod.name=Blitzableiter
+tile.cavesandcliffsbackport.exposed_lightning_rod.name=Angelaufener Blitzableiter
+tile.cavesandcliffsbackport.weathered_lightning_rod.name=Verwitterter Blitzableiter
+tile.cavesandcliffsbackport.oxidized_lightning_rod.name=Oxidierter Blitzableiter
+tile.cavesandcliffsbackport.waxed_lightning_rod.name=Gewachster Blitzableiter
+tile.cavesandcliffsbackport.waxed_exposed_lightning_rod.name=Gewachster angelaufener Blitzableiter
+tile.cavesandcliffsbackport.waxed_weathered_lightning_rod.name=Gewachster verwitterter Blitzableiter
+tile.cavesandcliffsbackport.waxed_oxidized_lightning_rod.name=Gewachster oxidierter Blitzableiter
 tile.cavesandcliffsbackport.oxidized_copper.name=Oxidierter Kupferblock
 tile.cavesandcliffsbackport.oxidized_cut_copper.name=Oxidierter geschnittener Kupferblock
 tile.cavesandcliffsbackport.oxidized_cut_copper_double_slab.name=Oxidierte geschnittene Kupferstufe
@@ -265,6 +272,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Ziege schreit
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Stürze im freien Fall von der Weltobergrenze (die maximale Bauhöhe) bis zur Weltuntergrenze und überlebe
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Höhlen & Klippen
 tile.cavesandcliffsbackport.light.name=Lichtblock
+gamerule.playersSleepingPercentage=Schlafquote
+gamerule.playersSleepingPercentage.description=Der Prozentsatz an Spielern, die im Bett liegen müssen, um die Nacht durchzuschlafen.
+sleep.players_sleeping=%s/%s Spielern schlafen
+sleep.skipping_night=Die Nacht wird durchgeschlafen
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

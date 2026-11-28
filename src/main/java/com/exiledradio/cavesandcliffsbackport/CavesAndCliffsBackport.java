@@ -89,6 +89,9 @@ public final class CavesAndCliffsBackport {
         com.exiledradio.cavesandcliffsbackport.powdersnow.PowderSnowContent.init();
         com.exiledradio.cavesandcliffsbackport.glowsquid.GlowSquidContent.init();
         com.exiledradio.cavesandcliffsbackport.goat.GoatContent.init();
+        if (com.exiledradio.cavesandcliffsbackport.candle.CandleContent.enabled()) {
+            com.exiledradio.cavesandcliffsbackport.candle.CandleDispense.register();
+        }
         com.exiledradio.cavesandcliffsbackport.blocks.BlocksContent.init();
         com.exiledradio.cavesandcliffsbackport.terrain.ModernStructures.register();
     }

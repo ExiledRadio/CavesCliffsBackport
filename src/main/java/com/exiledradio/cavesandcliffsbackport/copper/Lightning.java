@@ -4,7 +4,7 @@ import com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport;
 import com.exiledradio.cavesandcliffsbackport.ModConfig;
 import com.exiledradio.cavesandcliffsbackport.common.Advancements;
 
-import net.minecraft.block.BlockDirectional;
+import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.effect.EntityLightningBolt;
@@ -35,9 +35,9 @@ import java.util.Random;
  *       the nearest lightning rod within 128 blocks that is the top block of its column and has rain on it.
  *       The bolt is cancelled and a new one made above the rod. The fire the cancelled bolt already lit
  *       (1.12 lights it in the bolt's constructor) is put out.</li>
- *   <li><b>Cleaning</b>: any real bolt striking copper - or a rod standing on copper - turns that block back
- *       to unaffected, then walks 3-5 random paths of 1-8 steps through touching copper, scraping one stage
- *       off each block it reaches.</li>
+ *   <li><b>Cleaning</b>: any real bolt striking unwaxed copper (a lightning rod is copper since 1.21.9) turns
+ *       that block back to unaffected; on unwaxed or waxed copper it then walks 3-5 random paths of 1-8
+ *       steps through touching copper, scraping one stage off each block it reaches.</li>
  *   <li><b>Surge Protector</b>: a rod struck with a villager within 30 blocks and no fire lit grants it to
  *       players within 30 blocks.</li>
  * </ul>
@@ -110,22 +110,30 @@ public final class Lightning {
     /** What a bolt does to the block it hits; {@code at} is that block. */
     static void strike(World world, BlockPos at, @Nullable Entity bolt) {
         IBlockState hit = world.getBlockState(at);
-        BlockPos clean = at;
         if (hit.getBlock() instanceof BlockLightningRod) {
             ((BlockLightningRod) hit.getBlock()).onStruck(world, at, hit);
-            clean = at.offset(hit.getValue(BlockDirectional.FACING).getOpposite());
             surgeProtector(world, at.up());
         }
-        cleanCopper(world, clean, world.rand);
+        // 1.21.9: the struck block itself, a rod included (rods are copper now); before, a rod cleaned what it stood on.
+        cleanCopper(world, at, world.rand);
     }
 
-    /** Turns a struck copper block back to unaffected and scrapes a stage off a random walk around it. */
+    /**
+     * Turns a struck unwaxed copper block back to unaffected and scrapes a stage off a random walk around it; struck
+     * waxed copper stays as it is but still starts the walks (1.21.11 {@code LightningBolt.clearCopperOnLightningStrike}).
+     */
     public static void cleanCopper(World world, BlockPos pos, Random rand) {
         IBlockState state = world.getBlockState(pos);
-        if (Weathering.stage(state.getBlock()) < 0) {
+        boolean unwaxed = Weathering.stage(state.getBlock()) >= 0;
+        if (!unwaxed && Weathering.unwaxed(state.getBlock()) == null) {
             return;
         }
-        world.setBlockState(pos, Weathering.copy(state, Weathering.first(state.getBlock())), 3);
+        if (unwaxed) {
+            Block first = Weathering.first(state.getBlock());
+            if (first != state.getBlock()) {
+                world.setBlockState(pos, Weathering.copy(state, first), 3);
+            }
+        }
         int walks = rand.nextInt(3) + 3;
         for (int w = 0; w < walks; w++) {
             int steps = rand.nextInt(8) + 1;

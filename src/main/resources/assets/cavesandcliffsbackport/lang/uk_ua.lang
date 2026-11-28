@@ -64,6 +64,13 @@ tile.cavesandcliffsbackport.exposed_cut_copper_double_slab.name=Наражена
 tile.cavesandcliffsbackport.exposed_cut_copper_slab.name=Наражена тесана мідна плита
 tile.cavesandcliffsbackport.exposed_cut_copper_stairs.name=Наражені тесані мідні сходи
 tile.cavesandcliffsbackport.lightning_rod.name=Блискавичник
+tile.cavesandcliffsbackport.exposed_lightning_rod.name=Наражений блискавковідвід
+tile.cavesandcliffsbackport.weathered_lightning_rod.name=Вивітрений блискавковідвід
+tile.cavesandcliffsbackport.oxidized_lightning_rod.name=Окиснений блискавковідвід
+tile.cavesandcliffsbackport.waxed_lightning_rod.name=Вощений блискавковідвід
+tile.cavesandcliffsbackport.waxed_exposed_lightning_rod.name=Вощений наражений блискавковідвід
+tile.cavesandcliffsbackport.waxed_weathered_lightning_rod.name=Вощений вивітрений блискавковідвід
+tile.cavesandcliffsbackport.waxed_oxidized_lightning_rod.name=Вощений окиснений блискавковідвід
 tile.cavesandcliffsbackport.oxidized_copper.name=Окиснена мідь
 tile.cavesandcliffsbackport.oxidized_cut_copper.name=Окиснена тесана мідь
 tile.cavesandcliffsbackport.oxidized_cut_copper_double_slab.name=Окиснена тесана мідна плита
@@ -265,6 +272,10 @@ subtitles.cavesandcliffsbackport.entity.goat.screaming.ambient=Коза вола
 advancements.cavesandcliffsbackport.fall_from_world_height.description=Впадіть із найвищої точки світу (ліміт будівництва) до самого низу і виживіть
 advancements.cavesandcliffsbackport.fall_from_world_height.title=Печери та скелі
 tile.cavesandcliffsbackport.light.name=Світло
+gamerule.playersSleepingPercentage=Відсоток сплячих гравців
+gamerule.playersSleepingPercentage.description=Відсоток гравців, які повинні спати, щоб пропустити ніч.
+sleep.players_sleeping=%s/%s гравців сплять
+sleep.skipping_night=Ви проспите всю ніч
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

@@ -48,7 +48,7 @@ public final class WaterlogSelfTest implements SelfTest {
             return false;
         }
         return path.equals("candle") || path.endsWith("_candle") || path.equals("pointed_dripstone")
-                || path.startsWith("glow_lichen") || path.equals("lightning_rod") || path.equals("amethyst_cluster")
+                || path.startsWith("glow_lichen") || path.endsWith("lightning_rod") || path.equals("amethyst_cluster")
                 || path.endsWith("_amethyst_bud") || path.equals("hanging_roots") || path.equals("small_dripleaf")
                 || path.equals("big_dripleaf") || path.equals("big_dripleaf_stem") || path.equals("light")
                 || path.endsWith("_stairs") || path.endsWith("_slab") || path.endsWith("_wall");

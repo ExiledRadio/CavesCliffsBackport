@@ -5,6 +5,7 @@ import com.exiledradio.cavesandcliffsbackport.ModConfig;
 import com.exiledradio.cavesandcliffsbackport.common.BlockBasic;
 import com.exiledradio.cavesandcliffsbackport.common.BlockCCOre;
 import com.exiledradio.cavesandcliffsbackport.common.BlockCCSlab;
+import com.exiledradio.cavesandcliffsbackport.common.Compat;
 import com.exiledradio.cavesandcliffsbackport.common.Content;
 import com.exiledradio.cavesandcliffsbackport.common.ModSounds;
 import com.exiledradio.cavesandcliffsbackport.common.Owners;
@@ -77,6 +78,11 @@ public final class CopperContent {
         return waxed ? "waxed_" + base : base;
     }
 
+    /** @return a lightning rod's registry name (1.21.9): {@code lightning_rod}, {@code waxed_exposed_lightning_rod} and so on */
+    public static String rodName(CopperStage stage, boolean waxed) {
+        return (waxed ? "waxed_" : "") + stage.prefix + "lightning_rod";
+    }
+
     @SubscribeEvent
     public static void registerBlocks(RegistryEvent.Register<Block> event) {
         if (!enabled()) {
@@ -106,7 +112,21 @@ public final class CopperContent {
                 DOUBLE_SLABS.put(slab, add(r, dbl, new CopperBlocks.DoubleSlab(cut.getDefaultState(), half, ages), 1));
             }
         }
-        lightningRod = add(r, "lightning_rod", new BlockLightningRod(copper), 1);
+        // 1.21.9: rods oxidize, wax and scrape like the other copper; lightning_rod is the unaffected unwaxed one.
+        BlockLightningRod[] rods = new BlockLightningRod[4];
+        for (boolean waxed : new boolean[] {false, true}) {
+            for (CopperStage stage : CopperStage.values()) {
+                boolean ages = !waxed && stage != CopperStage.OXIDIZED;
+                BlockLightningRod rod = add(r, rodName(stage, waxed), new BlockLightningRod(copper, stage, ages), 1);
+                if (waxed) {
+                    Weathering.waxed(rods[stage.ordinal()], rod);
+                } else {
+                    rods[stage.ordinal()] = rod;
+                }
+            }
+        }
+        Weathering.chain(rods);
+        lightningRod = rods[0];
 
         for (String shape : SHAPES) {
             Block[] chain = new Block[4];
@@ -142,7 +162,11 @@ public final class CopperContent {
                 n.add(slab.substring(0, slab.length() - "_slab".length()) + "_double_slab");
             }
         }
-        n.add("lightning_rod");
+        for (boolean waxed : new boolean[] {false, true}) {
+            for (CopperStage stage : CopperStage.values()) {
+                n.add(rodName(stage, waxed));
+            }
+        }
         return n.toArray(new String[0]);
     }
 
@@ -211,6 +235,13 @@ public final class CopperContent {
                 shaped(r, name("cut_copper", stage, waxed), stack(name("cut_copper", stage, waxed), 4), "XX", "XX", 'X', full);
                 shaped(r, name("cut_copper_stairs", stage, waxed), stack(name("cut_copper_stairs", stage, waxed), 4), "X  ", "XX ", "XXX", 'X', cut);
                 shaped(r, name("cut_copper_slab", stage, waxed), stack(name("cut_copper_slab", stage, waxed), 6), "XXX", 'X', cut);
+                // The stonecutter (1.17), through Village & Pillage's when it is installed: each stage to its own cuts.
+                String block = name("block", stage, waxed), cutName = name("cut_copper", stage, waxed);
+                Compat.stonecut(block, cutName, 4);
+                Compat.stonecut(block, name("cut_copper_stairs", stage, waxed), 4);
+                Compat.stonecut(block, name("cut_copper_slab", stage, waxed), 8);
+                Compat.stonecut(cutName, name("cut_copper_stairs", stage, waxed), 1);
+                Compat.stonecut(cutName, name("cut_copper_slab", stage, waxed), 2);
             }
         }
         // Waxing in the crafting grid: any copper block and honeycomb.
@@ -222,6 +253,14 @@ public final class CopperContent {
                 sr.setRegistryName(Content.id(waxed + "_from_honeycomb"));
                 r.register(sr);
             }
+        }
+        // 1.21.9: lightning rods too.
+        for (CopperStage stage : CopperStage.values()) {
+            String waxed = rodName(stage, true);
+            ShapelessOreRecipe sr = new ShapelessOreRecipe(new ResourceLocation(CavesAndCliffsBackport.MOD_ID, "waxed_lightning_rod"),
+                    stack(waxed, 1), stack(rodName(stage, false), 1), "honeycomb");
+            sr.setRegistryName(Content.id(waxed + "_from_honeycomb"));
+            r.register(sr);
         }
     }
 

@@ -30,6 +30,9 @@ import java.util.Random;
  * redstone signal for 8 ticks (strong into the block it stands on, weak to every side), and the copper
  * block it stands on is cleaned of oxidation.
  *
+ * <p>1.21.9: eight rods, four oxidation stages waxed and not, aging, waxing and scraping like the other copper
+ * blocks ({@link Weathering}). A struck unwaxed rod goes back to unaffected ({@link Lightning}).
+ *
  * <p>Its tile entity holds nothing; it only lets the strike code find rods among the loaded tile entities
  * without scanning chunks (1.12 has no points of interest).
  */
@@ -44,8 +47,10 @@ public class BlockLightningRod extends Block implements ITileEntityProvider, Wat
     /** How long a struck rod stays powered. */
     public static final int POWER_TICKS = 8;
 
-    public BlockLightningRod(SoundType sound) {
-        super(Material.IRON, CopperStage.UNAFFECTED.color);
+    /** A rod at an oxidation stage (1.21.9); {@code ages} for the unwaxed ones that are not yet fully oxidized. */
+    public BlockLightningRod(SoundType sound, CopperStage stage, boolean ages) {
+        super(Material.IRON, stage.color);
+        setTickRandomly(ages);
         setSoundType(sound);
         setHardness(3.0F);
         BlockBasic.resistance(this, 6.0F);
@@ -124,6 +129,23 @@ public class BlockLightningRod extends Block implements ITileEntityProvider, Wat
         world.setBlockState(pos, state.withProperty(POWERED, true), 3);
         notifyAround(world, pos, state);
         world.scheduleUpdate(pos, this, POWER_TICKS);
+    }
+
+    /** Oxidation (1.21.9), never the unpowering {@link #updateTick} that 1.12's default random tick would run. */
+    @Override
+    public void randomTick(World world, BlockPos pos, IBlockState state, Random rand) {
+        Weathering.randomTick(world, pos, state, rand);
+    }
+
+    /**
+     * A powered rod that became another block (it oxidized, was waxed or scraped while lit) takes over the pending
+     * unpowering tick, which 1.12 keeps per block, as 1.21.9's {@code onPlace}.
+     */
+    @Override
+    public void onBlockAdded(World world, BlockPos pos, IBlockState state) {
+        if (!world.isRemote && state.getValue(POWERED) && !world.isUpdateScheduled(pos, this)) {
+            world.scheduleUpdate(pos, this, POWER_TICKS);
+        }
     }
 
     @Override

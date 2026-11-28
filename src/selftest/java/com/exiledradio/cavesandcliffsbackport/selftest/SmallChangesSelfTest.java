@@ -21,6 +21,7 @@ import net.minecraft.entity.passive.EntityHorse;
 import net.minecraft.entity.passive.EntityLlama;
 import net.minecraft.entity.passive.EntitySkeletonHorse;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.ItemStackHelper;
@@ -75,6 +76,7 @@ public final class SmallChangesSelfTest implements SelfTest {
             anvil(c);
             hearts(c);
             sleep(c);
+            sleepPercentage(c);
             tempting(c);
             tableLight(c);
             sprint(c);
@@ -313,6 +315,68 @@ public final class SmallChangesSelfTest implements SelfTest {
     private static void rain(WorldServer world, float strength) {
         ObfuscationReflectionHelper.setPrivateValue(net.minecraft.world.World.class, world, strength, "field_73003_n");
         ObfuscationReflectionHelper.setPrivateValue(net.minecraft.world.World.class, world, strength, "field_73004_o");
+    }
+
+    /** 1.17's playersSleepingPercentage: how many sleepers a night needs, and the night skipped once they slept. */
+    private static void sleepPercentage(Check c) {
+        WorldServer world = c.world;
+        String rule = com.exiledradio.cavesandcliffsbackport.changes.SleepPercentage.GAME_RULE;
+        c.ok(world.getGameRules().hasRule(rule), "the playersSleepingPercentage game rule exists");
+        c.eq(100, com.exiledradio.cavesandcliffsbackport.changes.SleepPercentage.percentage(world), "it defaults to 100");
+        c.eq(2, com.exiledradio.cavesandcliffsbackport.changes.SleepPercentage.sleepersNeeded(3, 50), "3 players at 50%: 2");
+        c.eq(1, com.exiledradio.cavesandcliffsbackport.changes.SleepPercentage.sleepersNeeded(3, 0), "at 0%: still 1");
+        c.eq(1, com.exiledradio.cavesandcliffsbackport.changes.SleepPercentage.sleepersNeeded(4, 1), "4 players at 1%: 1");
+        c.eq(4, com.exiledradio.cavesandcliffsbackport.changes.SleepPercentage.sleepersNeeded(4, 100), "at 100%: everyone");
+        long time = world.getWorldTime();
+        String daylight = world.getGameRules().getString("doDaylightCycle");
+        EntityPlayerMP a = Players.real(world, "sleepA");
+        EntityPlayerMP b = Players.real(world, "sleepB");
+        BlockPos spawn = world.getSpawnPoint();
+        a.setPosition(spawn.getX(), spawn.getY() + 1, spawn.getZ());
+        b.setPosition(spawn.getX() + 2, spawn.getY() + 1, spawn.getZ());
+        world.spawnEntity(a);
+        world.spawnEntity(b);
+        try {
+            world.getGameRules().setOrCreateGameRule("doDaylightCycle", "true");
+            world.getGameRules().setOrCreateGameRule(rule, "50");
+            world.setWorldTime(18000);
+            asleep(a, true, 40);
+            startTick(world);
+            c.eq(18000L, world.getWorldTime(), "one of two in bed, not yet long enough: still night");
+            asleep(a, true, 100);
+            startTick(world);
+            c.eq(24000L, world.getWorldTime(), "one of two asleep at 50%: the next morning");
+            c.ok(!a.isPlayerSleeping(), "the sleeper is woken");
+            world.getGameRules().setOrCreateGameRule(rule, "101");
+            world.setWorldTime(42000);
+            asleep(a, true, 100);
+            asleep(b, true, 100);
+            startTick(world);
+            c.eq(42000L, world.getWorldTime(), "above 100%: the night is never skipped");
+            c.ok(!world.areAllPlayersAsleep(), "and 1.12.2's own skip is held back");
+            world.getGameRules().setOrCreateGameRule(rule, "100");
+            world.updateAllPlayersSleepingFlag();
+            startTick(world);
+            c.ok(world.areAllPlayersAsleep(), "at 100% the skip is 1.12.2's own, which has everyone asleep");
+        } finally {
+            asleep(a, false, 0);
+            asleep(b, false, 0);
+            world.removeEntity(a);
+            world.removeEntity(b);
+            world.getGameRules().setOrCreateGameRule(rule, "100");
+            world.getGameRules().setOrCreateGameRule("doDaylightCycle", daylight);
+            world.setWorldTime(time);
+            world.updateAllPlayersSleepingFlag();
+        }
+    }
+
+    private static void asleep(EntityPlayer player, boolean sleeping, int ticks) {
+        ObfuscationReflectionHelper.setPrivateValue(EntityPlayer.class, player, sleeping, "field_71083_bS");
+        ObfuscationReflectionHelper.setPrivateValue(EntityPlayer.class, player, ticks, "field_71076_b");
+    }
+
+    private static void startTick(WorldServer world) {
+        MinecraftForge.EVENT_BUS.post(new TickEvent.WorldTickEvent(Side.SERVER, TickEvent.Phase.START, world));
     }
 
     private static void sleep(Check c) {
