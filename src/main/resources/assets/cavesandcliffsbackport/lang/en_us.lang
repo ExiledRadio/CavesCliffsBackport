@@ -275,10 +275,6 @@ advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=Sound of Music
 advancements.cavesandcliffsbackport.trade_at_world_height.description=Trade with a villager at the build height limit
 advancements.cavesandcliffsbackport.trade_at_world_height.title=Star Trader
 tile.cavesandcliffsbackport.light.name=Light
-gamerule.playersSleepingPercentage=Sleep percentage
-gamerule.playersSleepingPercentage.description=The percentage of players who must be sleeping to skip the night.
-sleep.players_sleeping=%s/%s players sleeping
-sleep.skipping_night=Sleeping through this night
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

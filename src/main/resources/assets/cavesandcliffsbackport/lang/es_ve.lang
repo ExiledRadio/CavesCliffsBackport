@@ -276,10 +276,6 @@ advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=El dulce canta
 advancements.cavesandcliffsbackport.trade_at_world_height.description=Comercia con un aldeano en el límite de altura del mundo
 advancements.cavesandcliffsbackport.trade_at_world_height.title=Comerciante estrella
 tile.cavesandcliffsbackport.light.name=Luz
-gamerule.playersSleepingPercentage=Porcentaje de jugadores dormidos
-gamerule.playersSleepingPercentage.description=El porcentaje necesario de jugadores que deben estar durmiendo para pasar la noche.
-sleep.players_sleeping=%s/%s jugadores durmiendo
-sleep.skipping_night=Durmiendo esta noche
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

@@ -276,10 +276,6 @@ advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=Играй, г
 advancements.cavesandcliffsbackport.trade_at_world_height.description=Поторгуйтесь с крестьянином на самой высокой точке мира
 advancements.cavesandcliffsbackport.trade_at_world_height.title=Звёздный торговец
 tile.cavesandcliffsbackport.light.name=Свет
-gamerule.playersSleepingPercentage=Процент спящих
-gamerule.playersSleepingPercentage.description=Процент игроков, которым нужно спать для пропуска ночи.
-sleep.players_sleeping=%s из %s игроков спят
-sleep.skipping_night=Вы проспите всю ночь
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

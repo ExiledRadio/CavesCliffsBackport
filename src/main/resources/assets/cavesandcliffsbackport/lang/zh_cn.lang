@@ -276,10 +276,6 @@ advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=音乐之声
 advancements.cavesandcliffsbackport.trade_at_world_height.description=在建筑高度限制处与村民交易
 advancements.cavesandcliffsbackport.trade_at_world_height.title=星际商人
 tile.cavesandcliffsbackport.light.name=光源方块
-gamerule.playersSleepingPercentage=入睡比例
-gamerule.playersSleepingPercentage.description=跳过夜晚所需的入睡玩家占比。
-sleep.players_sleeping=%s/%s名玩家已入睡
-sleep.skipping_night=今夜将在睡梦中度过
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

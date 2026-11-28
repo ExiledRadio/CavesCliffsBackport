@@ -276,10 +276,6 @@ advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=I gra muzyka
 advancements.cavesandcliffsbackport.trade_at_world_height.description=Dobij targu z osadnikiem, będąc na szczycie świata
 advancements.cavesandcliffsbackport.trade_at_world_height.title=Kosmiczne ceny
 tile.cavesandcliffsbackport.light.name=Światło
-gamerule.playersSleepingPercentage=Odsetek śpiących
-gamerule.playersSleepingPercentage.description=Odsetek śpiących graczy potrzebnych, by pominąć noc.
-sleep.players_sleeping=%s/%s graczy śpi
-sleep.skipping_night=Przesypianie nocy
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

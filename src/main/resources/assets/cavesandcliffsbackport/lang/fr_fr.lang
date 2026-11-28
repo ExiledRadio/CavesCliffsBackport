@@ -276,10 +276,6 @@ advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=La mélodie du
 advancements.cavesandcliffsbackport.trade_at_world_height.description=Commercez avec un villageois à la hauteur maximale de construction.
 advancements.cavesandcliffsbackport.trade_at_world_height.title=Un commerce à la hauteur
 tile.cavesandcliffsbackport.light.name=Lumière
-gamerule.playersSleepingPercentage=Pourcentage de joueurs endormis
-gamerule.playersSleepingPercentage.description=Le pourcentage de joueurs qui doivent dormir pour passer la nuit.
-sleep.players_sleeping=%s/%s joueurs endormis
-sleep.skipping_night=Vous passez la nuit
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

@@ -276,10 +276,6 @@ advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=사운드 오�
 advancements.cavesandcliffsbackport.trade_at_world_height.description=건축 높이 제한에서 주민과 거래하세요
 advancements.cavesandcliffsbackport.trade_at_world_height.title=최고의 거래
 tile.cavesandcliffsbackport.light.name=빛
-gamerule.playersSleepingPercentage=취침 비율
-gamerule.playersSleepingPercentage.description=밤을 건너뛰려면 잠들어야 하는 플레이어들의 비율.
-sleep.players_sleeping=%s/%s 플레이어들이 잠듦
-sleep.skipping_night=잠을 자서 밤을 보냅니다
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

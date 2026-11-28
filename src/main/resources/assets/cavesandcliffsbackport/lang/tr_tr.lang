@@ -276,10 +276,6 @@ advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=Müziğin Sesi
 advancements.cavesandcliffsbackport.trade_at_world_height.description=Maksimum inşaat sınırında bir köylü ile takas yap
 advancements.cavesandcliffsbackport.trade_at_world_height.title=Yıldız Tüccarı
 tile.cavesandcliffsbackport.light.name=Işık
-gamerule.playersSleepingPercentage=Uyuma yüzdesi
-gamerule.playersSleepingPercentage.description=Geceyi atlamak için uyuması gereken oyuncuların yüzdesi.
-sleep.players_sleeping=%s/%s oyuncu uyuyor
-sleep.skipping_night=Bu gece boyunca uyunuyor
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

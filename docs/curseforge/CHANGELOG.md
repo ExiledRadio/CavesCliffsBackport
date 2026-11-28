@@ -4,7 +4,7 @@
 *   **Copper in the stonecutter** (Village & Pillage's): a block of copper cuts into 4 cut copper, 4 cut copper stairs or 8 cut copper slabs, and cut copper into 1 stairs or 2 slabs, at every oxidation stage and waxed, as in 1.17.
 *   **Glow berries in mineshaft chests and moss in shipwreck supply chests**, as in 1.17 (shipwrecks come with Update Aquatic Backport).
 *   **Dispensers with flint and steel light candles and candle cakes**, as in 1.17.
-*   **The `playersSleepingPercentage` game rule**, as in 1.17: the share of players who must sleep to skip the night (100 by default; above 100 nights are never skipped). In multiplayer the action bar shows how many players are sleeping.
+*   **The `playersSleepingPercentage` game rule**, as in 1.17: the share of players who must sleep to skip the night (100 by default; above 100 nights are never skipped). In multiplayer the action bar shows how many players are sleeping. Backport Core 1.5.0 adds it to every world with this mod.
 *   **Vanilla advancements of 1.17 and 1.18**: *Two by Two* needs an axolotl and a goat bred, *A Balanced Diet* needs glow berries, and the new *Sound of Music* (a disc in a jukebox in a meadow, in Caves & Cliffs worlds) and *Star Trader* (a trade at y 319 or higher).
 *   **Dispensers wax copper with honeycomb**, and waxing, taking wax off and scraping show 1.17's particles.
 *   **A Channeling trident striking a lightning rod in a thunderstorm calls lightning onto it** (tridents come with Update Aquatic Backport).
@@ -14,6 +14,8 @@
 *   **Zombies no longer pick up glow ink sacs**, as in 1.17.1.
 *   **Squid spawn from y 50 to sea level**, as in 1.18.
 *   The spyglass hides the pumpkin blur and the powder snow frost while zoomed, as in 1.17.
+
+Needs Backport Core 1.5.0 or newer.
 
 # 1.1.7
 

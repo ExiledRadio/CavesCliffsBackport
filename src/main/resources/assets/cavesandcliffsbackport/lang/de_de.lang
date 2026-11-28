@@ -276,10 +276,6 @@ advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=Deine Welt sin
 advancements.cavesandcliffsbackport.trade_at_world_height.description=Handle mit einem Dorfbewohner auf der maximalen Bauhöhe
 advancements.cavesandcliffsbackport.trade_at_world_height.title=Sternenhändler
 tile.cavesandcliffsbackport.light.name=Lichtblock
-gamerule.playersSleepingPercentage=Schlafquote
-gamerule.playersSleepingPercentage.description=Der Prozentsatz an Spielern, die im Bett liegen müssen, um die Nacht durchzuschlafen.
-sleep.players_sleeping=%s/%s Spielern schlafen
-sleep.skipping_night=Die Nacht wird durchgeschlafen
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

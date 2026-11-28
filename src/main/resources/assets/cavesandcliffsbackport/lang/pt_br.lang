@@ -276,10 +276,6 @@ advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=Valsa das flor
 advancements.cavesandcliffsbackport.trade_at_world_height.description=Faça uma troca com um aldeão na altura limite de construção
 advancements.cavesandcliffsbackport.trade_at_world_height.title=Preços nas alturas
 tile.cavesandcliffsbackport.light.name=Luz
-gamerule.playersSleepingPercentage=Porcentagem de sono
-gamerule.playersSleepingPercentage.description=A porcentagem de jogadores que devem dormir para passar a noite.
-sleep.players_sleeping=%s/%s jogadores dormindo
-sleep.skipping_night=Passando essa noite
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

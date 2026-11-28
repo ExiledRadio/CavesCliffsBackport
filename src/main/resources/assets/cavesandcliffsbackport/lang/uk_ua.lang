@@ -276,10 +276,6 @@ advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=Звуки м�
 advancements.cavesandcliffsbackport.trade_at_world_height.description=Поторгуйтесь із селянином на максимальній висоті будівництва
 advancements.cavesandcliffsbackport.trade_at_world_height.title=Зоряний торговець
 tile.cavesandcliffsbackport.light.name=Світло
-gamerule.playersSleepingPercentage=Відсоток сплячих гравців
-gamerule.playersSleepingPercentage.description=Відсоток гравців, які повинні спати, щоб пропустити ніч.
-sleep.players_sleeping=%s/%s гравців сплять
-sleep.skipping_night=Ви проспите всю ніч
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

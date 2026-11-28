@@ -276,10 +276,6 @@ advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=サウンド�
 advancements.cavesandcliffsbackport.trade_at_world_height.description=限界高度で村人と取引をする
 advancements.cavesandcliffsbackport.trade_at_world_height.title=星の商人
 tile.cavesandcliffsbackport.light.name=ライトブロック
-gamerule.playersSleepingPercentage=就寝率
-gamerule.playersSleepingPercentage.description=夜をスキップするために必要なベッドで寝ているプレイヤーの割合を設定できます。
-sleep.players_sleeping=%s／%s人のプレイヤーが就寝中
-sleep.skipping_night=夜が過ごされます
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs

@@ -276,10 +276,6 @@ advancements.cavesandcliffsbackport.play_jukebox_in_meadows.title=De bergen zing
 advancements.cavesandcliffsbackport.trade_at_world_height.description=Handel met een dorpsbewoner op de bouwlimiet
 advancements.cavesandcliffsbackport.trade_at_world_height.title=Sterrenhandelaar
 tile.cavesandcliffsbackport.light.name=Licht
-gamerule.playersSleepingPercentage=Slaappercentage
-gamerule.playersSleepingPercentage.description=Het percentage spelers dat moet slapen om de nacht over te slaan.
-sleep.players_sleeping=%s/%s spelers slapen
-sleep.skipping_night=Door de nacht slapen
 
 # --- height ---
 generator.cavesandcliffs=Caves & Cliffs
