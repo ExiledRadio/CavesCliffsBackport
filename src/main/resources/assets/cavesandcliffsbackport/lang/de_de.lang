@@ -478,8 +478,8 @@ config.cavesandcliffsbackport.height.moddedBiomeHosts=Plätze der Mod-Biome
 config.cavesandcliffsbackport.height.moddedBiomeHosts.tooltip=Das 1.18-Biom, dessen Platz ein Mod-Biom einnimmt, wo die automatische Wahl falsch ist: modid:name=1.18-Name, zum Beispiel biomesoplenty:grove=forest.
 config.cavesandcliffsbackport.height.moddedBiomesMaxShare=Anteil der Mod-Biome
 config.cavesandcliffsbackport.height.moddedBiomesMaxShare.tooltip=Höchstens dieser Prozentsatz der Regionen eines 1.18-Bioms geht an die Mod-Biome, die seinen Platz einnehmen können. Weniger, wenn ihre BiomeManager-Gewichte gegenüber den 10 eines Vanilla-Bioms niedrig sind (ein seltenes Mod-Biom bleibt selten).
-config.cavesandcliffsbackport.height.moddedBiomeRegionSize=Regionsgröße der Mod-Biome
-config.cavesandcliffsbackport.height.moddedBiomeRegionSize.tooltip=Die Größe der Regionen in Blöcken, die jeweils entscheiden, ob ein 1.18-Biom dort es selbst oder ein Mod-Biom ist.
+config.cavesandcliffsbackport.height.moddedBiomeAreaSize=Regionsgröße der Mod-Biome
+config.cavesandcliffsbackport.height.moddedBiomeAreaSize.tooltip=Die Größe der Bereiche in Blöcken, in denen dasselbe Mod-Biom den Platz eines 1.18-Bioms einnimmt.
 config.cavesandcliffsbackport.height.moddedOreHeights=Erzhöhen anderer Mods
 config.cavesandcliffsbackport.height.moddedOreHeights.tooltip=Oberwelt-Erze anderer Mods wandern in Caves-&-Cliffs-Welten mit 1.18-Gelände nach unten, wie 1.18 die Vanilla-Erze verschoben hat: Ein Erz, das ein anderer Mod auf y 0 bis 63 erzeugt, wird auf dem Doppelten minus 64 platziert (y 10 auf -44, y 40 auf 16), in Stein, Tiefenschiefer oder Tuffstein, und die Adern dieser Mods unter y 64 werden verdoppelt, damit jeder Gesteinsblock den eigenen Erzanteil des Mods behält. Erze über y 63, Nether- und End-Erze und alles, was kein Erz ist, bleiben, wo der Mod sie platziert.
 config.cavesandcliffsbackport.height.defaultWorldType.tooltip=„Neue Welt erstellen“ beginnt mit dem Welttyp Caves & Cliffs, und ein neuer Server ohne level-type in server.properties erstellt seine Welt damit. Standard bleibt in der Liste als Gelände von 1.12.

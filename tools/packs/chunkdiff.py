@@ -22,6 +22,9 @@ def registries(world):
     return blocks, biomes
 
 
+BAD = [0]
+
+
 def chunks(world, radius):
     out = {}
     for rf in glob.glob(os.path.join(world, "region", "r.*.mca")):
@@ -37,8 +40,12 @@ def chunks(world, radius):
             ln = struct.unpack(">I", raw[sec:sec + 4])[0]
             comp = raw[sec + 4]
             data = raw[sec + 5:sec + 4 + ln]
-            data = zlib.decompress(data) if comp == 2 else gzip.decompress(data)
-            lv = read_root(data)["Level"]
+            try:
+                data = zlib.decompress(data) if comp == 2 else gzip.decompress(data)
+                lv = read_root(data)["Level"]
+            except Exception:  # a chunk half written when the world was copied
+                BAD[0] += 1
+                continue
             if radius is not None and (abs(lv["xPos"]) > radius or abs(lv["zPos"]) > radius):
                 continue
             if lv.get("TerrainPopulated"):

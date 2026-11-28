@@ -478,8 +478,8 @@ config.cavesandcliffsbackport.height.moddedBiomeHosts=Lugares dos biomas de mods
 config.cavesandcliffsbackport.height.moddedBiomeHosts.tooltip=O bioma da 1.18 cujo lugar um bioma de mod ocupa, onde a escolha automática está errada: modid:nome=nome da 1.18, por exemplo biomesoplenty:grove=forest.
 config.cavesandcliffsbackport.height.moddedBiomesMaxShare=Parcela dos biomas de mods
 config.cavesandcliffsbackport.height.moddedBiomesMaxShare.tooltip=No máximo esta porcentagem das regiões de um bioma da 1.18 vai para os biomas de mods que podem ocupar seu lugar. Menos quando seus pesos do BiomeManager são baixos diante do 10 de um bioma vanilla (um bioma de mod raro continua raro).
-config.cavesandcliffsbackport.height.moddedBiomeRegionSize=Tamanho da região dos biomas de mods
-config.cavesandcliffsbackport.height.moddedBiomeRegionSize.tooltip=O tamanho em blocos das regiões que decidem, cada uma, se um bioma da 1.18 continua ele mesmo ou vira um de mod.
+config.cavesandcliffsbackport.height.moddedBiomeAreaSize=Tamanho da região dos biomas de mods
+config.cavesandcliffsbackport.height.moddedBiomeAreaSize.tooltip=O tamanho em blocos das áreas onde o mesmo bioma de mod ocupa o lugar de um bioma da 1.18.
 config.cavesandcliffsbackport.height.moddedOreHeights=Altura dos minérios de outros mods
 config.cavesandcliffsbackport.height.moddedOreHeights.tooltip=Os minérios da Superfície de outros mods descem nos mundos Caves & Cliffs com terreno da 1.18, como a 1.18 moveu os do jogo base: um minério que outro mod gera entre y 0 e 63 é colocado no dobro menos 64 (y 10 em -44, y 40 em 16), em pedra, ardósia profunda ou tufo, e os veios desses mods abaixo de y 64 são dobrados para que cada bloco de rocha mantenha a proporção de minério própria do mod. Minérios acima de y 63, minérios do Nether e do End e tudo o que não é minério ficam onde o mod os coloca.
 config.cavesandcliffsbackport.height.defaultWorldType.tooltip="Criar novo mundo" começa no tipo de mundo Caves & Cliffs, e um servidor novo sem level-type no server.properties cria seu mundo com ele. Padrão continua na lista como o terreno da 1.12.

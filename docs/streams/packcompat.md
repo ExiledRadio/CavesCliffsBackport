@@ -112,9 +112,9 @@ mod (Dregora without it still has Core, which V&P needs).
     `terrain/ModdedBiomes` now places them as TerraBlender does in 1.18: each overworld biome in Forge's
     `BiomeManager` lists or in Biomes O' Plenty's own (its climate weights, capped at 10) takes the place of the 1.18
     biomes closest to it (same kind: land, mountain, river, beach, ocean, mushroom; then BiomeDictionary kind tags,
-    temperature, rainfall), in regions of 512 blocks (Voronoi cells with noise-warped borders). Each region's rank
-    picks, per 1.18 biome, a modded one by weight or the 1.18 biome; the modded share is the weights against a vanilla
-    biome's 10, at most 50%. Name matching now takes only the family's biomes. In a column a modded biome holds:
+    temperature, rainfall). Where (since branch `claude/cc-modded-biome-sizes`, item 7a): a noise at 1.18's
+    temperature scale decides per 1.18 biome whether a column is it or a modded one, the modded share being the
+    weights against a vanilla biome's 10, at most 50%; Voronoi cells of 1024 blocks pick which modded one. Name matching now takes only the family's biomes. In a column a modded biome holds:
     *   the chunk's biome array, the biome provider, mob spawning, grass and water colors, weather: the modded biome;
     *   surface: the soil the 1.18 surface rule laid (grass, dirt, sand, gravel, snow, down to the stone) becomes its
         top and filler blocks; under water only a sea floor block other than dirt (Biomes O' Plenty's) replaces it;
@@ -123,7 +123,7 @@ mod (Dregora without it still has Core, which V&P needs).
         sand, gravel and clay patches are denied there, and the 1.18 trees, cacti and surface plants step aside in
         chunks whose center it holds (`Decorator.TreeGate.PLANTS`, beside Dynamic Trees' gate).
     Settings (`height` category, read when a world loads): `moddedBiomes`, `moddedBiomesExcluded`,
-    `moddedBiomeHosts` (`modid:name=1.18 name`), `moddedBiomesMaxShare`, `moddedBiomeRegionSize`. The log lists
+    `moddedBiomeHosts` (`modid:name=1.18 name`), `moddedBiomesMaxShare`, `moddedBiomeAreaSize`. The log lists
     which modded biome takes whose place. Not in Cubic Chunks worlds' surface (the cubes take block codes).
 
     Rig `G:\VBPTest\cc-moddedbiomes` (Forge 2860 server, Java 8 on the E-cores, `run.sh`: fresh world, Chunk
@@ -145,6 +145,34 @@ mod (Dregora without it still has Core, which V&P needs).
     *   Seed 171 has no modded biome within 640 blocks of spawn: its 14 regions there all drew a rank above 0.52, the
         only such 1280-block square of 1024 tried (`RankWin`, a probe over the compiled classes).
     *   No exception in any log.
+
+7a. **Biome sizes next to BoP** (branch `claude/cc-modded-biome-sizes`, off `claude/xf-cc-118`; a play-test report:
+    "a lot of my biomes are really small and the BoP ones very large"). Until here 512-block regions decided
+    modded or 1.18 and cut 1.18's patches straight wherever a region border crossed them. Measured with
+    `tools/packs/patches.py` (contiguous patches of the saved column biomes, those cut by the area's edge left out)
+    on the family set (Core 1.5.0, C&C 1.1.8, Wild Update 1.2.0, Trails & Tales 1.0.5, Tricky Trials 1.0.4, Game
+    Drops 1.1.0), 160x160 chunks, seed 2026, and a patch probe over the terrain core's biome source (8192x8192
+    blocks, two seeds, area-weighted mean patch size in blocks, Σs²/Σs):
+    *   **Family biomes are never replaced and never resized**: the cherry grove is identical with and without BoP
+        (92 patches, 3.31% of the columns, the large ones 29.8k columns on average), as are mangrove swamps, pale
+        gardens and dappled forests in the probe (they are not hosts). Its size is 1.20's: probe 42k/19k blocks
+        against meadow 23k/36k and grove 49k/13k, a mountain-slope biome among mountain-slope biomes. A cherry grove
+        a few trees wide is one of 1.20's own fragments.
+    *   **BoP patches were not larger: they and the 1.18 biomes around them were cut smaller.** Probe, seeds 2026/42:
+
+        | Placement | modded share | 1.18 land patches | modded patches |
+        | --- | --- | --- | --- |
+        | no modded biomes | 0 | 107k / 128k | - |
+        | 512-block regions (before) | 23% / 23% | 65k / 99k | 55k / 69k |
+        | 2048-block regions | 26% / 25% | 79k / 105k | 116k / 84k |
+        | noise at 1.18's vegetation scale (-8) + 1024 cells | 24% / 24% | 79k / 98k | 73k / 59k |
+        | **noise at 1.18's temperature scale (-10) + 1024 cells (now)** | 21% / 32% | **102k / 100k** | **105k / 97k** |
+        | the same with 512 cells | 21% / 32% | 102k / 100k | 78k / 83k |
+
+        Server census, seed 2026 (large patches, 256+ columns, mean in columns): no BoP 21.7k for 1.18 land; with
+        BoP before, 15.5k for 1.18 land and 10.7k for BoP; AFTER_SERVER.
+    *   The setting is now `moddedBiomeAreaSize` (default 1024, the area that keeps one modded biome): the old
+        `moddedBiomeRegionSize=512` stays in installed configs, so it is a new key.
 
 ## OptiFine (branch `cc-optifine`)
 
