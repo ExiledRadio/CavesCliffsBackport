@@ -20,7 +20,7 @@ public final class RegionTree {
 
     /** The value of the closest leaf to a target (7 quantized values, offset 0), as a cold-start search finds it. */
     public int search(long[] target) {
-        return Climate.search(root, target, null).biome;
+        return Climate.search(root, target, null, false).biome; // 1.18.2's distance: these are 1.18.2 tables
     }
 
     /** Leaves added one by one, then built into a tree. */
