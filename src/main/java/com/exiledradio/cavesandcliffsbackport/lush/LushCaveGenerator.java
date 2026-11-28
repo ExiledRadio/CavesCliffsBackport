@@ -280,7 +280,6 @@ public final class LushCaveGenerator implements IWorldGenerator {
             return false;
         }
         BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos(origin);
-        int x = origin.getX(), z = origin.getZ();
         // RootSystemFeature.placeDirtAndTree: up at most 100 to a block a tree may take (air, water, leaves or a
         // replaceable plant) standing on azalea_grows_on, with air above (water allowed in the first block).
         for (int i = 0; i < 100 && m.getY() < 240; i++) {
@@ -294,32 +293,129 @@ public final class LushCaveGenerator implements IWorldGenerator {
                 return false;
             }
             BlockPos base = m.toImmutable();
-            // With Dynamic Trees - Backport, a dynamic azalea tree grows in the static one's place.
-            if (!com.exiledradio.backportcore.compat.DynamicTrees.grow(world, base, random, "dtbackport:azalea")
-                    && !AzaleaTree.grow(world, random, base, minX, minZ, 2, true)) {
+            if (dynamicAzaleas(world)) {
+                // Dynamic Trees - Backport's azalea in the static one's place. Where it has no room nothing grows, as
+                // in Dynamic Trees' own worldgen, and the roots go only under a tree.
+                if (!growDynamicAzalea(world, base, random)) {
+                    return false;
+                }
+            } else if (!AzaleaTree.grow(world, random, base, minX, minZ, 2, true)) {
                 continue;
             }
-            // placeDirt: from the origin up to (not including) the block under the tree, which the tree made rooted dirt.
-            for (int y = origin.getY(); y < base.getY() - 1; y++) {
-                for (int t = 0; t < 20; t++) {
-                    m.setPos(x + random.nextInt(3) - random.nextInt(3), y, z + random.nextInt(3) - random.nextInt(3));
-                    if (inside(m, minX, minZ) && rootReplaceable(world.getBlockState(m))) {
-                        world.setBlockState(m, LushContent.rootedDirt.getDefaultState(), 2);
-                    }
-                }
-            }
-            for (int t = 0; t < 20; t++) {
-                m.setPos(x + random.nextInt(3) - random.nextInt(3), origin.getY() + random.nextInt(2) - random.nextInt(2),
-                        z + random.nextInt(3) - random.nextInt(3));
-                BlockPos up = m.up();
-                if (inside(m, minX, minZ) && world.isAirBlock(m)
-                        && world.getBlockState(up).getBlockFaceShape(world, up, EnumFacing.DOWN) == BlockFaceShape.SOLID) {
-                    world.setBlockState(m, LushContent.hangingRoots.getDefaultState(), 2);
-                }
-            }
+            placeRoots(world, random, origin, base.getY(), minX, minZ);
             return true;
         }
         return false;
+    }
+
+    /** Dynamic Trees - Backport's azalea species. */
+    public static final String AZALEA_SPECIES = "dtbackport:azalea";
+
+    /**
+     * Grows Dynamic Trees - Backport's azalea through Backport Core at a tree's spot.
+     *
+     * @return whether a tree stands there now: Core's grow can answer true where Dynamic Trees found the soil good but
+     * its trunk had no room (another tree's leaves in the spot), and then took its rooty soil back, so the trunk is
+     * looked at
+     */
+    public static boolean growDynamicAzalea(World world, BlockPos base, Random random) {
+        return com.exiledradio.backportcore.compat.DynamicTrees.grow(world, base, random, AZALEA_SPECIES)
+                && dynamicBranch(world.getBlockState(base));
+    }
+
+    private static volatile java.lang.reflect.Method isBranch;
+    private static volatile boolean isBranchLooked;
+
+    /** Dynamic Trees' TreeHelper.isBranch, or a block named "...branch" without it. */
+    private static boolean dynamicBranch(IBlockState s) {
+        if (!isBranchLooked) {
+            java.lang.reflect.Method m = null;
+            try {
+                m = Class.forName("com.ferreusveritas.dynamictrees.api.TreeHelper").getMethod("isBranch", IBlockState.class);
+            } catch (ReflectiveOperationException | LinkageError | RuntimeException e) {
+                m = null;
+            }
+            isBranch = m;
+            isBranchLooked = true;
+        }
+        java.lang.reflect.Method m = isBranch;
+        if (m != null) {
+            try {
+                return Boolean.TRUE.equals(m.invoke(null, s));
+            } catch (ReflectiveOperationException | LinkageError | RuntimeException e) {
+                // the name below
+            }
+        }
+        net.minecraft.util.ResourceLocation id = s.getBlock().getRegistryName();
+        return id != null && id.getPath().endsWith("branch");
+    }
+
+    private static volatile java.lang.reflect.Method dtActive;
+    private static volatile boolean dtActiveLooked;
+
+    /**
+     * Whether the azalea trees over lush caves are Dynamic Trees - Backport's in this world: Dynamic Trees (linked
+     * through Backport Core) and the add-on are installed, and Dynamic Trees runs in the dimension. A spot it refuses
+     * then gets no tree, not the static one.
+     */
+    public static boolean dynamicAzaleas(World world) {
+        if (world == null || world.isRemote || !com.exiledradio.backportcore.compat.DynamicTrees.loaded()
+                || !net.minecraftforge.fml.common.Loader.isModLoaded("dtbackport")) {
+            return false;
+        }
+        // Core grows an add-on's species wherever Dynamic Trees has a biome database for the dimension (its
+        // DynamicTreesLink.active, which Core's release API does not expose); without that answer, assume it does.
+        if (!dtActiveLooked) {
+            java.lang.reflect.Method a = null;
+            try {
+                a = Class.forName("com.exiledradio.backportcore.compat.DynamicTreesLink")
+                        .getDeclaredMethod("active", World.class);
+                a.setAccessible(true);
+            } catch (ReflectiveOperationException | LinkageError | RuntimeException e) {
+                a = null;
+            }
+            dtActive = a;
+            dtActiveLooked = true;
+        }
+        java.lang.reflect.Method a = dtActive;
+        if (a == null) {
+            return true;
+        }
+        try {
+            return Boolean.TRUE.equals(a.invoke(null, world));
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException e) {
+            return true;
+        }
+    }
+
+    /**
+     * RootSystemFeature's placeDirt and placeRoots under a placed tree: rooted dirt from the origin up to (not
+     * including) the block under the tree, which the tree made its own ground, then hanging roots around the origin.
+     *
+     * @param origin the air block under the cave's ceiling the root system started from
+     * @param treeY  the tree's base (the sapling's block)
+     * @param minX   and minZ: the 32x32 window everything stays in
+     */
+    public static void placeRoots(World world, Random random, BlockPos origin, int treeY, int minX, int minZ) {
+        BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
+        int x = origin.getX(), z = origin.getZ();
+        for (int y = origin.getY(); y < treeY - 1; y++) {
+            for (int t = 0; t < 20; t++) {
+                m.setPos(x + random.nextInt(3) - random.nextInt(3), y, z + random.nextInt(3) - random.nextInt(3));
+                if (inside(m, minX, minZ) && rootReplaceable(world.getBlockState(m))) {
+                    world.setBlockState(m, LushContent.rootedDirt.getDefaultState(), 2);
+                }
+            }
+        }
+        for (int t = 0; t < 20; t++) {
+            m.setPos(x + random.nextInt(3) - random.nextInt(3), origin.getY() + random.nextInt(2) - random.nextInt(2),
+                    z + random.nextInt(3) - random.nextInt(3));
+            BlockPos up = m.up();
+            if (inside(m, minX, minZ) && world.isAirBlock(m)
+                    && world.getBlockState(up).getBlockFaceShape(world, up, EnumFacing.DOWN) == BlockFaceShape.SOLID) {
+                world.setBlockState(m, LushContent.hangingRoots.getDefaultState(), 2);
+            }
+        }
     }
 
     /** The root system's allowed tree position: air, water, leaves or a replaceable plant. */
@@ -331,11 +427,43 @@ public final class LushCaveGenerator implements IWorldGenerator {
                 || s.getBlock() instanceof BlockGlowLichen;
     }
 
-    /** {@code azalea_grows_on}: the dirt tag, sand, terracotta, snow blocks (and powder snow, which 1.12 lacks here). */
+    /**
+     * {@code azalea_grows_on}: the dirt tag (with the family's mud, muddy mangrove roots and pale moss), sand,
+     * terracotta, snow blocks and powder snow, as the 1.18 terrain's root system asks.
+     */
     private static boolean azaleaGrowsOn(IBlockState s) {
         Block b = s.getBlock();
-        return Soil.dirt(s) || b == Blocks.SAND || b == Blocks.HARDENED_CLAY || b == Blocks.STAINED_HARDENED_CLAY
-                || b == Blocks.SNOW;
+        return dirtTag(s) || b == Blocks.SAND || b == Blocks.HARDENED_CLAY || b == Blocks.STAINED_HARDENED_CLAY
+                || b == Blocks.SNOW || b == newer()[3];
+    }
+
+    /** Today's {@code dirt} tag: Soil's, and 1.19's mud and muddy mangrove roots, 1.21.4's pale moss block. */
+    private static boolean dirtTag(IBlockState s) {
+        if (Soil.dirt(s)) {
+            return true;
+        }
+        Block b = s.getBlock();
+        Block[] n = newer();
+        return b != Blocks.AIR && (b == n[0] || b == n[1] || b == n[2]);
+    }
+
+    private static volatile Block[] newer;
+
+    /**
+     * Mud and muddy mangrove roots (Wild Update), the pale moss block (Tricky Trials), by whichever backport owns them,
+     * and our powder snow; null for each one not installed.
+     */
+    private static Block[] newer() {
+        Block[] n = newer;
+        if (n == null) {
+            n = new Block[] {
+                com.exiledradio.backportcore.ownership.BlockOwnership.resolve("mud", "wildupdatebackport"),
+                com.exiledradio.backportcore.ownership.BlockOwnership.resolve("muddy_mangrove_roots", "wildupdatebackport"),
+                com.exiledradio.backportcore.ownership.BlockOwnership.resolve("pale_moss_block", "trickytrialsbackport"),
+                Owners.ourBlock("powder_snow")};
+            newer = n;
+        }
+        return n;
     }
 
     /** RootSystemFeature.spaceForTree: the 3 blocks above are air, or water in the first one. */
@@ -349,10 +477,11 @@ public final class LushCaveGenerator implements IWorldGenerator {
         return true;
     }
 
-    /** {@code azalea_root_replaceable}: base stone, dirt, clay, gravel, sand, hardened clay, snow blocks. */
+    /** {@code azalea_root_replaceable}: base stone, the dirt tag, clay, gravel, sand, terracotta, snow blocks, powder snow. */
     private static boolean rootReplaceable(IBlockState s) {
-        return Soil.lushReplaceable(s) || s.getBlock() == Blocks.HARDENED_CLAY || s.getBlock() == Blocks.STAINED_HARDENED_CLAY
-                || s.getBlock() == Blocks.SNOW;
+        Block b = s.getBlock();
+        return Soil.lushReplaceable(s) || dirtTag(s) || b == Blocks.HARDENED_CLAY || b == Blocks.STAINED_HARDENED_CLAY
+                || b == Blocks.SNOW || b == newer()[3];
     }
 
     private static boolean inside(BlockPos p, int minX, int minZ) {

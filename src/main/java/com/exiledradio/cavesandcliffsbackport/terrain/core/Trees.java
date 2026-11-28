@@ -2113,6 +2113,8 @@ final class Trees {
     // ---- RootSystemFeature (rooted_azalea_tree) ----
 
     static final class RootSystem implements Feature {
+        static final String AZALEA_SPECIES = "dtbackport:azalea";
+
         final Feature tree;
 
         RootSystem(Feature tree) {
@@ -2130,6 +2132,13 @@ final class Trees {
                 if (allowedTreePosition(level, x, my, z) && spaceForTree(level, x, my, z)) {
                     int below = level.get(x, my - 1, z);
                     if ((flags(below) & F_FLUID) != 0 && !Vegetation.isWaterFluid(below) || !solid(below)) {
+                        return true;
+                    }
+                    // Dynamic Trees - Backport's azalea: its gate grows it later, the roots only under a tree it grew,
+                    // and nothing where it refuses (as Dynamic Trees' own worldgen). This tree's draws are then not made.
+                    Decorator d = Decorator.CURRENT.get();
+                    Decorator.TreeGate gate = d == null ? null : d.gate();
+                    if (gate != null && level.canWrite(x, z) && gate.handRooted(AZALEA_SPECIES, x, my, z, y)) {
                         return true;
                     }
                     if (LushCaves.placeInline(tree, level, random, x, my, z)) {
