@@ -59,7 +59,9 @@ public final class ModernStructures {
             // A candidate's start check reads the noise (biome and heights); 1.12's generators and the beard ask
             // the same few candidates for every chunk near them.
             Map<Long, Integer> m = chosen[set];
-            long k = (long) cx << 32 | (cz & 0xFFFFFFFFL);
+            // Mixed by an odd constant (a bijection): the packed long's own hash, cx ^ cz, is shared along every
+            // diagonal, and the map's buckets turned into trees.
+            long k = ((long) cx << 32 | (cz & 0xFFFFFFFFL)) * 0x9E3779B97F4A7C15L;
             Integer known = m.get(k);
             if (known == null) {
                 known = structures.startAt(set, cx, cz);

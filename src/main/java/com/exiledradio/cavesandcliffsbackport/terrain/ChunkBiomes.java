@@ -55,8 +55,13 @@ final class ChunkBiomes implements BiomeZoom.Quarts {
         this.zoom = new BiomeZoom(terrain.noise.seed, this);
     }
 
+    /**
+     * A chunk's map key. The packed position is multiplied by an odd constant (a bijection, so two chunks never share
+     * a key): the packed long's own hash is {@code cx ^ cz}, which every chunk on a diagonal shares, and the map's
+     * buckets turned into trees that every biome lookup searched.
+     */
     private static long key(int cx, int cz) {
-        return (long) cx << 32 | (cz & 0xFFFFFFFFL);
+        return ((long) cx << 32 | (cz & 0xFFFFFFFFL)) * 0x9E3779B97F4A7C15L;
     }
 
     /** A generated chunk's stored biomes (BiomeSource.fillChunk's layout); the array is kept. */

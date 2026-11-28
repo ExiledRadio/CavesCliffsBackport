@@ -126,11 +126,18 @@ public class EntityGlowSquid extends EntitySquid {
     /** Current Java: in water, at least 33 blocks below sea level, where no light at all reaches. */
     @Override
     public boolean getCanSpawnHere() {
-        BlockPos pos = new BlockPos(this);
-        return pos.getY() <= this.world.getSeaLevel() - 33
-                && this.world.getBlockState(pos).getMaterial() == Material.WATER
-                && this.world.getLightFor(EnumSkyBlock.SKY, pos) == 0
-                && this.world.getLightFor(EnumSkyBlock.BLOCK, pos) == 0;
+        return canSpawnAt(this.world, new BlockPos(this));
+    }
+
+    /**
+     * 1.17's {@code GlowSquid.checkGlowSquideSpawnRules}: 33 or more below sea level, in water, in the dark. Also asked
+     * before a natural spawn builds the squid (Backport Core's {@code SpawnPrechecks}), as current Java orders it.
+     */
+    static boolean canSpawnAt(World world, BlockPos pos) {
+        return pos.getY() <= world.getSeaLevel() - 33
+                && world.getBlockState(pos).getMaterial() == Material.WATER
+                && world.getLightFor(EnumSkyBlock.SKY, pos) == 0
+                && world.getLightFor(EnumSkyBlock.BLOCK, pos) == 0;
     }
 
     /** Full block light, fading to the world's light over the last ten dark ticks' worth; sky light as it is. */

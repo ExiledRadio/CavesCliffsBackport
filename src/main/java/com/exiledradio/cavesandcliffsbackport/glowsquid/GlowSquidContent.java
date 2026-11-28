@@ -130,6 +130,9 @@ public final class GlowSquidContent {
                 .tracker(160, Integer.MAX_VALUE, false)
                 .build());
         EntitySpawnPlacementRegistry.setPlacementType(EntityGlowSquid.class, EntityLiving.SpawnPlacementType.IN_WATER);
+        // Checked before the spawner builds a squid (current Java's order); 1.12.2 built one for every attempt in water.
+        com.exiledradio.backportcore.worldgen.SpawnPrechecks.register(EntityGlowSquid.class,
+                (world, pos) -> !EntityGlowSquid.canSpawnAt(world, pos));
         LootTableList.register(LOOT);
     }
 
