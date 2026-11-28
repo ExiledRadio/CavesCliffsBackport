@@ -2,6 +2,7 @@ package com.exiledradio.cavesandcliffsbackport.terrain;
 
 import com.exiledradio.backportcore.compat.DynamicTrees;
 import com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport;
+import com.exiledradio.cavesandcliffsbackport.lush.LushCaveGenerator;
 import com.exiledradio.cavesandcliffsbackport.terrain.core.Decorator;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -77,6 +78,22 @@ final class DynamicTreesGate implements Decorator.TreeGate {
         return true;
     }
 
+    /**
+     * Dynamic Trees - Backport's azalea where a root system found its tree's spot over a lush cave: grown once that
+     * spot is populated, as the trees {@link #hand} takes, and only where it grew the root system's rooted dirt and
+     * hanging roots follow ({@link LushCaveGenerator#placeRoots}). Where Dynamic Trees refuses, nothing is placed.
+     */
+    @Override
+    public boolean handRooted(String name, int x, int y, int z, int rootY) {
+        if (!LushCaveGenerator.dynamicAzaleas(this.world)) {
+            return false;
+        }
+        long key = net.minecraft.util.math.ChunkPos.asLong((x - 8) >> 4, (z - 8) >> 4);
+        this.handed.computeIfAbsent(key, k -> java.util.Collections.synchronizedList(new java.util.ArrayList<Object[]>()))
+                .add(new Object[] {new BlockPos(x, y, z), name, rootY});
+        return true;
+    }
+
     /** Whether Dynamic Trees - Backport has this species: made only with the backport that owns the tree. */
     private static boolean installed(String name) {
         int colon = name.indexOf(':');
@@ -111,8 +128,17 @@ final class DynamicTreesGate implements Decorator.TreeGate {
         try {
             Object[] t;
             while ((t = this.waiting.poll()) != null) {
-                DynamicTrees.grow(this.world, (BlockPos) t[0], new java.util.Random(this.world.getSeed() ^ ((BlockPos) t[0]).toLong()),
-                        (String) t[1]);
+                BlockPos pos = (BlockPos) t[0];
+                java.util.Random r = new java.util.Random(this.world.getSeed() ^ pos.toLong());
+                if (t.length < 3) {
+                    DynamicTrees.grow(this.world, pos, r, (String) t[1]);
+                } else if (LushCaveGenerator.growDynamicAzalea(this.world, pos, r)) {
+                    // A root system's tree grew: its rooted dirt down to the cave and hanging roots, inside the
+                    // populating chunk's 32x32 window (the tree's spot is in its middle 16x16).
+                    int minX = (((pos.getX() - 8) >> 4) << 4), minZ = (((pos.getZ() - 8) >> 4) << 4);
+                    LushCaveGenerator.placeRoots(this.world, r, new BlockPos(pos.getX(), (Integer) t[2], pos.getZ()),
+                            pos.getY(), minX, minZ);
+                }
             }
         } finally {
             this.growing = false;

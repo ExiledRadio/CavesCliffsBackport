@@ -1,6 +1,7 @@
 # 1.2.0
 
 *   **Dynamic Trees in 1.18 worlds**: with Dynamic Trees - Backport, cherry groves, mangrove swamps and pale gardens grow its dynamic trees in Caves & Cliffs worlds too. They had the static trees there.
+*   With Dynamic Trees - Backport, the azalea trees over lush caves are its dynamic azaleas in Caves & Cliffs worlds too; where it has no room, none grows. Azalea trees over lush caves also grow on mud, pale moss and powder snow in 1.12 worlds.
 *   **Creaking hearts**: with Tricky Trials Backport 1.0.4, the pale garden's heart trees are Dynamic Trees - Backport's creaking pale oaks too.
 *   **Lighter servers**: faster biome and structure lookups in Caves & Cliffs worlds, and glow squid are only built when the spot passes their spawn rules (through Backport Core 1.5.0).
 *   **Lightning rods oxidize**, as in 1.21.9: exposed, weathered and oxidized lightning rods, and waxed ones of each. Honeycomb waxes them (in hand or in the crafting grid) and an axe scrapes them, as other copper. They work the same at every stage. Lightning cleans an unwaxed rod it strikes back to new and scrapes a stage off some of the copper around it.

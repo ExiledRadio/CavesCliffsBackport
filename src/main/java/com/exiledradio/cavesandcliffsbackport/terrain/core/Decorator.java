@@ -357,6 +357,17 @@ public final class Decorator {
         default boolean hand(String species, int x, int y, int z) {
             return false;
         }
+
+        /**
+         * As {@link #hand}, for the azalea tree of a root system ({@link Trees.RootSystem}): true takes over the tree
+         * and its roots. The mod grows its tree later and, only where it grew, lays the rooted dirt from {@code rootY}
+         * up to the tree and the hanging roots under {@code rootY}; where it refuses, nothing is placed.
+         *
+         * @param rootY the root system's origin, the air under the lush cave's ceiling
+         */
+        default boolean handRooted(String species, int x, int y, int z, int rootY) {
+            return false;
+        }
     }
 
     /** The decorator running on this thread, for the trees that ask its gate ({@link Trees.Handed}). */

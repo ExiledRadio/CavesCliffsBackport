@@ -170,6 +170,11 @@ final class ModDecoration {
             public boolean hand(String species, int x, int y, int z) {
                 return a.hand(species, x, y, z) || b.hand(species, x, y, z);
             }
+
+            @Override
+            public boolean handRooted(String species, int x, int y, int z, int rootY) {
+                return a.handRooted(species, x, y, z, rootY) || b.handRooted(species, x, y, z, rootY);
+            }
         };
     }
 
