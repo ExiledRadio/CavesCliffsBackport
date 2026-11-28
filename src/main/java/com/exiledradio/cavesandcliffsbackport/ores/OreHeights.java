@@ -6,6 +6,7 @@ import com.exiledradio.cavesandcliffsbackport.common.Owners;
 import com.exiledradio.cavesandcliffsbackport.height.Heights;
 import com.exiledradio.cavesandcliffsbackport.terrain.ModernGenerator;
 import com.google.common.base.Predicate;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
@@ -45,7 +46,7 @@ import java.util.Set;
  *   <li>its stone check ({@code Block.isReplaceableOreGen}, which {@code WorldGenMinable} and most mods' vein code ask;
  *       patched to call {@link #isReplaceableOreGen}) is answered at that target height too, where deepslate and tuff
  *       count as stone. An ore whose target fails the check is not placed; a non-ore placement still needs the check
- *       to pass where it is;</li>
+ *       to pass where it is, at every position the run checked (not only the last), and is never moved;</li>
  *   <li>only positions in the four chunks population may write (the chunk and its +x, +z neighbors, vanilla's +8
  *       offset) move; anything a generator places beyond them is left as the mod placed it.</li>
  * </ul>
@@ -78,6 +79,13 @@ public final class OreHeights {
     /** The last stone check's position (as a long) and what it found where it was and at the target. */
     private static long checkedPos;
     private static boolean checked, checkedHere, checkedThere;
+    /**
+     * Every position of this generator run whose stone check passed only for its target, not for its own block. A
+     * generator may check a list of positions and set them later (Bedrock Ores: the bedrock at y 0-2, whose targets
+     * at -64 to -60 are the real bedrock), so the last check alone can't tell; anything but a moved ore set at one of
+     * these is dropped.
+     */
+    private static LongOpenHashSet onlyThere = new LongOpenHashSet();
     /** The last {@link #setBlockPos} moved an ore: {@link #placedState} picks the block. */
     private static boolean placing;
 
@@ -127,6 +135,9 @@ public final class OreHeights {
         IWorldGenerator runningBefore = running;
         int minXBefore = minX, minZBefore = minZ;
         boolean movedBefore = moved;
+        // A generator may populate another chunk (a nested run): that run gets a set of its own.
+        LongOpenHashSet onlyThereBefore = onlyThere;
+        onlyThere = new LongOpenHashSet();
         try {
             for (IWorldGenerator generator : generators) {
                 fmlRandom.setSeed(chunkSeed);
@@ -163,6 +174,7 @@ public final class OreHeights {
             minX = minXBefore;
             minZ = minZBefore;
             moved = movedBefore;
+            onlyThere = onlyThereBefore;
             checked = false;
             placing = false;
         }
@@ -174,6 +186,7 @@ public final class OreHeights {
         running = generator;
         moved = false;
         checked = false;
+        onlyThere.clear();
         minX = chunkX << 4;
         minZ = chunkZ << 4;
     }
@@ -258,8 +271,8 @@ public final class OreHeights {
         if (pass == 2) {
             return DROP;
         }
-        // The check said yes only for the target: a non-ore placement needs it to pass where it is.
-        return memo && !checkedHere ? DROP : pos;
+        // A check said yes only for the target: a non-ore placement needs it to pass where it is. Never moved either.
+        return inside && (memo && !checkedHere || onlyThere.contains(pos.toLong())) ? DROP : pos;
     }
 
     /**
@@ -313,6 +326,11 @@ public final class OreHeights {
         checkedPos = pos.toLong();
         checkedHere = here;
         checkedThere = there;
+        if (there && !here) {
+            onlyThere.add(checkedPos);
+        } else if (here) {
+            onlyThere.remove(checkedPos);
+        }
         return pass == 2 ? there : here || there;
     }
 

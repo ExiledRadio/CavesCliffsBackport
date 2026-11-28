@@ -30,7 +30,9 @@ import java.util.Random;
  *   <li>{@link Fixed}: one chunk, fixed placements through the usual stone check
  *       ({@code isReplaceableOreGen} with stone), each prepared first: ore at y 10 lands at -44 (deepslate there, air
  *       at 10: the check is answered at the target), 40 at 16, 100 at 100; an end brick and a Nether ore at 20 stay;
- *       an ore whose target is air is not placed anywhere; an ore set without a check lands in tuff.</li>
+ *       an ore whose target is air is not placed anywhere; an ore set without a check lands in tuff; a list of
+ *       positions checked first and set after (as Bedrock Ores does), passing only at their targets: none of the
+ *       non-ores is set, while one that passes where it is is.</li>
  *   <li>{@link Veins}: an 8 by 8 chunk area, four one-block "veins" per chunk at random y 0-63 through the stone
  *       check: in a Caves &amp; Cliffs world the area holds about twice as many in y -64 to 63 (the second run), none
  *       left in 0-63 above their target; in a Default world as many as were placed, at their own heights.</li>
@@ -125,6 +127,7 @@ public final class OreHeightsSelfTest implements SelfTest {
             check.eq(Blocks.AIR.getDefaultState(), world.getBlockState(at(11, -4, 11)), "ore aimed at 30 over an air target: not placed there");
             check.eq(Blocks.STONE.getDefaultState(), world.getBlockState(at(11, 30, 11)), "nor at 30");
             check.eq(ore, world.getBlockState(at(13, 36, 13)), "ore set at 50 without a check lands in tuff at 36");
+            listChecked(check, world, true);
         } else {
             check.eq(Blocks.AIR.getDefaultState(), world.getBlockState(at(1, 10, 1)), "Default: ore at y 10 over air is not placed");
             check.eq(ore, world.getBlockState(at(3, 40, 3)), "Default: ore at y 40 stays at 40");
@@ -132,8 +135,24 @@ public final class OreHeightsSelfTest implements SelfTest {
             check.eq(notOre, world.getBlockState(at(7, 20, 7)), "Default: a non-ore at y 20 stays");
             check.eq(ore, world.getBlockState(at(11, 30, 11)), "Default: ore at 30 is placed at 30");
             check.eq(ore, world.getBlockState(at(13, 50, 13)), "Default: ore set at 50 stays at 50");
+            listChecked(check, world, false);
         }
     }
+
+    /** Checked as a list, set after: only the one that passed where it is gets the non-ore, at its own height. */
+    private static void listChecked(Check check, WorldServer world, boolean remap) {
+        for (int i = 0; i < LIST_Y.length; i++) {
+            check.eq(Blocks.COBBLESTONE.getDefaultState(), world.getBlockState(at(15 + 2 * i, LIST_Y[i], 1)),
+                    "a non-ore checked in a list, passing only at its target, is not set at y " + LIST_Y[i]);
+            if (remap) {
+                check.eq(Blocks.STONE.getDefaultState(), world.getBlockState(at(15 + 2 * i, OreHeights.targetY(LIST_Y[i]), 1)),
+                        "nor at its target");
+            }
+        }
+        check.eq(notOre, world.getBlockState(at(21, 8, 1)), "a non-ore in the same list that passes where it is is set");
+    }
+
+    private static final int[] LIST_Y = {0, 1, 2};
 
     private static void veins(Check check, WorldServer world, boolean remap) {
         long moved = OreHeights.movedOres, second = OreHeights.secondRunOres;
@@ -253,6 +272,23 @@ public final class OreHeightsSelfTest implements SelfTest {
             // Set at 50 without a check: tuff at 36 takes it.
             world.setBlockState(at(13, 36, 13), tuff, 2);
             world.setBlockState(at(13, 50, 13), ore, 2);
+            // Bedrock Ores' way: check a list (cobblestone here, stone at the targets), then set the ones that passed.
+            java.util.List<BlockPos> passed = new java.util.ArrayList<BlockPos>();
+            for (int i = 0; i < LIST_Y.length; i++) {
+                world.setBlockState(at(15 + 2 * i, LIST_Y[i], 1), Blocks.COBBLESTONE.getDefaultState(), 2);
+                world.setBlockState(at(15 + 2 * i, OreHeights.targetY(LIST_Y[i]), 1), stone, 2);
+            }
+            world.setBlockState(at(21, 8, 1), stone, 2);
+            world.setBlockState(at(21, OreHeights.targetY(8), 1), stone, 2);
+            for (BlockPos p : new BlockPos[] {at(15, LIST_Y[0], 1), at(21, 8, 1), at(17, LIST_Y[1], 1), at(19, LIST_Y[2], 1)}) {
+                IBlockState here = world.getBlockState(p);
+                if (here.getBlock().isReplaceableOreGen(here, world, p, STONE)) {
+                    passed.add(p);
+                }
+            }
+            for (BlockPos p : passed) {
+                world.setBlockState(p, notOre, 2);
+            }
         }
     }
 
