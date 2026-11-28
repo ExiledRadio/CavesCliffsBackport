@@ -535,10 +535,10 @@ public final class ModConfig {
 
         @Config.RequiresWorldRestart
         @Setting.NewChunks
-        @Config.Comment("The size in blocks of the regions that each decide whether a 1.18 biome there is itself or a modded one.")
-        @Config.LangKey("config.cavesandcliffsbackport.height.moddedBiomeRegionSize")
+        @Config.Comment("The size in blocks of the areas where the same modded biome takes a 1.18 biome's place.")
+        @Config.LangKey("config.cavesandcliffsbackport.height.moddedBiomeAreaSize")
         @Config.RangeInt(min = 64, max = 8192)
-        public int moddedBiomeRegionSize = 512;
+        public int moddedBiomeAreaSize = 1024;
 
         @Setting.NewChunks
         @Config.Comment({"Other mods' overworld ores move down in Caves & Cliffs worlds with 1.18 terrain, as 1.18 moved vanilla's:",

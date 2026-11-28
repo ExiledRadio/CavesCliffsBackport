@@ -200,8 +200,8 @@ config.cavesandcliffsbackport.height.moddedBiomeHosts=Mod バイオームの置�
 config.cavesandcliffsbackport.height.moddedBiomeHosts.tooltip=自動の選択が合わない場合に、Mod バイオームが代わりになる 1.18 バイオーム：modid:名前=1.18 の名前。例：biomesoplenty:grove=forest。
 config.cavesandcliffsbackport.height.moddedBiomesMaxShare=Mod バイオームの割合
 config.cavesandcliffsbackport.height.moddedBiomesMaxShare.tooltip=1.18 バイオームの地域のうち、その代わりになりうる Mod バイオームに渡る割合の上限（パーセント）。BiomeManager の重みがバニラのバイオームの 10 に比べて低い場合は少なくなります（珍しい Mod バイオームは珍しいままです）。
-config.cavesandcliffsbackport.height.moddedBiomeRegionSize=Mod バイオームの地域サイズ
-config.cavesandcliffsbackport.height.moddedBiomeRegionSize.tooltip=そこにある 1.18 バイオームがそのままか Mod バイオームになるかをそれぞれ決める地域の大きさ（ブロック単位）。
+config.cavesandcliffsbackport.height.moddedBiomeAreaSize=Mod バイオームの地域サイズ
+config.cavesandcliffsbackport.height.moddedBiomeAreaSize.tooltip=同じ Mod バイオームが 1.18 バイオームの代わりになる範囲の大きさ（ブロック単位）。
 config.cavesandcliffsbackport.height.moddedOreHeights=他の Mod の鉱石の高さ
 config.cavesandcliffsbackport.height.moddedOreHeights.tooltip=1.18 の地形の Caves & Cliffs ワールドでは、1.18 がバニラの鉱石を下へ移したように、他の Mod のオーバーワールドの鉱石も下へ移ります。他の Mod が y 0 から 63 に生成する鉱石は、その 2 倍から 64 を引いた高さ（y 10 は -44、y 40 は 16）の石、深層岩、凝灰岩の中に置かれ、それらの Mod の y 64 より下の鉱脈は 2 倍になるので、岩のブロックあたりの鉱石の割合は Mod 本来のままです。y 63 より上の鉱石、ネザーとジ・エンドの鉱石、鉱石でないものはすべて、Mod が置いた場所のままです。
 config.cavesandcliffsbackport.height.defaultWorldType.tooltip=「ワールド新規作成」は Caves & Cliffs ワールドタイプで始まり、server.properties に level-type のない新しいサーバーもこれでワールドを作ります。「デフォルト」は 1.12 の地形として一覧に残ります。

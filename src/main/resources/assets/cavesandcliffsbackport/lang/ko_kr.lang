@@ -478,8 +478,8 @@ config.cavesandcliffsbackport.height.moddedBiomeHosts=모드 생물 군계의 �
 config.cavesandcliffsbackport.height.moddedBiomeHosts.tooltip=자동 선택이 맞지 않을 때 모드 생물 군계가 대신할 1.18 생물 군계: modid:이름=1.18 이름. 예: biomesoplenty:grove=forest.
 config.cavesandcliffsbackport.height.moddedBiomesMaxShare=모드 생물 군계 비율
 config.cavesandcliffsbackport.height.moddedBiomesMaxShare.tooltip=1.18 생물 군계의 지역 중 그 자리를 대신할 수 있는 모드 생물 군계에 돌아가는 최대 비율(퍼센트). BiomeManager 가중치가 바닐라 생물 군계의 10보다 낮으면 더 적습니다(드문 모드 생물 군계는 드문 채로 남습니다).
-config.cavesandcliffsbackport.height.moddedBiomeRegionSize=모드 생물 군계 지역 크기
-config.cavesandcliffsbackport.height.moddedBiomeRegionSize.tooltip=그곳의 1.18 생물 군계가 그대로일지 모드 생물 군계가 될지를 각각 정하는 지역의 크기(블록).
+config.cavesandcliffsbackport.height.moddedBiomeAreaSize=모드 생물 군계 지역 크기
+config.cavesandcliffsbackport.height.moddedBiomeAreaSize.tooltip=같은 모드 생물 군계가 1.18 생물 군계를 대신하는 구역의 크기(블록).
 config.cavesandcliffsbackport.height.moddedOreHeights=다른 모드의 광석 높이
 config.cavesandcliffsbackport.height.moddedOreHeights.tooltip=1.18 지형의 Caves & Cliffs 세계에서는 1.18이 바닐라 광석을 아래로 옮긴 것처럼 다른 모드의 오버월드 광석도 아래로 옮겨집니다. 다른 모드가 y 0에서 63 사이에 생성하는 광석은 그 두 배에서 64를 뺀 높이(y 10은 -44, y 40은 16)의 돌, 심층암, 응회암 속에 놓이며, 그 모드들의 y 64 아래 광맥은 두 배가 되어 암석 블록마다 모드 본래의 광석 비율이 유지됩니다. y 63 위의 광석, 네더와 엔드의 광석, 그리고 광석이 아닌 모든 것은 모드가 놓은 자리에 그대로 있습니다.
 config.cavesandcliffsbackport.height.defaultWorldType.tooltip='새로운 세계 만들기'가 Caves & Cliffs 세계 유형으로 시작하고, server.properties에 level-type이 없는 새 서버도 이 유형으로 세계를 만듭니다. '기본'은 1.12의 지형으로 목록에 남습니다.

@@ -19,6 +19,7 @@
 *   **26.4's ice caves in new Caves & Cliffs worlds** with Game Drops Backport 1.1.0: under the coldest oceans, where 26.4 puts them, with their packed ice and calcite bands. `/locate biome minecraft:ice_caves` finds them where 26.4 does.
 *   New worlds with Game Drops Backport 1.1.0 get 26.4's other biome changes too: where dripstone caves or sulfur caves met lush caves, it is lush caves, and biome borders fall where 26.4's do. Existing worlds keep the biomes they were made with.
 *   **`/locate biome` finds cave biomes** in Caves & Cliffs worlds: lush caves, dripstone caves, the deep dark, sulfur caves and ice caves.
+*   **Biomes O' Plenty and other mods' biomes keep 1.18's sizes**: they now take a 1.18 biome's place over areas shaped by 1.18's own climate noise instead of 512-block squares, so neither they nor the 1.18 biomes beside them come out cut in half. The setting for the area that keeps one modded biome is `height.moddedBiomeAreaSize` (1024). New chunks only.
 
 Needs Backport Core 1.5.0 or newer.
 

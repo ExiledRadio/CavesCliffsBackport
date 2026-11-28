@@ -35,10 +35,13 @@ import java.util.TreeMap;
  * Traverse) and Biomes O' Plenty's (its own world type's, with their climate weights), not vanilla's, not the family's
  * (those are placed by their 1.18 names, {@link BiomeMap}), not ones the config excludes.
  *
- * <p>Regions: Voronoi cells of {@code moddedBiomeRegionSize} blocks with noise-warped borders. Each cell draws a rank,
- * and the rank picks, for every host, one of its modded biomes (by weight) or the 1.18 biome itself: the modded biomes
- * get their weight's share against a vanilla biome's 10, at most {@code moddedBiomesMaxShare} percent. The vanilla
- * share is last, so a cell that keeps one host keeps the others too.
+ * <p>Where: a climate noise of 1.18's temperature scale ({@link #variant}) decides, per host, whether a column is the
+ * 1.18 biome or a modded one: the modded biomes get their weight's share of its range against a vanilla biome's 10, at
+ * most {@code moddedBiomesMaxShare} percent. Its borders are smooth contours, as between 1.18's own variant biomes
+ * (plains and sunflower plains), so a 1.18 biome's patch is split the way 1.18 splits its biomes, not cut straight
+ * by regions, and modded patches come out about as large as 1.18's. Which modded biome: Voronoi cells of
+ * {@code moddedBiomeAreaSize} blocks with noise-warped borders, each drawing one by weight. The same noise for every
+ * host, so a place that keeps one host keeps its neighbors too.
  * With no candidate there is nothing to place and the world is exactly 1.18's.
  *
  * <p>Immutable once built; any thread.
@@ -185,6 +188,15 @@ public final class ModdedBiomes {
     private final DoubleNoise warpX;
     private final DoubleNoise warpZ;
 
+    /**
+     * Modded or 1.18: a noise at 1.18's temperature scale (first octave -10), with its own seed. At this scale its
+     * borders cross few 1.18 patches, so 1.18's biomes keep their sizes and the modded ones get theirs (the patch
+     * probe, packcompat.md item 7: -8 halved both, as 512-block regions did).
+     */
+    private final DoubleNoise variant;
+    /** The variant noise's sorted sample values, to turn a value into its rank in [0, 1). */
+    private final double[] quantiles;
+
     /** A vanilla biome's BiomeManager weight. */
     private static final int VANILLA_WEIGHT = 10;
 
@@ -197,6 +209,14 @@ public final class ModdedBiomes {
         this.warpZ = new DoubleNoise(positional.fromHashOf(CavesAndCliffsBackport.MOD_ID + ":modded_biome_warp_z"), -6, 1, 1, 1);
         this.cell = regionSize;
         this.warp = regionSize * 0.5D;
+        this.variant = new DoubleNoise(positional.fromHashOf(CavesAndCliffsBackport.MOD_ID + ":modded_biome_variant"), -10,
+                1, 1, 0, 0, 0, 0);
+        java.util.Random sample = new java.util.Random(seed ^ 0x6D6F64646564L);
+        this.quantiles = new double[8192];
+        for (int i = 0; i < quantiles.length; i++) {
+            quantiles[i] = variantValue(sample.nextInt(200000) - 100000, sample.nextInt(200000) - 100000);
+        }
+        java.util.Arrays.sort(quantiles);
         for (int host = 0; host < Biomes.COUNT; host++) {
             List<Integer> mine = new ArrayList<>();
             int weights = 0;
@@ -288,7 +308,7 @@ public final class ModdedBiomes {
             return null;
         }
         ModdedBiomes m = new ModdedBiomes(seed, placed, ModConfig.height.moddedBiomesMaxShare,
-                ModConfig.height.moddedBiomeRegionSize);
+                ModConfig.height.moddedBiomeAreaSize);
         m.log();
         return m;
     }
@@ -451,7 +471,7 @@ public final class ModdedBiomes {
         for (Entry e : entries) {
             mods.merge(e.id.getNamespace(), 1, Integer::sum);
         }
-        CavesAndCliffsBackport.LOGGER.info("Other mods' biomes join the 1.18 terrain: {} biomes ({}), regions of {} blocks.",
+        CavesAndCliffsBackport.LOGGER.info("Other mods' biomes join the 1.18 terrain: {} biomes ({}), each modded biome kept over areas of {} blocks.",
                 entries.length, mods.toString().replace("{", "").replace("}", ""), (int) cell);
         for (int h = 0; h < Biomes.COUNT; h++) {
             int[] idx = hostEntries[h];
@@ -508,6 +528,16 @@ public final class ModdedBiomes {
         return hash01(bx, bz, 3);
     }
 
+    private double variantValue(int x, int z) {
+        return variant.getValue(x * 0.25D, 0.0D, z * 0.25D);
+    }
+
+    /** The variant noise's rank at block x, z, in [0, 1): uniform over the world. */
+    double variant(int x, int z) {
+        int i = java.util.Arrays.binarySearch(quantiles, variantValue(x, z));
+        return (i < 0 ? -i - 1 : i) / (double) (quantiles.length + 1);
+    }
+
     /** The modded biome in place of 1.18 biome {@code host} at block x, z, or null for the 1.18 biome itself. */
     @Nullable
     Entry at(int x, int z, int host) {
@@ -518,14 +548,18 @@ public final class ModdedBiomes {
         if (idx == null) {
             return null;
         }
-        float r = (float) rank(x, z);
         float[] ends = hostEnds[host];
+        float share = ends[ends.length - 1];
+        if (variant(x, z) >= share) {
+            return null;
+        }
+        float r = (float) rank(x, z) * share;
         for (int k = 0; k < idx.length; k++) {
             if (r < ends[k]) {
                 return entries[idx[k]];
             }
         }
-        return null;
+        return entries[idx[idx.length - 1]];
     }
 
     /**

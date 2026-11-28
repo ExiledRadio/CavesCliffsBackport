@@ -201,8 +201,8 @@ config.cavesandcliffsbackport.height.moddedBiomeHosts=Miejsca biomów modów
 config.cavesandcliffsbackport.height.moddedBiomeHosts.tooltip=Biom 1.18, którego miejsce zajmuje biom moda, gdy automatyczny wybór jest zły: modid:nazwa=nazwa z 1.18, na przykład biomesoplenty:grove=forest.
 config.cavesandcliffsbackport.height.moddedBiomesMaxShare=Udział biomów modów
 config.cavesandcliffsbackport.height.moddedBiomesMaxShare.tooltip=Najwyżej taki procent regionów biomu 1.18 przypada biomom modów, które mogą zająć jego miejsce. Mniej, gdy ich wagi BiomeManagera są niskie wobec 10 biomu vanilla (rzadki biom moda pozostaje rzadki).
-config.cavesandcliffsbackport.height.moddedBiomeRegionSize=Rozmiar regionów biomów modów
-config.cavesandcliffsbackport.height.moddedBiomeRegionSize.tooltip=Rozmiar w blokach regionów, z których każdy decyduje, czy biom 1.18 jest tam sobą, czy biomem moda.
+config.cavesandcliffsbackport.height.moddedBiomeAreaSize=Rozmiar regionów biomów modów
+config.cavesandcliffsbackport.height.moddedBiomeAreaSize.tooltip=Rozmiar w blokach obszarów, w których ten sam biom moda zajmuje miejsce biomu 1.18.
 config.cavesandcliffsbackport.height.moddedOreHeights=Wysokość rud innych modów
 config.cavesandcliffsbackport.height.moddedOreHeights.tooltip=Rudy innych modów ze Świata Zwykłego schodzą niżej w światach Caves & Cliffs z terenem 1.18, tak jak 1.18 przeniosła rudy z podstawowej gry: ruda, którą inny mod generuje na y od 0 do 63, trafia na wysokość podwojoną minus 64 (y 10 na -44, y 40 na 16), w kamień, łupek głębinowy lub tuf, a żyły tych modów poniżej y 64 są podwajane, by każdy blok skały zachował udział rudy właściwy dla moda. Rudy powyżej y 63, rudy Netheru i Kresu oraz wszystko, co nie jest rudą, zostają tam, gdzie mod je umieszcza.
 config.cavesandcliffsbackport.height.defaultWorldType.tooltip=„Utwórz nowy świat” zaczyna od typu świata Caves & Cliffs, a nowy serwer bez level-type w server.properties tworzy z nim swój świat. Domyślny zostaje na liście jako teren z 1.12.

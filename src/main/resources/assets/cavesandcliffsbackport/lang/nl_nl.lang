@@ -478,8 +478,8 @@ config.cavesandcliffsbackport.height.moddedBiomeHosts=Plaatsen van modbiomen
 config.cavesandcliffsbackport.height.moddedBiomeHosts.tooltip=Het 1.18-bioom waarvan een modbioom de plaats inneemt, waar de automatische keuze verkeerd is: modid:naam=1.18-naam, bijvoorbeeld biomesoplenty:grove=forest.
 config.cavesandcliffsbackport.height.moddedBiomesMaxShare=Aandeel van modbiomen
 config.cavesandcliffsbackport.height.moddedBiomesMaxShare.tooltip=Hoogstens dit percentage van de regio's van een 1.18-bioom gaat naar de modbiomen die zijn plaats kunnen innemen. Minder wanneer hun BiomeManager-gewichten laag zijn tegenover de 10 van een vanillabioom (een zeldzaam modbioom blijft zeldzaam).
-config.cavesandcliffsbackport.height.moddedBiomeRegionSize=Regiogrootte van modbiomen
-config.cavesandcliffsbackport.height.moddedBiomeRegionSize.tooltip=De grootte in blokken van de regio's die elk bepalen of een 1.18-bioom daar zichzelf blijft of een modbioom wordt.
+config.cavesandcliffsbackport.height.moddedBiomeAreaSize=Regiogrootte van modbiomen
+config.cavesandcliffsbackport.height.moddedBiomeAreaSize.tooltip=De grootte in blokken van de gebieden waar hetzelfde modbioom de plaats van een 1.18-bioom inneemt.
 config.cavesandcliffsbackport.height.moddedOreHeights=Ertshoogte van andere mods
 config.cavesandcliffsbackport.height.moddedOreHeights.tooltip=Bovenwereld-ertsen van andere mods gaan omlaag in Caves & Cliffs-werelden met 1.18-terrein, zoals 1.18 de ertsen van het basisspel verplaatste: een erts die een andere mod op y 0 tot 63 genereert, wordt op het dubbele min 64 geplaatst (y 10 op -44, y 40 op 16), in steen, diepleisteen of tuf, en de aders van die mods onder y 64 worden verdubbeld zodat elk blok gesteente het eigen ertsaandeel van de mod houdt. Ertsen boven y 63, Nether- en End-ertsen en alles wat geen erts is, blijven waar de mod ze plaatst.
 config.cavesandcliffsbackport.height.defaultWorldType.tooltip='Nieuwe wereld maken' begint met het wereldtype Caves & Cliffs, en een nieuwe server zonder level-type in server.properties maakt zijn wereld daarmee. Standaard blijft in de lijst als het terrein van 1.12.
