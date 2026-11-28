@@ -150,7 +150,7 @@ mod (Dregora without it still has Core, which V&P needs).
     "a lot of my biomes are really small and the BoP ones very large"). Until here 512-block regions decided
     modded or 1.18 and cut 1.18's patches straight wherever a region border crossed them. Measured with
     `tools/packs/patches.py` (contiguous patches of the saved column biomes, those cut by the area's edge left out)
-    on the family set (Core 1.5.0, C&C 1.1.8, Wild Update 1.2.0, Trails & Tales 1.0.5, Tricky Trials 1.0.4, Game
+    on the family set (Core 1.5.0, C&C 1.2.0, Wild Update 1.2.0, Trails & Tales 1.0.5, Tricky Trials 1.0.4, Game
     Drops 1.1.0), 160x160 chunks, seed 2026, and a patch probe over the terrain core's biome source (8192x8192
     blocks, two seeds, area-weighted mean patch size in blocks, Σs²/Σs):
     *   **Family biomes are never replaced and never resized**: the cherry grove is identical with and without BoP
