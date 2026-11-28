@@ -143,6 +143,13 @@ public final class ModConfig {
         @Config.Comment("Ores that get no deepslate form, by registry name (modid:name), with :meta for one variant, or modid:* for a whole mod.")
         @Config.LangKey("config.cavesandcliffsbackport.deepslate.moddedOresExclude")
         public String[] moddedOresExclude = {};
+
+        @Config.RequiresMcRestart
+        @Config.Comment({"Other mods' ores to treat as ores though their mods give them no ore* ore dictionary name, by registry name (modid:name),",
+                "with :meta for one variant, or modid:* for every block of a mod. They get deepslate forms and the Caves & Cliffs ore heights.",
+                "Nether and End ores stay out."})
+        @Config.LangKey("config.cavesandcliffsbackport.deepslate.moddedOresInclude")
+        public String[] moddedOresInclude = {};
     }
 
     public static final class Copper {

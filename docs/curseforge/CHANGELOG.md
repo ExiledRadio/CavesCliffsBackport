@@ -23,6 +23,9 @@
 *   New worlds with Game Drops Backport 1.1.0 get 26.4's other biome changes too: where dripstone caves or sulfur caves met lush caves, it is lush caves, and biome borders fall where 26.4's do. Existing worlds keep the biomes they were made with.
 *   **`/locate biome` finds cave biomes** in Caves & Cliffs worlds: lush caves, dripstone caves, the deep dark, sulfur caves and ice caves.
 *   **Biomes O' Plenty generates as it does in 1.18**: its biomes come in TerraBlender's regions (vanilla 10, Biomes O' Plenty 13, its rare biomes 2) and fill the slots of 1.18's climate that Biomes O' Plenty 1.18.2 gives them, so they follow 1.18's climate like vanilla's own biomes. 1.12 biomes 1.18 dropped stand in for the 1.18 ones 1.12 never had. Defiled Lands, Traverse and other mods share one more region. The weights and region size are in the `height` settings. New chunks only.
+*   **`moddedOresInclude`** (deepslate settings): add any mod's ore by name, for ores their mods give no ore dictionary name (Super Ores, Scaling Health's heart crystal ore, Simple Pink Diamond, Synctum). They get deepslate forms and, in Caves & Cliffs worlds, 1.18's ore heights. `modid:name`, `modid:name:meta` or `modid:*`. Nether and End ores stay out.
+*   Fixed: ores whose names end like "crystalore" or "synctumore" were never treated as ores.
+*   Fixed: Bedrock Ores placed its ores in the deepslate of Caves & Cliffs worlds.
 
 Needs Backport Core 1.5.0 or newer.
 

@@ -1,6 +1,7 @@
 package com.exiledradio.cavesandcliffsbackport.ores;
 
 import com.exiledradio.cavesandcliffsbackport.CavesAndCliffsBackport;
+import com.exiledradio.cavesandcliffsbackport.ModConfig;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
@@ -10,6 +11,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import net.minecraftforge.oredict.OreDictionary;
 
 import javax.annotation.Nullable;
@@ -24,6 +26,9 @@ import java.util.Map;
  * <p>Nether and End ores are those under an {@code oreNether*} or {@code oreEnd*} name, vanilla's quartz ore, and
  * blocks whose registry name says nether or end ({@code nether_*}, {@code *_end_*}, {@code endore}...). A block that is
  * both (a mod listing its Nether ore under {@code oreCopper} too) counts as Nether or End.
+ *
+ * <p>Ores named in {@code deepslate.moddedOresInclude} count too, with no ore dictionary name (the same states that
+ * get deepslate forms: full blocks of rock, no Nether or End ores).
  */
 public final class ModdedOres {
 
@@ -100,6 +105,27 @@ public final class ModdedOres {
                 to.put(block, was == null ? mask : was | mask);
             }
         }
+        // deepslate.moddedOresInclude: ores their mods give no ore* name.
+        int included = 0;
+        if (ModConfig.deepslate.moddedOresInclude.length > 0) {
+            for (Block block : ForgeRegistries.BLOCKS.getValuesCollection()) {
+                int mask = 0;
+                for (IBlockState state : block.getBlockState().getValidStates()) {
+                    if (com.exiledradio.cavesandcliffsbackport.deepslate.ModdedOres.includedOre(block, state)) {
+                        try {
+                            mask |= 1 << (block.getMetaFromState(state) & 15);
+                        } catch (RuntimeException ignored) {
+                            // includedOre read it already.
+                        }
+                    }
+                }
+                if (mask != 0 && !otherDimension(block)) {
+                    Integer was = in.get(block);
+                    in.put(block, was == null ? mask : was | mask);
+                    included++;
+                }
+            }
+        }
         for (Map.Entry<Block, Integer> e : out.entrySet()) {
             Integer was = in.get(e.getKey());
             if (was != null) {
@@ -112,8 +138,8 @@ public final class ModdedOres {
             }
         }
         ores = in;
-        CavesAndCliffsBackport.LOGGER.info("Modded ore heights: {} blocks have overworld ore states ({} left out as Nether "
-                + "or End ores).", in.size(), out.size());
+        CavesAndCliffsBackport.LOGGER.info("Modded ore heights: {} blocks have overworld ore states ({} by "
+                + "deepslate.moddedOresInclude; {} left out as Nether or End ores).", in.size(), included, out.size());
         return in;
     }
 

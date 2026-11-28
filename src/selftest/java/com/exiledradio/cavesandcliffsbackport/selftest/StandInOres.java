@@ -40,7 +40,11 @@ import java.util.Random;
  *       not an ore);</li>
  *   <li>{@code nether_copper_ore} (a Nether ore, left out) and {@code excluded_ore} (excluded by the setting);</li>
  *   <li>{@code deepslate_tin_ore} (already a deepslate ore) and {@code pearl_ore} (an End ore by its translation key):
- *       left out with no form.</li>
+ *       left out with no form;</li>
+ *   <li>{@code crystalore}: an ore by its name (Scaling Health's), in no ore dictionary: a candidate, not confirmed;</li>
+ *   <li>by {@code deepslate.moddedOresInclude}: {@code super_tin} (no ore word, no ore dictionary name, as Super
+ *       Ores' are) is confirmed; {@code shiny_rock} (an End ore by its translation key) is left out, as is a name
+ *       that is no block.</li>
  * </ul>
  * In the client test they draw as vanilla's iron, diamond, emerald and redstone ores
  * ({@link StandInOresClient}), so their forms can be held against 1.18's own deepslate ores.
@@ -51,6 +55,7 @@ public final class StandInOres {
     public static final String NS = "ccstandin";
 
     public static Block copperOre, gemOre, netherOre, excludedOre, sandOre, clathrateOre, deepslateOre, enderKeyOre;
+    public static Block nameOnlyOre, includedOre, includedEndOre;
     public static final List<Item> ITEMS = new ArrayList<Item>();
 
     private StandInOres() {
@@ -138,6 +143,13 @@ public final class StandInOres {
             ex.add(NS + ":excluded_ore");
             ModConfig.deepslate.moddedOresExclude = ex.toArray(new String[0]);
         }
+        List<String> in = new ArrayList<String>(Arrays.asList(ModConfig.deepslate.moddedOresInclude));
+        for (String s : new String[] {NS + ":super_tin", NS + ":shiny_rock", NS + ":no_such_block"}) {
+            if (!in.contains(s)) {
+                in.add(s);
+            }
+        }
+        ModConfig.deepslate.moddedOresInclude = in.toArray(new String[0]);
         copperOre = name(plain(3.0F, 1), "copper_ore");
         gemOre = name(new GemOre(), "ore");
         netherOre = name(plain(3.0F, 1), "nether_copper_ore");
@@ -150,12 +162,17 @@ public final class StandInOres {
         deepslateOre = name(plain(4.5F, 1), "deepslate_tin_ore");
         enderKeyOre = name(plain(3.0F, 1), "pearl_ore");
         enderKeyOre.setTranslationKey(NS + ".enderPearlOre");
-        event.getRegistry().registerAll(copperOre, gemOre, netherOre, excludedOre, sandOre, clathrateOre, deepslateOre, enderKeyOre);
+        nameOnlyOre = name(plain(3.0F, 1), "crystalore");
+        includedOre = name(plain(3.0F, 1), "super_tin");
+        includedEndOre = name(plain(3.0F, 1), "shiny_rock");
+        includedEndOre.setTranslationKey(NS + ".enderShinyRock");
+        event.getRegistry().registerAll(copperOre, gemOre, netherOre, excludedOre, sandOre, clathrateOre, deepslateOre, enderKeyOre,
+                nameOnlyOre, includedOre, includedEndOre);
     }
 
     @SubscribeEvent
     public static void items(RegistryEvent.Register<Item> event) {
-        for (Block b : new Block[] {copperOre, netherOre, excludedOre, sandOre, clathrateOre}) {
+        for (Block b : new Block[] {copperOre, netherOre, excludedOre, sandOre, clathrateOre, nameOnlyOre, includedOre, includedEndOre}) {
             ITEMS.add(new ItemBlock(b).setRegistryName(b.getRegistryName()));
         }
         ItemBlock gem = new ItemBlock(gemOre) {

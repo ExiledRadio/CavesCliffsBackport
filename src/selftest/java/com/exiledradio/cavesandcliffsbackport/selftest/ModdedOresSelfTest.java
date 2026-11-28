@@ -154,7 +154,47 @@ public final class ModdedOresSelfTest implements SelfTest {
         String name = copper.item().getItemStackDisplayName(new ItemStack(copper.item()));
         c.ok(name.startsWith("Deepslate ") && name.endsWith(new ItemStack(StandInOres.copperOre).getDisplayName()), "the form's name: " + name);
 
+        names(c);
+        include(c);
         layer(c);
+    }
+
+    /** The name filter: "ore" words, and words ending in "ore" that are not ores only as whole words. */
+    private void names(Check c) {
+        for (String ore : new String[] {"copper_ore", "ore_copper", "orecopper", "copperore", "ores", "crystalore", "synctumore",
+                "obsidiansynctumore", "zincore", "pink_diamond_ore", "tin_ores", "blocks/coreore"}) {
+            c.ok(ModdedOres.oreName(ore), "an ore by its name: " + ore);
+        }
+        for (String not : new String[] {"core", "reactor_core", "drill_core_2", "store", "spore", "spore_blossom", "lore", "more",
+                "folklore", "hardcore", "ignore", "fore", "sycamore", "fancy_sycamore", "semaphore", "sophomore", "cores",
+                "stone", "storage", "machine.core", "a-snore"}) {
+            c.ok(!ModdedOres.oreName(not), "not an ore by its name: " + not);
+        }
+        ModdedOres.Form crystal = forBlock(StandInOres.nameOnlyOre).isEmpty() ? null : forBlock(StandInOres.nameOnlyOre).get(0);
+        c.ok(crystal != null && !crystal.confirmed() && !crystal.included(),
+                "crystalore is a candidate through the name filter, not confirmed without an ore dictionary name");
+        c.ok(!com.exiledradio.cavesandcliffsbackport.ores.ModdedOres.isOre(StandInOres.nameOnlyOre.getDefaultState()),
+                "and no ore for the ore heights");
+    }
+
+    /** deepslate.moddedOresInclude: ores by name, without an ore dictionary name. */
+    private void include(Check c) {
+        ModdedOres.Form tin = forBlock(StandInOres.includedOre).isEmpty() ? null : forBlock(StandInOres.includedOre).get(0);
+        c.ok(tin != null && tin.confirmed() && tin.included(), "an included block with no ore word or ore name is confirmed");
+        c.ok(tin != null && tin.oreNames().isEmpty(), "with no ore dictionary names of its own");
+        c.ok(tin != null && ModdedOres.deepslateForm(StandInOres.includedOre.getDefaultState()) == tin.block().getDefaultState(),
+                "lookup: the included ore");
+        c.ok(com.exiledradio.cavesandcliffsbackport.ores.ModdedOres.isOre(StandInOres.includedOre.getDefaultState()),
+                "an included block is an ore for the ore heights");
+        c.ok(ModdedOres.included(StandInOres.includedOre.getRegistryName(), 0) && !ModdedOres.included(StandInOres.copperOre.getRegistryName(), 0),
+                "the include list by name");
+        c.ok(forBlock(StandInOres.includedEndOre).isEmpty(), "an included End ore gets no form");
+        String why = ModdedOres.leftOut("ccstandin:shiny_rock");
+        c.ok(why != null && why.contains("Nether or End") && why.contains("moddedOresInclude"), "an included End ore is left out, with why: " + why);
+        c.ok(!com.exiledradio.cavesandcliffsbackport.ores.ModdedOres.isOre(StandInOres.includedEndOre.getDefaultState()),
+                "and is no ore for the ore heights");
+        why = ModdedOres.leftOut("ccstandin:no_such_block");
+        c.ok(why != null && why.contains("no such block"), "an included name that is no block is listed: " + why);
     }
 
     /** The Default-world deepslate layer turns confirmed ores into their forms, and leaves the rest. */

@@ -52,6 +52,10 @@ import java.util.regex.Pattern;
  * can't wait; it becomes a <em>confirmed</em> ore once the ore dictionary lists it under an {@code ore*} name. An
  * unconfirmed candidate is never generated, has no creative tab and so is not in JEI either.
  *
+ * <p>{@code deepslate.moddedOresInclude} names ores whose mods give them no {@code ore*} name (Super Ores, Scaling
+ * Health's crystal ore): they skip the name test and are confirmed without the ore dictionary, here and for stream O2's
+ * ore heights ({@link #includedOre}). The state test, the exclude list and the Nether and End tests still apply.
+ *
  * <h2>What the form is</h2>
  * {@link BlockModdedDeepslateOre}: 1.18's deepslate ore rules (hardness 1.5 times the stone ore's, at least 4.5; same
  * harvest tool and level, drops, experience and Fortune; deepslate's sound), plus the original's ore dictionary names
@@ -76,8 +80,11 @@ public final class ModdedOres {
 
     /** An "ore" word in a registry path: ore, ores, ore_copper, copper_ore, oreCopper (lowered), copperore. */
     private static final Pattern ORE_WORD = Pattern.compile("(^|[_./-])ores?($|[_./-])|^ore[a-z]|[a-z]ores?$");
-    /** Words ending in "ore" that are not ores. */
-    private static final Pattern NOT_ORE = Pattern.compile("(core|store|spore|shore|score|more|chore|snore|swore|bore|"
+    /**
+     * Words ending in "ore" that are not ores, each a whole word: at the start of the name or after {@code _ . / -}
+     * (reactor_core, spore_blossom), never the end of a longer one (crystalore, synctumore, zincore are ores).
+     */
+    private static final Pattern NOT_ORE = Pattern.compile("(^|[_./-])(core|store|spore|shore|score|more|chore|snore|swore|bore|"
             + "lore|fore|adore|ignore|explore|restore|sycamore|hardcore|folklore|semaphore|sophomore)s?($|[_./-])");
     /** Nether and End ores, by registry path or ore dictionary name. */
     private static final Pattern NETHER_END = Pattern.compile("nether|hell|(^|[_./-])end($|[_./-])|endstone|end_stone|theend|"
@@ -91,7 +98,7 @@ public final class ModdedOres {
 
     /** End ores whose names don't say so (name:meta): Biomes O' Plenty's amethyst and Quark's biotite, in end stone. */
     private static final Set<String> KNOWN_END = new HashSet<String>(java.util.Arrays.asList(
-            "biomesoplenty:gem_ore:0", "quark:biotite_ore:0"));
+            "biomesoplenty:gem_ore:0", "quark:biotite_ore:0", "synctum:obsidiansynctumore:0"));
 
     /** A candidate: one metadata of another mod's stone ore, and its deepslate form. */
     public static final class Form {
@@ -110,6 +117,8 @@ public final class ModdedOres {
         final Set<String> oreNames = new TreeSet<String>();
         private final Set<String> registeredNames = new HashSet<String>();
         boolean smelting;
+        /** Listed in deepslate.moddedOresInclude: confirmed without an ore dictionary name. */
+        boolean included;
 
         Form(ResourceLocation originalName, int meta, IBlockState original, float originalHardness) {
             this.originalName = originalName;
@@ -128,6 +137,10 @@ public final class ModdedOres {
 
         public boolean confirmed() {
             return this.confirmed;
+        }
+
+        public boolean included() {
+            return this.included;
         }
 
         public Set<String> oreNames() {
@@ -276,9 +289,142 @@ public final class ModdedOres {
         return false;
     }
 
-    private static boolean excluded(Set<String> exclude, ResourceLocation name, int meta) {
-        return exclude.contains(name.getNamespace() + ":*") || exclude.contains(name.toString())
-                || exclude.contains(name + ":" + meta);
+    /** The registry name or its namespace is in the list (modid:name, modid:name:meta or modid:*). */
+    private static boolean listed(Set<String> list, ResourceLocation name, int meta) {
+        return list.contains(name.getNamespace() + ":*") || list.contains(name.toString())
+                || list.contains(name + ":" + meta);
+    }
+
+    /** The list names the block itself, with or without a metadata (modid:* does not count). */
+    private static boolean namedAnyMeta(Set<String> list, ResourceLocation name) {
+        if (list.contains(name.toString())) {
+            return true;
+        }
+        String prefix = name + ":";
+        for (String s : list) {
+            if (s.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** As {@link #listed}, for some metadata of the block. */
+    private static boolean listedAnyMeta(Set<String> list, ResourceLocation name) {
+        if (list.isEmpty()) {
+            return false;
+        }
+        if (list.contains(name.getNamespace() + ":*") || list.contains(name.toString())) {
+            return true;
+        }
+        String prefix = name + ":";
+        for (String s : list) {
+            if (s.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // The include list (deepslate.moddedOresInclude): ores by name, for both streams
+
+    private static final Pattern INCLUDE_ENTRY = Pattern.compile("[a-z0-9_.-]+:(\\*|[a-z0-9_./-]+(:[0-9]{1,2})?)");
+    @Nullable
+    private static Set<String> include;
+    private static final Set<String> WARNED = new HashSet<String>();
+
+    /** {@code deepslate.moddedOresInclude}, lowered, read once: a change needs a restart. */
+    private static synchronized Set<String> include() {
+        if (include == null) {
+            Set<String> s = new LinkedHashSet<String>();
+            for (String e : ModConfig.deepslate.moddedOresInclude) {
+                String t = e == null ? "" : e.trim().toLowerCase(Locale.ROOT);
+                if (t.isEmpty()) {
+                    continue;
+                }
+                if (!INCLUDE_ENTRY.matcher(t).matches()) {
+                    CavesAndCliffsBackport.LOGGER.warn("deepslate.moddedOresInclude: \"{}\" is not modid:name, modid:name:meta or "
+                            + "modid:*; ignored.", e);
+                    continue;
+                }
+                s.add(t);
+            }
+            include = s;
+        }
+        return include;
+    }
+
+    /** Whether {@code deepslate.moddedOresInclude} lists this block and metadata (by name, name:meta or modid:*). */
+    public static boolean included(ResourceLocation name, int meta) {
+        Set<String> in = include();
+        return !in.isEmpty() && listed(in, name, meta);
+    }
+
+    /** A full opaque cube of rock with no tile entity that can be broken: what an ore in stone is. */
+    private static boolean rockCube(Block b, IBlockState st, float hardness) {
+        try {
+            return st.getBlock() == b && st.getMaterial() == Material.ROCK && st.isOpaqueCube() && st.isFullCube()
+                    && !b.hasTileEntity(st) && hardness >= 0;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    /** Why a block is a Nether or End ore, by what registration knows, or null. */
+    @Nullable
+    private static String netherOrEndReason(ResourceLocation name, Block b, @Nullable IBlockState st, int meta) {
+        if (netherOrEnd(name.getPath())) {
+            return "Nether or End ore";
+        }
+        if (name.getNamespace().contains("nether")) {
+            return "Nether or End ore (a Nether mod's)";
+        }
+        if (st != null && (KNOWN_END.contains(name + ":" + meta) || netherOrEndByState(b, st))) {
+            return "Nether or End ore";
+        }
+        return null;
+    }
+
+    /** An included block left out: warned once, and listed in the report. */
+    private static void includedLeftOut(String what, String reason) {
+        synchronized (LEFT_OUT) {
+            LEFT_OUT.put(what, reason + "; listed in deepslate.moddedOresInclude, which takes only Overworld ores in stone");
+        }
+        synchronized (WARNED) {
+            if (!WARNED.add(what)) {
+                return;
+            }
+        }
+        CavesAndCliffsBackport.LOGGER.warn("deepslate.moddedOresInclude lists {}, left out: {}.", what, reason);
+    }
+
+    /**
+     * Stream O2's lookup ({@link com.exiledradio.cavesandcliffsbackport.ores.ModdedOres}): a state the include list
+     * makes an overworld ore. As for a deepslate form, it must be a full block of rock and no Nether or End ore.
+     */
+    public static boolean includedOre(Block b, IBlockState st) {
+        ResourceLocation name = b.getRegistryName();
+        if (name == null || familyNamespace(name.getNamespace()) || include().isEmpty()) {
+            return false;
+        }
+        int meta;
+        try {
+            meta = b.getMetaFromState(st);
+        } catch (RuntimeException e) {
+            return false;
+        }
+        if (!included(name, meta) || !rockCube(b, st, field(b, "blockHardness", "field_149782_v"))) {
+            return false;
+        }
+        String why = netherOrEndReason(name, b, st, meta);
+        if (why != null) {
+            if (namedAnyMeta(include(), name) || oreName(name.getPath())) {
+                includedLeftOut(name + (meta != 0 ? ":" + meta : ""), why);
+            }
+            return false;
+        }
+        return true;
     }
 
     private static float field(Block b, String mcp, String srg) {
@@ -299,18 +445,28 @@ public final class ModdedOres {
         for (String s : ModConfig.deepslate.moddedOresExclude) {
             exclude.add(s.trim().toLowerCase(Locale.ROOT));
         }
+        Set<String> include = include();
         SoundType sound = ModSounds.type("block.deepslate");
         for (Block b : new ArrayList<Block>(r.getValuesCollection())) {
             ResourceLocation name = b.getRegistryName();
-            if (name == null || familyNamespace(name.getNamespace()) || !oreName(name.getPath())) {
+            if (name == null || familyNamespace(name.getNamespace())) {
                 continue;
             }
-            if (netherOrEnd(name.getPath())) {
-                LEFT_OUT.put(name.toString(), "Nether or End ore");
+            // An included block skips the name filter.
+            boolean anyIncluded = listedAnyMeta(include, name);
+            boolean byName = oreName(name.getPath());
+            if (!byName && !anyIncluded) {
                 continue;
             }
-            if (name.getNamespace().contains("nether")) {
-                LEFT_OUT.put(name.toString(), "Nether or End ore (a Nether mod's)");
+            // Named outright (not only through modid:*): what is left out of it is reported, as an ore-named block's is.
+            boolean named = anyIncluded && namedAnyMeta(include, name);
+            String why = netherOrEndReason(name, b, null, 0);
+            if (why != null) {
+                if (named || anyIncluded && byName) {
+                    includedLeftOut(name.toString(), why);
+                } else if (byName) {
+                    LEFT_OUT.put(name.toString(), why);
+                }
                 continue;
             }
             if (name.getPath().toLowerCase(Locale.ROOT).contains("deepslate")) {
@@ -328,25 +484,43 @@ public final class ModdedOres {
             float hardness = field(b, "blockHardness", "field_149782_v");
             float resistance = field(b, "blockResistance", "field_149781_w");
             for (int meta : metas) {
+                boolean inc = anyIncluded && listed(include, name, meta);
+                if (!byName && !inc) {
+                    continue;
+                }
+                String what = name + (meta != 0 ? ":" + meta : "");
                 IBlockState st;
                 try {
                     st = b.getStateFromMeta(meta);
-                    if (st.getBlock() != b || st.getMaterial() != Material.ROCK || !st.isOpaqueCube() || !st.isFullCube()
-                            || b.hasTileEntity(st) || !(hardness >= 0)) {
-                        continue;
-                    }
                 } catch (RuntimeException e) {
                     continue;
                 }
-                if (excluded(exclude, name, meta)) {
-                    LEFT_OUT.put(name + (meta != 0 ? ":" + meta : ""), "excluded by deepslate.moddedOresExclude");
+                if (!rockCube(b, st, hardness)) {
+                    // Only an ore named outright is reported: modid:* takes the mod's rock blocks and nothing else.
+                    if (named && (include.contains(name.toString()) || include.contains(name + ":" + meta))) {
+                        LEFT_OUT.put(what, "listed in deepslate.moddedOresInclude, but not a full block of rock without a tile entity");
+                    }
                     continue;
                 }
-                if (KNOWN_END.contains(name + ":" + meta) || netherOrEndByState(b, st)) {
-                    LEFT_OUT.put(name + (meta != 0 ? ":" + meta : ""), "Nether or End ore");
+                if (listed(exclude, name, meta)) {
+                    LEFT_OUT.put(what, "excluded by deepslate.moddedOresExclude");
+                    continue;
+                }
+                why = netherOrEndReason(name, b, st, meta);
+                if (why != null) {
+                    if (inc) {
+                        includedLeftOut(what, why);
+                    } else {
+                        LEFT_OUT.put(what, why);
+                    }
                     continue;
                 }
                 Form f = new Form(name, meta, st, hardness);
+                if (inc) {
+                    // Confirmed without an ore dictionary name; a Nether or End one, or a shovel's, still drops out.
+                    f.included = true;
+                    f.confirmed = true;
+                }
                 // 1.18: deepslate ores are 4.5 against stone ores' 3, so 1.5 times; never below 4.5. Blast resistance stays.
                 float ours = Math.max(4.5F, hardness * 1.5F);
                 float res = resistance >= 0 ? resistance / 3.0F : 3.0F;
@@ -373,6 +547,14 @@ public final class ModdedOres {
                         // As above.
                     }
                 }
+            }
+        }
+        for (String e : include) {
+            String[] p = e.split(":");
+            boolean found = "*".equals(p[1]) ? Loader.isModLoaded(p[0]) : r.containsKey(new ResourceLocation(p[0], p[1]));
+            if (!found) {
+                LEFT_OUT.put(e, "listed in deepslate.moddedOresInclude, but no such " + ("*".equals(p[1]) ? "mod" : "block"));
+                CavesAndCliffsBackport.LOGGER.warn("deepslate.moddedOresInclude lists {}: no such {}.", e, "*".equals(p[1]) ? "mod" : "block");
             }
         }
         CavesAndCliffsBackport.LOGGER.info("Modded ores: {} candidates for deepslate forms.", FORMS.size());
@@ -480,6 +662,15 @@ public final class ModdedOres {
                 f.notStone = true;
                 f.confirmed = false;
             }
+            // An included ore has no ore dictionary name to be told by: its item's translation key (Ender ... Ore).
+            if (f.included && f.confirmed && netherOrEndKey(f)) {
+                f.netherOrEnd = true;
+                f.confirmed = false;
+            }
+            if (f.included && !f.confirmed) {
+                includedLeftOut(f.toString(), f.netherOrEnd ? "Nether or End ore" : f.notStone
+                        ? "not mined with a pickaxe (a sand or gravel ore)" : "not an ore");
+            }
         }
         FurnaceRecipes furnace = FurnaceRecipes.instance();
         for (Form f : FORMS) {
@@ -520,12 +711,13 @@ public final class ModdedOres {
         try {
             out.println("# Caves & Cliffs Backport: other mods' ores and their deepslate forms.");
             out.println("# Written at every game start. Leave an ore out with deepslate.moddedOresExclude (modid:name, modid:name:meta or modid:*).");
+            out.println("# Add an ore its mod gives no ore* ore dictionary name with deepslate.moddedOresInclude (the same forms); it is marked \"included by config\".");
             out.println("#");
             out.println("# Deepslate forms (generated in deepslate):");
             for (Form f : FORMS) {
                 if (f.confirmed) {
                     out.println(f + "\t-> " + f.block.getRegistryName() + "\thardness " + f.block.getBlockHardness(f.block.getDefaultState(), null, null)
-                            + "\t" + String.join(" ", f.oreNames) + (f.smelting ? "\tsmelts" : ""));
+                            + "\t" + String.join(" ", f.oreNames) + (f.smelting ? "\tsmelts" : "") + (f.included ? "\tincluded by config" : ""));
                 }
             }
             out.println();
@@ -538,8 +730,10 @@ public final class ModdedOres {
             }
             out.println();
             out.println("# Left out:");
-            for (Map.Entry<String, String> e : LEFT_OUT.entrySet()) {
-                out.println(e.getKey() + "\t" + e.getValue());
+            synchronized (LEFT_OUT) {
+                for (Map.Entry<String, String> e : LEFT_OUT.entrySet()) {
+                    out.println(e.getKey() + "\t" + e.getValue());
+                }
             }
         } finally {
             out.close();
